@@ -35,10 +35,18 @@ namespace GraphBLAS
 // List of ops that can be used in map/reduce operations.
   enum BinaryOp
   {
-    fieldOps_mul =	0,
-    fieldOps_add =	1,
-    fieldOps_and =	2,
-    fieldOps_or	 =	3
+    fieldOps_mult =	0,
+    fieldOps_add  =	1,
+    fieldOps_and  =	2,
+    fieldOps_or	  =	3
+  };
+
+// List of additive identities that can be used
+  enum AdditiveId
+  {
+    addZero_add =       0,
+    addZero_min =       1,
+    addZero_max =       2
   };
 
   class fnCallDesc
@@ -48,8 +56,9 @@ namespace GraphBLAS
 	Transform arg2Desc ;
 	Transform maskDesc ;
 	int32_t dim ;			// dimension for reduction operation on matrices
-	BinaryOp mapOp ;
-	BinaryOp reduceOp ;
+	BinaryOp addOp ;
+	BinaryOp multOp ;
+        AdditiveId addZero ;
   };
 
   void mxm(fnCallDesc& d, Matrix<int>& C, Matrix<bool>& A, Matrix<int>& B, Vector<bool>& m);
