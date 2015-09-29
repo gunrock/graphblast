@@ -39,6 +39,7 @@ double (*multptr) (double, double), double (*addptr) (double, double), double SA
 
 Note: my syntax with function pointers might be off
 
+typedef UINT64 Index;
 
 // Ignoring + operator, because it is optional argument per GraphBlas_Vops.pdf
 template<typename Scalar>
