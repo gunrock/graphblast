@@ -177,15 +177,11 @@ namespace GraphBLAS
 
 int main() {
 
-  GraphBLAS::Vector<GraphBLAS::Index> I = {0, 1, 2};
-  GraphBLAS::Vector<GraphBLAS::Index> J = {0, 1, 2};
-  GraphBLAS::Vector<int> V = {1, 1, 1};
-
   GraphBLAS::Tuple<int> tuple1;
   GraphBLAS::Tuple<int> tuple2;
-  tuple1.I = I;
-  tuple1.J = J;
-  tuple1.V = V;
+  tuple1.I = {0, 1, 2};
+  tuple1.J = {0, 1, 2};
+  tuple1.V = {1, 1, 1};
   
   GraphBLAS::Matrix<int> A;
   GraphBLAS::Matrix<int> B;
