@@ -88,9 +88,8 @@ namespace GraphBLAS
     Index dest;
     Index cumsum = 0;
     int nnz = A.I.size();
-    //C.colptr.resize(N+1);
-	C.val.resize(nnz);
-	C.rowind.resize(nnz);
+    C.val.resize(nnz);
+    C.rowind.resize(nnz);
     C.colptr.assign(N+1,0);
     for( i=0; i<nnz; i++ ) {
       C.colptr[A.J[i]]++;                   // Go through all elements to see how many fall into each row
@@ -121,8 +120,8 @@ namespace GraphBLAS
     int to_increment = 0;
     C.I.resize(A.val.size());
     C.J.resize(A.val.size());
-	C.V.resize(A.val.size());
-	for( i=0; i<A.val.size(); i++ ) {
+    C.V.resize(A.val.size());
+    for( i=0; i<A.val.size(); i++ ) {
       C.I[i] = A.rowind[i];                // Copy from Tuple
       C.V[i] = A.val[i];                   // Copy from Tuple
     }
