@@ -1,10 +1,10 @@
 // Compiles using:
 //   g++ -o graphblas -std=c++11 graphblas.cpp
 // Functional:
-//   -buildmatrix (builds matrix in CSC format)
-//   -extracttuples
+//   -BuildMatrix (builds matrix in CSC format)
+//   -ExtractTuples
 // Incomplete:
-//   -mxm (still needs ewisemult and ewiseadd, or versions of both that do same thing but are customized for mxm)
+//   -MxM (still needs EwiseMult and EwiseAdd, or versions of both that do same thing but are customized for mxm)
 
 #include <unistd.h>
 #include <ctype.h>
@@ -86,7 +86,7 @@ namespace GraphBLAS
   // Don't have to assume tuple is ordered
   // Can be used for CSR by swapping I and J vectors in tuple A and swapping N and M dimensions
   template<typename Scalar>
-  void buildmatrix(int M, int N, Tuple<Scalar>& A, Matrix<Scalar>& C) {
+  void BuildMatrix(int M, int N, Tuple<Scalar>& A, Matrix<Scalar>& C) {
     Index i, j;
     Index temp;
     Index row;
@@ -120,7 +120,7 @@ namespace GraphBLAS
   }}
 
   template<typename Scalar>
-  void extracttuples(Matrix<Scalar>& A, Tuple<Scalar>& C) {
+  void ExtractTuples(Matrix<Scalar>& A, Tuple<Scalar>& C) {
     Index i, j;
     int to_increment = 0;
     C.I.resize(A.val.size());
@@ -137,16 +137,16 @@ namespace GraphBLAS
   }}}
 
   template<typename Scalar>
-  void ewisemult( fnCallDesc& d, Scalar multiplicand, Matrix<Scalar>& A, Index start, Index end, Vector<Scalar>& temp );
+  void EwiseMult( fnCallDesc& d, Scalar multiplicand, Matrix<Scalar>& A, Index start, Index end, Vector<Scalar>& temp );
 
   template<typename Scalar>
-  void ewiseadd( fnCallDesc& d, Vector<Scalar>& temp, Vector<Scalar>& A, Vector<Scalar>& C );
+  void EwiseAdd( fnCallDesc& d, Vector<Scalar>& temp, Vector<Scalar>& A, Vector<Scalar>& C );
 
   // Could also have template where matrices A and B have different values as Manoj/Jose originally had in their signature, but sake of simplicity assume they have same ScalarType. Also omitted optional mask m for   sake of simplicity.
   // Also omitting safety check that sizes of A and B s.t. they can be multiplied
   // For simplicity, assume both are NxN square matrices
   template<typename Scalar>
-  void mxm(fnCallDesc& d, Matrix<Scalar>& C, Matrix<Scalar>& A, Matrix<Scalar>& B) {
+  void MxM(fnCallDesc& d, Matrix<Scalar>& C, Matrix<Scalar>& A, Matrix<Scalar>& B) {
     Index i, j;
     Index N = B.colptr.size()-1;
     Index Acol, Bcol;
@@ -164,14 +164,14 @@ namespace GraphBLAS
           value = B.val[j];
           Acol = A.colptr[j+1]-A.colptr[j];
           if( Acol > 0 ) {
-            //TODO: implement ewisemult, store result into temp
-            //GraphBLAS::ewisemult( d, value, A, A.colptr[j], A.colptr[j+1], temp );  
-            //GraphBLAS::ewiseadd( d, temp, result );
+            //TODO: implement Ewisemult, store result into temp
+            //GraphBLAS::EwiseMult( d, value, A, A.colptr[j], A.colptr[j+1], temp );  
+            //GraphBLAS::EwiseAdd( d, temp, result );
             count++;                                       // count is placeholder for if statement
           }
         }
         //TODO: write result into C and advance colptr;
-        //GraphBLAS::ewiseadd( result, C );
+        //GraphBLAS::EwiseAdd( result, C );
   }}}
 }
 
@@ -185,9 +185,11 @@ int main() {
   
   GraphBLAS::Matrix<int> A;
   GraphBLAS::Matrix<int> B;
-  GraphBLAS::buildmatrix<int>(3, 3, tuple1, A);
-  GraphBLAS::buildmatrix<int>(3, 3, tuple1, B);
-  GraphBLAS::extracttuples<int>(A, tuple2);
+  GraphBLAS::Matrix<int> C;
+  GraphBLAS::BuildMatrix<int>(3, 3, tuple1, A);
+  GraphBLAS::BuildMatrix<int>(3, 3, tuple1, B);
+  //GraphBLAS::MxM<int>(d, C, A, B);
+  GraphBLAS::ExtractTuples<int>(C, tuple2);
 
   for( int i=0; i<A.colptr.size(); i++ )
     std::cout << A.colptr[i] << std::endl;
