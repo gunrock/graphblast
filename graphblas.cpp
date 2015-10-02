@@ -172,9 +172,9 @@ namespace GraphBLAS
 
 int main() {
 
-  std::vector<GraphBLAS::Index> I = {0, 1, 2};
-  std::vector<GraphBLAS::Index> J = {0, 1, 2};
-  std::vector<int> V = {1, 1, 1};
+  GraphBLAS::Vector<GraphBLAS::Index> I = {0, 1, 2};
+  GraphBLAS::Vector<GraphBLAS::Index> J = {0, 1, 2};
+  GraphBLAS::Vector<int> V = {1, 1, 1};
 
   GraphBLAS::Tuple<int> tuple1;
   GraphBLAS::Tuple<int> tuple2;
