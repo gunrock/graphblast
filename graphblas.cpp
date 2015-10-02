@@ -88,12 +88,10 @@ namespace GraphBLAS
     Index dest;
     Index cumsum = 0;
     int nnz = A.I.size();
-    C.colptr.push_back(0);
-    for( i=0; i<N; i++ ) {
-      C.colptr.push_back(0);
-      C.val.push_back(0);
-      C.rowind.push_back(0);
-    }
+    //C.colptr.resize(N+1);
+	C.val.resize(nnz);
+	C.rowind.resize(nnz);
+    C.colptr.assign(N+1,0);
     for( i=0; i<nnz; i++ ) {
       C.colptr[A.J[i]]++;                   // Go through all elements to see how many fall into each row
     }
@@ -121,14 +119,17 @@ namespace GraphBLAS
   void extracttuples(Matrix<Scalar>& A, Tuple<Scalar>& C) {
     Index i, j;
     int to_increment = 0;
-    for( i=0; i<A.val.size(); i++ ) {
-      C.I.push_back(A.rowind[i]);           // Copy from Tuple
-      C.V.push_back(A.val[i]);              // Copy from Tuple
+    C.I.resize(A.val.size());
+    C.J.resize(A.val.size());
+	C.V.resize(A.val.size());
+	for( i=0; i<A.val.size(); i++ ) {
+      C.I[i] = A.rowind[i];                // Copy from Tuple
+      C.V[i] = A.val[i];                   // Copy from Tuple
     }
     for( i=0; i<A.colptr.size()-1; i++ ) {  // Get j-coordinate from colptr
       to_increment = A.colptr[i+1]-A.colptr[i];
       for( to_increment; to_increment>0; to_increment-- ) {      
-        C.J.push_back(i);
+        C.J[i] = i;
   }}}
 
   template<typename Scalar>
