@@ -1,3 +1,6 @@
+// Compiles using:
+//   g++ -o graphblas -std=c++11 graphblas.cpp
+
 #include <unistd.h>
 #include <ctype.h>
 #include <stdint.h>
@@ -137,12 +140,13 @@ namespace GraphBLAS
   // Could also have template where matrices A and B have different values as Manoj/Jose originally had in their signature, but sake of simplicity assume they have same ScalarType. Also omitted optional mask m for   sake of simplicity.
   // Also omitting safety check that sizes of A and B s.t. they can be multiplied
   // For simplicity, assume both are NxN square matrices
-  /*template<typename Scalar>
+  template<typename Scalar>
   void mxm(fnCallDesc& d, Matrix<Scalar>& C, Matrix<Scalar>& A, Matrix<Scalar>& B) {
     Index i, j;
     Index N = B.colptr.size()-1;
-    Index Bcol;
-
+    Index Acol, Bcol;
+    Scalar value;
+    int count = 0;
   // i = column in B (between 0 and N)
   // j = index of nonzero element in B column
   //    -used to pick out columns of A that we need to do ewisemult on
@@ -156,13 +160,14 @@ namespace GraphBLAS
           Acol = A.colptr[j+1]-A.colptr[j];
           if( Acol > 0 ) {
             //TODO: implement ewisemult, store result into temp
-            GraphBLAS::ewisemult( d, value, A, A.colptr[j], A.colptr[j+1], temp );  
-            GraphBLAS::ewiseadd( d, temp, result );
+            //GraphBLAS::ewisemult( d, value, A, A.colptr[j], A.colptr[j+1], temp );  
+            //GraphBLAS::ewiseadd( d, temp, result );
+            count++;                                       // count is placeholder for if statement
           }
         }
         //TODO: write result into C and advance colptr;
-        GraphBLAS::ewiseadd( result, C );
-  }}}*/
+        //GraphBLAS::ewiseadd( result, C );
+  }}}
 }
 
 int main() {
