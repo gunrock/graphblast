@@ -1,5 +1,10 @@
 // Compiles using:
 //   g++ -o graphblas -std=c++11 graphblas.cpp
+// Functional:
+//   -buildmatrix (builds matrix in CSC format)
+//   -extracttuples
+// Incomplete:
+//   -mxm (still needs ewisemult and ewiseadd, or custom versions of both that do same thing)
 
 #include <unistd.h>
 #include <ctype.h>
