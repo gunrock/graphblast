@@ -38,18 +38,3 @@ SpCSC_MxM_double(SpCSCMat * A, SpCSCMat * B, SpCSCMat * C,
 double (*multptr) (double, double), double (*addptr) (double, double), double SAID, flags = 0000)
 
 Note: my syntax with function pointers might be off
-
-typedef UINT64 Index;
-
-// Ignoring + operator, because it is optional argument per GraphBlas_Vops.pdf
-template<typename Scalar>
-void buildmatrix(int N, int M, Vector<Index>& I, Vector<Index>& J, Vector<Scalar> V, Matrix<Scalar>& C);
-void buildmatrix(int N, int M, Tuple<Scalar>& V, Matrix<Scalar>& C);
-
-template<typename Scalar>
-void extracttuples(Matrix<Scalar>& A, Vector<Index>& I, Vector<Index>& J, Vector<Scalar> V);
-void extracttuples(Matrix<Scalar>& A, Tuple<Scalar>& V);
-
-// Could also have template where matrices A and B have different values as Manoj/Jose originally had in their signature, but sake of simplicity assume they have same ScalarType. Also omitted optional mask m for sake of simplicity.
-template<typename Scalar>
-void mxm(fnCallDesc& d, Matrix<Scalar>& C, Matrix<Scalar>& A, Matrix<Scalar>& B);
