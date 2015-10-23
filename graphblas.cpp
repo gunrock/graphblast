@@ -3,8 +3,9 @@
 // Functional:
 //   -BuildMatrix (builds matrix in CSC format)
 //   -ExtractTuples
-// Incomplete:
-//   -MxM (still needs EwiseMult and EwiseAdd, or versions of both that do same thing but are customized for mxm)
+//   -MxM
+// TO-DO:
+//   
 
 #include <unistd.h>
 #include <ctype.h>
@@ -42,7 +43,7 @@ namespace GraphBLAS
     public:
       std::vector<Index> I;
       std::vector<Index> J;
-      std::vector<T>     V;
+      std::vector<T>   val;
   };
   
   // Input argument preprocessing functions.
@@ -95,21 +96,11 @@ namespace GraphBLAS
         addOp(fieldOps_add),
         multOp(fieldOps_mult),
         addId(addId_add)
-      {}
-      fnCallDesc( const std::string& semiring = "Matrix Multiply Assign" ):
-        assignDesc(assignDesc_st),
-        arg1Desc(argDesc_null),
-        arg2Desc(argDesc_null),
-        maskDesc(argDesc_null),
-        dim(1),
-        addOp(fieldOps_add),
-        multOp(fieldOps_mult),
-        addId(addId_add)
-      {}
-      assignDesc getAssign() const { 
-        return assignDesc };
+      { }
+      Assign getAssign() const { 
+        return assignDesc; }
       void setAssign(Assign state) { 
-        state = argDesc_stOp };
+        assignDesc = state; }
   };
 
   // Ignoring + operator, because it is optional argument per GraphBlas_Vops.pdf
@@ -140,7 +131,7 @@ namespace GraphBLAS
       row = A.J[i];                         // Store every row index in memory location specified by colptr
       dest = C.colptr[row];
       C.rowind[dest] = A.I[i];              // Store row index
-      C.val[dest] = A.V[i];                 // Store value
+      C.val[dest] = A.val[i];                 // Store value
       C.colptr[row]++;                      // Shift destination to right by one
     }
     cumsum = 0;
@@ -156,10 +147,10 @@ namespace GraphBLAS
     int to_increment = 0;
     C.I.resize(A.val.size());
     C.J.resize(A.val.size());
-    C.V.resize(A.val.size());
+    C.val.resize(A.val.size());
     for( i=0; i<A.val.size(); i++ ) {
-      C.I[i] = A.rowind[i];                // Copy from Tuple
-      C.V[i] = A.val[i];                   // Copy from Tuple
+      C.I[i] = A.rowind[i];                  // Copy from Tuple
+      C.val[i] = A.val[i];                   // Copy from Tuple
     }
     for( i=0; i<A.colptr.size()-1; i++ ) {  // Get j-coordinate from colptr
       to_increment = A.colptr[i+1]-A.colptr[i];
@@ -167,7 +158,8 @@ namespace GraphBLAS
         C.J[i] = i;
   }}}
 
-  // This is overloaded ewiseMult A*u. A*B not written yet.
+  // This is overloaded ewiseMult C=A*u. 
+  // TODO: C=A*B not written yet.
   template<typename Scalar>
   void ewiseMult( fnCallDesc& d, Scalar multiplicand, Vector<Scalar>& A, Vector<Scalar>& C) {
     Index i;
@@ -180,8 +172,12 @@ namespace GraphBLAS
     }
   }
 
-  // This is overloaded ewiseAdd A+B. A+u not written yet. (It also seems redundant if we already have A*u?)
-  // Standard mergesort merge.
+  // This is overloaded ewiseAdd C=A+B. A+u not written yet. (It also seems redundant if we already have C=A*u?)
+  // Standard merge algorithm
+  // Checks d.Assign to see whether we are doing C += or C =
+  // When B is empty, we do C+=A
+  // TODO: C+=A+B
+  //       C =A*u
   template<typename Scalar>
   void ewiseAdd( fnCallDesc& d, Vector<Scalar>& A, Vector<Scalar>& B, Vector<Scalar>& C ) {
     Index i = 0;
@@ -208,30 +204,78 @@ namespace GraphBLAS
         C.num++;
         j++;
       }
-    } while( i<A.num ) {
-      C.val.push_back(A.val[i]);
-      C.rowind.push_back(A.rowind[i]);
-      C.num++;
-      i++;
-    } while( j<B.num ) {
-      C.val.push_back(B.val[j]);
-      C.rowind.push_back(B.rowind[j]);
-      C.num++;
-      j++;
+      } while( i<A.num ) {
+        C.val.push_back(A.val[i]);
+        C.rowind.push_back(A.rowind[i]);
+        C.num++;
+        i++;
+      } while( j<B.num ) {
+        C.val.push_back(B.val[j]);
+        C.rowind.push_back(B.rowind[j]);
+        C.num++;
+        j++;
+      }
+    } else if( d.getAssign()==assignDesc_stOp && B.num==0) {
+      Vector<Scalar> D;
+      D.num = 0;
+      D.rowind.clear();
+      D.val.clear();
+      while( i<A.num && j<C.num ) {
+        if( A.rowind[i] == C.rowind[j] ) {
+          D.val.push_back(A.val[i] + C.val[j]);
+          D.rowind.push_back(A.rowind[i]);
+          D.num++;
+          i++;
+          j++;
+        } else if( A.rowind[i] < C.rowind[j] ) {
+          D.val.push_back(A.val[i]);
+          D.rowind.push_back(A.rowind[i]);
+          D.num++;
+          i++;
+        } else {
+        D.val.push_back(C.val[j]);
+        D.rowind.push_back(C.rowind[j]);
+        D.num++;
+        j++;
+      }
+      } while( i<A.num ) {
+        D.val.push_back(A.val[i]);
+        D.rowind.push_back(A.rowind[i]);
+        D.num++;
+        i++;
+      } while( j<C.num ) {
+        D.val.push_back(C.val[j]);
+        D.rowind.push_back(C.rowind[j]);
+        D.num++;
+        j++;
+      }
+      C.num = D.num;
+      C.rowind = D.rowind;
+      C.val = D.val;
     }
   }
 
   // Could also have template where matrices A and B have different values as Manoj/Jose originally had in their signature, but sake of simplicity assume they have same ScalarType. Also omitted optional mask m for   sake of simplicity.
   // Also omitting safety check that sizes of A and B s.t. they can be multiplied
   template<typename Scalar>
-  void mXm(fnCallDesc& d, Matrix<Scalar>& C, Matrix<Scalar>& A, Matrix<Scalar>& B) {
+  void mXm(fnCallDesc& d, Matrix<Scalar>& A, Matrix<Scalar>& B, Matrix<Scalar>& C) {
     Index i, j, k;
     Index N = B.colptr.size()-1;
     Index Acol, Bcol;
     Scalar value;
     Vector<Scalar> temp;
+    Vector<Scalar> empty;
+    empty.num = 0;
     Vector<Scalar> result;
     Index count = 0;
+    C.colptr.clear();
+    C.rowind.clear();
+    C.val.clear();
+    C.colptr.push_back(0);
+
+    Assign old_assign;
+    old_assign = d.getAssign();
+    d.setAssign(assignDesc_stOp);
   // i = column in B (between 0 and N)
   // j = index of nonzero element in B column
   //    -used to pick out columns of A that we need to do ewisemult on
@@ -243,67 +287,59 @@ namespace GraphBLAS
         for( j=B.colptr[i]; j<B.colptr[i+1]; j++ ) {
           value = B.val[j];
           Acol = A.colptr[j+1]-A.colptr[j];
+          result.num = 0;
+          result.rowind.clear();
+          result.val.clear();
           if( Acol > 0 ) {
-            //TODO: implement ewiseMult, store result into temp
-            //GraphBLAS::ewiseMult( d, value, A, A.colptr[j], A.colptr[j+1], temp );
+            // ewiseMult, store result into temp
+            // GraphBLAS::ewiseMult( d, value, A, A.colptr[j], A.colptr[j+1], temp );
             temp.num = Acol;
             temp.rowind.resize(Acol);
             temp.val.resize(Acol);
             count = 0;
             temp.rowind[count] = A.rowind[j];
             temp.val[count] = A.val[j]*value;
-            d.setAssign(1);
-            //GraphBLAS::ewiseAdd( d, temp, result );
-            count++;                                       // count is placeholder for if statement
+            GraphBLAS::ewiseAdd( d, temp, empty, result );
+            //for( k=0; k<result.num; k++ )
+            //  std::cout << j << result.rowind[k] << result.val[k] << std::endl;
           }
         }
-        //TODO: write result into C and advance colptr;
-        //GraphBLAS::ewiseAdd( result, C );
+        // Write result into C and advance colptr;
+        // GraphBLAS::ewiseAdd( result, C );
+        if( i>0 )
+          C.colptr.push_back(C.colptr[i-1]+result.num);
+        for( j=0; j<result.num; j++ ) {
+          C.rowind.push_back(result.rowind[j]);
+          C.val.push_back(result.val[j]);
   }}}
+    if( old_assign == assignDesc_st )
+      d.setAssign(assignDesc_stOp);
+  }
 }
 
 int main() {
 
-  GraphBLAS::Tuple<int> tuple1;
-  GraphBLAS::Tuple<int> tuple2;
-  tuple1.I = {0, 1, 2};
-  tuple1.J = {0, 1, 2};
-  tuple1.V = {1, 1, 1};
+  GraphBLAS::Tuple<int> tuple;
+  tuple.I   = {0, 1, 2};
+  tuple.J   = {0, 1, 2};
+  tuple.val = {1, 1, 1};
   
   GraphBLAS::Matrix<int> A;
   GraphBLAS::Matrix<int> B;
   GraphBLAS::Matrix<int> C;
-  GraphBLAS::buildMatrix<int>(3, 3, tuple1, A);
-  GraphBLAS::buildMatrix<int>(3, 3, tuple1, B);
+  GraphBLAS::buildMatrix<int>(3, 3, tuple, A);
+  GraphBLAS::buildMatrix<int>(3, 3, tuple, B);
 
-  GraphBLAS::fnCallDesc d("Matrix Multiply");
-  //GraphBLAS::mXm<int>(d, C, A, B);
-  GraphBLAS::extractTuples<int>(B, tuple2);
+  GraphBLAS::fnCallDesc d;
+  GraphBLAS::mXm<int>(d, A, B, C);
+  GraphBLAS::extractTuples<int>(C, tuple);
 
-  GraphBLAS::Vector<int> V;
-  GraphBLAS::Vector<int> W;
-  GraphBLAS::Vector<int> X;
-  V.num = 3;
-  V.rowind = {1, 3, 5};
-  V.val = {1, 2, 3};
-  W.num = 3;
-  W.rowind = {2, 3, 6};
-  W.val = {1, 2, 3};
-  GraphBLAS::ewiseAdd<int> ( d, V, W, X );
-  GraphBLAS::ewiseMult<int>( d, 2, V, W );
-
-  for( int i=0; i<A.colptr.size(); i++ )
-    std::cout << A.colptr[i] << std::endl;
-  for( int i=0; i<A.rowind.size(); i++ )
-    std::cout << A.rowind[i] << std::endl;
-  for( int i=0; i<tuple2.I.size(); i++ )
-    std::cout << tuple2.I[i] << std::endl;
-  for( int i=0; i<tuple2.J.size(); i++ )
-    std::cout << tuple2.J[i] << std::endl;
-  for( int i=0; i<X.rowind.size(); i++ )
-    std::cout << X.rowind[i] << std::endl;
-  for( int i=0; i<X.val.size(); i++ )
-    std::cout << X.val[i] << std::endl;
+  for( int i=0; i<tuple.I.size(); i++ )
+    std::cout << tuple.I[i] << std::endl;
+  for( int i=0; i<tuple.J.size(); i++ )
+    std::cout << tuple.J[i] << std::endl;
+  for( int i=0; i<tuple.val.size(); i++ )
+    std::cout << tuple.val[i] << std::endl;
 
   return 0;
 }
