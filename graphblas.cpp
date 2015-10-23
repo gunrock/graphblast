@@ -21,6 +21,7 @@ namespace GraphBLAS
   // Sparse (CSC format with single value instead of colptr) by default
   // Temporarily keeping member variables public to avoid having to use get
   template<typename T>
+  //using Vector = std::vector<T>;
   class Vector {
     public:
       Index                 num;
@@ -108,18 +109,18 @@ namespace GraphBLAS
   // Don't have to assume tuple is ordered
   // Can be used for CSR by swapping I and J vectors in tuple A and swapping N and M dimensions
   template<typename Scalar>
-  void buildMatrix(int M, int N, Tuple<Scalar>& A, Matrix<Scalar>& C) {
+  void buildMatrix( Matrix<Scalar>& C, int M, int N, std::vector<Index>& I, std::vector<Index>& J, std::vector<Scalar>& val ) {
     Index i, j;
     Index temp;
     Index row;
     Index dest;
     Index cumsum = 0;
-    int nnz = A.I.size();
+    int nnz = I.size();
     C.val.resize(nnz);
     C.rowind.resize(nnz);
     C.colptr.assign(N+1,0);
     for( i=0; i<nnz; i++ ) {
-      C.colptr[A.J[i]]++;                   // Go through all elements to see how many fall into each row
+      C.colptr[J[i]]++;                   // Go through all elements to see how many fall into each row
     }
     for( i=0; i<N; i++ ) {                  // Cumulative sum to obtain column pointer array
       temp = C.colptr[i];
@@ -128,10 +129,10 @@ namespace GraphBLAS
     }
     C.colptr[N] = nnz;
     for( i=0; i<nnz; i++ ) {
-      row = A.J[i];                         // Store every row index in memory location specified by colptr
+      row = J[i];                         // Store every row index in memory location specified by colptr
       dest = C.colptr[row];
-      C.rowind[dest] = A.I[i];              // Store row index
-      C.val[dest] = A.val[i];                 // Store value
+      C.rowind[dest] = I[i];              // Store row index
+      C.val[dest] = val[i];                 // Store value
       C.colptr[row]++;                      // Shift destination to right by one
     }
     cumsum = 0;
@@ -142,20 +143,20 @@ namespace GraphBLAS
   }}
 
   template<typename Scalar>
-  void extractTuples(Matrix<Scalar>& A, Tuple<Scalar>& C) {
+  void extractTuples(std::vector<Index>& I, std::vector<Index>& J, std::vector<Scalar>& val, Matrix<Scalar>& A) {
     Index i, j;
     int to_increment = 0;
-    C.I.resize(A.val.size());
-    C.J.resize(A.val.size());
-    C.val.resize(A.val.size());
+    I.resize(A.val.size());
+    J.resize(A.val.size());
+    val.resize(A.val.size());
     for( i=0; i<A.val.size(); i++ ) {
-      C.I[i] = A.rowind[i];                  // Copy from Tuple
-      C.val[i] = A.val[i];                   // Copy from Tuple
+      I[i] = A.rowind[i];                  // Copy from Tuple
+      val[i] = A.val[i];                   // Copy from Tuple
     }
     for( i=0; i<A.colptr.size()-1; i++ ) {  // Get j-coordinate from colptr
       to_increment = A.colptr[i+1]-A.colptr[i];
       for( to_increment; to_increment>0; to_increment-- ) {      
-        C.J[i] = i;
+        J[i] = i;
   }}}
 
   // This is overloaded ewiseMult C=A*u. 
@@ -169,6 +170,31 @@ namespace GraphBLAS
     for( i=0; i<A.num; i++ ) {
       C.rowind[i] = A.rowind[i];
       C.val[i] = A.val[i]*multiplicand;
+    }
+  }
+
+  // This is overloaded ewiseMult C=A*B.
+  template<typename Scalar>
+  void ewiseMult( fnCallDesc& d, Vector<Scalar>& A, Vector<Scalar>& B, Vector<Scalar>& C ) {
+    Index i = 0;
+    Index j = 0;
+    if( d.getAssign()==assignDesc_st ) {
+      C.num = 0;
+      C.rowind.clear();
+      C.val.clear();
+      while( i<A.num && j<B.num ) {
+        if( A.rowind[i] == B.rowind[j] ) {
+          C.val.push_back(A.val[i] * B.val[j]);
+          C.rowind.push_back(A.rowind[i]);
+          C.num++;
+          i++;
+          j++;
+        } else if( A.rowind[i] < B.rowind[j] ) {
+          i++;
+        } else {
+          j++;
+        }
+      }
     }
   }
 
@@ -258,7 +284,7 @@ namespace GraphBLAS
   // Could also have template where matrices A and B have different values as Manoj/Jose originally had in their signature, but sake of simplicity assume they have same ScalarType. Also omitted optional mask m for   sake of simplicity.
   // Also omitting safety check that sizes of A and B s.t. they can be multiplied
   template<typename Scalar>
-  void mXm(fnCallDesc& d, Matrix<Scalar>& A, Matrix<Scalar>& B, Matrix<Scalar>& C) {
+  void mXm(Matrix<Scalar>& C, Matrix<Scalar>& A, Matrix<Scalar>& B, fnCallDesc& d) {
     Index i, j, k;
     Index N = B.colptr.size()-1;
     Index Acol, Bcol;
@@ -319,27 +345,26 @@ namespace GraphBLAS
 
 int main() {
 
-  GraphBLAS::Tuple<int> tuple;
-  tuple.I   = {0, 1, 2};
-  tuple.J   = {0, 1, 2};
-  tuple.val = {1, 1, 1};
+  std::vector<GraphBLAS::Index> I = {0, 1, 2};
+  std::vector<GraphBLAS::Index> J = {0, 1, 2};
+  std::vector<int> val            = {1, 1, 1};
   
   GraphBLAS::Matrix<int> A;
   GraphBLAS::Matrix<int> B;
   GraphBLAS::Matrix<int> C;
-  GraphBLAS::buildMatrix<int>(3, 3, tuple, A);
-  GraphBLAS::buildMatrix<int>(3, 3, tuple, B);
+  GraphBLAS::buildMatrix<int>(A, 3, 3, I, J, val);
+  GraphBLAS::buildMatrix<int>(B, 3, 3, I, J, val);
 
   GraphBLAS::fnCallDesc d;
-  GraphBLAS::mXm<int>(d, A, B, C);
-  GraphBLAS::extractTuples<int>(C, tuple);
+  GraphBLAS::mXm<int>(C, A, B, d);
+  GraphBLAS::extractTuples<int>(I, J, val, C);
 
-  for( int i=0; i<tuple.I.size(); i++ )
-    std::cout << tuple.I[i] << std::endl;
-  for( int i=0; i<tuple.J.size(); i++ )
-    std::cout << tuple.J[i] << std::endl;
-  for( int i=0; i<tuple.val.size(); i++ )
-    std::cout << tuple.val[i] << std::endl;
+  for( int i=0; i<I.size(); i++ )
+    std::cout << I[i] << std::endl;
+  for( int i=0; i<J.size(); i++ )
+    std::cout << J[i] << std::endl;
+  for( int i=0; i<val.size(); i++ )
+    std::cout << val[i] << std::endl;
 
   return 0;
 }
