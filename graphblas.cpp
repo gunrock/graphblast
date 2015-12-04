@@ -60,59 +60,67 @@ namespace GraphBLAS
   
   // Input argument preprocessing functions.
   enum Transform {
-    argDesc_null =	0,
-    argDesc_neg  =	1,
-    argDesc_T 	 =	2,
-    argDesc_negT =	3,
-    argDesc_notT =	4
+    TRANSFORM_NULL  =	0,
+    TRANSFORM_NEG   =	1,
+    TRANSFORM_T     =	2,
+    TRANSFORM_NEG_T =	3,
+    TRANSFORM_NOT_T =	4
   };
 
 // Next is the relevant number of assignment operators.  Since Boolean data is
 // of significant interest, I have added the stAnd and stOr ops for now
   enum Assign {
-    assignDesc_st   =	0,	/* Simple assignment */
-    assignDesc_stOp =	1	/* Store with Circle plus */
+    ASSIGN_NOOP   =	0,	/* Simple assignment */
+    ASSIGN_ADDOP  =	1	/* Store with Circle plus */
   };
 
 // List of ops that can be used in map/reduce operations.
   enum BinaryOp {
-    fieldOps_mult =	0,
-    fieldOps_add  =	1,
-    fieldOps_and  =	2,
-    fieldOps_or	  =	3
+    BINARY_MULT    =	0,
+    BINARY_ADD    =	1,
+    BINARY_AND    =	2,
+    BINARY_OR	  =	3
   };
 
 // List of additive identities that can be used
   enum AdditiveId {
-    addId_add =         0,
-    addId_min =         1,
-    addId_max =         2
+    IDENTITY_ADD =         0,
+    IDENTITY_MIN =         1,
+    IDENTITY_MAX =         2
   };
 
   class fnCallDesc {
-    Assign assignDesc ;
-    Transform arg1Desc ;
-    Transform arg2Desc ;
-    Transform maskDesc ;
-    int32_t dim ;			// dimension for reduction operation on matrices
-    BinaryOp addOp ;
-    BinaryOp multOp ;
-    AdditiveId addId ;
+      Assign assignDesc;
+      Transform arg1Desc;
+      Transform arg2Desc;
+      Transform maskDesc;
+      int32_t dim;			// dimension for reduction operation on matrices
+      BinaryOp addOp;
+      BinaryOp multOp;
+      AdditiveId addId;
     public:
       fnCallDesc( const std::string& semiring = "Matrix Multiply" ):
-        assignDesc(assignDesc_st),
-        arg1Desc(argDesc_null),
-        arg2Desc(argDesc_null),
-        maskDesc(argDesc_null),
+        assignDesc(ASSIGN_NOOP),
+        arg1Desc(TRANSFORM_NULL),
+        arg2Desc(TRANSFORM_NULL),
+        maskDesc(TRANSFORM_NULL),
         dim(1),
-        addOp(fieldOps_add),
-        multOp(fieldOps_mult),
-        addId(addId_add)
+        addOp(BINARY_ADD),
+        multOp(BINARY_MULT),
+        addId(IDENTITY_ADD)
       { }
       Assign getAssign() const { 
         return assignDesc; }
       void setAssign(Assign state) { 
         assignDesc = state; }
+      Transform getTransformArg1() const {
+        return arg1Desc; }
+      void setTransformArg1(Transform state) {
+        arg1Desc = state; }
+      Transform getTransformArg2() const {
+        return arg2Desc; }
+      void setTransformArg2(Transform state) {
+        arg2Desc = state; }
   };
 
   // Ignoring + operator, because it is optional argument per GraphBlas_Vops.pdf
@@ -179,6 +187,8 @@ namespace GraphBLAS
     C.num = A.num;
     C.rowind.resize(C.num);
     C.val.resize(C.num);
+    if( d.getTransformArg1() == TRANSFORM_NEG ) // Only the first argument Transform gets checked
+      multiplicand *= -1;                       // when only one argument vector in argument list
     for( i=0; i<A.num; i++ ) {
       C.rowind[i] = A.rowind[i];
       C.val[i] = A.val[i]*multiplicand;
@@ -186,17 +196,23 @@ namespace GraphBLAS
   }
 
   // This is overloaded ewiseMult C=A*B.
+  // TODO: Test performance impact of using multiplicand*A[i]*B[j] vs. -A[i]*B[j]
+  //      -there is savings in LOC, but is it worth the performance loss (if any)?
   template<typename Scalar>
   void ewiseMult( fnCallDesc& d, Vector<Scalar>& A, Vector<Scalar>& B, Vector<Scalar>& C ) {
     Index i = 0;
     Index j = 0;
-    if( d.getAssign()==assignDesc_st ) {
+    Scalar multiplicand = 1;
+    if((d.getTransformArg1() == TRANSFORM_NEG && d.getTransformArg2() == TRANSFORM_NULL) || 
+       (d.getTransformArg1() == TRANSFORM_NULL && d.getTransformArg2() == TRANSFORM_NEG ))
+        multiplicand = -1;
+    if( d.getAssign()==ASSIGN_NOOP ) {
       C.num = 0;
       C.rowind.clear();
       C.val.clear();
       while( i<A.num && j<B.num ) {
         if( A.rowind[i] == B.rowind[j] ) {
-          C.val.push_back(A.val[i] * B.val[j]);
+          C.val.push_back( multiplicand*A.val[i]*B.val[j]);
           C.rowind.push_back(A.rowind[i]);
           C.num++;
           i++;
@@ -220,7 +236,7 @@ namespace GraphBLAS
   void ewiseAdd( fnCallDesc& d, Vector<Scalar>& A, Vector<Scalar>& B, Vector<Scalar>& C ) {
     Index i = 0;
     Index j = 0;
-    if( d.getAssign()==assignDesc_st ) {
+    if( d.getAssign()==ASSIGN_NOOP ) {
       C.num = 0;
       C.rowind.clear();
       C.val.clear();
@@ -253,7 +269,7 @@ namespace GraphBLAS
         C.num++;
         j++;
       }
-    } else if( d.getAssign()==assignDesc_stOp && B.num==0) {
+    } else if( d.getAssign()==ASSIGN_ADDOP && B.num==0) {
       Vector<Scalar> D;
       D.num = 0;
       D.rowind.clear();
@@ -313,7 +329,7 @@ namespace GraphBLAS
 
     Assign old_assign;
     old_assign = d.getAssign();
-    d.setAssign(assignDesc_stOp);
+    d.setAssign(ASSIGN_ADDOP);
   // i = column in B (between 0 and N)
   // j = index of nonzero element in B column
   //    -used to pick out columns of A that we need to do ewisemult on
@@ -350,8 +366,7 @@ namespace GraphBLAS
           C.rowind.push_back(result.rowind[j]);
           C.val.push_back(result.val[j]);
   }}}
-    if( old_assign == assignDesc_st )
-      d.setAssign(assignDesc_stOp);
+    d.setAssign(old_assign);
   }
 }
 
