@@ -229,7 +229,8 @@ namespace GraphBLAS
   // This is overloaded ewiseAdd C=A+B. A+u not written yet. (It also seems redundant if we already have C=A*u?)
   // Standard merge algorithm
   // Checks d.Assign to see whether we are doing C += or C =
-  // When B is empty, we do C+=A
+  // When B is empty, we do C+=A (implicit, could also have been implemented using templated ewiseAdd
+  //   e.g. ewiseAdd( d, A, C )
   // TODO: C+=A+B
   //       C =A*u
   template<typename Scalar>
@@ -240,72 +241,191 @@ namespace GraphBLAS
       C.num = 0;
       C.rowind.clear();
       C.val.clear();
-      while( i<A.num && j<B.num ) {
-        if( A.rowind[i] == B.rowind[j] ) {
-          C.val.push_back(A.val[i] + B.val[j]);
-          C.rowind.push_back(A.rowind[i]);
+      if( d.getTransformArg1() == TRANSFORM_NULL && d.getTransformArg2() == TRANSFORM_NULL ) {
+        while( i<A.num && j<B.num ) {
+          if( A.rowind[i] == B.rowind[j] ) {
+            C.val.push_back(A.val[i] + B.val[j]);
+            C.rowind.push_back(A.rowind[i]);
+            C.num++;
+            i++;
+            j++;
+          } else if( A.rowind[i] < B.rowind[j] ) {
+            C.val.push_back(A.val[i]);
+            C.rowind.push_back(A.rowind[i]);
+            C.num++;
+            i++;
+          } else {
+          C.val.push_back(B.val[j]);
+          C.rowind.push_back(B.rowind[j]);
           C.num++;
-          i++;
           j++;
-        } else if( A.rowind[i] < B.rowind[j] ) {
+        }} while( i<A.num ) {
           C.val.push_back(A.val[i]);
           C.rowind.push_back(A.rowind[i]);
           C.num++;
           i++;
-        } else {
-        C.val.push_back(B.val[j]);
-        C.rowind.push_back(B.rowind[j]);
-        C.num++;
-        j++;
-      }
-      } while( i<A.num ) {
-        C.val.push_back(A.val[i]);
-        C.rowind.push_back(A.rowind[i]);
-        C.num++;
-        i++;
-      } while( j<B.num ) {
-        C.val.push_back(B.val[j]);
-        C.rowind.push_back(B.rowind[j]);
-        C.num++;
-        j++;
+        } while( j<B.num ) {
+          C.val.push_back(B.val[j]);
+          C.rowind.push_back(B.rowind[j]);
+          C.num++;
+          j++;
+        }
+      } else if( d.getTransformArg1() == TRANSFORM_NEG && d.getTransformArg2() == TRANSFORM_NULL ) {
+        while( i<A.num && j<B.num ) {
+          if( A.rowind[i] == B.rowind[j] ) {
+            C.val.push_back(B.val[j] - A.val[i]);
+            C.rowind.push_back(A.rowind[i]);
+            C.num++;
+            i++;
+            j++;
+          } else if( A.rowind[i] < B.rowind[j] ) {
+            C.val.push_back(-A.val[i]);
+            C.rowind.push_back(A.rowind[i]);
+            C.num++;
+            i++;
+          } else {
+          C.val.push_back(B.val[j]);
+          C.rowind.push_back(B.rowind[j]);
+          C.num++;
+          j++;
+        }} while( i<A.num ) {
+          C.val.push_back(-A.val[i]);
+          C.rowind.push_back(A.rowind[i]);
+          C.num++;
+          i++;
+        } while( j<B.num ) {
+          C.val.push_back(B.val[j]);
+          C.rowind.push_back(B.rowind[j]);
+          C.num++;
+          j++;
+        }
+      } else if( d.getTransformArg1() == TRANSFORM_NULL && d.getTransformArg2() == TRANSFORM_NEG ) {
+        while( i<A.num && j<B.num ) {
+          if( A.rowind[i] == B.rowind[j] ) {
+            C.val.push_back(A.val[i]-B.val[j]);
+            C.rowind.push_back(A.rowind[i]);
+            C.num++;
+            i++;
+            j++;
+          } else if( A.rowind[i] < B.rowind[j] ) {
+            C.val.push_back(A.val[i]);
+            C.rowind.push_back(A.rowind[i]);
+            C.num++;
+            i++;
+          } else {
+          C.val.push_back(-B.val[j]);
+          C.rowind.push_back(B.rowind[j]);
+          C.num++;
+          j++;
+        }} while( i<A.num ) {
+          C.val.push_back(A.val[i]);
+          C.rowind.push_back(A.rowind[i]);
+          C.num++;
+          i++;
+        } while( j<B.num ) {
+          C.val.push_back(-B.val[j]);
+          C.rowind.push_back(B.rowind[j]);
+          C.num++;
+          j++;
+        }
+      } else if( d.getTransformArg1() == TRANSFORM_NEG && d.getTransformArg2() == TRANSFORM_NEG ) {
+        while( i<A.num && j<B.num ) {
+          if( A.rowind[i] == B.rowind[j] ) {
+            C.val.push_back(-A.val[i]-B.val[j]);
+            C.rowind.push_back(A.rowind[i]);
+            C.num++;
+            i++;
+            j++;
+          } else if( A.rowind[i] < B.rowind[j] ) {
+            C.val.push_back(-A.val[i]);
+            C.rowind.push_back(A.rowind[i]);
+            C.num++;
+            i++;
+          } else {
+          C.val.push_back(-B.val[j]);
+          C.rowind.push_back(B.rowind[j]);
+          C.num++;
+          j++;
+        }} while( i<A.num ) {
+          C.val.push_back(-A.val[i]);
+          C.rowind.push_back(A.rowind[i]);
+          C.num++;
+          i++;
+        } while( j<B.num ) {
+          C.val.push_back(-B.val[j]);
+          C.rowind.push_back(B.rowind[j]);
+          C.num++;
+          j++;
+        }
       }
     } else if( d.getAssign()==ASSIGN_ADDOP && B.num==0) {
-      Vector<Scalar> D;
-      D.num = 0;
-      D.rowind.clear();
-      D.val.clear();
-      while( i<A.num && j<C.num ) {
-        if( A.rowind[i] == C.rowind[j] ) {
-          D.val.push_back(A.val[i] + C.val[j]);
-          D.rowind.push_back(A.rowind[i]);
-          D.num++;
-          i++;
+      B.rowind.clear();
+      B.val.clear();
+      if( d.getTransformArg1() == TRANSFORM_NULL ) {
+        while( i<A.num && j<C.num ) {
+          if( A.rowind[i] == C.rowind[j] ) {
+            B.val.push_back(A.val[i] + C.val[j]);
+            B.rowind.push_back(A.rowind[i]);
+            B.num++;
+            i++;
+            j++;
+          } else if( A.rowind[i] < C.rowind[j] ) {
+            B.val.push_back(A.val[i]);
+            B.rowind.push_back(A.rowind[i]);
+            B.num++;
+            i++;
+          } else {
+          B.val.push_back(C.val[j]);
+          B.rowind.push_back(C.rowind[j]);
+          B.num++;
           j++;
-        } else if( A.rowind[i] < C.rowind[j] ) {
-          D.val.push_back(A.val[i]);
-          D.rowind.push_back(A.rowind[i]);
-          D.num++;
+        }} while( i<A.num ) {
+          B.val.push_back(A.val[i]);
+          B.rowind.push_back(A.rowind[i]);
+          B.num++;
           i++;
-        } else {
-        D.val.push_back(C.val[j]);
-        D.rowind.push_back(C.rowind[j]);
-        D.num++;
-        j++;
+        } while( j<C.num ) {
+          B.val.push_back(C.val[j]);
+          B.rowind.push_back(C.rowind[j]);
+          B.num++;
+          j++;
+        }
+      } else if( d.getTransformArg1() == TRANSFORM_NEG ) {
+        while( i<A.num && j<C.num ) {
+          if( A.rowind[i] == C.rowind[j] ) {
+            B.val.push_back(C.val[j]-A.val[i]);
+            B.rowind.push_back(A.rowind[i]);
+            B.num++;
+            i++;
+            j++;
+          } else if( A.rowind[i] < C.rowind[j] ) {
+            B.val.push_back(-A.val[i]);
+            B.rowind.push_back(A.rowind[i]);
+            B.num++;
+            i++;
+          } else {
+          B.val.push_back(C.val[j]);
+          B.rowind.push_back(C.rowind[j]);
+          B.num++;
+          j++;
+        }} while( i<A.num ) {
+          B.val.push_back(-A.val[i]);
+          B.rowind.push_back(A.rowind[i]);
+          B.num++;
+          i++;
+        } while( j<C.num ) {
+          B.val.push_back(C.val[j]);
+          B.rowind.push_back(C.rowind[j]);
+          B.num++;
+          j++;
+        }
       }
-      } while( i<A.num ) {
-        D.val.push_back(A.val[i]);
-        D.rowind.push_back(A.rowind[i]);
-        D.num++;
-        i++;
-      } while( j<C.num ) {
-        D.val.push_back(C.val[j]);
-        D.rowind.push_back(C.rowind[j]);
-        D.num++;
-        j++;
-      }
-      C.num = D.num;
-      C.rowind = D.rowind;
-      C.val = D.val;
+      C.num = B.num;
+      C.rowind = B.rowind;
+      C.val = B.val;
+      B.num = 0;
+      B.rowind.clear();
+      B.val.clear();
     }
   }
 
