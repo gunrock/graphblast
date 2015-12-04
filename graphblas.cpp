@@ -37,7 +37,18 @@ namespace GraphBLAS
       std::vector<Index> rowind;
       std::vector<Index> colptr;
       std::vector<T>        val;
+      Index               nrows; // m in math spec
+      Index               ncols; // n in math spec
+
+      Matrix( Index m, Index n ) : nrows(m), ncols(n){};
   };
+
+  // Matrix constructor with dimensions
+  //template<typename T>
+  //Matrix<T>::Matrix( Index m, Index n ) {
+  //  nrows = m;
+  //  ncols = n;
+  //}
 
   template<typename T>
   class Tuple {
@@ -107,9 +118,10 @@ namespace GraphBLAS
   // Ignoring + operator, because it is optional argument per GraphBlas_Vops.pdf
   // Store as CSC by default
   // Don't have to assume tuple is ordered
-  // Can be used for CSR by swapping I and J vectors in tuple A and swapping N and M dimensions
+  // TODO: Can be used for CSR by swapping I and J vectors in tuple A and swapping n.cols and n.rows dimensions
   template<typename Scalar>
-  void buildMatrix( Matrix<Scalar>& C, int M, int N, std::vector<Index>& I, std::vector<Index>& J, std::vector<Scalar>& val ) {
+  void buildMatrix( Matrix<Scalar>& C, std::vector<Index>& I, std::vector<Index>& J, std::vector<Scalar>& val ) {
+
     Index i, j;
     Index temp;
     Index row;
@@ -118,16 +130,16 @@ namespace GraphBLAS
     int nnz = I.size();
     C.val.resize(nnz);
     C.rowind.resize(nnz);
-    C.colptr.assign(N+1,0);
+    C.colptr.assign(C.ncols+1,0);
     for( i=0; i<nnz; i++ ) {
       C.colptr[J[i]]++;                   // Go through all elements to see how many fall into each row
     }
-    for( i=0; i<N; i++ ) {                  // Cumulative sum to obtain column pointer array
+    for( i=0; i<C.ncols; i++ ) {                  // Cumulative sum to obtain column pointer array
       temp = C.colptr[i];
       C.colptr[i] = cumsum;
       cumsum += temp;
     }
-    C.colptr[N] = nnz;
+    C.colptr[C.ncols] = nnz;
     for( i=0; i<nnz; i++ ) {
       row = J[i];                         // Store every row index in memory location specified by colptr
       dest = C.colptr[row];
@@ -136,7 +148,7 @@ namespace GraphBLAS
       C.colptr[row]++;                      // Shift destination to right by one
     }
     cumsum = 0;
-    for( i=0; i<=N; i++ ) {                 // Undo damage done by moving destination
+    for( i=0; i<=C.ncols; i++ ) {                 // Undo damage done by moving destination
       temp = C.colptr[i];
       C.colptr[i] = cumsum;
       cumsum = temp;
@@ -349,11 +361,14 @@ int main() {
   std::vector<GraphBLAS::Index> J = {0, 1, 2};
   std::vector<int> val            = {1, 1, 1};
   
-  GraphBLAS::Matrix<int> A;
-  GraphBLAS::Matrix<int> B;
-  GraphBLAS::Matrix<int> C;
-  GraphBLAS::buildMatrix<int>(A, 3, 3, I, J, val);
-  GraphBLAS::buildMatrix<int>(B, 3, 3, I, J, val);
+  // Construct 3x3 matrices
+  GraphBLAS::Matrix<int> A(3, 3);
+  GraphBLAS::Matrix<int> B(3, 3);
+  GraphBLAS::Matrix<int> C(3, 3);
+
+  // Initialize 3x3 matrices
+  GraphBLAS::buildMatrix<int>(A, I, J, val);
+  GraphBLAS::buildMatrix<int>(B, I, J, val);
 
   GraphBLAS::fnCallDesc d;
   GraphBLAS::mXm<int>(C, A, B, d);
