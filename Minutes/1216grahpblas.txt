@@ -1,0 +1,17 @@
+-semi-ring not opaque, matrix is opaque
+-if no additive inverse, no structural zero
+-how to detect structural zero
+  -only reason to detect is optimization
+  -two optimizations:
+    -less storage
+    -less computation
+-star and plus can create NaN
+-how to convert value -> structural zero when +, * to MAX semi-ring
+-MATLAB converts two empty sparse matrices ./ into two dense NaN matrices
+-standard promotion rules T -> D if T is subset of D
+-how about for int32 -> int64
+-how about for float -> bool?
+               matrix   semi-ring
+-Jeremy idea - integer into bool (semi-ring)
+  -have user do it themselves
+-ask Jeremy for details on hardware team
