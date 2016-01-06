@@ -13,5 +13,6 @@ Scott’s idea about attaching semiring as part of matrix/vector
     -sometimes no-op, sometimes convert to new semi-ring
 
   -type: matrix type does not follow computer science definitions
+  -tolerance for converting sparse -> dense, dense -> sparse (perhaps stored in descriptor)
 
 Idea: add rule-checking for those rules in Elements of Programming semi-ring
