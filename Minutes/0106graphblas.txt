@@ -16,3 +16,17 @@ Scott’s idea about attaching semiring as part of matrix/vector
   -tolerance for converting sparse -> dense, dense -> sparse (perhaps stored in descriptor)
 
 Idea: add rule-checking for those rules in Elements of Programming semi-ring
+
+-what methods on objects should there be?
+-A.getnnz()
+-good when you can avoid implementing free functions
+-must check NULL when using pointers
+-min, select2nd
+-helper methods:
+  -getDim()
+  -argmin
+
+-decision on what to template on
+-Scott templates on entire matrix type rather than Scalar
+-can use “using” instead of allocator_traits
+
