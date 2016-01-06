@@ -77,7 +77,7 @@ namespace GraphBLAS
   // This is overloaded ewiseMult C=A*u. 
   // TODO: C=A*B not written yet.
   template<typename Scalar>
-  void ewiseMult( fnCallDesc& d, Scalar multiplicand, Vector<Scalar>& A, Vector<Scalar>& C) {
+  void ewiseMult( Scalar multiplicand, Vector<Scalar>& A, Vector<Scalar>& C, fnCallDesc& d) {
     Index i;
     C.num = A.num;
     C.rowind.resize(C.num);
@@ -94,7 +94,7 @@ namespace GraphBLAS
   // TODO: Test performance impact of using multiplicand*A[i]*B[j] vs. -A[i]*B[j]
   //      -there is savings in LOC, but is it worth the performance loss (if any)?
   template<typename Scalar>
-  void ewiseMult( fnCallDesc& d, Vector<Scalar>& A, Vector<Scalar>& B, Vector<Scalar>& C ) {
+  void ewiseMult( Vector<Scalar>& A, Vector<Scalar>& B, Vector<Scalar>& C, fnCallDesc& d ) {
     Index i = 0;
     Index j = 0;
     Scalar multiplicand = 1;
@@ -125,18 +125,25 @@ namespace GraphBLAS
   // Standard merge algorithm
   // Checks d.Assign to see whether we are doing C += or C =
   // When B is empty, we do C+=A (implicit, could also have been implemented using templated ewiseAdd
-  //   e.g. ewiseAdd( d, A, C )
+  //   e.g. ewiseAdd( A, C, d )
   // TODO: C+=A+B
   //       C =A*u
   template<typename Scalar>
-  void ewiseAdd( fnCallDesc& d, Vector<Scalar>& A, Vector<Scalar>& B, Vector<Scalar>& C ) {
+  void ewiseAdd( Vector<Scalar>& A, Vector<Scalar>& B, Vector<Scalar>& C, fnCallDesc& d ) {
     Index i = 0;
     Index j = 0;
     if( d.getAssign()==ASSIGN_NOOP ) {
       C.num = 0;
       C.rowind.clear();
       C.val.clear();
-      if( d.getTransformArg1() == TRANSFORM_NULL && d.getTransformArg2() == TRANSFORM_NULL ) {
+      if( d.getMultOp() == BINARY_OR ) {
+        while( i<A.num && j<B.num ) {
+          if( A.rowind[i] == B.rowind[j] ) {
+            C.val.push_back(1);
+            C.rowind.push_back(1);
+            C.num++;
+            break;
+      }}} else if( d.getTransformArg1() == TRANSFORM_NULL && d.getTransformArg2() == TRANSFORM_NULL ) {
         while( i<A.num && j<B.num ) {
           if( A.rowind[i] == B.rowind[j] ) {
             C.val.push_back(A.val[i] + B.val[j]);
@@ -325,7 +332,58 @@ namespace GraphBLAS
   }
 
   template<typename Scalar>
-  void mXv(Matrix<Scalar>& C, Vector<Scalar>& A, Vector<Scalar>& B, fnCallDesc& d) {
+  void mXv( Vector<Scalar>& C, Matrix<Scalar>& A, Vector<Scalar>& B, fnCallDesc& d ) {
+    Index i, j, k;
+    Index Acol;
+    Scalar value;
+    Vector<Scalar> temp;
+    Vector<Scalar> empty;
+    empty.num = 0;
+    Index count = 0;
+    C.num = 0;
+    C.rowind.clear();
+    C.val.clear();
+
+    Assign old_assign;
+    old_assign = d.getAssign();
+    d.setAssign(ASSIGN_ADDOP);
+  // i = column in B (between 0 and N)
+  // j = index of nonzero element in B column
+  //    -used to pick out columns of A that we need to do ewisemult on
+  // Iterate over nonzero elements of vector B
+    if( d.getMultOp() == BINARY_MULT ) {
+      for( j=0; j<B.num; j++ ) {
+        value = B.val[j];
+        Acol = A.colptr[j+1]-A.colptr[j];
+        if( Acol > 0 ) {
+          // ewiseMult, store result into temp
+          // GraphBLAS::ewiseMult( value, A, A.colptr[j], A.colptr[j+1], temp, d );
+          temp.num = Acol;
+          temp.rowind.resize(Acol);
+          temp.val.resize(Acol);
+          count = 0;
+          temp.rowind[count] = A.rowind[j];
+          temp.val[count] = A.val[j]*value;
+          GraphBLAS::ewiseAdd( temp, empty, C, d );
+          //for( k=0; k<result.num; k++ )
+          //  std::cout << j << result.rowind[k] << result.val[k] << std::endl;
+    } else if( d.getMultOp() == BINARY_ADD ) {
+      for( j=0; j<B.num; j++ ) {
+        value = B.val[j];
+        Acol = A.colptr[j+1]-A.colptr[j];
+        if( Acol > 0 ) {
+          // ewiseMult, store result into temp
+          // GraphBLAS::ewiseMult( d, value, A, A.colptr[j], A.colptr[j+1], temp );
+          temp.num = Acol;
+          temp.rowind.resize(Acol);
+          temp.val.resize(Acol);
+          count = 0;
+          temp.rowind[count] = A.rowind[j];
+          temp.val[count] = 1;
+          GraphBLAS::ewiseAdd( temp, empty, C, d );
+          //for( k=0; k<result.num; k++ )
+    }}}
+    d.setAssign(old_assign);
   }
 
   // Could also have template where matrices A and B have different values as Manoj/Jose originally had in their signature, but sake of simplicity assume they have same ScalarType. Also omitted optional mask m for   sake of simplicity.
@@ -387,6 +445,40 @@ namespace GraphBLAS
   }}}
     d.setAssign(old_assign);
   }
+
+  namespace app {
+
+    // initFrontier is boolean vector initial frontier
+    // Define 
+    template<typename MatrixT, typename VectorT>
+    void bfsMasked( Matrix<MatrixT>& Graph, Vector<VectorT>& initFrontier, Vector<Index>& bfsResult ) {
+
+      // BFS semi-ring
+      fnCallDesc d;
+      d.setAddOp( BINARY_OR );
+      d.setMultOp( BINARY_AND );
+
+      // Only update the values that are IDENTITY_MIN (i.e. infinity)
+      fnCallDesc e;
+      d.setAddOp( BINARY_MIN );
+      d.setMultOp( BINARY_MULT );
+      d.setAddId( IDENTITY_MIN );
+      d.setAssign( ASSIGN_ADDOP );
+
+      Vector<Scalar> tempFrontier = initFrontier;
+      Vector<Scalar> tempFrontier2;
+      Vector<Scalar> empty;
+
+      IndexType depth = 0;
+
+      for( depth; depth<1; depth++ ) {
+        GraphBLAS::ewiseMult( depth, tempFrontier, tempFrontier2, e );
+        GraphBLAS::ewiseAdd( bfsResult, empty, tempFrontier2, e );
+
+        // Only perform mXv on elements in bfsResult vector that == depth
+        d.setMaskDesc( depth );
+        GraphBLAS::mXv( tempFrontier, Graph, bfsResult, d );
+    }}
 }
 
 int main() {
@@ -408,12 +500,21 @@ int main() {
   GraphBLAS::mXm<int>(C, A, B, d);
   GraphBLAS::extractTuples<int>(I, J, val, C);
 
+  // Initialize vector a, b
+  GraphBLAS::Vector<int> a, b;
+  a.num = 1;
+  a.rowind.push_back(0);
+  a.val.push_back(2);
+  GraphBLAS::mXv<int>(b, C, a, d);
+
   for( int i=0; i<I.size(); i++ )
     std::cout << I[i] << std::endl;
   for( int i=0; i<J.size(); i++ )
     std::cout << J[i] << std::endl;
   for( int i=0; i<val.size(); i++ )
     std::cout << val[i] << std::endl;
+  for( int i=0; i<b.num; i++ )
+    std::cout << b.rowind[i] << b.val[i] << std::endl;
 
   return 0;
 }

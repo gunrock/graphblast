@@ -61,10 +61,11 @@ namespace GraphBLAS
 
 // List of ops that can be used in map/reduce operations.
   enum BinaryOp {
-    BINARY_MULT    =    0,
+    BINARY_MULT   =     0,
     BINARY_ADD    =     1,
     BINARY_AND    =     2,
-    BINARY_OR     =     3
+    BINARY_OR     =     3,
+    BINARY_MIN    =     4
   };
 
 // List of additive identities that can be used
@@ -106,6 +107,14 @@ namespace GraphBLAS
         return arg2Desc; }
       void setTransformArg2(Transform state) {
         arg2Desc = state; }
+      BinaryOp getAddOp() const {
+        return addOp; }
+      void setAddOp( BinaryOp operation ) {
+        addOp = operation; }
+      BinaryOp getMultOp() const {
+        return multOp; }
+      void setMultOp( BinaryOp operation ) {
+        multOp = operation; }
   };
 
   template<typename Scalar>
@@ -115,18 +124,23 @@ namespace GraphBLAS
   void extractTuples( std::vector<Index>&, std::vector<Index>&, std::vector<Scalar>&, Matrix<Scalar>& ); 
 
   template<typename Scalar>
-  void ewiseMult( fnCallDesc&, Scalar, Vector<Scalar>&, Vector<Scalar>& );
+  void ewiseMult( Scalar, Vector<Scalar>&, Vector<Scalar>&, fnCallDesc& );
 
   template<typename Scalar>
-  void ewiseMult( fnCallDesc&, Vector<Scalar>&, Vector<Scalar>&, Vector<Scalar>& );
+  void ewiseMult( Vector<Scalar>&, Vector<Scalar>&, Vector<Scalar>&, fnCallDesc& );
 
   template<typename Scalar>
-  void ewiseAdd( fnCallDesc&, Vector<Scalar>&, Vector<Scalar>&, Vector<Scalar>& );
+  void ewiseAdd( Vector<Scalar>&, Vector<Scalar>&, Vector<Scalar>&, fnCallDesc& );
 
   template<typename Scalar>
-  void mXv( Matrix<Scalar>&, Vector<Scalar>&, Vector<Scalar>&, fnCallDesc& );
+  void mXv( Vector<Scalar>&, Matrix<Scalar>&, Vector<Scalar>&, fnCallDesc& );
 
   template<typename Scalar>
   void mXm( Matrix<Scalar>&, Matrix<Scalar>&, Matrix<Scalar>&, fnCallDesc& );
+
+  namespace app {
+    template<typename MatrixT, typename VectorT>
+    void bfsMasked( Matrix<MatrixT>&, Vector<VectorT>&, Vector<Index>& );
+  }
 
 }
