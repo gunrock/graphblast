@@ -343,6 +343,7 @@ namespace GraphBLAS
     C.num = 0;
     C.rowind.clear();
     C.val.clear();
+    Scalar mask = d.getMaskDesc();
 
     Assign old_assign;
     old_assign = d.getAssign();
@@ -355,7 +356,7 @@ namespace GraphBLAS
       for( j=0; j<B.num; j++ ) {
         value = B.val[j];
         Acol = A.colptr[j+1]-A.colptr[j];
-        if( Acol > 0 ) {
+		if( ((mask>0 && value == mask) || (mask==0)) && Acol > 0 ) {
           // ewiseMult, store result into temp
           // GraphBLAS::ewiseMult( value, A, A.colptr[j], A.colptr[j+1], temp, d );
           temp.num = Acol;
@@ -446,7 +447,7 @@ namespace GraphBLAS
     d.setAssign(old_assign);
   }
 
-  /*namespace app {
+  namespace app {
 
     // initFrontier is boolean vector initial frontier
     // Define 
@@ -465,11 +466,11 @@ namespace GraphBLAS
       d.setAddId( IDENTITY_MIN );
       d.setAssign( ASSIGN_ADDOP );
 
-      Vector<Scalar> tempFrontier = initFrontier;
-      Vector<Scalar> tempFrontier2;
-      Vector<Scalar> empty;
+      Vector<Index> tempFrontier = initFrontier;
+      Vector<Index> tempFrontier2;
+      Vector<Index> empty;
 
-      IndexType depth = 0;
+      Index depth = 0;
 
       for( depth; depth<1; depth++ ) {
         GraphBLAS::ewiseMult( depth, tempFrontier, tempFrontier2, e );
@@ -478,8 +479,8 @@ namespace GraphBLAS
         // Only perform mXv on elements in bfsResult vector that == depth
         d.setMaskDesc( depth );
         GraphBLAS::mXv( tempFrontier, Graph, bfsResult, d );
-    }}*/
-}
+    }}
+}}
 
 int main() {
 
