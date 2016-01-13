@@ -367,7 +367,7 @@ namespace GraphBLAS
           GraphBLAS::ewiseAdd( temp, empty, C, d );
           //for( k=0; k<result.num; k++ )
           //  std::cout << j << result.rowind[k] << result.val[k] << std::endl;
-    } else if( d.getMultOp() == BINARY_ADD ) {
+	}}} else if( d.getMultOp() == BINARY_ADD ) {
       for( j=0; j<B.num; j++ ) {
         value = B.val[j];
         Acol = A.colptr[j+1]-A.colptr[j];
@@ -430,7 +430,7 @@ namespace GraphBLAS
             count = 0;
             temp.rowind[count] = A.rowind[j];
             temp.val[count] = A.val[j]*value;
-            GraphBLAS::ewiseAdd( d, temp, empty, result );
+            GraphBLAS::ewiseAdd( temp, empty, result, d );
             //for( k=0; k<result.num; k++ )
             //  std::cout << j << result.rowind[k] << result.val[k] << std::endl;
           }
@@ -446,7 +446,7 @@ namespace GraphBLAS
     d.setAssign(old_assign);
   }
 
-  namespace app {
+  /*namespace app {
 
     // initFrontier is boolean vector initial frontier
     // Define 
@@ -478,7 +478,7 @@ namespace GraphBLAS
         // Only perform mXv on elements in bfsResult vector that == depth
         d.setMaskDesc( depth );
         GraphBLAS::mXv( tempFrontier, Graph, bfsResult, d );
-    }}
+    }}*/
 }
 
 int main() {
