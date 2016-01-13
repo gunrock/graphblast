@@ -12,6 +12,11 @@ namespace GraphBLAS
       Index                 num;
       std::vector<Index> rowind;
       std::vector<T>        val;
+
+	  void print() {
+		  for( Index i=0;i<num;i++ )
+			  std::cout << rowind[i] << " " << val[i] << std::endl;
+	  };
   };
 
   // CSC format by default
@@ -147,8 +152,8 @@ namespace GraphBLAS
   void mXm( Matrix<Scalar>&, Matrix<Scalar>&, Matrix<Scalar>&, fnCallDesc& );
 
   namespace app {
-    template<typename MatrixT, typename VectorT>
-    void bfsMasked( Matrix<MatrixT>&, Vector<VectorT>&, Vector<Index>& );
+    template<typename Scalar>
+    void bfsMasked( Matrix<Scalar>&, Vector<Scalar>&, Vector<Scalar>& );
   }
 
 }
