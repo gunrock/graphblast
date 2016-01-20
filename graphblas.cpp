@@ -476,11 +476,11 @@ namespace GraphBLAS
         GraphBLAS::ewiseMult( depth, tempFrontier, tempFrontier2, e );
         tempFrontier.print();
 		tempFrontier2.print();
-		//GraphBLAS::ewiseAdd( bfsResult, empty, tempFrontier2, e );
+		GraphBLAS::ewiseAdd( bfsResult, empty, tempFrontier2, e );
 
         // Only perform mXv on elements in bfsResult vector that == depth
-        //d.setMaskDesc( depth );
-        //GraphBLAS::mXv( tempFrontier, Graph, bfsResult, d );
+        d.setMaskDesc( depth );
+        GraphBLAS::mXv( tempFrontier, Graph, bfsResult, d );
     }}
 }}
 
