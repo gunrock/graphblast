@@ -1,0 +1,34 @@
+-semi-rings:
+  -scott claims is composition of 2 monoids (
+  -on potentially different sets (not strictly mathematical
+  -scott claims there is worth in each monoid having an identity
+-descriptors vs. views
+  -blas has transpose flag
+    -does not change matrix (in memory)
+    -matrix is not mutable object that can be changed by descriptor
+    -divide-and-conquer read-only data for multithreaded consistency
+  -so it needs to be thread-safe
+  -there needs to be 1:1 mapping between descriptors and views
+    -if they are used
+-scott asks:
+  -do i have any experience working with masks, descriptors on GPU
+-IU/CMU working on testbed for interface research
+-multiple vector object?
+  -matrices and vectors both containers -scott on STL
+  -advantage of vector is performance
+  -can map from one vector space to another
+  -tim says strong-typing is good (compiler error to tell you when you made mistake)
+
+Qs:
+  -is ::backend a ubiquitous way to do generic programming?
+  -IU can only compile one backend at once
+    -it would be desirable to compile both at once?
+    -or would it be confusing to have both in same file?
+
+Qs:
+  -is there cutoff point for SpGEMM to use SpMV?
+  -keep vector as 1xN matrix then we can write only SpGEMM
+
+-tim prefers having orientation, because mathematically specifying transpose on vector will cause less error
+  -because it provides a hint to whether vector will be multiplied from left or right
+  -optimization
