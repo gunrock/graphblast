@@ -1,15 +1,15 @@
 #ifndef BACKEND_SEQUENTIAL_HPP
 #define BACKEND_SEQUENTIAL_HPP
 
-using namespace graphblas
+namespace graphblas
 {
-  using namespace backend
+  namespace backend
   {
     template <typename T>
-    class Matrix : 
+    class Matrix 
     {
 
-    }
+    };
   }
 }
 

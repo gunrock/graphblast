@@ -1,15 +1,14 @@
 #ifndef MATRIX_HPP
 #define MATRIX_HPP
 
-#include "info.hpp"
-#include "index.hpp"
+#include <types.hpp>
 
 // Opaque data members from the right backend
-#define __GRB_BACKEND_MATRIX_HEADER "backend/__GRB_BACKEND_ROOT/Matrix.hpp"
-#include __GRB_BACKEND_MATRIX_HEADER
-#undef __GRB_BACKEND_MATRIX_HEADER
+//#define __GRB_BACKEND_MATRIX_HEADER "backend/__GRB_BACKEND_ROOT/Matrix.hpp"
+//#include __GRB_BACKEND_MATRIX_HEADER
+//#undef __GRB_BACKEND_MATRIX_HEADER
 
-using namespace graphblas
+namespace graphblas
 {
   template <typename T>
   class Matrix
@@ -35,7 +34,7 @@ using namespace graphblas
     Index numRows;
     Index numCols;
     Index numNnz;
-  }
+  };
 }
 
 #endif  // MATRIX_HPP
