@@ -6,6 +6,10 @@ namespace graphblas
 {
   typedef int Index;
   typedef int Info;
+
+  class Descriptor{};
+  class BinaryFunction{};
+  class Null{};
 }
 
 #endif  // GRB_TYPES_HPP
