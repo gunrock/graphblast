@@ -1,5 +1,5 @@
-#ifndef BACKEND_SEQUENTIAL_HPP
-#define BACKEND_SEQUENTIAL_HPP
+#ifndef GRB_BACKEND_APSPIE_HPP
+#define GRB_BACKEND_APSPIE_HPP
 
 namespace graphblas
 {
@@ -13,4 +13,4 @@ namespace graphblas
   }
 }
 
-#endif  // BACKEND_SEQUENTIAL_HPP
+#endif  // GRB_BACKEND_APSPIE_HPP

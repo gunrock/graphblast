@@ -12,7 +12,7 @@ set( PROJ_OUT_PATH  ${CMAKE_BINARY_DIR})
 set( PROJ_SOURCES   "test_matrix.cpp" )
 set( PROJ_HEADERS   "" )
 set( PROJ_LIBRARIES "" )
-set( PROJ_INCLUDES  "../src" "../../ext/moderngpu/include" "../../ext/cub ")
+set( PROJ_INCLUDES  "../" "../../ext/moderngpu/include" "../../ext/cub ")
 #set( mgpu_SRC_DIR "../../ext/moderngpu/src")
 #set( mgpu_SRC_FILES ${mgpu_SRC_DIR}/mgpucontext.cu ${mgpu_SRC_DIR}/mgpuutil.cpp)
 
@@ -22,7 +22,7 @@ set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
 
 #FILE( GLOB_RECURSE PROJ_SOURCES ../../src/*.cpp )
 #FILE( GLOB_RECURSE PROJ_LIBRARIES ../../ext/cublas1.1/*.cu )
-FILE( GLOB_RECURSE PROJ_HEADERS ../src/*.hpp )
+FILE( GLOB_RECURSE PROJ_HEADERS ../graphblas/*.hpp )
 
 # nvcc flags
 set(CUDA_NVCC_FLAGS  ${CUDA_NVCC_FLAGS};-gencode arch=compute_35,code=sm_35)

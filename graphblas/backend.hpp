@@ -1,4 +1,5 @@
-#ifdef BACKEND_HPP
+#ifndef GRB_BACKEND_HPP
+#define GRB_BACKEND_HPP
 
 #ifdef GRB_USE_SEQUENTIAL
 #define __GRB_BACKEND_ROOT sequential
@@ -8,4 +9,4 @@
 #pragma message "Error: No GraphBLAS library specified!"
 #endif
 
-#endif  // BACKEND_HPP
+#endif  // GRB_BACKEND_HPP
