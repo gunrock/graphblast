@@ -9,7 +9,6 @@ namespace graphblas
 
   class Descriptor{};
   class BinaryFunction{};
-  class Null{};
 }
 
 #endif  // GRB_TYPES_HPP

@@ -20,9 +20,13 @@ namespace backend
     ~Matrix() {};
       
     // C API Methods
-    Info buildMatrix( const Matrix& mask, const BinaryFunction& accum,
-        const Index *row_ids, const Index *col_ids, const T *values, Index n,
-        const Descriptor& desc );
+    Info buildMatrix( const Index* row_ids, 
+                      const Index* col_ids, 
+                      const T *values, 
+                      Index n,
+                      const Matrix* mask,
+                      const BinaryFunction* accum,
+                      const Descriptor* desc );
 
     Info nnew( Index num_row, Index num_col ); // possibly unnecessary in C++
     Info clear();
@@ -39,10 +43,12 @@ namespace backend
   };
 
   template <typename T>
+  Matrix<T>::Matrix() : CooMatrix<T>() {};
+
+  template <typename T>
   Matrix<T>::Matrix( Index num_row,
-                     Index num_col ) : num_row_(num_row), num_col_(num_col)
-  {
-  }
+                     Index num_col ) : CooMatrix<T>( num_row, num_col ) {}
+
 
 } // backend
 } // graphblas
