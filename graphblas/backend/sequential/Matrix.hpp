@@ -1,7 +1,10 @@
 #ifndef GRB_BACKEND_SEQUENTIAL_HPP
 #define GRB_BACKEND_SEQUENTIAL_HPP
 
+#include <vector>
+
 #include <graphblas/backend/sequential/CooMatrix.hpp>
+#include <graphblas/backend/sequential/DenseMatrix.hpp>
 
 namespace graphblas
 {
@@ -12,42 +15,45 @@ namespace backend
   {
     public:
     // Default Constructor, Standard Constructor and Assignment Constructor
-    Matrix();
-    Matrix( Index num_rows, Index num_cols );
-    void operator=( Matrix& rhs );
+    Matrix()
+				: CooMatrix<T>() {}
+    Matrix( const Index nrows, const Index ncols )
+				: CooMatrix<T>( nrows, ncols ) {}
+    void operator=( Matrix& rhs ) {}
 
     // Destructor
     ~Matrix() {};
       
     // C API Methods
-    Info buildMatrix( const Index* row_ids, 
-                      const Index* col_ids, 
-                      const T *values, 
-                      Index n,
-                      const Matrix* mask,
-                      const BinaryFunction* accum,
-                      const Descriptor* desc );
+    Info build( const std::vector<Index>& row_indices, 
+                const std::vector<Index>& col_indices, 
+                const std::vector<T>& values, 
+                const Index nvals,
+                const Matrix& mask,
+                const BinaryOp& dup ) 
+		{
+            CooMatrix<T>::build( row_indices, col_indices, values, nvals, mask, dup );
+		}
 
-    Info nnew( Index num_row, Index num_col ); // possibly unnecessary in C++
-    Info clear();
-    Info nrow( Index *m );
-    Info ncol( Index *n );
-    Info nnz( Index *s );
+	Info build( const std::vector<T>& values )
+        {
+            DenseMatrix<T>::build( values );
+        }
+
+    Info nnew( const Index nrows, const Index ncols ) {} // possibly unnecessary in C++
+		Info dup( Matrix& C ) {}
+    Info clear() {}
+    Info nrows( Index nrows__ ) {}
+    Info ncols( Index ncols__ ) {}
+    Info nvals( Index nvals__ ) {}
 
     private:
     // Data members that are same for all matrix formats 
-    Index num_row_;
-    Index num_col_;
-    Index num_nnz_;
+    //Index nrows_;
+    //Index ncols_;
+    //Index nvals_;
 
   };
-
-  template <typename T>
-  Matrix<T>::Matrix() : CooMatrix<T>() {};
-
-  template <typename T>
-  Matrix<T>::Matrix( Index num_row,
-                     Index num_col ) : CooMatrix<T>( num_row, num_col ) {}
 
 
 } // backend

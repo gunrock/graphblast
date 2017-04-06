@@ -1,6 +1,8 @@
 #ifndef GRB_MATRIX_HPP
 #define GRB_MATRIX_HPP
 
+#include <vector>
+
 #include <graphblas/types.hpp>
 
 // Opaque data members from the right backend
@@ -16,49 +18,48 @@ namespace graphblas
     public:
     // Default Constructor, Standard Constructor and Assignment Constructor
     Matrix();
-    Matrix( Index num_rows, Index num_cols );
+	Matrix( const Index nrows, const Index ncols );
     void operator=( Matrix& rhs );
 
     // Destructor
     ~Matrix() {};
 
     // C API Methods
-    Info buildMatrix( const Index* row_ids, 
-                      const Index* col_ids, 
-                      const T* values, 
-                      Index n, 
-                      const Matrix* mask=NULL, 
-                      const BinaryFunction* accum=NULL, 
-                      const Descriptor* desc=NULL );
+    Info build( const std::vector<Index>& row_indices,
+                const std::vector<Index>& col_indices,
+                const std::vector<T>& values,
+                const Index nvals,
+                const Matrix& mask,
+                const BinaryOp& dup );
 
-  	Info nnew( Index num_row, Index num_col ); // possibly unnecessary in C++
-  	Info clear();
-	  Info nrow( Index *m );
-	  Info ncol( Index *n );
-	  Info nnz( Index *s );
+    Info nnew( const Index nrows, const Index ncols ); // possibly unnecessary in C++
+    Info dup( Matrix& C );
+    Info clear();
+    Info nrows( const Index nrows__ );
+    Info ncols( const Index ncols__ );
+    Info nvals( const Index nvals__ );
 
     private:
     // Data members that are same for all backends
     backend::Matrix<T> matrix;
   };
 
-  template <typename T>  
-  Matrix<T>::Matrix( Index num_row, 
-                     Index num_col )
+  template <typename T>
+  Matrix<T>::Matrix( const Index nrows, 
+                     const Index ncols )
   {
-	  backend::Matrix<T>( num_row, num_col );
+	  backend::Matrix<T>( nrows, ncols );
   }
 
   template <typename T>
-  Info Matrix<T>::buildMatrix( const Index* row_ids,
-                               const Index* col_ids,
-                               const T* values,
-                               const Index n,
-                               const Matrix* mask,
-                               const BinaryFunction* accum,
-                               const Descriptor* desc )
+  Info Matrix<T>::build( const std::vector<Index>& row_indices,
+                         const std::vector<Index>& col_indices,
+                         const std::vector<T>& values,
+                         const Index nvals,
+                         const Matrix& mask,
+                         const BinaryOp& dup)
   {
-	  return matrix.buildMatrix( row_ids, col_ids, values, n, mask, accum, desc );
+	  return matrix.build( row_indices, col_indices, values, nvals, mask, dup );
   }
 }
 

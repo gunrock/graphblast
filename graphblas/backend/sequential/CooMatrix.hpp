@@ -11,25 +11,34 @@ namespace backend
   class CooMatrix
   {
     public:
-    CooMatrix();
-    CooMatrix( Index num_rows, Index num_cols );
+    CooMatrix() : nrows_(0), ncols_(0) {}
+	CooMatrix( const Index nrows, const Index ncols ) : nrows_(nrows), ncols_(ncols) {}
+
+	// C API Methods
+	Info build( const std::vector<Index>& row_indices,
+				const std::vector<Index>& col_indices,
+				const std::vector<T>& values,
+				const Index nvals,
+				const CooMatrix& mask,
+				const BinaryOp& dup );
 
     private:
-    Index num_row_;
-    Index num_col_;
-    Index num_nnz_;
+    Index nrows_;
+    Index ncols_;
+    Index nvals_;
 
-    std::vector<Index> row_ind_;
-    std::vector<Index> col_ind_;
-    std::vector<T> values;
+    std::vector<Index> row_indices_;
+    std::vector<Index> col_indices_;
+    std::vector<T> values_;
   };
 
   template <typename T>
-  CooMatrix<T>::CooMatrix() : num_row_(0), num_col_(0) {}
-
-  template <typename T>
-  CooMatrix<T>::CooMatrix( Index num_row,
-                           Index num_col ) : num_row_(num_row), num_col_(num_col) {}
+  Info CooMatrix<T>::build( const std::vector<Index>& row_indices,
+                            const std::vector<Index>& col_indices,
+                            const std::vector<T>& values,
+                            const Index nvals,
+                            const CooMatrix& mask,
+                            const BinaryOp& dup) {}
 
 } // backend
 } // graphblas
