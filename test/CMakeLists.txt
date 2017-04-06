@@ -10,7 +10,7 @@ find_package(Boost REQUIRED)
 set( PROJ_NAME      "test_matrix" )
 set( PROJ_PATH      ${CMAKE_SOURCE_DIR})
 set( PROJ_OUT_PATH  ${CMAKE_BINARY_DIR})
-set( PROJ_SOURCES   "test_mmio.cpp" )#"test_matrix.cpp" )
+set( PROJ_SOURCES   "test_mmio2.cpp" )#"test_matrix.cpp" )
 set( PROJ_HEADERS   "" )
 set( PROJ_LIBRARIES "" )
 set( PROJ_INCLUDES  "../" )
@@ -33,7 +33,7 @@ set(CUDA_NVCC_FLAGS  ${CUDA_NVCC_FLAGS};-gencode arch=compute_35,code=sm_35)
 # needed for cudamalloc
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
 set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
-set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --verbose")
+#set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --verbose")
 
 # ptx generation
 #include_directories( ${PROJ_INCLUDES} )
