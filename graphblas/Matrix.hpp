@@ -28,14 +28,14 @@ namespace graphblas
     Info build( const std::vector<Index>& row_indices,
                 const std::vector<Index>& col_indices,
                 const std::vector<T>& values,
-                const Index nvals );
+                const Index nvals,
+                const Matrix& mask,
+                const BinaryOp& dup );
 
     Info build( const std::vector<Index>& row_indices,
                 const std::vector<Index>& col_indices,
                 const std::vector<T>& values,
-                const Index nvals,
-                const Matrix& mask,
-                const BinaryOp& dup );
+                const Index nvals );
 
     Info nnew( const Index nrows, const Index ncols ); // possibly unnecessary in C++
     Info dup( Matrix& C );
@@ -60,21 +60,22 @@ namespace graphblas
   Info Matrix<T>::build( const std::vector<Index>& row_indices,
                          const std::vector<Index>& col_indices,
                          const std::vector<T>& values,
-                         const Index nvals )
-  {
-	  return matrix.build( row_indices, col_indices, values, nvals );
-  }
-
-  template <typename T>
-  Info Matrix<T>::build( const std::vector<Index>& row_indices,
-                         const std::vector<Index>& col_indices,
-                         const std::vector<T>& values,
                          const Index nvals,
                          const Matrix& mask,
                          const BinaryOp& dup)
   {
 	  return matrix.build( row_indices, col_indices, values, nvals, mask, dup );
   }
+
+  template <typename T>
+  Info Matrix<T>::build( const std::vector<Index>& row_indices,
+                         const std::vector<Index>& col_indices,
+                         const std::vector<T>& values,
+                         const Index nvals )
+  {
+	  return matrix.build( row_indices, col_indices, values, nvals );
+  }
+
 }
 
 #endif  // GRB_MATRIX_HPP
