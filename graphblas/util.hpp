@@ -2,14 +2,61 @@
 #include <iostream>
 #include <typeinfo>
 #include <cstdio>
+#include <tuple>
+#include <algorithm>
 
 #include <graphblas/types.hpp>
 
+template<typename T>
+bool compare(const std::tuple<graphblas::Index,
+				                     graphblas::Index,
+														 T,
+														 graphblas::Index> &lhs, 
+						const std::tuple<graphblas::Index,
+						                 graphblas::Index,
+														 T,
+														 graphblas::Index> &rhs)
+{
+  graphblas::Index a = std::get<0>(lhs);
+  graphblas::Index b = std::get<0>(rhs);
+  graphblas::Index c = std::get<1>(lhs);
+  graphblas::Index d = std::get<1>(rhs);
+  if( a==b ) return c < d ? 0 : c > d;
+  else return a < b ? 0 : a > b;
+}
+
+template<typename T>
+void customSort( std::vector<graphblas::Index>&row_indices,
+				         std::vector<graphblas::Index>& col_indices,
+								 std::vector<T>& values )
+{
+  graphblas::Index nvals = row_indices.size();
+	std::vector<std::tuple<graphblas::Index,
+			                   graphblas::Index,
+												 T,
+												 graphblas::Index> > my_tuple;
+  for(graphblas::Index i=0;i<nvals;++i){
+		my_tuple.push_back(std::make_tuple( row_indices[i], col_indices[i], 
+								values[i], i));
+  }
+	std::sort( my_tuple.begin(), my_tuple.end(), compare<T> );
+    
+  std::vector<graphblas::Index> v1 = row_indices;
+  std::vector<graphblas::Index> v2 = col_indices;
+  std::vector<T>                v3 = values;
+
+  for(graphblas::Index i=0;i<nvals;++i){
+    row_indices[i] = v1[std::get<3>(my_tuple[i])];
+    col_indices[i] = v2[std::get<3>(my_tuple[i])];
+    values[i]      = v3[std::get<3>(my_tuple[i])];
+  }
+}
+
 template<typename T, typename mtxT>
 void readTuples( std::vector<graphblas::Index>& row_indices,
-			     std::vector<graphblas::Index>& col_indices,
-			     std::vector<T>& values,
-			     const graphblas::Index nvals,
+			           std::vector<graphblas::Index>& col_indices,
+			           std::vector<T>& values,
+			           const graphblas::Index nvals,
                  FILE* f)
 {
   bool is_weighted = true;
@@ -46,7 +93,8 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       mtxT raw_value;
       fscanf(f, type_str, &raw_value);
       value = (T) raw_value;
-      //std::cout << "The first row is " << row_ind-1 << " " <<  col_ind-1 << std::endl;
+      //std::cout << "The first row is " << row_ind-1 << " " <<  col_ind-1
+			//<< std::endl;
 
       // Finds max csr row.
       if( i!=0 ) {
@@ -64,8 +112,9 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
         }
       }
   }}
-  std::cout << "The biggest row was " << csr_row << " with " << csr_max << " elements.\n";
-  std::cout << "The first row has " << csr_first << " elements.\n";
+  //std::cout << "The biggest row was " << csr_row << " with " << csr_max << 
+	//" elements.\n";
+  //std::cout << "The first row has " << csr_first << " elements.\n";
 }
 
 template<typename T>
@@ -73,13 +122,12 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
 			     std::vector<graphblas::Index>& col_indices,
 			     std::vector<T>& values,
 			     const graphblas::Index nvals,
-                 FILE* f)
+           FILE* f)
 {
   bool is_weighted = true;
   int c;
   graphblas::Index row_ind, col_ind;
-  T value;
-  int raw_value;
+  T value = (T) 1.0;
 
   int csr_max = 0;
   int csr_current = 0;
@@ -100,7 +148,8 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       col_indices.push_back(col_ind-1);
       values.push_back(value);
 
-      //std::cout << "The first row is " << row_ind-1 << " " <<  col_ind-1 << std::endl;
+      //std::cout << "The first row is " << row_ind-1 << " " <<  col_ind-1 
+			//<< std::endl;
 
       // Finds max csr row.
       if( i!=0 ) {
@@ -118,39 +167,30 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
         }
       }
   }}
-  std::cout << "The biggest row was " << csr_row << " with " << csr_max << " elements.\n";
-  std::cout << "The first row has " << csr_first << " elements.\n";
+  //std::cout << "The biggest row was " << csr_row << " with " << csr_max << 
+	//" elements.\n";
+  //std::cout << "The first row has " << csr_first << " elements.\n";
 }
 
 template<typename T>
-void makeSymmetric( std::vector<graphblas::Index> row_indices, 
-                    std::vector<graphblas::Index> col_indices,
-                    std::vector<T> values, 
-					graphblas::Index& nvals,
+void makeSymmetric( std::vector<graphblas::Index>& row_indices, 
+                    std::vector<graphblas::Index>& col_indices,
+                    std::vector<T>& values, 
+                    graphblas::Index& nvals,
                     bool remove_self_loops=true ) {
-
-  graphblas::Index shift = 0;
-  std::vector<graphblas::Index> indices;
 
   for( graphblas::Index i=0; i<nvals; i++ ) {
     if( col_indices[i] != row_indices[i] ) {
-      row_indices[nvals+i-shift] = col_indices[i];
-      col_indices[nvals+i-shift] = row_indices[i];
-      values[nvals+i-shift] = values[i];
-	  indices.push_back(i);
-    } else shift++;
+      row_indices.push_back( col_indices[i] );
+      col_indices.push_back( row_indices[i] );
+      values.push_back( values[i] );
+    }
   }
-  //print_array(row_indices);
-  //print_array(col_indices);
 
-  nvals = 2*nvals-shift;
+  nvals = row_indices.size();
 
   // Sort
-  
-  struct arrayset<T> work = { row_indices, col_indices, values };
-  custom_sort(&work, nvals);
-  //print_array(row_indices);
-  //print_array(col_indices);
+  customSort<T>( row_indices, col_indices, values );
 
   graphblas::Index curr = col_indices[0];
   graphblas::Index last;
@@ -175,7 +215,7 @@ void makeSymmetric( std::vector<graphblas::Index> row_indices,
       col_indices[i] = -1;
   }}
 
-  shift=0;
+  graphblas::Index shift = 0;
 
   // Remove self-loops and duplicates marked -1.
   graphblas::Index back = 0;
@@ -184,7 +224,6 @@ void makeSymmetric( std::vector<graphblas::Index> row_indices,
       for( shift; back<=nvals; shift++ ) {
         back = i+shift;
         if( col_indices[back] != -1 ) {
-          //printf("Swapping %d with %d\n", i, back ); 
           col_indices[i] = row_indices[back];
           row_indices[i] = col_indices[back];
           col_indices[back] = -1;
@@ -199,14 +238,16 @@ void makeSymmetric( std::vector<graphblas::Index> row_indices,
 
 template<typename T>
 int readMtx( const char *fname,
-		     std::vector<graphblas::Index>& row_indices,
-	         std::vector<graphblas::Index>& col_indices,
-	         std::vector<T>& values )
+    		     std::vector<graphblas::Index>& row_indices,
+	           std::vector<graphblas::Index>& col_indices,
+	           std::vector<T>& values,
+			       graphblas::Index& nrows,
+			       graphblas::Index& ncols,
+			       graphblas::Index& nvals	)
 {
   int ret_code;
   MM_typecode matcode;
   FILE *f;
-  graphblas::Index nrows, ncols, nvals;
 
   if ((f = fopen(fname, "r")) == NULL) {
     printf( "File %s not found", fname );
@@ -236,4 +277,14 @@ int readMtx( const char *fname,
 
   mm_write_banner(stdout, matcode);
   mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
+}
+
+template<typename T>
+void printArray( const char* str, const T *array, int length=40 )
+{
+  if( length>40 ) length=40;
+  std::cout << str << ":\n";
+  for( int j=0;j<length;j++ )
+    std::cout << "[" << j << "]:" << array[j] << " ";
+  std::cout << "\n";
 }

@@ -28,6 +28,11 @@ namespace graphblas
     Info build( const std::vector<Index>& row_indices,
                 const std::vector<Index>& col_indices,
                 const std::vector<T>& values,
+                const Index nvals );
+
+    Info build( const std::vector<Index>& row_indices,
+                const std::vector<Index>& col_indices,
+                const std::vector<T>& values,
                 const Index nvals,
                 const Matrix& mask,
                 const BinaryOp& dup );
@@ -49,6 +54,15 @@ namespace graphblas
                      const Index ncols )
   {
 	  backend::Matrix<T>( nrows, ncols );
+  }
+
+  template <typename T>
+  Info Matrix<T>::build( const std::vector<Index>& row_indices,
+                         const std::vector<Index>& col_indices,
+                         const std::vector<T>& values,
+                         const Index nvals )
+  {
+	  return matrix.build( row_indices, col_indices, values, nvals );
   }
 
   template <typename T>

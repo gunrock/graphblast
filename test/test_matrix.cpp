@@ -1,4 +1,4 @@
-#define GRB_USE_SEQUENTIAL
+#define GRB_USE_APSPIE
 
 #include <graphblas/graphblas.hpp>
 
