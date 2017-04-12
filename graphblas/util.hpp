@@ -7,6 +7,13 @@
 
 #include <graphblas/types.hpp>
 
+// Forward declarations
+
+template<typename T>
+void printArray( const char* str, std::vector<T>& array, int length=40 );
+
+// Utility functions
+
 template<typename T>
 bool compare(const std::tuple<graphblas::Index,
 				                     graphblas::Index,
@@ -21,12 +28,12 @@ bool compare(const std::tuple<graphblas::Index,
   graphblas::Index b = std::get<0>(rhs);
   graphblas::Index c = std::get<1>(lhs);
   graphblas::Index d = std::get<1>(rhs);
-  if( a==b ) return c < d ? 0 : c > d;
-  else return a < b ? 0 : a > b;
+  if( a==b ) return c < d;
+  else return a < b;
 }
 
 template<typename T>
-void customSort( std::vector<graphblas::Index>&row_indices,
+void customSort( std::vector<graphblas::Index>& row_indices,
 				         std::vector<graphblas::Index>& col_indices,
 								 std::vector<T>& values )
 {
@@ -35,6 +42,7 @@ void customSort( std::vector<graphblas::Index>&row_indices,
 			                   graphblas::Index,
 												 T,
 												 graphblas::Index> > my_tuple;
+
   for(graphblas::Index i=0;i<nvals;++i){
 		my_tuple.push_back(std::make_tuple( row_indices[i], col_indices[i], 
 								values[i], i));
@@ -46,9 +54,10 @@ void customSort( std::vector<graphblas::Index>&row_indices,
   std::vector<T>                v3 = values;
 
   for(graphblas::Index i=0;i<nvals;++i){
-    row_indices[i] = v1[std::get<3>(my_tuple[i])];
-    col_indices[i] = v2[std::get<3>(my_tuple[i])];
-    values[i]      = v3[std::get<3>(my_tuple[i])];
+    graphblas::Index index= std::get<3>(my_tuple[i]);
+    row_indices[i] = v1[index];
+    col_indices[i] = v2[index];
+    values[i]      = v3[index];
   }
 }
 
@@ -119,10 +128,10 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
 
 template<typename T>
 void readTuples( std::vector<graphblas::Index>& row_indices,
-			     std::vector<graphblas::Index>& col_indices,
-			     std::vector<T>& values,
-			     const graphblas::Index nvals,
-           FILE* f)
+			           std::vector<graphblas::Index>& col_indices,
+			           std::vector<T>& values,
+			           const graphblas::Index nvals,
+                 FILE* f)
 {
   bool is_weighted = true;
   int c;
@@ -181,8 +190,8 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
 
   for( graphblas::Index i=0; i<nvals; i++ ) {
     if( col_indices[i] != row_indices[i] ) {
-      row_indices.push_back( col_indices[i] );
-      col_indices.push_back( row_indices[i] );
+      row_indices.push_back( row_indices[i] );
+      col_indices.push_back( col_indices[i] );
       values.push_back( values[i] );
     }
   }
@@ -224,8 +233,8 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
       for( shift; back<=nvals; shift++ ) {
         back = i+shift;
         if( col_indices[back] != -1 ) {
-          col_indices[i] = row_indices[back];
-          row_indices[i] = col_indices[back];
+          col_indices[i] = col_indices[back];
+          row_indices[i] = row_indices[back];
           col_indices[back] = -1;
           break;
   }}}}
@@ -284,7 +293,17 @@ void printArray( const char* str, const T *array, int length=40 )
 {
   if( length>40 ) length=40;
   std::cout << str << ":\n";
-  for( int j=0;j<length;j++ )
-    std::cout << "[" << j << "]:" << array[j] << " ";
+  for( int i=0;i<length;i++ )
+    std::cout << "[" << i << "]:" << array[i] << " ";
   std::cout << "\n";
+}
+
+template<typename T>
+void printArray( const char* str, std::vector<T>& array, int length=40 )
+{
+  if( length>40 ) length=40;
+	std::cout << str << ":\n";
+	for( int i=0;i<length;i++ )
+    std::cout << "[" << i << "]:" << array[i] << " ";
+	std::cout << "\n";
 }

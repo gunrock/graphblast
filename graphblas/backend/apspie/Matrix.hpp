@@ -2,6 +2,7 @@
 #define GRB_BACKEND_APSPIE_HPP
 
 #include <vector>
+//#include <iostream>
 
 #include <graphblas/backend/apspie/CooMatrix.hpp>
 #include <graphblas/backend/apspie/DenseMatrix.hpp>
@@ -27,7 +28,7 @@ namespace backend
     // C API Methods
     Info build( const std::vector<Index>& row_indices,
                 const std::vector<Index>& col_indices,
-                const std::vector<T>& values,
+                const std::vector<T>&     values,
                 const Index nvals,
                 const Matrix& mask,
                 const BinaryOp& dup )
@@ -37,16 +38,18 @@ namespace backend
 
     Info build( const std::vector<Index>& row_indices,
                 const std::vector<Index>& col_indices,
-                const std::vector<T>& values,
+                const std::vector<T>&     values,
                 const Index nvals )
         {
+						// Need this-> to refer to base class data members
+						//std::cout << this->nrows_ << " " << this->ncols_ << std::endl;
             CooMatrix<T>::build( row_indices, col_indices, values, nvals );
         }
 
 
     Info build( const std::vector<T>& values )
         {
-            DenseMatrix<T>::build( values );
+            CooMatrix<T>::build( values );
         }
 
     Info nnew( const Index nrows, const Index ncols ) {} // possibly unnecessary in C++

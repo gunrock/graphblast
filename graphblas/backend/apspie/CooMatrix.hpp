@@ -33,6 +33,8 @@ namespace backend
 				        const std::vector<T>& values,
 				        const Index nvals );
 
+    Info build( const std::vector<T>& values );
+
     Info print();
 
     private:
@@ -47,14 +49,23 @@ namespace backend
     Index* d_csrColInd;
 		Index* d_csrRowPtr;
 		T*     d_csrVal;
+
+		Index* h_denseVal;
+		Index* d_denseVal;
   };
 
   template <typename T>	
   CooMatrix<T>::CooMatrix( const Index nrows, const Index ncols )
        : nrows_(nrows), ncols_(ncols) 
   {
+		//std::cout << nrows_ << " " << ncols_ << std::endl;
+		//std::cout << "excellent" << std::endl;
+		
     // Host alloc
     h_csrRowPtr = (Index*)malloc((nrows+1)*sizeof(Index));
+
+    // Device alloc
+    CUDA_SAFE_CALL(cudaMalloc(&d_csrRowPtr, (nrows+1)*sizeof(Index)));
 
     // RowInd and Val will be allocated in build rather than here
     // since nvals may be unknown
@@ -63,8 +74,9 @@ namespace backend
     d_csrColInd = NULL;
     d_csrVal = NULL;
 
-    // Device alloc
-    CUDA_SAFE_CALL(cudaMalloc(&d_csrRowPtr, (nrows+1)*sizeof(Index)));
+		// Ignore dense matrices
+		h_denseVal = NULL;
+		d_denseVal = NULL;
   }
 
   template <typename T>
@@ -99,7 +111,7 @@ namespace backend
       h_csrRowPtr[i] = 0;
     // Go through all elements to see how many fall in each row
     for( Index i=0; i<nvals; i++ )
-      h_csrRowPtr[ col_indices[i] ]++;
+      h_csrRowPtr[ row_indices[i] ]++;
     // Cumulative sum to obtain rowPtr
     for( Index i=0; i<nrows_; i++ ) {
       temp = h_csrRowPtr[i];
@@ -107,7 +119,6 @@ namespace backend
       cumsum += temp;
     }
     h_csrRowPtr[nrows_] = nvals;
-
 
     // Store colInd and val
     for( Index i=0; i<nvals; i++ ) {
@@ -118,7 +129,7 @@ namespace backend
       h_csrRowPtr[row]++;
     }
     cumsum = 0;
-
+    
     // Undo damage done to rowPtr
     for( Index i=0; i<=nrows_; i++ ) {
       temp = h_csrRowPtr[i];
@@ -133,6 +144,12 @@ namespace backend
         cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(d_csrRowPtr, h_csrRowPtr, (nrows_+1)*sizeof(Index),
         cudaMemcpyHostToDevice));
+	}
+
+	template <typename T>
+  Info CooMatrix<T>::build( const std::vector<T>& values )
+	{
+    
 	}
 
   template <typename T>

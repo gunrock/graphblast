@@ -17,8 +17,10 @@ namespace graphblas
   {
     public:
     // Default Constructor, Standard Constructor and Assignment Constructor
+		//   -it's imperative to call constructor using matrix or the constructed object
+		//     won't be tied to this outermost layer
     Matrix();
-	Matrix( const Index nrows, const Index ncols );
+	  Matrix( const Index nrows, const Index ncols ) : matrix( nrows, ncols ) {}
     void operator=( Matrix& rhs );
 
     // Destructor
@@ -48,13 +50,6 @@ namespace graphblas
     // Data members that are same for all backends
     backend::Matrix<T> matrix;
   };
-
-  template <typename T>
-  Matrix<T>::Matrix( const Index nrows, 
-                     const Index ncols )
-  {
-	  backend::Matrix<T>( nrows, ncols );
-  }
 
   template <typename T>
   Info Matrix<T>::build( const std::vector<Index>& row_indices,
