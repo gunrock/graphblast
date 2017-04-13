@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   printArray( "row_indices", row_indices );
   printArray( "col_indices", col_indices );
 
-	graphblas::Matrix<float> a(nrows,ncols);
+	graphblas::Matrix<float> a( nrows,ncols );
 	std::cout << nrows << " " << ncols << " " << nvals << std::endl;
 	std::cout << row_indices.size() << " " << col_indices.size() << " " << 
 			values.size() << std::endl;
@@ -45,7 +45,8 @@ int main(int argc, char **argv)
   std::vector<float> dense(nrows*ncols);
   std::generate(begin(dense), end(dense), gen);
 	printArray( "random", dense );
-  graphblas::Matrix<float> b( dense );
+  graphblas::Matrix<float, graphblas::Dense> b( nrows, ncols );
+  b.build( dense );
 
   return 0;
 }

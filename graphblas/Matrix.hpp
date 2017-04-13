@@ -12,7 +12,7 @@
 
 namespace graphblas
 {
-  template <typename T>
+  template <typename T, typename S=Sparse>
   class Matrix
   {
     public:
@@ -39,6 +39,8 @@ namespace graphblas
                 const std::vector<T>& values,
                 const Index nvals );
 
+		Info build( const std::vector<T>& values );
+
     Info nnew( const Index nrows, const Index ncols ); // possibly unnecessary in C++
     Info dup( Matrix& C );
     Info clear();
@@ -48,11 +50,11 @@ namespace graphblas
 
     private:
     // Data members that are same for all backends
-    backend::Matrix<T> matrix;
+    backend::Matrix<T,S> matrix;
   };
 
-  template <typename T>
-  Info Matrix<T>::build( const std::vector<Index>& row_indices,
+  template <typename T, typename S>
+  Info Matrix<T,S>::build( const std::vector<Index>& row_indices,
                          const std::vector<Index>& col_indices,
                          const std::vector<T>& values,
                          const Index nvals,
@@ -62,8 +64,8 @@ namespace graphblas
 	  return matrix.build( row_indices, col_indices, values, nvals, mask, dup );
   }
 
-  template <typename T>
-  Info Matrix<T>::build( const std::vector<Index>& row_indices,
+  template <typename T, typename S>
+  Info Matrix<T,S>::build( const std::vector<Index>& row_indices,
                          const std::vector<Index>& col_indices,
                          const std::vector<T>& values,
                          const Index nvals )
@@ -71,6 +73,11 @@ namespace graphblas
 	  return matrix.build( row_indices, col_indices, values, nvals );
   }
 
+	template <typename T, typename S>
+	Info Matrix<T,S>::build( const std::vector<T>& values )
+	{
+		return matrix.build( values );
+	}
 }
 
 #endif  // GRB_MATRIX_HPP

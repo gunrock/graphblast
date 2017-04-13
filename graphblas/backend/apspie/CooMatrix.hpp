@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <iostream>
+#include <typeinfo>
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -13,7 +14,7 @@ namespace graphblas
 {
 namespace backend
 {
-  template <typename T>
+  template <typename T, typename S>
   class CooMatrix
   {
     public:
@@ -42,53 +43,76 @@ namespace backend
     Index ncols_;
     Index nvals_;
 
+		// CSR format
     Index* h_csrColInd;
     Index* h_csrRowPtr;
     T*     h_csrVal;
-
     Index* d_csrColInd;
 		Index* d_csrRowPtr;
 		T*     d_csrVal;
 
-		Index* h_denseVal;
-		Index* d_denseVal;
+    // CSC format
+		// TODO: add CSC support. 
+		// -this will be useful and necessary for direction-optimized SpMV
+		/*Index* h_cscRowInd;
+		Index* h_cscColPtr;
+    T*     h_cscVal;
+		Index* d_cscRowInd;
+		Index* d_cscColPtr;
+		T*     d_csrVal;*/
+
+		// Dense format
+		T* h_denseVal;
+		T* d_denseVal;
   };
 
-  template <typename T>	
-  CooMatrix<T>::CooMatrix( const Index nrows, const Index ncols )
+  template <typename T, typename S>	
+  CooMatrix<T,S>::CooMatrix( const Index nrows, const Index ncols )
        : nrows_(nrows), ncols_(ncols) 
   {
-		//std::cout << nrows_ << " " << ncols_ << std::endl;
-		//std::cout << "excellent" << std::endl;
-		
-    // Host alloc
-    h_csrRowPtr = (Index*)malloc((nrows+1)*sizeof(Index));
+    if( typeid(S)==typeid(Sparse) ) {
+	    // Host alloc
+      h_csrRowPtr = (Index*)malloc((nrows+1)*sizeof(Index));
 
-    // Device alloc
-    CUDA_SAFE_CALL(cudaMalloc(&d_csrRowPtr, (nrows+1)*sizeof(Index)));
+      // Device alloc
+      CUDA_SAFE_CALL(cudaMalloc(&d_csrRowPtr, (nrows+1)*sizeof(Index)));
 
-    // RowInd and Val will be allocated in build rather than here
-    // since nvals may be unknown
-    h_csrColInd = NULL;
-    h_csrVal = NULL;
-    d_csrColInd = NULL;
-    d_csrVal = NULL;
+      // RowInd and Val will be allocated in build rather than here
+      // since nvals may be unknown
+      h_csrColInd = NULL;
+      h_csrVal = NULL;
+      d_csrColInd = NULL;
+      d_csrVal = NULL;
 
-		// Ignore dense matrices
-		h_denseVal = NULL;
-		d_denseVal = NULL;
-  }
+		  // Ignore dense matrices
+		  h_denseVal = NULL;
+		  d_denseVal = NULL;
+		} else {
+      // Host alloc
+		  h_denseVal = (T*)malloc(nrows_*ncols_*sizeof(T));
 
-  template <typename T>
-  Info CooMatrix<T>::build( const std::vector<Index>& row_indices,
+      // Device alloc
+      CUDA_SAFE_CALL(cudaMalloc(&d_denseVal, nrows_*ncols_*sizeof(T)));
+
+      // Ignore sparse matrices
+      h_csrRowPtr = NULL;
+      h_csrColInd = NULL;
+      h_csrVal = NULL;
+      d_csrRowPtr = NULL;
+      d_csrColInd = NULL;
+      d_csrVal = NULL;
+  }}
+
+  template <typename T, typename S>
+  Info CooMatrix<T,S>::build( const std::vector<Index>& row_indices,
                             const std::vector<Index>& col_indices,
                             const std::vector<T>& values,
                             const Index nvals,
                             const CooMatrix& mask,
                             const BinaryOp& dup) {}
 
-  template <typename T>
-  Info CooMatrix<T>::build( const std::vector<Index>& row_indices,
+  template <typename T, typename S>
+  Info CooMatrix<T,S>::build( const std::vector<Index>& row_indices,
                             const std::vector<Index>& col_indices,
                             const std::vector<T>& values,
                             const Index nvals )
@@ -146,14 +170,18 @@ namespace backend
         cudaMemcpyHostToDevice));
 	}
 
-	template <typename T>
-  Info CooMatrix<T>::build( const std::vector<T>& values )
+	template <typename T, typename S>
+  Info CooMatrix<T,S>::build( const std::vector<T>& values )
 	{
-    
+    // Host alloc
+		h_denseVal = (T*)malloc(nrows_*ncols_*sizeof(T));
+
+    // Device alloc
+    CUDA_SAFE_CALL(cudaMalloc(&d_denseVal, nrows_*ncols_*sizeof(T)));
 	}
 
-  template <typename T>
-  Info CooMatrix<T>::print()
+  template <typename T, typename S>
+  Info CooMatrix<T,S>::print()
 	{
     printArray( "csrColInd", h_csrColInd );
 		printArray( "csrRowPtr", h_csrRowPtr );

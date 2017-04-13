@@ -5,21 +5,20 @@
 //#include <iostream>
 
 #include <graphblas/backend/apspie/CooMatrix.hpp>
-#include <graphblas/backend/apspie/DenseMatrix.hpp>
 
 namespace graphblas
 {
 namespace backend
 {
-  template <typename T>
-  class Matrix : public CooMatrix<T>
+  template <typename T, typename S>
+  class Matrix : public CooMatrix<T,S>
   {
     public:
     // Default Constructor, Standard Constructor and Assignment Constructor
     Matrix()
-                : CooMatrix<T>() {}
+                : CooMatrix<T,S>() {}
     Matrix( const Index nrows, const Index ncols )
-                : CooMatrix<T>( nrows, ncols ) {}
+                : CooMatrix<T,S>( nrows, ncols ) {}
     void operator=( Matrix& rhs ) {}
 
     // Destructor
@@ -33,7 +32,7 @@ namespace backend
                 const Matrix& mask,
                 const BinaryOp& dup )
         {
-            CooMatrix<T>::build( row_indices, col_indices, values, nvals, mask, dup );
+            CooMatrix<T,S>::build( row_indices, col_indices, values, nvals, mask, dup );
         }
 
     Info build( const std::vector<Index>& row_indices,
@@ -43,17 +42,17 @@ namespace backend
         {
 						// Need this-> to refer to base class data members
 						//std::cout << this->nrows_ << " " << this->ncols_ << std::endl;
-            CooMatrix<T>::build( row_indices, col_indices, values, nvals );
+            CooMatrix<T,S>::build( row_indices, col_indices, values, nvals );
         }
 
 
     Info build( const std::vector<T>& values )
         {
-            CooMatrix<T>::build( values );
+            CooMatrix<T,S>::build( values );
         }
 
     Info nnew( const Index nrows, const Index ncols ) {} // possibly unnecessary in C++
-        Info dup( Matrix& C ) {}
+    Info dup( Matrix& C ) {}
     Info clear() {}
     Info nrows( Index nrows__ ) {}
     Info ncols( Index ncols__ ) {}
@@ -64,9 +63,7 @@ namespace backend
     //Index nrows_;
     //Index ncols_;
     //Index nvals_;
-
   };
-
 
 } // backend
 } // graphblas

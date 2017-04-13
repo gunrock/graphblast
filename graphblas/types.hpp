@@ -15,6 +15,9 @@ namespace graphblas
 
   static const uint8_t GrB_SUCCESS       = 0;
   static const uint8_t GrB_INDEX_OUT_OF_BOUNDS = 1;
+
+  typedef int Sparse;
+	typedef float Dense;
 }
 
 #endif  // GRB_TYPES_HPP
