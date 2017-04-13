@@ -7,20 +7,19 @@ cmake_minimum_required(VERSION 2.8)
 find_package(CUDA)
 find_package(Boost REQUIRED)
 
-set( PROJ_NAME      "test_matrix" )
+set( PROJ_NAME      "/test" )
 set( PROJ_PATH      ${CMAKE_SOURCE_DIR})
 set( PROJ_OUT_PATH  ${CMAKE_BINARY_DIR})
-set( PROJ_SOURCES   "test_matrix2.cpp" )
+set( PROJ_SOURCES   ".cpp" )
 set( PROJ_HEADERS   "" )
 set( PROJ_LIBRARIES "" )
 set( PROJ_INCLUDES  "../" )
 #set( mgpu_SRC_DIR "../../ext/moderngpu/src")
 #set( mgpu_SRC_FILES ${mgpu_SRC_DIR}/mgpucontext.cu ${mgpu_SRC_DIR}/mgpuutil.cpp)
-set( MMIO_SRC_FILES "../graphblas/mmio.cpp" )
 
 #set( CUDA_CURAND_LIBRARY "$ENV{CUDA_HOME}/lib64/libcurand.so" )
 #set( CUDA_CUBLAS_LIBRARY "$ENV{CUDA_HOME}/lib64/libcublas.so" )
-set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
+#set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
 
 #FILE( GLOB_RECURSE PROJ_SOURCES ../graphblas/*.cpp )
 #FILE( GLOB_RECURSE PROJ_LIBRARIES ../../ext/cublas1.1/*.cu )
@@ -51,5 +50,5 @@ set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
 # standard compilation
 include_directories( ${PROJ_INCLUDES} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
-cuda_add_executable( ${PROJ_NAME} ${PROJ_SOURCES} ${MMIO_SRC_FILES} )#${mgpu_SRC_FILES})
-target_link_libraries( ${PROJ_NAME} grb )#${CUDA_CUSPARSE_LIBRARY} ${CUDA_CUBLAS_LIBRARY} )
+cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cpp" )#${mgpu_SRC_FILES}
+cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cpp" )#${mgpu_SRC_FILES}

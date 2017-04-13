@@ -1,6 +1,8 @@
 #ifndef GRB_MXM_BACKEND_APSPIE_HPP
 #define GRB_MXM_BACKEND_APSPIE_HPP
 
+#include <cusparse.h>
+
 #include <graphblas/types.hpp>
 
 namespace graphblas
@@ -49,9 +51,9 @@ namespace backend
 
     // Computation
 		cusparseHandle_t cusparse_handle;
-		cusparseCreate( &handle );
+		cusparseCreate( &cusparse_handle );
 		cusparseMatDescr_t cusparse_descr;
-		cusparseCreateMatDescr( &descr );
+		cusparseCreateMatDescr( &cusparse_descr );
 		cusparseStatus_t cusparse_status;
 		cusparse_status = cusparseScsrmm( cusparse_handle,
 			  CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
@@ -60,7 +62,7 @@ namespace backend
 				0.0, C,
 			  A_nrows );    // ldc = max(1,m) since op(A) = A
 
-    switch( status ) {
+    switch( cusparse_status ) {
         case CUSPARSE_STATUS_SUCCESS:
             std::cout << "nnz count successful!\n";
             break;
