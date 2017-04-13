@@ -285,6 +285,7 @@ int readMtx( const char *fname,
   // If graph is symmetric, replicate it out in memory
   if( mm_is_symmetric(matcode) )
     makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
+  customSort<T>( row_indices, col_indices, values );
 
   mm_write_banner(stdout, matcode);
   mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);

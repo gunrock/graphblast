@@ -146,7 +146,7 @@ namespace backend
     for( Index i=0; i<=nrows_; i++ )
       h_csrRowPtr[i] = 0;
     // Go through all elements to see how many fall in each row
-    for( Index i=0; i<nvals; i++ )
+    for( Index i=0; i<nvals_; i++ )
       h_csrRowPtr[ row_indices[i] ]++;
     // Cumulative sum to obtain rowPtr
     for( Index i=0; i<nrows_; i++ ) {
@@ -157,7 +157,7 @@ namespace backend
     h_csrRowPtr[nrows_] = nvals;
 
     // Store colInd and val
-    for( Index i=0; i<nvals; i++ ) {
+    for( Index i=0; i<nvals_; i++ ) {
       row = row_indices[i];
       dest= h_csrRowPtr[row];
       h_csrColInd[dest] = col_indices[i];
