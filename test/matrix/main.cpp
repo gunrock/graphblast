@@ -104,8 +104,12 @@ BOOST_FIXTURE_TEST_CASE( matrix3, TestMatrix )
 			values.size() << std::endl;
   a.build( row_indices, col_indices, values, nvals );
 
-  for( graphblas::Index i=0; i<nvals; i++ )
-    BOOST_ASSERT( a.matrix.h_csrRowPtr[i]<a.matrix.h_csrRowPtr[i+1] );
+  for( graphblas::Index i=0; i<nrows; i++ ) {
+	  if( a.matrix.h_csrRowPtr[i]>a.matrix.h_csrRowPtr[i+1] )
+			std::cout << i << " " << a.matrix.h_csrRowPtr[i] << " " << 
+					a.matrix.h_csrRowPtr[i+1] << std::endl;
+		BOOST_ASSERT( a.matrix.h_csrRowPtr[i]<=a.matrix.h_csrRowPtr[i+1] );
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
