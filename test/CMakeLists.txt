@@ -26,7 +26,7 @@ set( PROJ_INCLUDES  "../" )
 FILE( GLOB_RECURSE PROJ_HEADERS ../graphblas/*.hpp )
 
 # nvcc flags
-set(CUDA_NVCC_FLAGS  ${CUDA_NVCC_FLAGS};-arch=sm_35;-lineinfo;-dlcm=ca)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-dlcm=ca)
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_21)
 
 # needed for cudamalloc

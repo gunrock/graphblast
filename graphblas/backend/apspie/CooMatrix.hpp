@@ -80,7 +80,7 @@ namespace backend
       h_csrRowPtr = (Index*)malloc((nrows+1)*sizeof(Index));
 
       // Device alloc
-      CUDA_SAFE_CALL(cudaMalloc(&d_csrRowPtr, (nrows+1)*sizeof(Index)));
+      CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrRowPtr, (nrows+1)*sizeof(Index)));
 
       // RowInd and Val will be allocated in build rather than here
       // since nvals may be unknown
@@ -99,7 +99,7 @@ namespace backend
 		  h_denseVal = (T*)malloc(nrows_*ncols_*sizeof(T));
 
       // Device alloc
-      CUDA_SAFE_CALL(cudaMalloc(&d_denseVal, nrows_*ncols_*sizeof(T)));
+      CUDA_SAFE_CALL(cudaMalloc((void**)&d_denseVal, nrows_*ncols_*sizeof(T)));
 
       // Ignore sparse matrices
       h_csrRowPtr = NULL;
@@ -131,8 +131,8 @@ namespace backend
     h_csrVal    = (T*)    malloc(nvals*sizeof(T));
 
     // Device malloc
-    CUDA_SAFE_CALL(cudaMalloc(&d_csrColInd, nvals*sizeof(Index)));
-    CUDA_SAFE_CALL(cudaMalloc(&d_csrVal,    nvals*sizeof(T))); 
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrColInd, nvals*sizeof(Index)));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrVal,    nvals*sizeof(T))); 
 
     // Convert to CSR/CSC
     Index temp, row, dest, cumsum=0;
