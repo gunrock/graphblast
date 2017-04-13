@@ -93,7 +93,7 @@ namespace backend
         case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
             std::cout << "Error: Matrix type not supported.\n";
     }
-    CUDA_SAFE_CALL(cudaDeviceSynchronize());
+    //CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
 		C.need_update = true;  // Set flag that we need to copy data from GPU
 		return GrB_SUCCESS;
