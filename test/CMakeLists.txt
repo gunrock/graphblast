@@ -19,7 +19,7 @@ set( PROJ_INCLUDES  "../" )
 
 #set( CUDA_CURAND_LIBRARY "$ENV{CUDA_HOME}/lib64/libcurand.so" )
 #set( CUDA_CUBLAS_LIBRARY "$ENV{CUDA_HOME}/lib64/libcublas.so" )
-#set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
+set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
 
 #FILE( GLOB_RECURSE PROJ_SOURCES ../graphblas/*.cpp )
 #FILE( GLOB_RECURSE PROJ_LIBRARIES ../../ext/cublas1.1/*.cu )
@@ -52,3 +52,5 @@ include_directories( ${PROJ_INCLUDES} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cpp" )#${mgpu_SRC_FILES}
 cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cpp" )#${mgpu_SRC_FILES}
+cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cpp" )#${mgpu_SRC_FILES}
+target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )

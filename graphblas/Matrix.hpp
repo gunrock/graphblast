@@ -41,31 +41,36 @@ namespace graphblas
 
 		Info build( const std::vector<T>& values );
 
+    Info print();
+
     Info nnew( const Index nrows, const Index ncols ); // possibly unnecessary in C++
     Info dup( Matrix& C );
     Info clear();
-    Info nrows( const Index nrows );
-    Info ncols( const Index ncols );
-    Info nvals( const Index nvals );
+    Info nrows( Index& nrows ) const;
+    Info ncols( Index& ncols ) const;
+    Info nvals( Index& nvals ) const;
 
     private:
     // Data members that are same for all backends
     backend::Matrix<T,S> matrix;
 
-		template <typename c, typename m, typename a, typename b>
-    friend Info mxm( Matrix<c>&        C,
-                     const Matrix<m>&  mask,
+		template <typename c, typename m, typename a, typename b,
+						 MatrixType c_spar, MatrixType m_spar,
+             MatrixType a_spar, MatrixType b_spar>
+    friend Info mxm( Matrix<c,c_spar>&        C,
+                     const Matrix<m,m_spar>&  mask,
                      const BinaryOp&   accum,
                      const Semiring&   op,
-                     const Matrix<a>&  A,
-                     const Matrix<b>&  B,
+                     const Matrix<a,a_spar>&  A,
+                     const Matrix<b,b_spar>&  B,
                      const Descriptor& desc );
 
-		template <typename c, typename a, typename b>
-    friend Info mxm( Matrix<c>&       C,
+		template <typename c, typename a, typename b,
+						 MatrixType c_spar, MatrixType a_spar, MatrixType b_spar>
+    friend Info mxm( Matrix<c,c_spar>&       C,
                      const Semiring&  op,
-                     const Matrix<a>& A,
-                     const Matrix<b>& B );
+                     const Matrix<a,a_spar>& A,
+                     const Matrix<b,b_spar>& B );
 	};
 
   template <typename T, MatrixType S>
@@ -94,6 +99,29 @@ namespace graphblas
 		return matrix.build( values );
 	}
 
+  template <typename T, MatrixType S>
+  Info Matrix<T,S>::print()
+  {
+    return matrix.print();
+  }
+
+	template <typename T, MatrixType S>
+  Info Matrix<T,S>::nrows( Index& nrows ) const
+	{
+    return matrix.nrows( nrows );
+	}
+
+	template <typename T, MatrixType S>
+  Info Matrix<T,S>::ncols( Index& ncols ) const
+	{
+    return matrix.ncols( ncols );
+	}
+
+	template <typename T, MatrixType S>
+  Info Matrix<T,S>::nvals( Index& nvals ) const
+	{
+    return matrix.nvals( nvals );
+	}
 }  // graphblas
 
 #endif  // GRB_MATRIX_HPP

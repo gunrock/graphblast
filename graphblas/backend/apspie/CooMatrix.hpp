@@ -38,6 +38,10 @@ namespace backend
 
     Info print();
 
+		Info nrows( Index& nrows ) const;
+		Info ncols( Index& ncols ) const;
+		Info nvals( Index& nvals ) const;
+
     private:
     Index nrows_;
     Index ncols_;
@@ -67,11 +71,12 @@ namespace backend
 
 		// Matrix format
 		MatrixType mat_type;
+    bool need_update;
   };
 
   template <typename T, MatrixType S>	
   CooMatrix<T,S>::CooMatrix( const Index nrows, const Index ncols )
-       : nrows_(nrows), ncols_(ncols) 
+       : nrows_(nrows), ncols_(ncols), need_update(false) 
   {
     if( S==Sparse ) {
 			mat_type = Sparse;
@@ -169,12 +174,12 @@ namespace backend
     }
 
     // Device memcpy
-    CUDA_SAFE_CALL(cudaMemcpy(d_csrVal,    h_csrVal,    nvals*sizeof(T),
+    CUDA_SAFE_CALL(cudaMemcpy(d_csrVal,    h_csrVal,    nvals_*sizeof(T),
         cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_csrColInd, h_csrColInd, nvals*sizeof(Index),
+    CUDA_SAFE_CALL(cudaMemcpy(d_csrColInd, h_csrColInd, nvals_*sizeof(Index),
         cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_csrRowPtr, h_csrRowPtr, (nrows_+1)*sizeof(Index),
-        cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_csrRowPtr, h_csrRowPtr, 
+				(nrows_+1)*sizeof(Index), cudaMemcpyHostToDevice));
 	}
 
 	template <typename T, MatrixType S>
@@ -191,11 +196,52 @@ namespace backend
   template <typename T, MatrixType S>
   Info CooMatrix<T,S>::print()
 	{
-    printArray( "csrColInd", h_csrColInd );
-		printArray( "csrRowPtr", h_csrRowPtr );
-		printArray( "csrVal",    h_csrVal );
+		if( mat_type==Sparse ) {
+
+      // Device memcpy
+			if( need_update ) {
+        CUDA_SAFE_CALL(cudaMemcpy(h_csrVal,    d_csrVal,    
+						nvals_*sizeof(T), cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(cudaMemcpy(h_csrColInd, d_csrColInd, 
+						nvals_*sizeof(Index), cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(cudaMemcpy(h_csrRowPtr, d_csrRowPtr, 
+				    (nrows_+1)*sizeof(Index), cudaMemcpyDeviceToHost));
+			}
+
+      printArray( "csrColInd", h_csrColInd );
+		  printArray( "csrRowPtr", h_csrRowPtr );
+		  printArray( "csrVal",    h_csrVal );
+		} else {
+			if( need_update ) {
+				CUDA_SAFE_CALL(cudaMemcpy(h_denseVal, d_denseVal, 
+				  	nrows_*ncols_*sizeof(T), cudaMemcpyDeviceToHost));
+			}
+
+      printArray( "denseVal", h_denseVal );
+	  }
+		return GrB_SUCCESS;
 	}
 
+	template <typename T, MatrixType S>
+	Info CooMatrix<T,S>::nrows( Index& nrows ) const
+	{
+		nrows = nrows_;
+		return GrB_SUCCESS;
+	}
+
+	template <typename T, MatrixType S>
+	Info CooMatrix<T,S>::ncols( Index& ncols ) const
+	{
+		ncols = ncols_;
+		return GrB_SUCCESS;
+	}
+
+	template <typename T, MatrixType S>
+	Info CooMatrix<T,S>::nvals( Index& nvals ) const
+	{
+		nvals = nvals_;
+		return GrB_SUCCESS;
+	}
 } // backend
 } // graphblas
 

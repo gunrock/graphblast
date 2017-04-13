@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <tuple>
 #include <algorithm>
+#include <sys/resource.h>
+#include <sys/time.h>
 
 #include <graphblas/types.hpp>
 
@@ -307,3 +309,57 @@ void printArray( const char* str, std::vector<T>& array, int length=40 )
     std::cout << "[" << i << "]:" << array[i] << " ";
 	std::cout << "\n";
 }
+
+struct CpuTimer {
+
+#if defined(CLOCK_PROCESS_CPUTIME_ID)
+
+    double start;
+    double stop;
+
+    void Start()
+    {
+        static struct timeval tv;
+        static struct timezone tz;
+      gettimeofday(&tv, &tz);
+        start = tv.tv_sec + 1.e-6*tv.tv_usec;
+    }
+
+    void Stop()
+    {
+        static struct timeval tv;
+        static struct timezone tz;
+        gettimeofday(&tv, &tz);
+        stop = tv.tv_sec + 1.e-6*tv.tv_usec;
+    }
+
+    double ElapsedMillis()
+    {
+        return 1000*(stop - start);
+    }
+
+#else
+
+    rusage start;
+    rusage stop;
+
+    void Start()
+    {
+        getrusage(RUSAGE_SELF, &start);
+    }
+
+    void Stop()
+    {
+        getrusage(RUSAGE_SELF, &stop);
+    }
+
+    float ElapsedMillis()
+    {
+        float sec = stop.ru_utime.tv_sec - start.ru_utime.tv_sec;
+        float usec = stop.ru_utime.tv_usec - start.ru_utime.tv_usec;
+
+        return (sec * 1000) + (usec /1000);
+    }
+
+#endif
+};
