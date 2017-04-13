@@ -54,3 +54,4 @@ cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cpp" )#${mgpu_SRC_FILES}
 cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cpp" )#${mgpu_SRC_FILES}
 cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cpp" )#${mgpu_SRC_FILES}
 target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )
+
