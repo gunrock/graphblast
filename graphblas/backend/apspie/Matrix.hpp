@@ -10,7 +10,7 @@ namespace graphblas
 {
 namespace backend
 {
-  template <typename T, typename S>
+  template <typename T, MatrixType S=Sparse>
   class Matrix : public CooMatrix<T,S>
   {
     public:
@@ -31,25 +31,25 @@ namespace backend
                 const Index nvals,
                 const Matrix& mask,
                 const BinaryOp& dup )
-        {
-            CooMatrix<T,S>::build( row_indices, col_indices, values, nvals, mask, dup );
-        }
+    {
+      CooMatrix<T,S>::build( row_indices, col_indices, values, nvals, mask, dup );
+    }
 
     Info build( const std::vector<Index>& row_indices,
                 const std::vector<Index>& col_indices,
                 const std::vector<T>&     values,
                 const Index nvals )
-        {
-						// Need this-> to refer to base class data members
-						//std::cout << this->nrows_ << " " << this->ncols_ << std::endl;
-            CooMatrix<T,S>::build( row_indices, col_indices, values, nvals );
-        }
+    {
+			// Need this-> to refer to base class data members
+			//std::cout << this->nrows_ << " " << this->ncols_ << std::endl;
+      CooMatrix<T,S>::build( row_indices, col_indices, values, nvals );
+    }
 
 
     Info build( const std::vector<T>& values )
-        {
-            CooMatrix<T,S>::build( values );
-        }
+    {
+      CooMatrix<T,S>::build( values );
+    }
 
     Info nnew( const Index nrows, const Index ncols ) {} // possibly unnecessary in C++
     Info dup( Matrix& C ) {}

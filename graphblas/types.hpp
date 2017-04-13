@@ -12,12 +12,13 @@ namespace graphblas
 
   class Descriptor{};
   class BinaryOp{};
+  class Semiring{};
 
-  static const uint8_t GrB_SUCCESS       = 0;
+  static const uint8_t GrB_SUCCESS             = 0;
   static const uint8_t GrB_INDEX_OUT_OF_BOUNDS = 1;
+  static const uint8_t GrB_DIMENSION_MISMATCH  = 2;
 
-  typedef int Sparse;
-	typedef float Dense;
+  enum MatrixType {Sparse,Dense};
 }
 
 #endif  // GRB_TYPES_HPP

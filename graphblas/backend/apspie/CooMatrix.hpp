@@ -14,7 +14,7 @@ namespace graphblas
 {
 namespace backend
 {
-  template <typename T, typename S>
+  template <typename T, MatrixType S>
   class CooMatrix
   {
     public:
@@ -64,13 +64,18 @@ namespace backend
 		// Dense format
 		T* h_denseVal;
 		T* d_denseVal;
+
+		// Matrix format
+		MatrixType mat_type;
   };
 
-  template <typename T, typename S>	
+  template <typename T, MatrixType S>	
   CooMatrix<T,S>::CooMatrix( const Index nrows, const Index ncols )
        : nrows_(nrows), ncols_(ncols) 
   {
-    if( typeid(S)==typeid(Sparse) ) {
+    if( S==Sparse ) {
+			mat_type = Sparse;
+
 	    // Host alloc
       h_csrRowPtr = (Index*)malloc((nrows+1)*sizeof(Index));
 
@@ -88,6 +93,8 @@ namespace backend
 		  h_denseVal = NULL;
 		  d_denseVal = NULL;
 		} else {
+      mat_type = Dense;
+
       // Host alloc
 		  h_denseVal = (T*)malloc(nrows_*ncols_*sizeof(T));
 
@@ -103,7 +110,7 @@ namespace backend
       d_csrVal = NULL;
   }}
 
-  template <typename T, typename S>
+  template <typename T, MatrixType S>
   Info CooMatrix<T,S>::build( const std::vector<Index>& row_indices,
                             const std::vector<Index>& col_indices,
                             const std::vector<T>& values,
@@ -111,7 +118,7 @@ namespace backend
                             const CooMatrix& mask,
                             const BinaryOp& dup) {}
 
-  template <typename T, typename S>
+  template <typename T, MatrixType S>
   Info CooMatrix<T,S>::build( const std::vector<Index>& row_indices,
                             const std::vector<Index>& col_indices,
                             const std::vector<T>& values,
@@ -170,17 +177,18 @@ namespace backend
         cudaMemcpyHostToDevice));
 	}
 
-	template <typename T, typename S>
+	template <typename T, MatrixType S>
   Info CooMatrix<T,S>::build( const std::vector<T>& values )
 	{
-    // Host alloc
-		h_denseVal = (T*)malloc(nrows_*ncols_*sizeof(T));
+		for( graphblas::Index i=0; i<nrows_*ncols_; i++ )
+				h_denseVal[i] = values[i];
 
-    // Device alloc
-    CUDA_SAFE_CALL(cudaMalloc(&d_denseVal, nrows_*ncols_*sizeof(T)));
+    // Device memcpy
+    CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nrows_*ncols_*sizeof(T),
+				cudaMemcpyHostToDevice));
 	}
 
-  template <typename T, typename S>
+  template <typename T, MatrixType S>
   Info CooMatrix<T,S>::print()
 	{
     printArray( "csrColInd", h_csrColInd );

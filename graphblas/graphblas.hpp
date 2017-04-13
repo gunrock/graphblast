@@ -3,6 +3,7 @@
 
 #include <graphblas/backend.hpp>
 #include <graphblas/Matrix.hpp>
+#include <graphblas/mxm.hpp>
 //#include <graphblas/types.hpp>
 
 #define __GRB_BACKEND_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/__GRB_BACKEND_ROOT.hpp>
