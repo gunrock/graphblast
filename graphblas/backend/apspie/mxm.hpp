@@ -55,6 +55,8 @@ namespace backend
     // Computation
 		cusparseHandle_t cusparse_handle;
 		cusparseCreate( &cusparse_handle );
+		cusparseSetPointerMode( cusparse_handle, CUSPARSE_POINTER_MODE_HOST );
+
 		cusparseMatDescr_t cusparse_descr;
 		cusparseCreateMatDescr( &cusparse_descr );
 		cusparseStatus_t cusparse_status;

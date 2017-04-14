@@ -1,3 +1,6 @@
+#ifndef GRB_UTIL_HPP
+#define GRB_UTIL_HPP
+
 #include <vector>
 #include <iostream>
 #include <typeinfo>
@@ -189,16 +192,18 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
                     std::vector<T>& values, 
                     graphblas::Index& nvals,
                     bool remove_self_loops=true ) {
+  std::cout << nvals << std::endl;
 
   for( graphblas::Index i=0; i<nvals; i++ ) {
     if( col_indices[i] != row_indices[i] ) {
-      row_indices.push_back( row_indices[i] );
-      col_indices.push_back( col_indices[i] );
+      row_indices.push_back( col_indices[i] );
+      col_indices.push_back( row_indices[i] );
       values.push_back( values[i] );
     }
   }
 
   nvals = row_indices.size();
+  std::cout << nvals << std::endl;
 
   // Sort
   customSort<T>( row_indices, col_indices, values );
@@ -244,6 +249,7 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
   nvals = nvals-shift;
   row_indices.resize(nvals);
   col_indices.resize(nvals);
+  std::cout << nvals << std::endl;
   values.resize(nvals);
 }
 
@@ -254,7 +260,7 @@ int readMtx( const char *fname,
 	           std::vector<T>& values,
 			       graphblas::Index& nrows,
 			       graphblas::Index& ncols,
-			       graphblas::Index& nvals	)
+			       graphblas::Index& nvals )
 {
   int ret_code;
   MM_typecode matcode;
@@ -283,7 +289,9 @@ int readMtx( const char *fname,
     readTuples<T>( row_indices, col_indices, values, nvals, f );
 
   // If graph is symmetric, replicate it out in memory
-  if( mm_is_symmetric(matcode) )
+	if( mm_is_symmetric(matcode) )
+	// If user wants to treat MTX as a directed graph
+  //if( undirected )
     makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
   customSort<T>( row_indices, col_indices, values );
 
@@ -364,3 +372,5 @@ struct CpuTimer {
 
 #endif
 };
+
+#endif  // GRB_UTIL_HPP

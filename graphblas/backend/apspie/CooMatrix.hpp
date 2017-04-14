@@ -9,6 +9,7 @@
 #include <cuda_runtime_api.h>
 
 #include "graphblas/backend/apspie/apspie.hpp"
+#include "graphblas/backend/apspie/util.hpp"
 
 namespace graphblas
 {
@@ -105,6 +106,7 @@ namespace backend
 
       // Device alloc
       CUDA_SAFE_CALL(cudaMalloc((void**)&d_denseVal, nrows_*ncols_*sizeof(T)));
+      CUDA_SAFE_CALL(cudaMemset( d_denseVal, (T) 0, nrows_*ncols_*sizeof(T)));
 
       // Ignore sparse matrices
       h_csrRowPtr = NULL;
@@ -191,13 +193,15 @@ namespace backend
     // Device memcpy
     CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nrows_*ncols_*sizeof(T),
 				cudaMemcpyHostToDevice));
+		CUDA_SAFE_CALL(cudaDeviceSynchronize());
+
+		//printArrayDevice( "B matrix GPU", d_denseVal );
 	}
 
   template <typename T, MatrixType S>
   Info CooMatrix<T,S>::print()
 	{
 		if( mat_type==Sparse ) {
-
       // Device memcpy
 			if( need_update ) {
         CUDA_SAFE_CALL(cudaMemcpy(h_csrVal,    d_csrVal,    
@@ -207,7 +211,6 @@ namespace backend
         CUDA_SAFE_CALL(cudaMemcpy(h_csrRowPtr, d_csrRowPtr, 
 				    (nrows_+1)*sizeof(Index), cudaMemcpyDeviceToHost));
 			}
-
       printArray( "csrColInd", h_csrColInd );
 		  printArray( "csrRowPtr", h_csrRowPtr );
 		  printArray( "csrVal",    h_csrVal );

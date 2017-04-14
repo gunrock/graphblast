@@ -54,10 +54,12 @@ BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
 
 	// Assume 8GB GPU RAM, 4B per float
 	graphblas::Index MEM_SIZE = 10000000;//1000000000; 
-	graphblas::Index max_ncols = std::min( MEM_SIZE/nrows, ncols );
+	graphblas::Index max_ncols = std::min( 10, ncols );
+	//graphblas::Index max_cols = std::min( MEM_SIZE/nrows, ncols );
 	std::cout << "Restrict ncols to: " << max_ncols << std::endl;
 	std::vector<float> dense(nrows*max_ncols, 1.0);
-	printArray( "random", dense );
+  std::cout << "Size: " << dense.size() << std::endl;
+	printArray( "B matrix", dense );
   graphblas::Matrix<float, graphblas::Dense> b( nrows, max_ncols );
   b.build( dense );
 
