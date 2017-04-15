@@ -12,7 +12,7 @@
 
 namespace graphblas
 {
-  template <typename T, MatrixType S=Sparse>
+  template <typename T>
   class Matrix
   {
     public:
@@ -27,6 +27,8 @@ namespace graphblas
     ~Matrix() {};
 
     // C API Methods
+		//
+		// TODO: mask version
     Info build( const std::vector<Index>& row_indices,
                 const std::vector<Index>& col_indices,
                 const std::vector<T>& values,
@@ -52,29 +54,26 @@ namespace graphblas
 
     private:
     // Data members that are same for all backends
-    backend::Matrix<T,S> matrix;
+    backend::Matrix<T> matrix;
 
-		template <typename c, typename m, typename a, typename b,
-						 MatrixType c_spar, MatrixType m_spar,
-             MatrixType a_spar, MatrixType b_spar>
-    friend Info mxm( Matrix<c,c_spar>&        C,
-                     const Matrix<m,m_spar>&  mask,
+		template <typename c, typename m, typename a, typename b>
+    friend Info mxm( Matrix<c>&        C,
+                     const Matrix<m>&  mask,
                      const BinaryOp&   accum,
                      const Semiring&   op,
-                     const Matrix<a,a_spar>&  A,
-                     const Matrix<b,b_spar>&  B,
+                     const Matrix<a>&  A,
+                     const Matrix<b>&  B,
                      const Descriptor& desc );
 
-		template <typename c, typename a, typename b,
-						 MatrixType c_spar, MatrixType a_spar, MatrixType b_spar>
-    friend Info mxm( Matrix<c,c_spar>&       C,
+		template <typename c, typename a, typename b>
+    friend Info mxm( Matrix<c>&       C,
                      const Semiring&  op,
-                     const Matrix<a,a_spar>& A,
-                     const Matrix<b,b_spar>& B );
+                     const Matrix<a>& A,
+                     const Matrix<b>& B );
 	};
 
-  template <typename T, MatrixType S>
-  Info Matrix<T,S>::build( const std::vector<Index>& row_indices,
+  template <typename T>
+  Info Matrix<T>::build( const std::vector<Index>& row_indices,
                          const std::vector<Index>& col_indices,
                          const std::vector<T>& values,
                          const Index nvals,
@@ -84,8 +83,8 @@ namespace graphblas
 	  return matrix.build( row_indices, col_indices, values, nvals, mask, dup );
   }
 
-  template <typename T, MatrixType S>
-  Info Matrix<T,S>::build( const std::vector<Index>& row_indices,
+  template <typename T>
+  Info Matrix<T>::build( const std::vector<Index>& row_indices,
                          const std::vector<Index>& col_indices,
                          const std::vector<T>& values,
                          const Index nvals )
@@ -93,32 +92,32 @@ namespace graphblas
 	  return matrix.build( row_indices, col_indices, values, nvals );
   }
 
-	template <typename T, MatrixType S>
-	Info Matrix<T,S>::build( const std::vector<T>& values )
+	template <typename T>
+	Info Matrix<T>::build( const std::vector<T>& values )
 	{
 		return matrix.build( values );
 	}
 
-  template <typename T, MatrixType S>
-  Info Matrix<T,S>::print()
+  template <typename T>
+  Info Matrix<T>::print()
   {
     return matrix.print();
   }
 
-	template <typename T, MatrixType S>
-  Info Matrix<T,S>::nrows( Index& nrows ) const
+	template <typename T>
+  Info Matrix<T>::nrows( Index& nrows ) const
 	{
     return matrix.nrows( nrows );
 	}
 
-	template <typename T, MatrixType S>
-  Info Matrix<T,S>::ncols( Index& ncols ) const
+	template <typename T>
+  Info Matrix<T>::ncols( Index& ncols ) const
 	{
     return matrix.ncols( ncols );
 	}
 
-	template <typename T, MatrixType S>
-  Info Matrix<T,S>::nvals( Index& nvals ) const
+	template <typename T>
+  Info Matrix<T>::nvals( Index& nvals ) const
 	{
     return matrix.nvals( nvals );
 	}

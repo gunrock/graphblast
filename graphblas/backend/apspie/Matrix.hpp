@@ -10,15 +10,15 @@ namespace graphblas
 {
 namespace backend
 {
-  template <typename T, MatrixType S=Sparse>
-  class Matrix : public CooMatrix<T,S>
+  template <typename T>
+  class Matrix : public CooMatrix<T>
   {
     public:
     // Default Constructor, Standard Constructor and Assignment Constructor
     Matrix()
-                : CooMatrix<T,S>() {}
+                : CooMatrix<T>() {}
     Matrix( const Index nrows, const Index ncols )
-                : CooMatrix<T,S>( nrows, ncols ) {}
+                : CooMatrix<T>( nrows, ncols ) {}
     void operator=( Matrix& rhs ) {}
 
     // Destructor
@@ -32,7 +32,7 @@ namespace backend
                 const Matrix& mask,
                 const BinaryOp& dup )
     {
-      CooMatrix<T,S>::build( row_indices, col_indices, values, nvals, 
+      CooMatrix<T>::build( row_indices, col_indices, values, nvals, 
 					mask, dup );
     }
 
@@ -43,17 +43,17 @@ namespace backend
     {
 			// Need this-> to refer to base class data members
 			//std::cout << this->nrows_ << " " << this->ncols_ << std::endl;
-      CooMatrix<T,S>::build( row_indices, col_indices, values, nvals );
+      CooMatrix<T>::build( row_indices, col_indices, values, nvals );
     }
 
     Info build( const std::vector<T>& values )
     {
-      CooMatrix<T,S>::build( values );
+      CooMatrix<T>::build( values );
     }
 
 		Info print()
 		{
-			CooMatrix<T,S>::print();
+			CooMatrix<T>::print();
 		}
 
     Info nnew( const Index nrows, const Index ncols ) {} // possibly unnecessary in C++
@@ -61,15 +61,15 @@ namespace backend
     Info clear() {}
     Info nrows( Index& nrows ) const 
 		{
-		  CooMatrix<T,S>::nrows( nrows );
+		  CooMatrix<T>::nrows( nrows );
 		}
     Info ncols( Index& ncols ) const
 		{
-			CooMatrix<T,S>::nrows( ncols );
+			CooMatrix<T>::nrows( ncols );
 		}
     Info nvals( Index& nvals ) const 
 		{
-			CooMatrix<T,S>::nvals( nvals );
+			CooMatrix<T>::nvals( nvals );
 		}
 
     private:
@@ -77,6 +77,12 @@ namespace backend
     //Index nrows_;
     //Index ncols_;
     //Index nvals_;
+
+		SparseMatrix<T> sparse;
+		DenseMatrix<T>  dense;
+
+		// Whether matrix is Sparse or Dense
+		Storage mat_type; 
   };
 
 } // backend

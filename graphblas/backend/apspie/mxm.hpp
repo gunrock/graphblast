@@ -9,23 +9,20 @@ namespace graphblas
 {
 namespace backend
 {
-	template <typename c, typename m, typename a, typename b,
-					 MatrixType c_spar, MatrixType m_spar,
-           MatrixType a_spar, MatrixType b_spar>
-  Info mxm( Matrix<c,c_spar>&       C,
-					  const Matrix<m,m_spar>& mask,
-						const BinaryOp&         accum,
-						const Semiring&         op,
-						const Matrix<a,a_spar>& A,
-						const Matrix<b,b_spar>& B,
-						const Descriptor&       desc ); 
+	template <typename c, typename m, typename a, typename b>
+  Info mxm( Matrix<c>&        C,
+					  const Matrix<m>&  mask,
+						const BinaryOp&   accum,
+						const Semiring&   op,
+						const Matrix<a>&  A,
+						const Matrix<b>&  B,
+						const Descriptor& desc ); 
 
-  template <typename c, typename a, typename b,
-           MatrixType c_spar, MatrixType a_spar, MatrixType b_spar>
-  Info mxm( Matrix<c,c_spar>&       C,
-	  			  const Semiring&         op,
-		  			const Matrix<a,a_spar>& A,
-			  		const Matrix<b,b_spar>& B )
+  template <typename c, typename a, typename b>
+  Info mxm( Matrix<c>&       C,
+	  			  const Semiring&  op,
+		  			const Matrix<a>& A,
+			  		const Matrix<b>& B )
   {
     Index A_nrows, A_ncols, A_nvals;
 		Index B_nrows, B_ncols;
@@ -53,24 +50,26 @@ namespace backend
     // TODO: add domain compatibility check
 
     // Computation
-		cusparseHandle_t cusparse_handle;
-		cusparseCreate( &cusparse_handle );
-		cusparseSetPointerMode( cusparse_handle, CUSPARSE_POINTER_MODE_HOST );
+		cusparseHandle_t handle;
+		cusparseCreate( &handle );
+		cusparseSetPointerMode( handle, CUSPARSE_POINTER_MODE_HOST );
 
-		cusparseMatDescr_t cusparse_descr;
-		cusparseCreateMatDescr( &cusparse_descr );
-		cusparseStatus_t cusparse_status;
+		cusparseMatDescr_t descr;
+		cusparseCreateMatDescr( &descr );
+
+		cusparseSetMatType( descr, CUSPARSE_MATRIX_TYPE_GENERAL );
+	  cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
+		cusparseStatus_t status;
 		float alpha = 1.0;
 		float beta  = 0.0;
-		cusparse_status = cusparseScsrmm( cusparse_handle,
+		status = cusparseScsrmm( handle,
 			  CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
-        &alpha, cusparse_descr, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-				B.d_denseVal,
+        &alpha, descr, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, B.d_denseVal,
 				A_ncols,      // ldb = max(1,k) since op(A) = A
 				&beta, C.d_denseVal,
 			  A_nrows );    // ldc = max(1,m) since op(A) = A
 
-    switch( cusparse_status ) {
+    switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
             std::cout << "nnz count successful!\n";
             break;
