@@ -43,11 +43,14 @@ namespace graphblas
 
 		Info build( const std::vector<T>& values );
 
-    Info print();
-
+		// Mutators
     Info nnew( const Index nrows, const Index ncols ); // possibly unnecessary in C++
-    Info dup( Matrix& C );
+    Info storage( const Storage mat_type ); // used to set storage type {Sparse, Dense}
+    Info dup( const Matrix& C );
     Info clear();
+
+		// Accessors
+    Info print() const;
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
@@ -98,8 +101,16 @@ namespace graphblas
 		return matrix.build( values );
 	}
 
+	// Mutators
+	template <typename T>
+	Info Matrix<T>::storage( const Storage mat_type )
+	{
+    return matrix.storage( mat_type );
+	}
+
+	// Accessors
   template <typename T>
-  Info Matrix<T>::print()
+  Info Matrix<T>::print() const
   {
     return matrix.print();
   }

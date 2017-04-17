@@ -1,8 +1,13 @@
 #ifndef GRB_MXM_BACKEND_APSPIE_HPP
 #define GRB_MXM_BACKEND_APSPIE_HPP
 
+#include <iostream>
+
 #include <cusparse.h>
 
+#include <graphblas/backend/apspie/Matrix.hpp>
+#include <graphblas/backend/apspie/SparseMatrix.hpp>
+#include <graphblas/backend/apspie/DenseMatrix.hpp>
 #include <graphblas/types.hpp>
 
 namespace graphblas
@@ -24,29 +29,44 @@ namespace backend
 		  			const Matrix<a>& A,
 			  		const Matrix<b>& B )
   {
+		// Decision tree:
+		// a) Sp x Sp: SpGEMM (TODO)
+		// b) Sp x De:   SpMM (DONE) 
+		// c) De x Sp:   SpMM (TODO)
+		// c) De x De:   GEMM (TODO)
+		if( A.mat_type_ == Sparse && B.mat_type_ == Dense ) {
+			return spmm( C.dense, op, A.sparse, B.dense );
+  }}
+
+	template<typename c, typename a, typename b>
+  Info spmm( DenseMatrix<c>&        C,
+	  			   const Semiring&        op,
+		  			 const SparseMatrix<a>& A,
+			  		 const DenseMatrix<b>&  B )
+	{
     Index A_nrows, A_ncols, A_nvals;
-		Index B_nrows, B_ncols;
-		Index C_nrows, C_ncols;
+    Index B_nrows, B_ncols;
+    Index C_nrows, C_ncols;
 
-		A.nrows( A_nrows );
-		A.ncols( A_ncols );
-		A.nvals( A_nvals );
-		B.nrows( B_nrows );
-		B.ncols( B_ncols );
-		C.nrows( C_nrows );
-		C.ncols( C_ncols );
+    A.nrows( A_nrows );
+    A.ncols( A_ncols );
+    A.nvals( A_nvals );
+    B.nrows( B_nrows );
+    B.ncols( B_ncols );
+    C.nrows( C_nrows );
+    C.ncols( C_ncols );
 
-	  // Dimension compatibility check
+    // Dimension compatibility check
     if( (A_ncols != B_nrows) || (C_ncols != B_ncols) || (C_nrows != A_nrows ) )
-		{
-			std::cout << "Dim mismatch" << std::endl;
-			/*std::cout << A_ncols << " " << B_nrows << std::endl;
-			std::cout << C_ncols << " " << B_ncols << std::endl;
-			std::cout << C_nrows << " " << A_nrows << std::endl;*/
+    {
+      std::cout << "Dim mismatch" << std::endl;
+      std::cout << A_ncols << " " << B_nrows << std::endl;
+      std::cout << C_ncols << " " << B_ncols << std::endl;
+      std::cout << C_nrows << " " << A_nrows << std::endl;
       return GrB_DIMENSION_MISMATCH;
     }
 
-		// Domain compatibility check
+    // Domain compatibility check
     // TODO: add domain compatibility check
 
     // Computation
@@ -71,7 +91,7 @@ namespace backend
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
-            std::cout << "nnz count successful!\n";
+            std::cout << "SpMM successful!\n";
             break;
         case CUSPARSE_STATUS_NOT_INITIALIZED:
             std::cout << "Error: Library not initialized.\n";
@@ -94,7 +114,7 @@ namespace backend
         case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
             std::cout << "Error: Matrix type not supported.\n";
     }
-    //CUDA_SAFE_CALL(cudaDeviceSynchronize());
+    CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
 		C.need_update = true;  // Set flag that we need to copy data from GPU
 		return GrB_SUCCESS;

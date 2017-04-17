@@ -4,21 +4,20 @@
 #include <vector>
 //#include <iostream>
 
-#include <graphblas/backend/apspie/CooMatrix.hpp>
+#include <graphblas/backend/apspie/SparseMatrix.hpp>
+#include <graphblas/backend/apspie/DenseMatrix.hpp>
 
 namespace graphblas
 {
 namespace backend
 {
   template <typename T>
-  class Matrix : public CooMatrix<T>
+  class Matrix
   {
     public:
     // Default Constructor, Standard Constructor and Assignment Constructor
-    Matrix()
-                : CooMatrix<T>() {}
-    Matrix( const Index nrows, const Index ncols )
-                : CooMatrix<T>( nrows, ncols ) {}
+    Matrix() {}
+    Matrix( const Index nrows, const Index ncols ) : nrows_(nrows), ncols_(ncols) {}
     void operator=( Matrix& rhs ) {}
 
     // Destructor
@@ -32,8 +31,11 @@ namespace backend
                 const Matrix& mask,
                 const BinaryOp& dup )
     {
-      CooMatrix<T>::build( row_indices, col_indices, values, nvals, 
-					mask, dup );
+      mat_type_ = Sparse;
+
+			// Transfer nrows ncols to SparseMatrix data member
+			sparse.nnew( nrows_, ncols_ ); 
+      sparse.build( row_indices, col_indices, values, nvals, mask.sparse, dup );
     }
 
     Info build( const std::vector<Index>& row_indices,
@@ -41,48 +43,66 @@ namespace backend
                 const std::vector<T>&     values,
                 const Index nvals )
     {
-			// Need this-> to refer to base class data members
-			//std::cout << this->nrows_ << " " << this->ncols_ << std::endl;
-      CooMatrix<T>::build( row_indices, col_indices, values, nvals );
+      mat_type_ = Sparse;
+
+			// Transfer nrows ncols to SparseMatrix data member
+			sparse.nnew( nrows_, ncols_ );
+      sparse.build( row_indices, col_indices, values, nvals );
     }
 
     Info build( const std::vector<T>& values )
     {
-      CooMatrix<T>::build( values );
+			mat_type_ = Dense;
+
+			// Transfer nrows ncols to DenseMatrix data member
+			dense.nnew( nrows_, ncols_ );
+      dense.build( values );
     }
 
-		Info print()
-		{
-			CooMatrix<T>::print();
-		}
-
+		// Mutators
     Info nnew( const Index nrows, const Index ncols ) {} // possibly unnecessary in C++
-    Info dup( Matrix& C ) {}
+		Info storage( const Storage mat_type )
+		{
+      mat_type_ = mat_type;
+
+	  	// Transfer nrows ncols to Sparse/DenseMatrix data member
+		  if( mat_type_ == Sparse ) sparse.nnew( nrows_, ncols_ );
+			else dense.nnew( nrows_, ncols_ );
+		}
+    Info dup( const Matrix& C ) {}
     Info clear() {}
+
+		// Accessors
+		Info print() const
+		{
+			if( mat_type_ == Sparse ) sparse.print();
+			else dense.print();
+		}
     Info nrows( Index& nrows ) const 
 		{
-		  CooMatrix<T>::nrows( nrows );
+		  if( mat_type_ == Sparse ) sparse.nrows( nrows );
+			else dense.nrows( nrows );
 		}
     Info ncols( Index& ncols ) const
 		{
-			CooMatrix<T>::nrows( ncols );
+			if( mat_type_ == Sparse ) sparse.ncols( ncols );
+			else dense.nrows( nrows );
 		}
     Info nvals( Index& nvals ) const 
 		{
-			CooMatrix<T>::nvals( nvals );
+			if( mat_type_ == Sparse ) sparse.nvals( nvals );
+			else dense.nvals( nvals );
 		}
 
     private:
-    // Data members that are same for all matrix formats
-    //Index nrows_;
-    //Index ncols_;
-    //Index nvals_;
+    Index nrows_;
+    Index ncols_;
 
 		SparseMatrix<T> sparse;
 		DenseMatrix<T>  dense;
 
-		// Whether matrix is Sparse or Dense
-		Storage mat_type; 
+		// Keeps track of whether matrix is Sparse or Dense
+		Storage mat_type_; 
   };
 
 } // backend
