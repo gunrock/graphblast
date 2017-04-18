@@ -42,8 +42,8 @@ BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
   } else { 
 	  readMtx( argv[1], row_indices, col_indices, values, nrows, ncols, nvals );
   }
-  printArray( "row_indices", row_indices );
-  printArray( "col_indices", col_indices );
+  //printArray( "row_indices", row_indices );
+  //printArray( "col_indices", col_indices );
 
 	graphblas::Matrix<float> a( nrows,ncols );
 	std::cout << nrows << " " << ncols << " " << nvals << std::endl;
@@ -59,9 +59,10 @@ BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
 	std::cout << "Restrict ncols to: " << max_ncols << std::endl;
 	std::vector<float> dense(nrows*max_ncols, 1.0);
   std::cout << "Size: " << dense.size() << std::endl;
-	printArray( "B matrix", dense );
+	//printArray( "B matrix", dense );
   graphblas::Matrix<float> b( nrows, max_ncols );
   b.build( dense );
+	b.print();
 
 	graphblas::Matrix<float> c( nrows, max_ncols );
 	// This statement is required if mxm() is used to build matrix rather than build()

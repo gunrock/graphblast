@@ -20,18 +20,32 @@ namespace backend
   class DenseMatrix
   {
     public:
-    DenseMatrix() : nrows_(0), ncols_(0) {}
+    DenseMatrix() 
+        : nrows_(0), ncols_(0), nvals_(0), h_denseVal(NULL), d_denseVal(NULL){}
     DenseMatrix( const Index nrows, const Index ncols ) 
-				: nrows_(nrows), ncols_(ncols) {}
+				: nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), 
+        h_denseVal(NULL), d_denseVal(NULL) {}
+
+    // Assignment Constructor
+		// // TODO: Replaces dup in C++
+		void operator=( const DenseMatrix& rhs ) {}
+
+    // Destructor
+		// TODO
+		~DenseMatrix() {};
 
 	  // C API Methods
     Info build( const std::vector<T>& values );
     
-    Info print() const; // Const, because host memory unmodified
+		// Mutators
+		// private method for setting nrows and ncols
+    Info nnew( const Index nrows, const Index ncols );
+		// private method for allocation
+	  Info allocate();	
+    Info clear();
 
-    Info nnew( const Index nrows, const Index ncols ); // possibly unnecessary in C++
-    Info dup( const DenseMatrix& C ) {}
-    Info clear() {}
+		// Accessors
+    Info print() const; // Const, because host memory unmodified
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
@@ -55,24 +69,46 @@ namespace backend
     nvals_ = nrows_*ncols_;
     need_update = false;
 
-	  // Host alloc
-		h_denseVal = (T*)malloc(nrows_*ncols_*sizeof(T));
-
-    // Device alloc
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_denseVal, nrows_*ncols_*sizeof(T)));
-    CUDA_SAFE_CALL(cudaMemset( d_denseVal, (T) 0, nrows_*ncols_*sizeof(T)));
+    allocate();
 
 		// Host copy
-		for( graphblas::Index i=0; i<nrows_*ncols_; i++ )
+		for( graphblas::Index i=0; i<nvals_; i++ )
 				h_denseVal[i] = values[i];
 
     // Device memcpy
-    CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nrows_*ncols_*sizeof(T),
+    CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T),
 				cudaMemcpyHostToDevice));
 		//CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
 		//printArrayDevice( "B matrix GPU", d_denseVal );
 		return GrB_SUCCESS;
+	}
+
+	template <typename T>
+	Info DenseMatrix<T>::nnew( const Index nrows, const Index ncols )
+	{
+		nrows_ = nrows;
+		ncols_ = ncols;
+		return GrB_SUCCESS;
+	}
+
+  template <typename T>
+	Info DenseMatrix<T>::allocate()
+	{
+    // Host alloc
+    h_denseVal = (T*)malloc(nvals_*sizeof(T));
+
+    // Device alloc
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_denseVal, nvals_*sizeof(T)));
+    //CUDA_SAFE_CALL(cudaMemset( d_denseVal, (T) 0, nvals_*sizeof(T)));
+	}
+
+  template <typename T>
+	Info DenseMatrix<T>::clear()
+	{
+    if( h_denseVal ) free( h_denseVal );
+    if( d_denseVal ) CUDA_SAFE_CALL(cudaFree( d_denseVal ));
+    return GrB_SUCCESS;
 	}
 
   template <typename T>
@@ -84,14 +120,6 @@ namespace backend
 		}
 
     printArray( "denseVal", h_denseVal );
-		return GrB_SUCCESS;
-	}
-
-	template <typename T>
-	Info DenseMatrix<T>::nnew( const Index nrows, const Index ncols )
-	{
-		nrows_ = nrows;
-		ncols_ = ncols;
 		return GrB_SUCCESS;
 	}
 

@@ -20,9 +20,15 @@ namespace backend
   class SparseMatrix
   {
     public:
-    SparseMatrix() : nrows_(0), ncols_(0) {}
+    SparseMatrix()
+			 	: nrows_(0), ncols_(0), nvals_(0), 
+				h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL),
+        d_csrColInd(NULL), d_csrRowPtr(NULL), d_csrVal(NULL) {}
+
     SparseMatrix( const Index nrows, const Index ncols )
-			  : nrows_(nrows), ncols_(ncols) {}
+			  : nrows_(nrows), ncols_(ncols), nvals_(0),
+				h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL),
+        d_csrColInd(NULL), d_csrRowPtr(NULL), d_csrVal(NULL) {}
 
 	  // C API Methods
 	  Info build( const std::vector<Index>& row_indices,
@@ -37,11 +43,19 @@ namespace backend
 				        const std::vector<T>& values,
 				        const Index nvals );
 
-    Info print() const; // Const, because host memory unmodified
+    Info extractTuples( std::vector<Index>& row_indices,
+                        std::vector<Index>& col_indices,
+                        std::vector<T>&     values ) const;
 
-    Info nnew( const Index nrows, const Index ncols ); // possibly unnecessary in C++
-    Info dup( const SparseMatrix& C ) {}
-    Info clear() {} 
+		// Mutators
+		// private method for setting nrows and ncols
+    Info nnew( const Index nrows, const Index ncols );
+	  // private method for allocation
+		Info allocate();	
+    Info clear();
+
+		// Accessors
+    Info print() const; // Const, because host memory unmodified
 		Info nrows( Index& nrows ) const;
 		Info ncols( Index& ncols ) const;
 		Info nvals( Index& nvals ) const;
@@ -90,15 +104,7 @@ namespace backend
     nvals_ = nvals;
 		need_update = false;
 
-    // Host malloc
-    h_csrRowPtr = (Index*)malloc((nrows_+1)*sizeof(Index));
-    h_csrColInd = (Index*)malloc(nvals_*sizeof(Index));
-    h_csrVal    = (T*)    malloc(nvals_*sizeof(T));
-
-    // Device malloc
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrRowPtr, (nrows_+1)*sizeof(Index)));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrColInd, nvals_*sizeof(Index)));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrVal,    nvals_*sizeof(T))); 
+    allocate();
 
     // Convert to CSR/CSC
     Index temp, row, dest, cumsum=0;
@@ -145,6 +151,42 @@ namespace backend
 		return GrB_SUCCESS;
 	}
 
+	template <typename T>
+	Info SparseMatrix<T>::nnew( const Index nrows, const Index ncols )
+	{
+		nrows_ = nrows;
+		ncols_ = ncols;
+		return GrB_SUCCESS;
+	}
+
+	template <typename T>
+	Info SparseMatrix<T>::allocate()
+	{
+    // Host malloc
+    h_csrRowPtr = (Index*)malloc((nrows_+1)*sizeof(Index));
+    h_csrColInd = (Index*)malloc(nvals_*sizeof(Index));
+    h_csrVal    = (T*)    malloc(nvals_*sizeof(T));
+
+    // Device malloc
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrRowPtr, (nrows_+1)*sizeof(Index)));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrColInd, nvals_*sizeof(Index)));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrVal,    nvals_*sizeof(T))); 
+    
+		return GrB_SUCCESS;
+	}
+
+  template <typename T>
+	Info SparseMatrix<T>::clear()
+	{
+    if( h_csrRowPtr ) free( h_csrRowPtr );
+    if( h_csrColInd ) free( h_csrColInd );
+    if( h_csrVal )    free( h_csrVal );
+    if( d_csrRowPtr ) CUDA_SAFE_CALL(cudaFree( d_csrRowPtr ));
+    if( d_csrColInd ) CUDA_SAFE_CALL(cudaFree( d_csrColInd ));
+    if( d_csrVal )    CUDA_SAFE_CALL(cudaFree( d_csrVal ));
+    return GrB_SUCCESS;
+	}
+
   template <typename T>
   Info SparseMatrix<T>::print() const
 	{
@@ -160,14 +202,6 @@ namespace backend
     printArray( "csrColInd", h_csrColInd );
 		printArray( "csrRowPtr", h_csrRowPtr );
 		printArray( "csrVal",    h_csrVal );
-		return GrB_SUCCESS;
-	}
-
-	template <typename T>
-	Info SparseMatrix<T>::nnew( const Index nrows, const Index ncols )
-	{
-		nrows_ = nrows;
-		ncols_ = ncols;
 		return GrB_SUCCESS;
 	}
 
