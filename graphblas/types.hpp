@@ -18,7 +18,7 @@ namespace graphblas
   static const uint8_t GrB_INDEX_OUT_OF_BOUNDS = 1;
   static const uint8_t GrB_DIMENSION_MISMATCH  = 2;
 
-  enum Storage {Sparse,Dense};
+  enum Storage {Unknown,Sparse,Dense};
 }
 
 #endif  // GRB_TYPES_HPP

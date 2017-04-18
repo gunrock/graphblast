@@ -65,7 +65,7 @@ BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
 
 	graphblas::Matrix<float> c( nrows, max_ncols );
 	// This statement is required if mxm() is used to build matrix rather than build()
-	c.storage( graphblas::Dense ); 
+	//c.storage( graphblas::Dense ); 
 	graphblas::Semiring op;
 
 	CpuTimer cpu_mxm;

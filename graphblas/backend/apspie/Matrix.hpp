@@ -16,8 +16,14 @@ namespace backend
   {
     public:
     // Default Constructor, Standard Constructor and Assignment Constructor
-    Matrix() {}
-    Matrix( const Index nrows, const Index ncols ) : nrows_(nrows), ncols_(ncols) {}
+    Matrix() : nrows_(0), ncols_(0), mat_type_(Unknown) {}
+    Matrix( const Index nrows, const Index ncols ) 
+				: nrows_(nrows), ncols_(ncols), mat_type_(Unknown)
+		{
+			// Transfer nrows ncols to Sparse/DenseMatrix data member
+		  sparse.nnew( nrows_, ncols_ );
+			dense.nnew( nrows_, ncols_ );
+		}
     void operator=( Matrix& rhs ) {}
 
     // Destructor
@@ -32,9 +38,6 @@ namespace backend
                 const BinaryOp& dup )
     {
       mat_type_ = Sparse;
-
-			// Transfer nrows ncols to SparseMatrix data member
-			sparse.nnew( nrows_, ncols_ ); 
       sparse.build( row_indices, col_indices, values, nvals, mask.sparse, dup );
     }
 
@@ -44,30 +47,20 @@ namespace backend
                 const Index nvals )
     {
       mat_type_ = Sparse;
-
-			// Transfer nrows ncols to SparseMatrix data member
-			sparse.nnew( nrows_, ncols_ );
       sparse.build( row_indices, col_indices, values, nvals );
     }
 
     Info build( const std::vector<T>& values )
     {
 			mat_type_ = Dense;
-
-			// Transfer nrows ncols to DenseMatrix data member
-			dense.nnew( nrows_, ncols_ );
       dense.build( values );
     }
 
 		// Mutators
     Info nnew( const Index nrows, const Index ncols ) {} // possibly unnecessary in C++
-		Info storage( const Storage mat_type )
+		Info set_storage( const Storage mat_type )
 		{
       mat_type_ = mat_type;
-
-	  	// Transfer nrows ncols to Sparse/DenseMatrix data member
-		  if( mat_type_ == Sparse ) sparse.nnew( nrows_, ncols_ );
-			else dense.nnew( nrows_, ncols_ );
 		}
     Info dup( const Matrix& C ) {}
     Info clear() {}
@@ -92,6 +85,10 @@ namespace backend
 		{
 			if( mat_type_ == Sparse ) sparse.nvals( nvals );
 			else dense.nvals( nvals );
+		}
+		Info get_storage( Storage& mat_type ) const
+		{
+      mat_type = mat_type_;
 		}
 
     private:

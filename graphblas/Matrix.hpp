@@ -45,7 +45,7 @@ namespace graphblas
 
 		// Mutators
     Info nnew( const Index nrows, const Index ncols ); // possibly unnecessary in C++
-    Info storage( const Storage mat_type ); // used to set storage type {Sparse, Dense}
+    Info set_storage( const Storage mat_type ); // used to set storage type {Sparse, Dense}
     Info dup( const Matrix& C );
     Info clear();
 
@@ -54,6 +54,7 @@ namespace graphblas
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
+		Info get_storage( Storage& mat_type ) const;
 
     private:
     // Data members that are same for all backends
@@ -103,9 +104,9 @@ namespace graphblas
 
 	// Mutators
 	template <typename T>
-	Info Matrix<T>::storage( const Storage mat_type )
+	Info Matrix<T>::set_storage( const Storage mat_type )
 	{
-    return matrix.storage( mat_type );
+    return matrix.set_storage( mat_type );
 	}
 
 	// Accessors
@@ -132,6 +133,12 @@ namespace graphblas
 	{
     return matrix.nvals( nvals );
 	}
+	template <typename T>
+	Info Matrix<T>::get_storage( Storage& mat_type ) const
+	{
+    return matrix.get_storage( mat_type );
+	}
+
 }  // graphblas
 
 #endif  // GRB_MATRIX_HPP

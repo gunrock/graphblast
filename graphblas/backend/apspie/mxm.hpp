@@ -29,12 +29,16 @@ namespace backend
 		  			const Matrix<a>& A,
 			  		const Matrix<b>& B )
   {
+		Storage A_storage, B_storage;
+		A.get_storage( A_storage );
+		B.get_storage( B_storage );
 		// Decision tree:
 		// a) Sp x Sp: SpGEMM (TODO)
 		// b) Sp x De:   SpMM (DONE) 
 		// c) De x Sp:   SpMM (TODO)
 		// c) De x De:   GEMM (TODO)
-		if( A.mat_type_ == Sparse && B.mat_type_ == Dense ) {
+		if( A_storage == Sparse && B_storage == Dense ) {
+			C.set_storage( Dense );
 			return spmm( C.dense, op, A.sparse, B.dense );
   }}
 
