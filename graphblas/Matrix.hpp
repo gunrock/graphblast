@@ -50,7 +50,7 @@ namespace graphblas
 		// Accessors
 		Info extractTuples( std::vector<Index>& row_indices,
 						            std::vector<Index>& col_indices,
-												std::vector<T>&     values ) const
+												std::vector<T>&     values ) const;
     Info print() const;
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;

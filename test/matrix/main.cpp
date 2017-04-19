@@ -43,100 +43,34 @@ BOOST_AUTO_TEST_CASE( matrix1 )
   a.print();
 }
 
-BOOST_FIXTURE_TEST_CASE( matrix2, TestMatrix )
+BOOST_AUTO_TEST_CASE( matrix2 )
 {
-  std::vector<graphblas::Index> row_indices;
-  std::vector<graphblas::Index> col_indices;
-  std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
+  std::vector<graphblas::Index> row_indices = {2, 3, 4, 1, 3, 5, 4, 5, 6, 6, 7, 3, 6, 7, 7, 9, 10, 11, 10, 11};
+	std::vector<graphblas::Index> col_indices = {1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6, 8, 8, 8, 9, 9};
+	std::vector<float> values (20, 1.0);
+	graphblas::Matrix<float> a(11, 11);
+  graphblas::Matrix<float> b(11, 11);
+	graphblas::Index nvals = 20;
+	a.build( row_indices, col_indices, values, 3 );
+	b.build( row_indices, col_indices, values, 3 );
+  graphblas::Matrix<float> c(11, 11);
+  graphblas::Semiring op;
+  graphblas::mxm<float, float, float>( c, op, a, b );
 
-	// Read in sparse matrix
-  if (argc < 2) {
-    fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
-    exit(1);
-  } else { 
-	  readMtx( argv[1], row_indices, col_indices, values, nrows, ncols, nvals );
-  }
+  /*std::vector<float> dense(nrows*max_ncols, 1.0);
+  std::cout << "Size: " << dense.size() << std::endl;
+  //printArray( "B matrix", dense );
 
-  printArray( "row_indices", row_indices );
-  printArray( "col_indices", col_indices );
+  CpuTimer cpu_mxm;
+  cpu_mxm.Start();
+  graphblas::mxm<float, float, float>( c, op, a, b );
+  cpu_mxm.Stop();
 
-	graphblas::Matrix<float> a( nrows,ncols );
-	std::cout << nrows << " " << ncols << " " << nvals << std::endl;
-	std::cout << row_indices.size() << " " << col_indices.size() << " " << 
-			values.size() << std::endl;
-  a.build( row_indices, col_indices, values, nvals );
-  a.print();
-
-  // Assume 8GB GPU RAM, 4B per float
-  graphblas::Index MEM_SIZE = 10000000;//1000000000; 
-  graphblas::Index max_ncols = std::min( 4, ncols );//MEM_SIZE/nrows, ncols );
-  std::cout << "Restrict ncols to: " << max_ncols << std::endl;
-  std::vector<float> dense(nrows*max_ncols, 1.0);
-  printArray( "random", dense );
-  graphblas::Matrix<float> b( nrows, max_ncols );
-
-	int rhs[7] = {6, 7, 10, 11, 12, 21, 22};
-	//BOOST_ASSERT_LIST( a.matrix.h_csrColInd, rhs, 7 );
+  c.print();
+  float elapsed_mxm = cpu_mxm.ElapsedMillis();
+  std::cout << "mxm: " << elapsed_mxm << " ms" << std::endl;
+  //int rhs[7] = {0, 0, 0, 0, 0, 0, 1};
+  //BOOST_ASSERT_LIST( a.matrix.h_csrRowPtr, rhs, 7 );*/
 }
 
-BOOST_FIXTURE_TEST_CASE( matrix3, TestMatrix )
-{
-  std::vector<graphblas::Index> row_indices;
-  std::vector<graphblas::Index> col_indices;
-  std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-
-	// Read in sparse matrix
-  if (argc < 2) {
-    fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
-    exit(1);
-  } else { 
-	  readMtx( argv[1], row_indices, col_indices, values, nrows, ncols, nvals );
-  }
-
-  printArray( "row_indices", row_indices );
-  printArray( "col_indices", col_indices );
-
-	graphblas::Matrix<float> a( nrows,ncols );
-	std::cout << nrows << " " << ncols << " " << nvals << std::endl;
-	std::cout << row_indices.size() << " " << col_indices.size() << " " << 
-			values.size() << std::endl;
-  a.build( row_indices, col_indices, values, nvals );
-
-  /*for( graphblas::Index i=0; i<nrows; i++ ) {
-	  if( a.matrix.h_csrRowPtr[i]>a.matrix.h_csrRowPtr[i+1] )
-			std::cout << i << " " << a.matrix.h_csrRowPtr[i] << " " << 
-					a.matrix.h_csrRowPtr[i+1] << std::endl;
-		BOOST_ASSERT( a.matrix.h_csrRowPtr[i]<=a.matrix.h_csrRowPtr[i+1] );
-  }*/
-}
-
-BOOST_FIXTURE_TEST_CASE( matrix4, TestMatrix )
-{
-  std::vector<graphblas::Index> row_indices;
-  std::vector<graphblas::Index> col_indices;
-  std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-
-	// Read in sparse matrix
-  if (argc < 2) {
-    fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
-    exit(1);
-  } else { 
-	  readMtx( argv[1], row_indices, col_indices, values, nrows, ncols, nvals );
-  }
-
-  printArray( "row_indices", row_indices );
-  printArray( "col_indices", col_indices );
-
-	graphblas::Matrix<float> a( nrows,ncols );
-	std::cout << nrows << " " << ncols << " " << nvals << std::endl;
-	std::cout << row_indices.size() << " " << col_indices.size() << " " << 
-			values.size() << std::endl;
-  a.build( row_indices, col_indices, values, nvals );
-
-  //BOOST_ASSERT( a.matrix.h_csrRowPtr[nrows]==nvals );
-}
-
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() 

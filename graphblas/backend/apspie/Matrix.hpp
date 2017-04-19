@@ -64,7 +64,22 @@ namespace backend
 		DenseMatrix<T>  dense;
 
 		// Keeps track of whether matrix is Sparse or Dense
-		Storage mat_type_; 
+		Storage mat_type_;
+
+    template <typename c, typename m, typename a, typename b>
+    friend Info mxm( Matrix<c>&        C,
+                     const Matrix<m>&  mask,
+                     const BinaryOp&   accum,
+                     const Semiring&   op,
+                     const Matrix<a>&  A,
+                     const Matrix<b>&  B,
+                     const Descriptor& desc );
+
+    template <typename c, typename a, typename b>
+    friend Info mxm( Matrix<c>&       C,
+                     const Semiring&  op,
+                     const Matrix<a>& A,
+                     const Matrix<b>& B );
   };
 
   template <typename T>
@@ -108,7 +123,7 @@ namespace backend
   template <typename T>
   Info Matrix<T>::extractTuples( std::vector<Index>& row_indices,
                                  std::vector<Index>& col_indices,
-                                 std::vector<T>&     values )
+                                 std::vector<T>&     values ) const
   {
     if( mat_type_ == Sparse ) 
       return sparse.extractTuples( row_indices, col_indices, values );

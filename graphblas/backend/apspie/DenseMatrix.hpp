@@ -35,9 +35,10 @@ namespace backend
 		~DenseMatrix() {};
 
 	  // C API Methods
-    Info build( const std::vector<T>& values );
-    
+		//
 		// Mutators
+		// assume values are in column major format
+    Info build( const std::vector<T>& values );
 		// private method for setting nrows and ncols
     Info nnew( const Index nrows, const Index ncols );
 		// private method for allocation
@@ -45,6 +46,7 @@ namespace backend
     Info clear();
 
 		// Accessors
+		Info extractTuples( std::vector<T>& values ) const;
     Info print() const; // Const, because host memory unmodified
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
@@ -111,13 +113,27 @@ namespace backend
     return GrB_SUCCESS;
 	}
 
+	template <typename T>
+	Info DenseMatrix<T>::extractTuples( std::vector<T>& values ) const
+  {
+    values.clear();
+
+		if( need_update )
+		  CUDA_SAFE_CALL(cudaMemcpy(h_denseVal, d_denseVal, 
+				  nvals_*sizeof(T), cudaMemcpyDeviceToHost));
+    
+    for( Index i=0; i<nvals_; i++ ) {
+      values.push_back( h_denseVal[i] );
+    }
+    return GrB_SUCCESS;
+	}
+
   template <typename T>
   Info DenseMatrix<T>::print() const
 	{
-		if( need_update ) {
+		if( need_update )
 		  CUDA_SAFE_CALL(cudaMemcpy(h_denseVal, d_denseVal, 
 				  nvals_*sizeof(T), cudaMemcpyDeviceToHost));
-		}
 
     printArray( "denseVal", h_denseVal );
 		return GrB_SUCCESS;

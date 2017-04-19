@@ -152,6 +152,35 @@ namespace backend
 	}
 
 	template <typename T>
+  Info SparseMatrix<T>::extractTuples( std::vector<Index>& row_indices,
+                                       std::vector<Index>& col_indices,
+                                       std::vector<T>&     values ) const
+	{
+    row_indices.clear();
+		col_indices.clear();
+		values.clear();
+
+		if( need_update ) {
+      CUDA_SAFE_CALL(cudaMemcpy(h_csrVal,    d_csrVal,    
+			  	nvals_*sizeof(T), cudaMemcpyDeviceToHost));
+      CUDA_SAFE_CALL(cudaMemcpy(h_csrColInd, d_csrColInd, 
+					nvals_*sizeof(Index), cudaMemcpyDeviceToHost));
+      CUDA_SAFE_CALL(cudaMemcpy(h_csrRowPtr, d_csrRowPtr, 
+			    (nrows_+1)*sizeof(Index), cudaMemcpyDeviceToHost));
+		}
+
+		for( Index row=0; row<nrows_; row++ ) {
+		  for( Index ind=h_csrRowPtr[row]; ind<h_csrRowPtr[row+1]; ind++ ) {
+        row_indices.push_back(row);
+				col_indices.push_back(h_csrColInd[ind]);
+				values.push_back(     h_csrVal[ind]);
+			}
+		}
+
+		return GrB_SUCCESS;
+	}
+
+	template <typename T>
 	Info SparseMatrix<T>::nnew( const Index nrows, const Index ncols )
 	{
 		nrows_ = nrows;
