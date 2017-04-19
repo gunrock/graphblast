@@ -1,7 +1,7 @@
 #ifndef GRB_MXM_HPP
 #define GRB_MXM_HPP
 
-#include <graphblas/types.hpp>
+#include "graphblas/types.hpp"
 
 #define __GRB_BACKEND_MXM_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/mxm.hpp>
 #include __GRB_BACKEND_MXM_HEADER

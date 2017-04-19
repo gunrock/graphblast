@@ -60,6 +60,11 @@ namespace backend
     cusparseStatus_t status;
     float alpha = 1.0;
     float beta  = 0.0;
+		if( A.d_csrVal==NULL )    std::cout << "AcsrVal" << std::endl;
+		if( A.d_csrRowPtr==NULL ) std::cout << "AcsrRowPtr" << std::endl;
+		if( A.d_csrColInd==NULL ) std::cout << "AcsrColInd" << std::endl;
+		if( B.d_denseVal==NULL )  std::cout << "BdenseVal" << std::endl;
+		if( C.d_denseVal==NULL )  std::cout << "CdenseVal" << std::endl;
     status = cusparseScsrmm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
         &alpha, descr, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, B.d_denseVal,

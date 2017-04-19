@@ -4,8 +4,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <graphblas/mmio.hpp>
-#include <graphblas/util.hpp>
 #include <graphblas/graphblas.hpp>
 
 #define BOOST_TEST_MAIN

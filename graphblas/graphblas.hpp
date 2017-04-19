@@ -1,10 +1,12 @@
 #ifndef GRB_GRAPHBLAS_HPP
 #define GRB_GRAPHBLAS_HPP
 
-#include <graphblas/backend.hpp>
-#include <graphblas/Matrix.hpp>
-#include <graphblas/mxm.hpp>
-//#include <graphblas/types.hpp>
+#include "graphblas/backend.hpp"
+#include "graphblas/types.hpp"
+#include "graphblas/mmio.hpp"
+#include "graphblas/util.hpp"
+#include "graphblas/Matrix.hpp"
+#include "graphblas/mxm.hpp"
 
 #define __GRB_BACKEND_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/__GRB_BACKEND_ROOT.hpp>
 #include __GRB_BACKEND_HEADER

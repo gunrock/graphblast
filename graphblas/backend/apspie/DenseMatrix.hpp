@@ -9,6 +9,7 @@
 #include <cuda_runtime_api.h>
 
 #include "graphblas/backend/apspie/Matrix.hpp"
+//#include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/apspie.hpp"
 #include "graphblas/backend/apspie/util.hpp"
 
@@ -16,7 +17,10 @@ namespace graphblas
 {
 namespace backend
 {
-  template <typename T>
+	template <typename T>
+  class SparseMatrix;
+
+	template <typename T>
   class DenseMatrix
   {
     public:
@@ -48,6 +52,8 @@ namespace backend
 		// Accessors
 		Info extractTuples( std::vector<T>& values ) const;
     Info print() const; // Const, because host memory unmodified
+		// private method for pretty printing
+		Info printDense() const;
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
@@ -63,12 +69,17 @@ namespace backend
 
     // Keep track of whether host values are up-to-date with device values 
 		bool need_update;
+
+		template <typename c, typename a, typename b>
+		friend Info spmm( DenseMatrix<c>&        C,
+                      const Semiring&        op,
+                      const SparseMatrix<a>& A,
+                      const DenseMatrix<b>&  B );
   };
 
 	template <typename T>
   Info DenseMatrix<T>::build( const std::vector<T>& values )
 	{
-    nvals_ = nrows_*ncols_;
     need_update = false;
 
     allocate();
@@ -91,6 +102,7 @@ namespace backend
 	{
 		nrows_ = nrows;
 		ncols_ = ncols;
+    nvals_ = nrows_*ncols_;
 		return GrB_SUCCESS;
 	}
 
@@ -136,7 +148,21 @@ namespace backend
 				  nvals_*sizeof(T), cudaMemcpyDeviceToHost));
 
     printArray( "denseVal", h_denseVal );
+		printDense();
 		return GrB_SUCCESS;
+	}
+
+	template <typename T>
+	Info DenseMatrix<T>::printDense() const
+	{
+		int length=std::min(20,nrows_);
+    for( int row=0; row<length; row++ ) {
+      for( int col=0; col<length; col++ ) {
+        if( h_denseVal[row+col*ncols_]!=0.0 ) std::cout << "x ";
+				else std::cout << "0 ";
+			}
+			std::cout << std::endl;
+		}
 	}
 
 	template <typename T>

@@ -17,6 +17,9 @@ namespace graphblas
 namespace backend
 {
   template <typename T>
+  class DenseMatrix;
+
+  template <typename T>
   class SparseMatrix
   {
     public:
@@ -55,7 +58,9 @@ namespace backend
     Info clear();
 
 		// Accessors
-    Info print() const; // Const, because host memory unmodified
+    Info print() const;    // Const, because host memory unmodified
+		// private method for pretty printing
+    Info printCSR( const char* str ) const;
 		Info nrows( Index& nrows ) const;
 		Info ncols( Index& ncols ) const;
 		Info nvals( Index& nvals ) const;
@@ -85,6 +90,12 @@ namespace backend
 
 		// Keep track of whether host values are up-to-date with device values
 		bool need_update;
+
+		template <typename c, typename a, typename b>
+		friend Info spmm( DenseMatrix<c>&        C,
+                      const Semiring&        op,
+                      const SparseMatrix<a>& A,
+                      const DenseMatrix<b>&  B );
   };
 
   template <typename T>
@@ -107,14 +118,17 @@ namespace backend
     allocate();
 
     // Convert to CSR/CSC
-    Index temp, row, dest, cumsum=0;
+    Index temp, row, col, dest, cumsum=0;
 
     // Set all rowPtr to 0
     for( Index i=0; i<=nrows_; i++ )
       h_csrRowPtr[i] = 0;
     // Go through all elements to see how many fall in each row
-    for( Index i=0; i<nvals_; i++ )
-      h_csrRowPtr[ row_indices[i] ]++;
+    for( Index i=0; i<nvals_; i++ ) {
+			row = row_indices[i];
+		  if( row>=nrows_ ) return GrB_INDEX_OUT_OF_BOUNDS;
+      h_csrRowPtr[ row ]++;
+		}
     // Cumulative sum to obtain rowPtr
     for( Index i=0; i<nrows_; i++ ) {
       temp = h_csrRowPtr[i];
@@ -127,7 +141,9 @@ namespace backend
     for( Index i=0; i<nvals_; i++ ) {
       row = row_indices[i];
       dest= h_csrRowPtr[row];
-      h_csrColInd[dest] = col_indices[i];
+			col = col_indices[i];
+			if( col>=ncols_ ) return GrB_INDEX_OUT_OF_BOUNDS;
+      h_csrColInd[dest] = col;
       h_csrVal[dest]    = values[i];
       h_csrRowPtr[row]++;
     }
@@ -200,7 +216,14 @@ namespace backend
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrRowPtr, (nrows_+1)*sizeof(Index)));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrColInd, nvals_*sizeof(Index)));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrVal,    nvals_*sizeof(T))); 
-    
+   
+	 	if( h_csrRowPtr==NULL ) return GrB_OUT_OF_MEMORY;
+	 	if( h_csrColInd==NULL ) return GrB_OUT_OF_MEMORY;
+	 	if( h_csrVal==NULL )    return GrB_OUT_OF_MEMORY;
+	 	if( d_csrRowPtr==NULL ) return GrB_OUT_OF_MEMORY;
+	 	if( d_csrColInd==NULL ) return GrB_OUT_OF_MEMORY;
+	 	if( d_csrVal==NULL )    return GrB_OUT_OF_MEMORY;
+
 		return GrB_SUCCESS;
 	}
 
@@ -231,7 +254,30 @@ namespace backend
     printArray( "csrColInd", h_csrColInd );
 		printArray( "csrRowPtr", h_csrRowPtr );
 		printArray( "csrVal",    h_csrVal );
+		printCSR( "pretty print" );
 		return GrB_SUCCESS;
+	}
+
+	template <typename T>
+	Info SparseMatrix<T>::printCSR( const char* str ) const
+	{
+		Index length = std::min(20, nrows_);
+    std::cout << str << ":\n";
+
+		for( Index row=0; row<length; row++ ) {
+      Index col_start = h_csrRowPtr[row];
+			Index col_end   = h_csrRowPtr[row+1];
+			for( Index col=0; col<length; col++ ) {
+				Index col_ind = h_csrColInd[col_start];
+				if( col_start<col_end && col_ind==col ) {
+					std::cout << "x ";
+					col_start++;
+				} else {
+					std::cout << "0 ";
+				}
+			}
+			std::cout << std::endl;
+		}
 	}
 
 	template <typename T>

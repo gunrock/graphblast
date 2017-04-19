@@ -2,10 +2,10 @@
 #define GRB_BACKEND_APSPIE_MATRIX_HPP
 
 #include <vector>
-//#include <iostream>
+#include <iostream>
 
-#include <graphblas/backend/apspie/SparseMatrix.hpp>
-#include <graphblas/backend/apspie/DenseMatrix.hpp>
+#include "graphblas/backend/apspie/SparseMatrix.hpp"
+#include "graphblas/backend/apspie/DenseMatrix.hpp"
 
 namespace graphblas
 {
@@ -50,6 +50,7 @@ namespace backend
     Info extractTuples( std::vector<Index>& row_indices,
                         std::vector<Index>& col_indices,
                         std::vector<T>&     values ) const;
+    Info extractTuples( std::vector<T>& values ) const;
 		Info print() const;
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
@@ -127,11 +128,19 @@ namespace backend
   {
     if( mat_type_ == Sparse ) 
       return sparse.extractTuples( row_indices, col_indices, values );
-    else if( mat_type_ == Dense ) 
-      return dense.extractTuples( row_indices, col_indices, values );
+    /*else if( mat_type_ == Dense ) 
+      return dense.extractTuples( row_indices, col_indices, values );*/
     else
       return GrB_UNINITIALIZED_OBJECT;
   }
+  template <typename T>
+  Info Matrix<T>::extractTuples( std::vector<T>& values ) const
+  {
+    if( mat_type_ == Dense ) 
+      return dense.extractTuples( values );
+    else
+      return GrB_UNINITIALIZED_OBJECT;
+	}
 
   // Private method that sets mat_type, clears and allocates
   template <typename T>

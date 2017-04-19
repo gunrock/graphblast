@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include <graphblas/types.hpp>
+#include "graphblas/types.hpp"
 
 // Opaque data members from the right backend
 #define __GRB_BACKEND_MATRIX_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/Matrix.hpp>
@@ -51,6 +51,8 @@ namespace graphblas
 		Info extractTuples( std::vector<Index>& row_indices,
 						            std::vector<Index>& col_indices,
 												std::vector<T>&     values ) const;
+		// Dense variant of extractTuples not in GraphBLAS spec
+		Info extractTuples( std::vector<T>& values ) const;
     Info print() const;
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
@@ -110,6 +112,12 @@ namespace graphblas
 												         std::vector<T>&     values ) const
 	{
 		return matrix.extractTuples( row_indices, col_indices, values );
+	}
+	
+	template <typename T>
+	Info Matrix<T>::extractTuples( std::vector<T>& values ) const
+	{
+		return matrix.extractTuples( values );
 	}
 
 	// Mutators

@@ -10,7 +10,7 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
-#include <graphblas/types.hpp>
+#include "graphblas/types.hpp"
 
 // Forward declarations
 
