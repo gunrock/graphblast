@@ -102,11 +102,13 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       // Convert 1-based indexing MTX to 0-based indexing C++
       row_indices.push_back(row_ind-1);
       col_indices.push_back(col_ind-1);
-      values.push_back(value);
 
       mtxT raw_value;
       fscanf(f, type_str, &raw_value);
       value = (T) raw_value;
+
+      values.push_back(value);
+			//std::cout << value << std::endl;
       //std::cout << "The first row is " << row_ind-1 << " " <<  col_ind-1
 			//<< std::endl;
 
@@ -192,7 +194,7 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
                     std::vector<T>& values, 
                     graphblas::Index& nvals,
                     bool remove_self_loops=true ) {
-  std::cout << nvals << std::endl;
+  //std::cout << nvals << std::endl;
 
   for( graphblas::Index i=0; i<nvals; i++ ) {
     if( col_indices[i] != row_indices[i] ) {
@@ -203,7 +205,7 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
   }
 
   nvals = row_indices.size();
-  std::cout << nvals << std::endl;
+  //std::cout << nvals << std::endl;
 
   // Sort
   customSort<T>( row_indices, col_indices, values );
@@ -249,7 +251,7 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
   nvals = nvals-shift;
   row_indices.resize(nvals);
   col_indices.resize(nvals);
-  std::cout << nvals << std::endl;
+  //std::cout << nvals << std::endl;
   values.resize(nvals);
 }
 
@@ -323,52 +325,52 @@ struct CpuTimer {
 
 #if defined(CLOCK_PROCESS_CPUTIME_ID)
 
-    double start;
-    double stop;
+  double start;
+  double stop;
 
-    void Start()
-    {
-        static struct timeval tv;
-        static struct timezone tz;
-      gettimeofday(&tv, &tz);
-        start = tv.tv_sec + 1.e-6*tv.tv_usec;
-    }
+  void Start()
+  {
+    static struct timeval tv;
+    static struct timezone tz;
+    gettimeofday(&tv, &tz);
+    start = tv.tv_sec + 1.e-6*tv.tv_usec;
+  }
 
-    void Stop()
-    {
-        static struct timeval tv;
-        static struct timezone tz;
-        gettimeofday(&tv, &tz);
-        stop = tv.tv_sec + 1.e-6*tv.tv_usec;
-    }
+  void Stop()
+  {
+    static struct timeval tv;
+    static struct timezone tz;
+    gettimeofday(&tv, &tz);
+    stop = tv.tv_sec + 1.e-6*tv.tv_usec;
+  }
 
-    double ElapsedMillis()
-    {
-        return 1000*(stop - start);
-    }
+  double ElapsedMillis()
+  {
+    return 1000*(stop - start);
+  }
 
 #else
 
-    rusage start;
-    rusage stop;
+  rusage start;
+  rusage stop;
 
-    void Start()
-    {
-        getrusage(RUSAGE_SELF, &start);
-    }
+  void Start()
+  {
+    getrusage(RUSAGE_SELF, &start);
+  }
 
-    void Stop()
-    {
-        getrusage(RUSAGE_SELF, &stop);
-    }
+  void Stop()
+  {
+    getrusage(RUSAGE_SELF, &stop);
+  }
 
-    float ElapsedMillis()
-    {
-        float sec = stop.ru_utime.tv_sec - start.ru_utime.tv_sec;
-        float usec = stop.ru_utime.tv_usec - start.ru_utime.tv_usec;
+  float ElapsedMillis()
+  {
+    float sec = stop.ru_utime.tv_sec - start.ru_utime.tv_sec;
+    float usec = stop.ru_utime.tv_usec - start.ru_utime.tv_usec;
 
-        return (sec * 1000) + (usec /1000);
-    }
+    return (sec * 1000) + (usec /1000);
+  }
 
 #endif
 };

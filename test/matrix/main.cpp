@@ -27,49 +27,117 @@ struct TestMatrix {
 
 BOOST_AUTO_TEST_SUITE(matrix_suite)
 
-// SpMM unit test (chesapeake)
-BOOST_AUTO_TEST_CASE( matrix5 )
+// SpMM unit test (ak2010)
+// -must restrict size of dense matrix to GPU memory
+BOOST_AUTO_TEST_CASE( matrix6 )
 {
-  std::vector<graphblas::Index> row_indices = {
-  std::vector<graphblas::Index> col_indices = {1, 0, 0, 1, 4, 0, 2, 1, 2, 2, 3, 4, 3, 4, 5, 7, 7, 8, 7, 8};
-  std::vector<float> values (20, 1.0);
-  graphblas::Matrix<float> a(11, 11);
-  graphblas::Matrix<float> b(11, 11);
-  graphblas::Index nvals = 20;
-	graphblas::Index nrows, ncols;
-  a.build( row_indices, col_indices, values, 20 );
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+	graphblas::Index nrows, ncols, nvals;
+
+	// Read in ak2010.mtx
+  char const *argv = "/data-2/gunrock_dataset/large/ak2010/ak2010.mtx";
+	readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals );
+
+  graphblas::Matrix<float> a(nrows, ncols);
+
+	graphblas::Index MEM_SIZE = 1000000000;
+	graphblas::Index max_ncols = std::min( MEM_SIZE/nrows, ncols );
+  if( max_ncols<ncols ) std::cout << "Restricting col to: " << max_ncols <<
+	    std::endl;
+
+  graphblas::Matrix<float> b(nrows, max_ncols);
+  a.build( row_indices, col_indices, values, nvals );
 	a.nrows( nrows );
 	a.ncols( ncols );
 	a.nvals( nvals );
-	BOOST_ASSERT( nrows==11 );
-	BOOST_ASSERT( ncols==11 );
-	BOOST_ASSERT( nvals==20 );
 	//a.print();
+	BOOST_ASSERT( nrows==45292 );
+	BOOST_ASSERT( ncols==45292 );
+	BOOST_ASSERT( nvals==217098 );
   std::vector<float> denseVal;
-	for( int i=0; i<11; i++ ) {
-    for( int j=0; j<11; j++ ) {
+
+	// Column major order
+	for( int i=0; i<max_ncols; i++ ) {
+    for( int j=0; j<nrows; j++ ) {
       if( i==j ) denseVal.push_back(1.0);
 			else denseVal.push_back(0.0);
 		}
 	}
   b.build( denseVal );
-  graphblas::Matrix<float> c(11, 11);
+  graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
+
+	CpuTimer cpu_mxm;
+	cpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b );
-  //c.print();
+  cpu_mxm.Stop();
+	float elapsed_mxm = cpu_mxm.ElapsedMillis();
+	std::cout << "mxm: " << elapsed_mxm << " ms\n";
+
 	std::vector<float> out_denseVal;
+	//c.print();
 	c.extractTuples( out_denseVal );
-	for( int i=0; i<20; i++ ) {
+	for( int i=0; i<nvals; i++ ) {
 		graphblas::Index row = row_indices[i];
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
-		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
-		BOOST_ASSERT( val==out_denseVal[col*11+row] );
+		// Column major order
+		if( col<max_ncols ) {
+		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
+		  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+}}}
+
+// SpMM unit test (chesapeake)
+BOOST_AUTO_TEST_CASE( matrix5 )
+{
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+	graphblas::Index nrows, ncols, nvals;
+
+	// Read in chesapeake.mtx
+  char const *argv = "../dataset/small/chesapeake.mtx";
+	readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals );
+
+  graphblas::Matrix<float> a(nrows, ncols);
+  graphblas::Matrix<float> b(nrows, ncols);
+  a.build( row_indices, col_indices, values, nvals );
+	a.nrows( nrows );
+	a.ncols( ncols );
+	a.nvals( nvals );
+	BOOST_ASSERT( nrows==39 );
+	BOOST_ASSERT( ncols==39 );
+	BOOST_ASSERT( nvals==340 );
+  std::vector<float> denseVal;
+	for( int i=0; i<nrows; i++ ) {
+    for( int j=0; j<ncols; j++ ) {
+      if( i==j ) denseVal.push_back(1.0);
+			else denseVal.push_back(0.0);
+		}
+	}
+  b.build( denseVal );
+  graphblas::Matrix<float> c(nrows, ncols);
+  graphblas::Semiring op;
+
+	CpuTimer cpu_mxm;
+	cpu_mxm.Start();
+  graphblas::mxm<float, float, float>( c, op, a, b );
+  cpu_mxm.Stop();
+	float elapsed_mxm = cpu_mxm.ElapsedMillis();
+	std::cout << "mxm: " << elapsed_mxm << " ms\n";
+
+	std::vector<float> out_denseVal;
+	c.extractTuples( out_denseVal );
+	for( int i=0; i<nvals; i++ ) {
+		graphblas::Index row = row_indices[i];
+		graphblas::Index col = col_indices[i];
+    float            val = values[i];
+		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
+		BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
 	}
 }
-
-BOOST_AUTO_TEST_SUITE_END() 
-
 
 BOOST_AUTO_TEST_CASE( matrix4 )
 {
@@ -142,7 +210,14 @@ BOOST_AUTO_TEST_CASE( matrix1 )
   b.build( denseVal );
   graphblas::Matrix<float> c(11, 11);
   graphblas::Semiring op;
+
+	CpuTimer cpu_mxm;
+	cpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b );
+  cpu_mxm.Stop();
+	float elapsed_mxm = cpu_mxm.ElapsedMillis();
+	std::cout << "mxm: " << elapsed_mxm << " ms\n";
+
   //c.print();
 	std::vector<float> out_denseVal;
 	c.extractTuples( out_denseVal );
