@@ -60,14 +60,27 @@ namespace backend
 			const c* B_denseVal, c* C_denseVal )
 	{
 		const Index idx = blockIdx.x*blockDim.x + threadIdx.x;
-    const Index idb = threadIdx.x;
+    const int   idb = threadIdx.x;
+		const int   T   = 2;
+    const int   L_c = 4;
+		const Index i   = idx/T;
+    const int   idp = idb%T;
 
-		const int T = 32;
-		const Index i = idx/T;
-    const int idp = idb%T;
-
+		c sv[L_c];
     if( i<A_nrows ) {
-      
+      sv[0] = 0.0; sv[1] = 0.0; sv[2] = 0.0; sv[3] = 0.0;
+			const int max = A_csrRowPtr[i+1]-A_csrRowPtr[i];
+			for( int j=0; j<max; j++ ) {
+        Index ind = T*(j*A_nrows+i)+idp;
+				c     val = A_csrVal[ind];
+				Index col = A_csrColInd[ind];
+
+				sv[0] += val*B_denseVal[col*A_ncols+0];
+				sv[1] += val*B_denseVal[col*A_ncols+1];
+				sv[2] += val*B_denseVal[col*A_ncols+2];
+				sv[3] += val*B_denseVal[col*A_ncols+3];
+			}
+			
 		}
 	}
 
