@@ -13,11 +13,69 @@ namespace graphblas
 {
 namespace backend
 {
+
+	// Naive implementation
   template<typename c, typename a, typename b>
-  Info spmm( DenseMatrix<c>&        C,
+	Info spmm( DenseMatrix<c>&        C,
              const Semiring&        op,
              const SparseMatrix<a>& A,
              const DenseMatrix<b>&  B )
+  {
+    Index A_nrows, A_ncols, A_nvals;
+    Index B_nrows, B_ncols;
+    Index C_nrows, C_ncols;
+
+    A.nrows( A_nrows );
+    A.ncols( A_ncols );
+    A.nvals( A_nvals );
+    B.nrows( B_nrows );
+    B.ncols( B_ncols );
+    C.nrows( C_nrows );
+    C.ncols( C_ncols );
+
+    // Dimension compatibility check
+    if( (A_ncols != B_nrows) || (C_ncols != B_ncols) || (C_nrows != A_nrows ) )
+    {
+      std::cout << "Dim mismatch" << std::endl;
+      std::cout << A_ncols << " " << B_nrows << std::endl;
+      std::cout << C_ncols << " " << B_ncols << std::endl;
+      std::cout << C_nrows << " " << A_nrows << std::endl;
+      return GrB_DIMENSION_MISMATCH;
+    }
+
+    // Domain compatibility check
+    // TODO: add domain compatibility check
+
+    // Computation
+    Info err;
+    err = spmm_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
+        A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
+    
+	}
+
+	template<typename c>
+	__global__ Info spmm_kernel( const Index A_nrows, const Index B_ncols, 
+			const Index A_ncols, const Index A_nvals, 
+			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
+			const c* B_denseVal, c* C_denseVal )
+	{
+		const Index idx = blockIdx.x*blockDim.x + threadIdx.x;
+    const Index idb = threadIdx.x;
+
+		const int T = 32;
+		const Index i = idx/T;
+    const int idp = idb%T;
+
+    if( i<A_nrows ) {
+      
+		}
+	}
+
+  template<typename c, typename a, typename b>
+  Info cusparse_spmm( DenseMatrix<c>&        C,
+                      const Semiring&        op,
+                      const SparseMatrix<a>& A,
+                      const DenseMatrix<b>&  B )
   {
     Index A_nrows, A_ncols, A_nvals;
     Index B_nrows, B_ncols;
@@ -60,11 +118,6 @@ namespace backend
     cusparseStatus_t status;
     float alpha = 1.0;
     float beta  = 0.0;
-		if( A.d_csrVal==NULL )    std::cout << "AcsrVal" << std::endl;
-		if( A.d_csrRowPtr==NULL ) std::cout << "AcsrRowPtr" << std::endl;
-		if( A.d_csrColInd==NULL ) std::cout << "AcsrColInd" << std::endl;
-		if( B.d_denseVal==NULL )  std::cout << "BdenseVal" << std::endl;
-		if( C.d_denseVal==NULL )  std::cout << "CdenseVal" << std::endl;
     status = cusparseScsrmm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
         &alpha, descr, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, B.d_denseVal,
