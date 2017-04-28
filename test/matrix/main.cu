@@ -99,11 +99,11 @@ BOOST_AUTO_TEST_CASE( matrix4 )
   graphblas::Matrix<float> c(11, 11);
   graphblas::Semiring op;
 
-	CpuTimer cpu_mxm;
-	cpu_mxm.Start();
+	GpuTimer gpu_mxm;
+	gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b );
-  cpu_mxm.Stop();
-	float elapsed_mxm = cpu_mxm.ElapsedMillis();
+  gpu_mxm.Stop();
+	float elapsed_mxm = gpu_mxm.ElapsedMillis();
 	std::cout << "mxm: " << elapsed_mxm << " ms\n";
 
   c.print();
@@ -151,11 +151,11 @@ BOOST_AUTO_TEST_CASE( matrix5 )
   graphblas::Matrix<float> c(nrows, ncols);
   graphblas::Semiring op;
 
-	CpuTimer cpu_mxm;
-	cpu_mxm.Start();
+	GpuTimer gpu_mxm;
+	gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b );
-  cpu_mxm.Stop();
-	float elapsed_mxm = cpu_mxm.ElapsedMillis();
+  gpu_mxm.Stop();
+	float elapsed_mxm = gpu_mxm.ElapsedMillis();
 	std::cout << "mxm: " << elapsed_mxm << " ms\n";
 
 	std::vector<float> out_denseVal;
@@ -210,11 +210,11 @@ BOOST_AUTO_TEST_CASE( matrix6 )
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
 
-	CpuTimer cpu_mxm;
-	cpu_mxm.Start();
+	GpuTimer gpu_mxm;
+	gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b );
-  cpu_mxm.Stop();
-	float elapsed_mxm = cpu_mxm.ElapsedMillis();
+  gpu_mxm.Stop();
+	float elapsed_mxm = gpu_mxm.ElapsedMillis();
 	std::cout << "mxm: " << elapsed_mxm << " ms\n";
 
 	std::vector<float> out_denseVal;
