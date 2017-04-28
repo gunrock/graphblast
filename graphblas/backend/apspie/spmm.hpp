@@ -86,8 +86,8 @@ namespace backend
 			const int max_batch = B_ncols/L_c;
 			for( int batch=0; batch<max_batch; batch++ ) {
         sv[0] = 0.0; sv[1] = 0.0; sv[2] = 0.0; sv[3] = 0.0;
-			  const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i])/T;
-			  //const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
+			  //const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i])/T;
+			  const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
 			  for( int j=0; j<max; j++ ) {
           Index ind = A_csrRowPtr[i]+j*T+idp;
 				  if( ind<A_csrRowPtr[i+1] ) {
@@ -97,7 +97,7 @@ namespace backend
 				    sv[1] += val*B_denseVal[(1+batch*L_c)*A_ncols+col];
 				    sv[2] += val*B_denseVal[(2+batch*L_c)*A_ncols+col];
 				    sv[3] += val*B_denseVal[(3+batch*L_c)*A_ncols+col];
-            printf("tid:%d,row:%d,col:%d,val:%f,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, col, val, sv[0], sv[1], sv[2], sv[3] );
+            //printf("tid:%d,row:%d,col:%d,val:%f,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, col, val, sv[0], sv[1], sv[2], sv[3] );
 			  }}
 			  if( idp!=0 ) {
 		      sdata[sid*L_c+0] = sv[0];
@@ -114,10 +114,36 @@ namespace backend
 			    C_denseVal[(3+batch*L_c)*A_nrows+i] = sdata[sid*L_c+3]+sv[3];
         //printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
         //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );
-				}
-			}
-		}
-	}
+			}}
+			const int rem = B_ncols-max_batch*L_c;
+			//if( idb==0 ) printf("Remainder:%d\n", rem);
+			if( rem!=0 ) {
+        sv[0] = 0.0; sv[1] = 0.0; sv[2] = 0.0;
+			  const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
+			  for( int j=0; j<max; j++ ) {
+          Index ind = A_csrRowPtr[i]+j*T+idp;
+			    if( ind<A_csrRowPtr[i+1] ) {
+		        c     val = A_csrVal[ind];
+				    Index col = A_csrColInd[ind];
+				                sv[0] += val*B_denseVal[(0+max_batch*L_c)*A_ncols+col];
+				    if( rem>1 ) sv[1] += val*B_denseVal[(1+max_batch*L_c)*A_ncols+col];
+				    if( rem>2 ) sv[2] += val*B_denseVal[(2+max_batch*L_c)*A_ncols+col];
+            //printf("tid:%d,row:%d,col:%d,val:%f,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, col, val, sv[0], sv[1], sv[2], sv[3] );
+			    }}
+			    if( idp!=0 ) {
+		                    sdata[sid*L_c+0] = sv[0];
+	  		    if( rem>1 ) sdata[sid*L_c+1] = sv[1];
+		  	    if( rem>2 )sdata[sid*L_c+2] = sv[2];
+            //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, sv[0], sv[1], sv[2], sv[3] );
+          }
+          __syncthreads();
+			    if( idp==0 ) {
+								        C_denseVal[(0+max_batch*L_c)*A_nrows+i] = sdata[sid*L_c+0]+sv[0];
+						if( rem>1 ) C_denseVal[(1+max_batch*L_c)*A_nrows+i] = sdata[sid*L_c+1]+sv[1];
+			      if( rem>2 ) C_denseVal[(2+max_batch*L_c)*A_nrows+i] = sdata[sid*L_c+2]+sv[2];
+        //printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
+        //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );
+	}}}}
 
   template<typename c, typename a, typename b>
   Info cusparse_spmm( DenseMatrix<c>&        C,

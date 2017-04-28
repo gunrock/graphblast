@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE( matrix4 )
 }
 
 // SpMM unit test (chesapeake)
-/*BOOST_AUTO_TEST_CASE( matrix5 )
+BOOST_AUTO_TEST_CASE( matrix5 )
 {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
@@ -228,6 +228,6 @@ BOOST_AUTO_TEST_CASE( matrix6 )
 		if( col<max_ncols ) {
 		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
 		  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
-}}}*/
+}}}
 
 BOOST_AUTO_TEST_SUITE_END() 
