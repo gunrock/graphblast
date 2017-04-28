@@ -41,6 +41,7 @@ namespace backend
 		if( A_storage == Sparse && B_storage == Dense ) {
 			err = C.set_storage( Dense );
 			err = spmm( C.dense, op, A.sparse, B.dense );
+			//err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
     }
 		return err;
 	}

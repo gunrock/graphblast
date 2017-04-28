@@ -78,10 +78,10 @@ namespace backend
                       const DenseMatrix<b>&  B );
 
 		template <typename c, typename a, typename b>
-		friend Info cusparsespmm( DenseMatrix<c>&        C,
-                              const Semiring&        op,
-                              const SparseMatrix<a>& A,
-                              const DenseMatrix<b>&  B );
+		friend Info cusparse_spmm( DenseMatrix<c>&        C,
+                               const Semiring&        op,
+                               const SparseMatrix<a>& A,
+                               const DenseMatrix<b>&  B );
   };
 
 	template <typename T>

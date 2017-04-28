@@ -59,7 +59,7 @@ namespace backend
     const int NBLOCKS  = T*A_nrows;
     spmm_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
       A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
-    
+
 	}
 
 	template<typename c>
@@ -80,17 +80,22 @@ namespace backend
 		__shared__ c sdata[blk/T*L_c];
     if( i<A_nrows ) {
       sv[0] = 0.0; sv[1] = 0.0; sv[2] = 0.0; sv[3] = 0.0;
-			const int max = A_csrRowPtr[i+1]-A_csrRowPtr[i];
+			const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
 			for( int j=0; j<max; j++ ) {
-        Index ind = T*(j*A_nrows+i)+idp;
-				c     val = A_csrVal[ind];
-				Index col = A_csrColInd[ind];
+        Index ind = A_csrRowPtr[i]+j*T+idp;
 
-				sv[0] += val*B_denseVal[col*A_ncols+0];
-				sv[1] += val*B_denseVal[col*A_ncols+1];
-				sv[2] += val*B_denseVal[col*A_ncols+2];
-				sv[3] += val*B_denseVal[col*A_ncols+3];
-			}
+				if( ind<A_csrRowPtr[i+1] ) {
+          //Index ind = T*(j*A_nrows+i)+idp;
+				  c     val = A_csrVal[ind];
+				  Index col = A_csrColInd[ind];
+
+          //printf("tid:%d,row:%d,col:%d,val:%f,val:%f\n", idb, i, col, val, val );
+
+				  sv[0] += val*B_denseVal[col*A_ncols+0];
+				  sv[1] += val*B_denseVal[col*A_ncols+1];
+				  sv[2] += val*B_denseVal[col*A_ncols+2];
+				  sv[3] += val*B_denseVal[col*A_ncols+3];
+			}}
 			if( idp!=0 ) {
 		    sdata[i*L_c+0] = sv[0];
 			  sdata[i*L_c+1] = sv[1];
