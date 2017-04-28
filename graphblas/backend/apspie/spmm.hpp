@@ -93,10 +93,10 @@ namespace backend
 				  Index col = A_csrColInd[ind];
 
 
-				  sv[0] += val*B_denseVal[col*A_ncols+0];
-				  sv[1] += val*B_denseVal[col*A_ncols+1];
-				  sv[2] += val*B_denseVal[col*A_ncols+2];
-				  sv[3] += val*B_denseVal[col*A_ncols+3];
+				  sv[0] += val*B_denseVal[0*A_ncols+col];
+				  sv[1] += val*B_denseVal[1*A_ncols+col];
+				  sv[2] += val*B_denseVal[2*A_ncols+col];
+				  sv[3] += val*B_denseVal[3*A_ncols+col];
 
           //printf("tid:%d,row:%d,col:%d,val:%f,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, col, val, sv[0], sv[1], sv[2], sv[3] );
 			}}
@@ -114,7 +114,7 @@ namespace backend
 			  C_denseVal[1*A_nrows+i] = sdata[sid*L_c+1]+sv[1];
 			  C_denseVal[2*A_nrows+i] = sdata[sid*L_c+2]+sv[2];
 			  C_denseVal[3*A_nrows+i] = sdata[sid*L_c+3]+sv[3];
-        printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
+        //printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
         //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );
 			}
 		}
