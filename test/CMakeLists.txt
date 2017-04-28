@@ -21,12 +21,13 @@ set( PROJ_INCLUDES  "../" )
 #set( CUDA_CUBLAS_LIBRARY "$ENV{CUDA_HOME}/lib64/libcublas.so" )
 set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
 
-#FILE( GLOB_RECURSE PROJ_SOURCES ../graphblas/*.cpp )
+#FILE( GLOB_RECURSE PROJ_SOURCES ../graphblas/*.cu ../graphblas/*.cpp )
 #FILE( GLOB_RECURSE PROJ_LIBRARIES ../../ext/cublas1.1/*.cu )
-FILE( GLOB_RECURSE PROJ_HEADERS ../graphblas/*.hpp )
+FILE( GLOB_RECURSE PROJ_HEADERS ../graphblas/*.hpp ../graphblas/*.cuh)
 
 # nvcc flags
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-dlcm=ca)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-arch=sm_35;-lineinfo)
+#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-dlcm=ca)
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_21)
 
 # needed for cudamalloc
@@ -50,9 +51,9 @@ set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
 # standard compilation
 include_directories( ${PROJ_INCLUDES} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
-cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cpp" )#${mgpu_SRC_FILES}
-cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cpp" )#${mgpu_SRC_FILES}
-#cuda_add_executable( vector${PROJ_NAME} "spmm/main.cpp" )#${mgpu_SRC_FILES}
+cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cu" )#${mgpu_SRC_FILES}
+cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cu" )#${mgpu_SRC_FILES}
+#cuda_add_executable( vector${PROJ_NAME} "spmm/main.cu" )#${mgpu_SRC_FILES}
 target_link_libraries( matrix${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )
 #target_link_libraries( vector${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )
 

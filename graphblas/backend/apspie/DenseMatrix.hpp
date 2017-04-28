@@ -12,6 +12,7 @@
 //#include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/apspie.hpp"
 #include "graphblas/backend/apspie/util.hpp"
+#include "graphblas/types.hpp"
 
 namespace graphblas
 {
@@ -120,7 +121,7 @@ namespace backend
 
     // Device alloc
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_denseVal, nvals_*sizeof(T)));
-    //CUDA_SAFE_CALL(cudaMemset( d_denseVal, (T) 0, nvals_*sizeof(T)));
+    CUDA_SAFE_CALL(cudaMemset( d_denseVal, (T) 0, nvals_*sizeof(T)));
 	}
 
   template <typename T>

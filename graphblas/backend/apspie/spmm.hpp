@@ -3,16 +3,22 @@
 
 #include <iostream>
 
+#include <cuda.h>
 #include <cusparse.h>
 
-#include <graphblas/backend/apspie/SparseMatrix.hpp>
-#include <graphblas/backend/apspie/DenseMatrix.hpp>
-#include <graphblas/types.hpp>
+#include "graphblas/backend/apspie/SparseMatrix.hpp"
+#include "graphblas/backend/apspie/DenseMatrix.hpp"
+#include "graphblas/types.hpp"
 
 namespace graphblas
 {
 namespace backend
 {
+	template<typename c>
+	__global__ void spmm_kernel( const Index A_nrows, const Index B_ncols, 
+			const Index A_ncols, const Index A_nvals, 
+			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
+			const c* B_denseVal, c* C_denseVal );
 
 	// Naive implementation
   template<typename c, typename a, typename b>
@@ -48,13 +54,16 @@ namespace backend
 
     // Computation
     Info err;
-    err = spmm_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
-        A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
+    const int T        = 2;
+    const int NTHREADS = 512;
+    const int NBLOCKS  = T*A_nrows;
+    spmm_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
+      A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
     
 	}
 
 	template<typename c>
-	__global__ Info spmm_kernel( const Index A_nrows, const Index B_ncols, 
+	__global__ void spmm_kernel( const Index A_nrows, const Index B_ncols, 
 			const Index A_ncols, const Index A_nvals, 
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal )
@@ -65,8 +74,10 @@ namespace backend
     const int   L_c = 4;
 		const Index i   = idx/T;
     const int   idp = idb%T;
+		const int   blk = 512;
 
 		c sv[L_c];
+		__shared__ c sdata[blk/T*L_c];
     if( i<A_nrows ) {
       sv[0] = 0.0; sv[1] = 0.0; sv[2] = 0.0; sv[3] = 0.0;
 			const int max = A_csrRowPtr[i+1]-A_csrRowPtr[i];
@@ -80,7 +91,20 @@ namespace backend
 				sv[2] += val*B_denseVal[col*A_ncols+2];
 				sv[3] += val*B_denseVal[col*A_ncols+3];
 			}
-			
+			if( idp!=0 ) {
+		    sdata[i*L_c+0] = sv[0];
+			  sdata[i*L_c+1] = sv[1];
+			  sdata[i*L_c+2] = sv[2];
+			  sdata[i*L_c+3] = sv[3];
+      }
+      __syncthreads();
+
+			if( idp==0 ) {
+				C_denseVal[0*A_ncols+i] = sdata[i*L_c+0]+sv[0];
+			  C_denseVal[1*A_ncols+i] = sdata[i*L_c+1]+sv[1];
+			  C_denseVal[2*A_ncols+i] = sdata[i*L_c+1]+sv[2];
+			  C_denseVal[3*A_ncols+i] = sdata[i*L_c+1]+sv[3];
+			}
 		}
 	}
 

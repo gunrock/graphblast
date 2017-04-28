@@ -11,6 +11,7 @@
 #include "graphblas/backend/apspie/Matrix.hpp"
 #include "graphblas/backend/apspie/apspie.hpp"
 #include "graphblas/backend/apspie/util.hpp"
+#include "graphblas/util.hpp"
 
 namespace graphblas
 {
