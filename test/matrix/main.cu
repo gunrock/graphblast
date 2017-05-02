@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE( matrix6 )
 
   graphblas::Matrix<float> a(nrows, ncols);
 
-	graphblas::Index MEM_SIZE = 1000000000;
+	graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
 	graphblas::Index max_ncols = std::min( MEM_SIZE/nrows, ncols );
   if( max_ncols<ncols ) std::cout << "Restricting col to: " << max_ncols <<
 	    std::endl;
