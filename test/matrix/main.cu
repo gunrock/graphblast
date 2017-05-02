@@ -114,7 +114,10 @@ BOOST_AUTO_TEST_CASE( matrix4 )
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
 		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
-		BOOST_ASSERT( val==out_denseVal[col*11+row] );
+    // Row Major layout
+		BOOST_ASSERT( val==out_denseVal[row*11+col] );
+    // Column Major layout
+		//BOOST_ASSERT( val==out_denseVal[col*11+row] );
 	}
 }
 
@@ -231,10 +234,16 @@ BOOST_AUTO_TEST_CASE( matrix6 )
 		graphblas::Index row = row_indices[i];
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
-		// Column major order
+		// Row major order
 		if( col<max_ncols ) {
+		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
+		  BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
+    }
+		// Column major order
+		/*if( col<max_ncols ) {
 		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
 		  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
-}}}
+    }*/
+}}
 
 BOOST_AUTO_TEST_SUITE_END() 

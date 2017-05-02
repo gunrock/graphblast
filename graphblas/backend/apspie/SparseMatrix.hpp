@@ -310,4 +310,4 @@ namespace backend
 } // backend
 } // graphblas
 
-#endif  // GRB_BACKEND_APSPIE_COOMATRIX_HPP
+#endif  // GRB_BACKEND_APSPIE_SPARSEMATRIX_HPP
