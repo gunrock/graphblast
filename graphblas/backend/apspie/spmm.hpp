@@ -10,6 +10,10 @@
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 #include "graphblas/types.hpp"
 
+#define VT 16
+#define NV 32
+#define NT 128
+
 namespace graphblas
 {
 namespace backend
@@ -59,9 +63,9 @@ namespace backend
 
     // Computation
     Info err;
-    const int T        = 2;
-    const int NTHREADS = 512;
-    const int NBLOCKS  = T*A_nrows;
+    const int T        = VT;
+    const int NTHREADS = NT;
+    const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
     spmm_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
       A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
 
@@ -79,12 +83,12 @@ namespace backend
 	{
 		const Index idx = blockIdx.x*blockDim.x + threadIdx.x;
     const int   idb = threadIdx.x;
-		const int   T   = 2;
-    const int   L_c = 4;
+		const int   T   = VT;
+    const int   L_c = NV;
 		const Index i   = idx/T;
 		const int   sid = idb/T;  // equivalent to (idx%blk)/T
     const int   idp = idb%T;
-		const int   blk = 512;
+		const int   blk = NT;
 
 		c sv[L_c];
 		__shared__ c sdata[blk/T*L_c];
@@ -162,12 +166,12 @@ namespace backend
 	{
 		const Index idx = blockIdx.x*blockDim.x + threadIdx.x;
     const int   idb = threadIdx.x;
-		const int   T   = 2;
-    const int   L_c = 4;
+		const int   T   = VT;
+    const int   L_c = NV;
 		const Index i   = idx/T;
-		const int   sid = idb/T;  // equivalent to (idx%blk)/T
-    const int   idp = idb%T;
-		const int   blk = 512;
+		const int   sid = idb/T;     // equivalent to (idx%blk)/T
+    const int   idp = idb&(T-1); // equivalent to (idb%T)
+		const int   blk = NT;
 
 		c sv[L_c];
 		__shared__ c sdata[blk/T*L_c];
@@ -175,7 +179,9 @@ namespace backend
     if( i<A_nrows ) {
 			const int max_batch = B_ncols/L_c;
 			for( int batch=0; batch<max_batch; batch++ ) {
-        sv[0] = 0.0; sv[1] = 0.0; sv[2] = 0.0; sv[3] = 0.0;
+        #pragma unroll
+			  for( int k=0; k<L_c; k++ )
+					sv[k] = 0.0;
 			  //const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i])/T;
 			  const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
 			  for( int j=0; j<max; j++ ) {
@@ -183,32 +189,31 @@ namespace backend
 				  if( ind<A_csrRowPtr[i+1] ) {
 				    c     val = A_csrVal[ind];
 				    Index col = A_csrColInd[ind];
-				    sv[0] += val*B_denseVal[(0+batch*L_c)*A_ncols+col];
-				    sv[1] += val*B_denseVal[(1+batch*L_c)*A_ncols+col];
-				    sv[2] += val*B_denseVal[(2+batch*L_c)*A_ncols+col];
-				    sv[3] += val*B_denseVal[(3+batch*L_c)*A_ncols+col];
+            #pragma unroll
+						for( int k=0; k<L_c; k++ )
+							sv[k] += val*B_denseVal[(k+batch*L_c)*A_ncols+col];
             //printf("tid:%d,row:%d,col:%d,val:%f,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, col, val, sv[0], sv[1], sv[2], sv[3] );
 			  }}
 			  if( idp!=0 ) {
-		      sdata[sid*L_c+0] = sv[0];
-	  		  sdata[sid*L_c+1] = sv[1];
-		  	  sdata[sid*L_c+2] = sv[2];
-			    sdata[sid*L_c+3] = sv[3];
+          #pragma unroll
+					for( int k=0; k<L_c; k++ )
+						sdata[sid*L_c+k] = sv[k];
           //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, sv[0], sv[1], sv[2], sv[3] );
         }
         __syncthreads();
 			  if( idp==0 ) {
-				  C_denseVal[(0+batch*L_c)*A_nrows+i] = sdata[sid*L_c+0]+sv[0];
-			    C_denseVal[(1+batch*L_c)*A_nrows+i] = sdata[sid*L_c+1]+sv[1];
-			    C_denseVal[(2+batch*L_c)*A_nrows+i] = sdata[sid*L_c+2]+sv[2];
-			    C_denseVal[(3+batch*L_c)*A_nrows+i] = sdata[sid*L_c+3]+sv[3];
+          #pragma unroll
+					for( int k=0; k<L_c; k++ )
+						C_denseVal[(k+batch*L_c)*A_nrows+i] = sdata[sid*L_c+k]+sv[k];
         //printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
         //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );
 			}}
-			const int rem = B_ncols-max_batch*L_c;
+			/*const int rem = B_ncols-max_batch*L_c;
 			//if( idb==0 ) printf("Remainder:%d\n", rem);
 			if( rem!=0 ) {
-        sv[0] = 0.0; sv[1] = 0.0; sv[2] = 0.0;
+        #pragma unroll
+			  for( int k=0; k<L_c-1; k++ )
+					sv[k] = 0.0;
 			  const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
 			  for( int j=0; j<max; j++ ) {
           Index ind = A_csrRowPtr[i]+j*T+idp;
@@ -223,7 +228,7 @@ namespace backend
 			    if( idp!=0 ) {
 		                    sdata[sid*L_c+0] = sv[0];
 	  		    if( rem>1 ) sdata[sid*L_c+1] = sv[1];
-		  	    if( rem>2 )sdata[sid*L_c+2] = sv[2];
+		  	    if( rem>2 ) sdata[sid*L_c+2] = sv[2];
             //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, sv[0], sv[1], sv[2], sv[3] );
           }
           __syncthreads();
@@ -232,8 +237,8 @@ namespace backend
 						if( rem>1 ) C_denseVal[(1+max_batch*L_c)*A_nrows+i] = sdata[sid*L_c+1]+sv[1];
 			      if( rem>2 ) C_denseVal[(2+max_batch*L_c)*A_nrows+i] = sdata[sid*L_c+2]+sv[2];
         //printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
-        //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );
-	}}}}
+        //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );}}*/
+	}}
 	
 	
   template<typename c, typename a, typename b>
