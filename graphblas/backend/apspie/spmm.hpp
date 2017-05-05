@@ -10,10 +10,10 @@
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 #include "graphblas/types.hpp"
 
-#define VT     32
-#define NV     32
-#define LOG_NV  5
-#define NT    256
+#define VT    32
+#define NV    32
+#define LOG_NT 8
+#define NT   256
 
 namespace graphblas
 {
@@ -99,8 +99,8 @@ namespace backend
 
 		// one warp per row
 		int row = warp_id;
-		if( threadIdx.x==0 )
-      printf("row:%d\n", row);
+		//if( threadIdx.x==0 )
+    //  printf("row:%d\n", row);
 
 		if( row < A_nrows ) {
       int row_start = A_csrRowPtr[row];
@@ -109,40 +109,42 @@ namespace backend
 			// compute running sum per thread
       #pragma unroll
 			for( int ii=0; ii<NV; ii++ )
-			  vals[threadIdx.x+ii<<LOG_NV] = 0;
+			  vals[threadIdx.x+(ii<<LOG_NT)] = 0;
 			for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
+				//printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
 				#pragma unroll
-				for( int ii=0; ii<NV; ii++ )
-					vals[threadIdx.x+ii<<LOG_NV] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii];
-      }
+				for( int ii=0; ii<NV; ii++ ) {
+					//printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,threadIdx.x+(ii<<LOG_NT));
+					vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii];
+      }}
 
 			// parallel reduction in shared memory
 			if( lane<16 ) 
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-				  vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+16+ii<<LOG_NV];
+				  vals[threadIdx.x+(ii<<LOG_NT)] += vals[threadIdx.x+16+(ii<<LOG_NT)];
 			if( lane< 8 ) 
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-					vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+ 8+ii<<LOG_NV];
+					vals[threadIdx.x+(ii<<LOG_NT)] += vals[threadIdx.x+ 8+(ii<<LOG_NT)];
 			if( lane< 4 ) 
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-					vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+ 4+ii<<LOG_NV];
+					vals[threadIdx.x+(ii<<LOG_NT)] += vals[threadIdx.x+ 4+(ii<<LOG_NT)];
 			if( lane< 2 ) 
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-					vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+ 2+ii<<LOG_NV];
+					vals[threadIdx.x+(ii<<LOG_NT)] += vals[threadIdx.x+ 2+(ii<<LOG_NT)];
 			if( lane< 1 ) 
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-					vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+ 1+ii<<LOG_NV];
+					vals[threadIdx.x+(ii<<LOG_NT)] += vals[threadIdx.x+ 1+(ii<<LOG_NT)];
 
 			// first thread writes the result
 			if( lane==0 )
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-				  C_denseVal[row*B_ncols+ii] += vals[threadIdx.x+ii<<LOG_NV];
+				  C_denseVal[row*B_ncols+ii] += vals[threadIdx.x+(ii<<LOG_NT)];
 		}
 	}
 
@@ -217,7 +219,7 @@ namespace backend
 			    if( idp!=0 ) {
 		                    sdata[sid*L_c+0] = sv[0];
 	  		    if( rem>1 ) sdata[sid*L_c+1] = sv[1];
-		  	    if( rem>2 )sdata[sid*L_c+2] = sv[2];
+		  	    if( rem>2 ) sdata[sid*L_c+2] = sv[2];
             //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, sv[0], sv[1], sv[2], sv[3] );
           }
           __syncthreads();
