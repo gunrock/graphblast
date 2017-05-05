@@ -10,14 +10,21 @@
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 #include "graphblas/types.hpp"
 
-#define VT 16
-#define NV 32
-#define NT 128
+#define VT     32
+#define NV     32
+#define LOG_NV  5
+#define NT    256
 
 namespace graphblas
 {
 namespace backend
 {
+	template<typename c>
+	__global__ void spmv_csr_vector_kernel( const Index A_nrows, 
+			const Index B_ncols, const Index A_ncols, const Index A_nvals,
+			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
+			const c* B_denseVal, c* C_denseVal );
+
 	template<typename c>
 	__global__ void spmm_row_kernel( const Index A_nrows, const Index B_ncols, 
 			const Index A_ncols, const Index A_nvals, 
@@ -66,11 +73,77 @@ namespace backend
     const int T        = VT;
     const int NTHREADS = NT;
     const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
-    spmm_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
-      A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
+    spmv_csr_vector_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, 
+			A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, 
+			C.d_denseVal );
+    //spmm_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
+    //  A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
 
 		C.need_update = true;
 		return GrB_SUCCESS;
+	}
+
+	// Baseline implementation (col major) based on Bell/Garland 2008
+	//
+	template<typename c>
+	__global__ void spmv_csr_vector_kernel( const Index A_nrows, 
+			const Index B_ncols, const Index A_ncols, const Index A_nvals,
+			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
+			const c* B_denseVal, c* C_denseVal )
+	{
+		__shared__ float vals[NT*NV];
+
+		int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
+		int warp_id   = thread_id>>5;                      // global warp idx
+		int lane      = thread_id & (32 - 1);
+
+		// one warp per row
+		int row = warp_id;
+		if( threadIdx.x==0 )
+      printf("row:%d\n", row);
+
+		if( row < A_nrows ) {
+      int row_start = A_csrRowPtr[row];
+			int row_end   = A_csrRowPtr[row+1];
+
+			// compute running sum per thread
+      #pragma unroll
+			for( int ii=0; ii<NV; ii++ )
+			  vals[threadIdx.x+ii<<LOG_NV] = 0;
+			for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
+				#pragma unroll
+				for( int ii=0; ii<NV; ii++ )
+					vals[threadIdx.x+ii<<LOG_NV] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii];
+      }
+
+			// parallel reduction in shared memory
+			if( lane<16 ) 
+				#pragma unroll
+				for( int ii=0; ii<NV; ii++ )
+				  vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+16+ii<<LOG_NV];
+			if( lane< 8 ) 
+				#pragma unroll
+				for( int ii=0; ii<NV; ii++ )
+					vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+ 8+ii<<LOG_NV];
+			if( lane< 4 ) 
+				#pragma unroll
+				for( int ii=0; ii<NV; ii++ )
+					vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+ 4+ii<<LOG_NV];
+			if( lane< 2 ) 
+				#pragma unroll
+				for( int ii=0; ii<NV; ii++ )
+					vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+ 2+ii<<LOG_NV];
+			if( lane< 1 ) 
+				#pragma unroll
+				for( int ii=0; ii<NV; ii++ )
+					vals[threadIdx.x+ii<<LOG_NV] += vals[threadIdx.x+ 1+ii<<LOG_NV];
+
+			// first thread writes the result
+			if( lane==0 )
+				#pragma unroll
+				for( int ii=0; ii<NV; ii++ )
+				  C_denseVal[row*B_ncols+ii] += vals[threadIdx.x+ii<<LOG_NV];
+		}
 	}
 
 	// Naive implementation (row major)

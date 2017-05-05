@@ -28,7 +28,7 @@ struct TestMatrix {
 
 BOOST_AUTO_TEST_SUITE(matrix_suite)
 
-/*BOOST_AUTO_TEST_CASE( matrix1 )
+BOOST_AUTO_TEST_CASE( matrix1 )
 {
   std::vector<graphblas::Index> row_indices = {0, 1, 2};
   std::vector<graphblas::Index> col_indices = {1, 1, 1};
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
 		BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
 	}
-}*/
+}
 
 BOOST_AUTO_TEST_CASE( matrix6 )
 {
