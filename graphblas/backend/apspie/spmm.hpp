@@ -11,7 +11,7 @@
 #include "graphblas/types.hpp"
 
 #define VT    32
-#define NV    32
+#define NV    16
 #define LOG_NT 8
 #define NT   256
 
@@ -177,16 +177,19 @@ namespace backend
       int row_start = A_csrRowPtr[row];
 			int row_end   = A_csrRowPtr[row+1];
 
+			//for( int slab=0; slab<B_ncols-1; slab+=NV ) {
+
 			// compute running sum per thread
       #pragma unroll
 			for( int ii=0; ii<NV; ii++ )
 			  vals[threadIdx.x+(ii<<LOG_NT)] = 0;
 			for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
-				//printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
+				//printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d,slab:%d\n", row, threadIdx.x, jj, row_start, row_end, slab);
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ ) {
 					//printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,threadIdx.x+(ii<<LOG_NT));
-					vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]+A_nrows*ii];
+					vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]+A_nrows*(ii)];
+					//vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]+A_nrows*(ii+slab)];
       }}
 
 			// parallel reduction in shared memory
@@ -215,8 +218,10 @@ namespace backend
 			if( lane==0 )
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-				  C_denseVal[row+A_nrows*ii] += vals[threadIdx.x+(ii<<LOG_NT)];
-		}
+				  C_denseVal[row+A_nrows*(ii)] += vals[threadIdx.x+(ii<<LOG_NT)];
+				  //C_denseVal[row+A_nrows*(ii+slab)] += vals[threadIdx.x+(ii<<LOG_NT)];
+		//__syncthreads();
+		}//}
 	}
 
 	// Naive implementation (row major)
