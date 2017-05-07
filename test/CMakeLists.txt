@@ -52,7 +52,7 @@ set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
 include_directories( ${PROJ_INCLUDES} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cu" )#${mgpu_SRC_FILES}
-cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cu" )#${mgpu_SRC_FILES}
+#cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cu" )#${mgpu_SRC_FILES}
 #cuda_add_executable( vector${PROJ_NAME} "spmm/main.cu" )#${mgpu_SRC_FILES}
 target_link_libraries( matrix${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )
 #target_link_libraries( vector${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )

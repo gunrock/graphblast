@@ -28,8 +28,7 @@ struct TestMatrix {
 
 BOOST_AUTO_TEST_SUITE(matrix_suite)
 
-/*
-BOOST_AUTO_TEST_CASE( matrix1 )
+/*BOOST_AUTO_TEST_CASE( matrix1 )
 {
   std::vector<graphblas::Index> row_indices = {0, 1, 2};
   std::vector<graphblas::Index> col_indices = {1, 1, 1};
@@ -205,19 +204,19 @@ BOOST_AUTO_TEST_CASE( matrix6 )
   std::vector<float> denseVal;
 
 	// Row major order
-	//for( int i=0; i<nrows; i++ ) {
-  //  for( int j=0; j<max_ncols; j++ ) {
-  //    if( i==j ) denseVal.push_back(1.0);
-	//		else denseVal.push_back(0.0);
-	//	}
-	//}
-	// Column major order
-	for( int i=0; i<max_ncols; i++ ) {
-    for( int j=0; j<nrows; j++ ) {
+	for( int i=0; i<nrows; i++ ) {
+    for( int j=0; j<max_ncols; j++ ) {
       if( i==j ) denseVal.push_back(1.0);
 			else denseVal.push_back(0.0);
 		}
 	}
+	// Column major order
+	//for( int i=0; i<max_ncols; i++ ) {
+  //  for( int j=0; j<nrows; j++ ) {
+  //    if( i==j ) denseVal.push_back(1.0);
+	//		else denseVal.push_back(0.0);
+	//	}
+	//}
   b.build( denseVal );
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
@@ -239,15 +238,15 @@ BOOST_AUTO_TEST_CASE( matrix6 )
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
 		// Row major order
-		//if( col<max_ncols ) {
-		//  //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
-		//  BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
-    //}
-		// Column major order
 		if( col<max_ncols ) {
-		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
-		  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
+		  BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
     }
+		// Column major order
+		//if( col<max_ncols ) {
+		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
+		//  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+    //}
 }}
 
 BOOST_AUTO_TEST_SUITE_END() 

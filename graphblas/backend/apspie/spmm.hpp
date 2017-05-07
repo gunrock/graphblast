@@ -11,7 +11,7 @@
 #include "graphblas/types.hpp"
 
 #define VT    32
-#define NV    16
+#define NV    32
 #define LOG_NT 8
 #define NT   256
 
@@ -79,7 +79,7 @@ namespace backend
     const int T        = VT;
     const int NTHREADS = NT;
     const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
-    spmv_csr_vector_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, 
+    spmv_csr_vector_row_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, 
 		  A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, 
 			C.d_denseVal );
     //spmm_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
@@ -112,6 +112,9 @@ namespace backend
       int row_start = A_csrRowPtr[row];
 			int row_end   = A_csrRowPtr[row+1];
 
+			//for( int slab=0; slab<B_ncols; slab+=NV ) {
+			for( int slab=0; slab<100*NV; slab+=NV ) {
+
 			// compute running sum per thread
       #pragma unroll
 			for( int ii=0; ii<NV; ii++ )
@@ -121,7 +124,7 @@ namespace backend
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ ) {
 					//printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,threadIdx.x+(ii<<LOG_NT));
-					vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii];
+					vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii+slab];
       }}
 
 			// parallel reduction in shared memory
@@ -150,8 +153,9 @@ namespace backend
 			if( lane==0 )
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-				  C_denseVal[row*B_ncols+ii] += vals[threadIdx.x+(ii<<LOG_NT)];
-		}
+				  C_denseVal[row*B_ncols+ii+slab] += vals[threadIdx.x+(ii<<LOG_NT)];
+		__syncthreads();
+		}}
 	}
 
 	// Baseline implementation (col major) based on Bell/Garland 2008
@@ -178,6 +182,7 @@ namespace backend
 			int row_end   = A_csrRowPtr[row+1];
 
 			//for( int slab=0; slab<B_ncols-1; slab+=NV ) {
+			for( int slab=0; slab<100*NV; slab+=NV ) {
 
 			// compute running sum per thread
       #pragma unroll
@@ -188,8 +193,8 @@ namespace backend
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ ) {
 					//printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,threadIdx.x+(ii<<LOG_NT));
-					vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]+A_nrows*(ii)];
-					//vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]+A_nrows*(ii+slab)];
+					//vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]+A_nrows*(ii)];
+					vals[threadIdx.x+(ii<<LOG_NT)] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]+A_nrows*(ii+slab)];
       }}
 
 			// parallel reduction in shared memory
@@ -218,10 +223,10 @@ namespace backend
 			if( lane==0 )
 				#pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-				  C_denseVal[row+A_nrows*(ii)] += vals[threadIdx.x+(ii<<LOG_NT)];
-				  //C_denseVal[row+A_nrows*(ii+slab)] += vals[threadIdx.x+(ii<<LOG_NT)];
+				  //C_denseVal[row+A_nrows*(ii)] += vals[threadIdx.x+(ii<<LOG_NT)];
+				  C_denseVal[row+A_nrows*(ii+slab)] += vals[threadIdx.x+(ii<<LOG_NT)];
 		//__syncthreads();
-		}//}
+		}}
 	}
 
 	// Naive implementation (row major)
