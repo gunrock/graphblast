@@ -9,13 +9,13 @@
 #include <cstdlib>
 #include <cuda_profiler_api.h>
 
-#include <graphblas/graphblas.hpp>
+#include "graphblas/graphblas.hpp"
 
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE matrix_suite
 
 #include <boost/test/included/unit_test.hpp>
-#include <test/test.hpp>
+#include "test/test.hpp"
 
 struct TestMatrix {
   TestMatrix() :
@@ -28,7 +28,7 @@ struct TestMatrix {
 
 BOOST_AUTO_TEST_SUITE(matrix_suite)
 
-/*BOOST_AUTO_TEST_CASE( matrix1 )
+BOOST_AUTO_TEST_CASE( matrix1 )
 {
   std::vector<graphblas::Index> row_indices = {0, 1, 2};
   std::vector<graphblas::Index> col_indices = {1, 1, 1};
@@ -116,12 +116,12 @@ BOOST_AUTO_TEST_CASE( matrix4 )
     float            val = values[i];
 		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
     // Row Major layout
-		//BOOST_ASSERT( val==out_denseVal[row*11+col] );
+		BOOST_ASSERT( val==out_denseVal[row*11+col] );
     // Column Major layout
-		BOOST_ASSERT( val==out_denseVal[col*11+row] );
+		//BOOST_ASSERT( val==out_denseVal[col*11+row] );
 	}
 }
-
+/*
 // SpMM unit test (chesapeake)
 BOOST_AUTO_TEST_CASE( matrix5 )
 {
@@ -170,11 +170,14 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
 		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
-		BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+    // Row Major layout
+		BOOST_ASSERT( val==out_denseVal[row*11+col] );
+    // Column Major layout
+		//BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
 	}
-}*/
+}
 
-/*BOOST_AUTO_TEST_CASE( matrix6 )
+BOOST_AUTO_TEST_CASE( matrix6 )
 {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
@@ -221,14 +224,9 @@ BOOST_AUTO_TEST_CASE( matrix5 )
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
 
-	GpuTimer gpu_mxm;
-	gpu_mxm.Start();
 	cudaProfilerStart();
   graphblas::mxm<float, float, float>( c, op, a, b );
   cudaProfilerStop();
-  gpu_mxm.Stop();
-	float elapsed_mxm = gpu_mxm.ElapsedMillis();
-	std::cout << "mxm: " << elapsed_mxm << " ms\n";
 
 	std::vector<float> out_denseVal;
 	c.print();
@@ -238,91 +236,17 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
 		// Row major order
+		if( col<3200 ) {
 		//if( col<max_ncols ) {
 		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
-		//  BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
-    //}
+		  BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
+    }
 		// Column major order
+		//if( col<3200 ) {
 		//if( col<max_ncols ) {
 		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
 		//  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
     //}
 }}*/
-
-BOOST_AUTO_TEST_CASE( matrix7 )
-{
-  std::vector<graphblas::Index> row_indices;
-  std::vector<graphblas::Index> col_indices;
-  std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-
-	// Read in ak2010.mtx
-  char const *argv = "/data-2/gunrock_dataset/large/kron_g500-logn21/kron_g500-logn21.mtx";
-  //char const *argv = "/data-2/gunrock_dataset/large/ak2010/ak2010.mtx";
-	readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals );
-
-  graphblas::Matrix<float> a(nrows, ncols);
-
-	graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
-	graphblas::Index max_ncols = std::min( MEM_SIZE/nrows, ncols );
-  if( max_ncols<ncols ) std::cout << "Restricting col to: " << max_ncols <<
-	    std::endl;
-
-  graphblas::Matrix<float> b(nrows, max_ncols);
-  a.build( row_indices, col_indices, values, nvals );
-	a.nrows( nrows );
-	a.ncols( ncols );
-	a.nvals( nvals );
-	a.print();
-	BOOST_ASSERT( nrows==2097152 );
-	BOOST_ASSERT( ncols==2097152 );
-	BOOST_ASSERT( nvals==182081864 );
-  std::vector<float> denseVal;
-
-	// Row major order
-	for( int i=0; i<nrows; i++ ) {
-    for( int j=0; j<max_ncols; j++ ) {
-      if( i==j ) denseVal.push_back(1.0);
-			else denseVal.push_back(0.0);
-		}
-	}
-	// Column major order
-	/*for( int i=0; i<max_ncols; i++ ) {
-    for( int j=0; j<nrows; j++ ) {
-      if( i==j ) denseVal.push_back(1.0);
-			else denseVal.push_back(0.0);
-		}
-	}*/
-  b.build( denseVal );
-  graphblas::Matrix<float> c(nrows, max_ncols);
-  graphblas::Semiring op;
-
-	GpuTimer gpu_mxm;
-	gpu_mxm.Start();
-	cudaProfilerStart();
-  graphblas::mxm<float, float, float>( c, op, a, b );
-  cudaProfilerStop();
-  gpu_mxm.Stop();
-	float elapsed_mxm = gpu_mxm.ElapsedMillis();
-	std::cout << "mxm: " << elapsed_mxm << " ms\n";
-
-	std::vector<float> out_denseVal;
-	c.print();
-	c.extractTuples( out_denseVal );
-	for( int i=0; i<nvals; i++ ) {
-		graphblas::Index row = row_indices[i];
-		graphblas::Index col = col_indices[i];
-    float            val = values[i];
-		// Row major order
-		//if( col<max_ncols ) {
-		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
-		//  BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
-    //}
-		// Column major order
-		//if( col<max_ncols ) {
-		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
-		//  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
-    //}
-}}
 
 BOOST_AUTO_TEST_SUITE_END() 

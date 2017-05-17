@@ -8,9 +8,9 @@
 #include <cstdlib>
 #include <cuda_profiler_api.h>
 
-#include <graphblas/mmio.hpp>
-#include <graphblas/util.hpp>
-#include <graphblas/graphblas.hpp>
+#include "graphblas/mmio.hpp"
+#include "graphblas/util.hpp"
+#include "graphblas/graphblas.hpp"
 
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE spmm_suite
@@ -79,14 +79,10 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
 
-  GpuTimer gpu_mxm;
-  gpu_mxm.Start();
   cudaProfilerStart();
   graphblas::mxm<float, float, float>( c, op, a, b );
   cudaProfilerStop();
-  gpu_mxm.Stop();
-  float elapsed_mxm = gpu_mxm.ElapsedMillis();
-  std::cout << "mxm: " << elapsed_mxm << " ms\n";
+
   std::vector<float> out_denseVal;
   c.print();
   c.extractTuples( out_denseVal );

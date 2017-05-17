@@ -98,7 +98,6 @@ namespace backend
     // Device memcpy
     CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T),
 				cudaMemcpyHostToDevice));
-		//CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
 		//printArrayDevice( "B matrix GPU", d_denseVal );
 		return GrB_SUCCESS;
@@ -118,10 +117,13 @@ namespace backend
 	{
     // Host alloc
     h_denseVal = (T*)malloc(nvals_*sizeof(T));
+    for( Index i=0; i<nvals_; i++ )
+			h_denseVal[i] = (T) 0;
 
     // Device alloc
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_denseVal, nvals_*sizeof(T)));
-    CUDA_SAFE_CALL(cudaMemset( d_denseVal, (T) 0, nvals_*sizeof(T)));
+    CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T), 
+				cudaMemcpyHostToDevice));
 	}
 
   template <typename T>

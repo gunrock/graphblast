@@ -12,8 +12,9 @@
 
 #define VT     32
 #define NV     32
-#define LOG_NT 10
-#define NT   1024
+#define LOG_NT  7
+#define NT    128
+//#define NT   1024
 
 namespace graphblas
 {
@@ -102,61 +103,126 @@ namespace backend
 		int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
 		int warp_id   = thread_id>>5;                      // global warp idx
 		int lane      = thread_id & (32 - 1);
+    int row, slab;
+
+	  //for( int slab=0; slab<B_ncols-NV+1; slab+=NV ) {
+		for( slab=0; slab<min(B_ncols-NV+1,100*NV); slab+=NV ) {
+    //const int slab = 0;
 
 		// one warp per row
-		int row = warp_id;
-		//if( threadIdx.x==0 )
-    //  printf("row:%d\n", row);
+		// Note: Must reset this value every slab
+      row = warp_id;
+		  //if( threadIdx.x==0 )
+      //  printf("row:%d,slab:%d\n", row, slab);
 
-		if( row < A_nrows ) {
-      int row_start = A_csrRowPtr[row];
-			int row_end   = A_csrRowPtr[row+1];
+		  if( row < A_nrows ) {
+        int row_start = A_csrRowPtr[row];
+			  int row_end   = A_csrRowPtr[row+1];
 
-			//for( int slab=0; slab<B_ncols; slab+=NV ) {
-			for( int slab=0; slab<100*NV; slab+=NV ) {
-      //const int slab = 0;
+			  // compute running sum per thread
+        #pragma unroll
+			  for( int ii=0; ii<NV; ii++ )
+			    vals[ii] = 0.0;
 
-			// compute running sum per thread
-      #pragma unroll
-			for( int ii=0; ii<NV; ii++ )
-			  vals[ii] = 0;
-			for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
-				//printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
-				#pragma unroll
-				for( int ii=0; ii<NV; ii++ ) {
-					//printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,threadIdx.x+(ii<<LOG_NT));
-					vals[ii] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii+slab];
+			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
+				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ ) {
+					  //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,ii+slab);
+					  vals[ii] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii+slab];
       }}
+		  // Not sure why the following code does not work
+		  #pragma unroll
+			  for( int ii=0; ii<NV; ii++ )
+					if(ii+slab>=B_ncols )
+						//vals[ii] = 0.0;*/
+				    printf("row:%d,col:%d,val:%f\n",row,ii,vals[ii]);
+			}
 
-			// parallel reduction in shared memory
+			// parallel reduction in register memory
 			if( lane<16 ) 
-				#pragma unroll
+			  #pragma unroll
 				for( int ii=0; ii<NV; ii++ )
 				  vals[ii] += __shfl_down(vals[ii], 16);
-			if( lane< 8 ) 
-				#pragma unroll
+			  if( lane< 8 ) 
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
+				    vals[ii] += __shfl_down(vals[ii], 8);
+			  if( lane< 4 ) 
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
+				    vals[ii] += __shfl_down(vals[ii], 4);
+			  if( lane< 2 ) 
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
+				    vals[ii] += __shfl_down(vals[ii], 2);
+			  if( lane< 1 ) 
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
+				    vals[ii] += __shfl_down(vals[ii], 1);
+
+			  // first thread writes the result
+			  if( lane==0 )
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
+				    C_denseVal[row*B_ncols+ii+slab] += vals[ii];
+			  //__syncthreads();
+		} // slab
+
+  // Not unrolled last slab iteration
+  //
+
+		// one warp per row
+		// Note: Must reset this value every slab
+      row = warp_id;
+		  //if( threadIdx.x==0 )
+      //  printf("row:%d,slab:%d\n", row, slab);
+
+		  if( row < A_nrows ) {
+        int row_start = A_csrRowPtr[row];
+			  int row_end   = A_csrRowPtr[row+1];
+
+			  // compute running sum per thread
+        #pragma unroll
+			  for( int ii=0; ii<NV; ii++ )
+			    vals[ii] = 0.0;
+
+			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
+				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
+				  for( int ii=0; ii+slab<B_ncols; ii++ ) {
+					  //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,ii+slab);
+					  vals[ii] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii+slab];
+      }}}
+
+			// parallel reduction in register memory
+			if( lane<16 ) 
+			  #pragma unroll
 				for( int ii=0; ii<NV; ii++ )
-				  vals[ii] += __shfl_down(vals[ii], 8);
-			if( lane< 4 ) 
-				#pragma unroll
-				for( int ii=0; ii<NV; ii++ )
-				  vals[ii] += __shfl_down(vals[ii], 4);
-			if( lane< 2 ) 
-				#pragma unroll
-				for( int ii=0; ii<NV; ii++ )
-				  vals[ii] += __shfl_down(vals[ii], 2);
-			if( lane< 1 ) 
-				#pragma unroll
-				for( int ii=0; ii<NV; ii++ )
-				  vals[ii] += __shfl_down(vals[ii], 1);
+				  vals[ii] += __shfl_down(vals[ii], 16);
+			  if( lane< 8 ) 
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
+				    vals[ii] += __shfl_down(vals[ii], 8);
+			  if( lane< 4 ) 
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
+				    vals[ii] += __shfl_down(vals[ii], 4);
+			  if( lane< 2 ) 
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
+				    vals[ii] += __shfl_down(vals[ii], 2);
+			  if( lane< 1 ) 
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
+				    vals[ii] += __shfl_down(vals[ii], 1);
 
 			// first thread writes the result
 			if( lane==0 )
-				#pragma unroll
-				for( int ii=0; ii<NV; ii++ )
+				for( int ii=0; ii+slab<B_ncols; ii++ )
 				  C_denseVal[row*B_ncols+ii+slab] += vals[ii];
-		}}
-	} //slab
+			//__syncthreads();
+		// incomplete slab
+	}
 
 	// Baseline implementation (col major) based on Bell/Garland 2008
 	//
@@ -181,8 +247,8 @@ namespace backend
       int row_start = A_csrRowPtr[row];
 			int row_end   = A_csrRowPtr[row+1];
 
-			//for( int slab=0; slab<B_ncols-1; slab+=NV ) {
-			for( int slab=0; slab<100*NV; slab+=NV ) {
+			//for( int slab=0; slab<B_ncols; slab+=NV ) {
+			for( int slab=0; slab<min(B_ncols,100*NV); slab+=NV ) {
       //const int slab=0;
 
 			// compute running sum per thread

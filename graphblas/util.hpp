@@ -13,11 +13,6 @@
 #include "graphblas/mmio.hpp"
 #include "graphblas/types.hpp"
 
-// Forward declarations
-
-template<typename T>
-void printArray( const char* str, std::vector<T>& array, int length=40 );
-
 // Utility functions
 
 template<typename T>
@@ -74,8 +69,6 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
 			           const graphblas::Index nvals,
                  FILE* f)
 {
-  bool is_weighted = true;
-  int c;
   graphblas::Index row_ind, col_ind;
   T value;
   mtxT raw_value;
@@ -85,11 +78,6 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
     type_str[1] = 'd';
   else if( typeid(mtxT)==typeid(float) )
     type_str[1] = 'f';
-
-  int csr_max = 0;
-  int csr_current = 0;
-  int csr_row = 0;
-  int csr_first = 0;
 
   // Currently checks if there are fewer rows than promised
   // Could add check for edges in diagonal of adjacency matrix
@@ -114,6 +102,11 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
 			//<< std::endl;
 
       // Finds max csr row.
+      /*int csr_max = 0;
+      int csr_current = 0;
+      int csr_row = 0;
+      int csr_first = 0;
+
       if( i!=0 ) {
         if( col_ind-1==0 ) csr_first++;
         if( col_ind-1==col_indices[i-1] )
@@ -123,11 +116,11 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
           if( csr_current > csr_max ) {
             csr_max = csr_current;
             csr_current = 0;
-            csr_row = row_indices[i-1];
+            //csr_row = row_indices[i-1];
           } else
             csr_current = 0;
         }
-      }
+      }*/
   }}
   //std::cout << "The biggest row was " << csr_row << " with " << csr_max << 
 	//" elements.\n";
@@ -141,15 +134,8 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
 			           const graphblas::Index nvals,
                  FILE* f)
 {
-  bool is_weighted = true;
-  int c;
   graphblas::Index row_ind, col_ind;
   T value = (T) 1.0;
-
-  int csr_max = 0;
-  int csr_current = 0;
-  int csr_row = 0;
-  int csr_first = 0;
 
   // Currently checks if there are fewer rows than promised
   // Could add check for edges in diagonal of adjacency matrix
@@ -169,6 +155,11 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
 			//<< std::endl;
 
       // Finds max csr row.
+      /*int csr_max = 0;
+      int csr_current = 0;
+      int csr_row = 0;
+      int csr_first = 0;
+
       if( i!=0 ) {
         if( col_ind-1==0 ) csr_first++;
         if( col_ind-1==col_indices[i-1] )
@@ -182,7 +173,7 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
           } else
             csr_current = 0;
         }
-      }
+      }*/
   }}
   //std::cout << "The biggest row was " << csr_row << " with " << csr_max << 
 	//" elements.\n";
@@ -300,6 +291,8 @@ int readMtx( const char *fname,
 
   mm_write_banner(stdout, matcode);
   mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
+
+  return ret_code; //TODO: parse ret_code
 }
 
 template<typename T>

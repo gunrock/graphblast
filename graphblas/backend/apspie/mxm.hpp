@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#include <cuda.h>
+
 #include "graphblas/backend/apspie/Matrix.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
@@ -40,8 +42,27 @@ namespace backend
 		Info err;
 		if( A_storage == Sparse && B_storage == Dense ) {
 			err = C.set_storage( Dense );
+			Index A_nvals;
+			Index B_ncols;
+			Index B_nvals;
+			A.nvals( A_nvals );
+			B.ncols( B_ncols );
+			B.nvals( B_nvals );
+			GpuTimer cusparse, myspmm;
+			/*cusparse.Start();
+			err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
+			cusparse.Stop();
+			C.dense.clear();
+			C.dense.allocate();*/
+			myspmm.Start();
 			err = spmm( C.dense, op, A.sparse, B.dense );
-			//err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
+			myspmm.Stop();
+			float cusparse_flop = 2.0*A_nvals*B_ncols;
+			float myspmm_flop   = 2.0*A_nvals*min( B_ncols, 3200 );
+      //std::cout << "cusparse mxm: " << cusparse.ElapsedMillis() << " ms, " <<
+			//		cusparse_flop/cusparse.ElapsedMillis()/1000000.0 << " gflops\n";
+      std::cout << "my spmm  mxm: " << myspmm.ElapsedMillis() << " ms, " <<
+					myspmm_flop/myspmm.ElapsedMillis()/1000000.0 << " gflops\n";
     }
 		return err;
 	}
