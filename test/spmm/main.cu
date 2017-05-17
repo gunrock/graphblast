@@ -1,11 +1,12 @@
 #define GRB_USE_APSPIE
-#define private public
+//#define private public
 
 #include <iostream>
 #include <algorithm>
 
 #include <cstdio>
 #include <cstdlib>
+#include <cuda_profiler_api.h>
 
 #include <graphblas/mmio.hpp>
 #include <graphblas/util.hpp>
@@ -28,7 +29,7 @@ struct TestSPMM {
 
 BOOST_AUTO_TEST_SUITE(spmm_suite)
 
-BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
+BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
 {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
@@ -45,40 +46,64 @@ BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
   //printArray( "row_indices", row_indices );
   //printArray( "col_indices", col_indices );
 
-	graphblas::Matrix<float> a( nrows,ncols );
-	std::cout << nrows << " " << ncols << " " << nvals << std::endl;
-	std::cout << row_indices.size() << " " << col_indices.size() << " " << 
-			values.size() << std::endl;
+  graphblas::Matrix<float> a(nrows, ncols);
+
+  graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
+  graphblas::Index max_ncols = std::min( MEM_SIZE/nrows, ncols );
+  if( max_ncols<ncols ) std::cout << "Restricting col to: " << max_ncols <<
+      std::endl;
+
+  graphblas::Matrix<float> b(nrows, max_ncols);
   a.build( row_indices, col_indices, values, nvals );
+  a.nrows( nrows );
+  a.ncols( ncols );
+  a.nvals( nvals );
   a.print();
+  std::vector<float> denseVal;
 
-	// Assume 8GB GPU RAM, 4B per float
-	graphblas::Index MEM_SIZE = 1000000000;//1000000000; 
-	//graphblas::Index max_ncols = std::min( 10, ncols );
-	graphblas::Index max_ncols = std::min( MEM_SIZE/nrows, ncols );
-	std::cout << "Restrict ncols to: " << max_ncols << std::endl;
-	std::vector<float> dense(nrows*max_ncols, 1.0);
-  std::cout << "Size: " << dense.size() << std::endl;
-	//printArray( "B matrix", dense );
-  graphblas::Matrix<float> b( nrows, max_ncols );
-  b.build( dense );
-	b.print();
+  // Row major order
+  for( int i=0; i<nrows; i++ ) {
+    for( int j=0; j<max_ncols; j++ ) {
+      if( i==j ) denseVal.push_back(1.0);
+      else denseVal.push_back(0.0);
+    }
+  }
+  // Column major order
+  /*for( int i=0; i<max_ncols; i++ ) {
+    for( int j=0; j<nrows; j++ ) {
+      if( i==j ) denseVal.push_back(1.0);
+      else denseVal.push_back(0.0);
+    }
+  }*/
+  b.build( denseVal );
+  graphblas::Matrix<float> c(nrows, max_ncols);
+  graphblas::Semiring op;
 
-	graphblas::Matrix<float> c( nrows, max_ncols );
-	// This statement is required if mxm() is used to build matrix rather than build()
-	//c.storage( graphblas::Dense ); 
-	graphblas::Semiring op;
-
-	CpuTimer cpu_mxm;
-	cpu_mxm.Start();
-	graphblas::mxm<float, float, float>( c, op, a, b );
-  cpu_mxm.Stop();
-
-	c.print();
-	float elapsed_mxm = cpu_mxm.ElapsedMillis();
-	std::cout << "mxm: " << elapsed_mxm << " ms" << std::endl;
-	//int rhs[7] = {0, 0, 0, 0, 0, 0, 1};
-	//BOOST_ASSERT_LIST( a.matrix.h_csrRowPtr, rhs, 7 );
-}
+  GpuTimer gpu_mxm;
+  gpu_mxm.Start();
+  cudaProfilerStart();
+  graphblas::mxm<float, float, float>( c, op, a, b );
+  cudaProfilerStop();
+  gpu_mxm.Stop();
+  float elapsed_mxm = gpu_mxm.ElapsedMillis();
+  std::cout << "mxm: " << elapsed_mxm << " ms\n";
+  std::vector<float> out_denseVal;
+  c.print();
+  c.extractTuples( out_denseVal );
+  for( int i=0; i<nvals; i++ ) {
+    graphblas::Index row = row_indices[i];
+    graphblas::Index col = col_indices[i];
+    float            val = values[i];
+    // Row major order
+    //if( col<max_ncols ) {
+      //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
+    //  BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
+    //}
+    // Column major order
+    //if( col<max_ncols ) {
+      //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
+    //  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+    //}
+}}
 
 BOOST_AUTO_TEST_SUITE_END()
