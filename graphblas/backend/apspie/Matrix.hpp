@@ -204,6 +204,7 @@ namespace backend
 	Info Matrix<T>::get_storage( Storage& mat_type ) const
 	{
     mat_type = mat_type_;
+		return GrB_SUCCESS;
 	}
 } // backend
 } // graphblas

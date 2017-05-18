@@ -86,14 +86,13 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       std::cout << "Error: not enough rows in mtx file.\n";
       return;
     } else {
-      fscanf(f, "%d", &col_ind);
+      int u = fscanf(f, "%d", &col_ind);
 
       // Convert 1-based indexing MTX to 0-based indexing C++
       row_indices.push_back(row_ind-1);
       col_indices.push_back(col_ind-1);
 
-      mtxT raw_value;
-      fscanf(f, type_str, &raw_value);
+      u = fscanf(f, type_str, &raw_value);
       value = (T) raw_value;
 
       values.push_back(value);
@@ -144,15 +143,12 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       std::cout << "Error: not enough rows in mtx file.\n";
       return;
     } else {
-      fscanf(f, "%d", &col_ind);
+      int u = fscanf(f, "%d", &col_ind);
 
       // Convert 1-based indexing MTX to 0-based indexing C++
       row_indices.push_back(row_ind-1);
       col_indices.push_back(col_ind-1);
       values.push_back(value);
-
-      //std::cout << "The first row is " << row_ind-1 << " " <<  col_ind-1 
-			//<< std::endl;
 
       // Finds max csr row.
       /*int csr_max = 0;
@@ -231,7 +227,7 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
   graphblas::Index back = 0;
   for( graphblas::Index i=0; i+shift<nvals; i++ ) {
     if(col_indices[i] == -1) {
-      for( shift; back<=nvals; shift++ ) {
+      for( ; back<=nvals; shift++ ) {
         back = i+shift;
         if( col_indices[back] != -1 ) {
           col_indices[i] = col_indices[back];

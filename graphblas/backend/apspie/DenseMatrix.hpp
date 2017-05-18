@@ -124,6 +124,8 @@ namespace backend
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_denseVal, nvals_*sizeof(T)));
     CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T), 
 				cudaMemcpyHostToDevice));
+
+		return GrB_SUCCESS;
 	}
 
   template <typename T>
@@ -175,6 +177,7 @@ namespace backend
 			}
 			std::cout << std::endl;
 		}
+		return GrB_SUCCESS;
 	}
 
 	template <typename T>

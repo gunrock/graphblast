@@ -285,6 +285,7 @@ namespace backend
 			}
 			std::cout << std::endl;
 		}
+		return GrB_SUCCESS;
 	}
 
 	template <typename T>

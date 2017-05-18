@@ -76,7 +76,6 @@ namespace backend
     // TODO: add domain compatibility check
 
     // Computation
-    Info err;
     const int T        = VT;
     const int NTHREADS = NT;
     const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
@@ -132,11 +131,11 @@ namespace backend
 					  vals[ii] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii+slab];
       }}
 		  // Not sure why the following code does not work
-		  #pragma unroll
+		  /*#pragma unroll
 			  for( int ii=0; ii<NV; ii++ )
 					if(ii+slab>=B_ncols )
-						//vals[ii] = 0.0;*/
-				    printf("row:%d,col:%d,val:%f\n",row,ii,vals[ii]);
+						//vals[ii] = 0.0;
+				    printf("row:%d,col:%d,val:%f\n",row,ii,vals[ii]);*/
 			}
 
 			// parallel reduction in register memory
