@@ -114,14 +114,14 @@ BOOST_AUTO_TEST_CASE( matrix4 )
 		graphblas::Index row = row_indices[i];
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
-		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
+		std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
     // Row Major layout
 		BOOST_ASSERT( val==out_denseVal[row*11+col] );
     // Column Major layout
 		//BOOST_ASSERT( val==out_denseVal[col*11+row] );
 	}
 }
-/*
+
 // SpMM unit test (chesapeake)
 BOOST_AUTO_TEST_CASE( matrix5 )
 {
@@ -169,10 +169,11 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 		graphblas::Index row = row_indices[i];
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
-		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
     // Row Major layout
-		BOOST_ASSERT( val==out_denseVal[row*11+col] );
+		//std::cout << row << " " << col << " " << val << " " << out_denseVal[row*ncols+col] << std::endl;
+		BOOST_ASSERT( val==out_denseVal[row*ncols+col] );
     // Column Major layout
+		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
 		//BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
 	}
 }
@@ -207,19 +208,19 @@ BOOST_AUTO_TEST_CASE( matrix6 )
   std::vector<float> denseVal;
 
 	// Row major order
-	//for( int i=0; i<nrows; i++ ) {
-  //  for( int j=0; j<max_ncols; j++ ) {
-  //    if( i==j ) denseVal.push_back(1.0);
-	//		else denseVal.push_back(0.0);
-	//	}
-	//}
-	// Column major order
-	for( int i=0; i<max_ncols; i++ ) {
-    for( int j=0; j<nrows; j++ ) {
+	for( int i=0; i<nrows; i++ ) {
+    for( int j=0; j<max_ncols; j++ ) {
       if( i==j ) denseVal.push_back(1.0);
 			else denseVal.push_back(0.0);
 		}
 	}
+	// Column major order
+	//for( int i=0; i<max_ncols; i++ ) {
+  //  for( int j=0; j<nrows; j++ ) {
+  //    if( i==j ) denseVal.push_back(1.0);
+	//		else denseVal.push_back(0.0);
+	//	}
+	//}
   b.build( denseVal );
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
@@ -247,6 +248,6 @@ BOOST_AUTO_TEST_CASE( matrix6 )
 		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
 		//  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
     //}
-}}*/
+}}
 
 BOOST_AUTO_TEST_SUITE_END() 

@@ -26,19 +26,19 @@ set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
 FILE( GLOB_RECURSE PROJ_HEADERS ../graphblas/*.hpp ../graphblas/*.cuh)
 
 # nvcc flags
-set(CUDA_NVCC_FLAGS -arch=sm_35;-lineinfo;-O3;-use_fast_math;)
-#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-dlcm=ca)
+set(CUDA_NVCC_FLAGS -arch=sm_35;-lineinfo;-O3;-use_fast_math;-lineinfo;-Xptxas=-v)
+#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-Xptxas=-v;-dlcm=ca)
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_21)
 
 # needed for cudamalloc
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
-set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
+#set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
 #set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --verbose")
 
 # ptx generation
 #include_directories( ${PROJ_INCLUDES} )
-#cuda_compile_ptx( cuda_ptx_files main.cu )
-#add_custom_target( ptx ALL DEPENDS ${cuda_ptx_files} ${PROJ_HEADERS} main.cu SOURCES main.cu ${PROJ_HEADERS} )
+#cuda_compile_ptx( cuda_ptx_files "matrix/main.cu" )
+#add_custom_target( ptx ALL DEPENDS ${cuda_ptx_files} ${PROJ_HEADERS} "matrix/main.cu") #SOURCES main.cu ${PROJ_HEADERS} )
 
 # standard compilation
 #PROJECT( test_matrix C CXX) 
@@ -52,7 +52,6 @@ set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
 include_directories( ${PROJ_INCLUDES} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cu" )#${mgpu_SRC_FILES}
-#cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cu" )#${mgpu_SRC_FILES}
 cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cu" )#${mgpu_SRC_FILES}
 target_link_libraries( matrix${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )
 target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )
