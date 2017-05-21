@@ -9,21 +9,45 @@
 #include <algorithm>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <string>
+
+#include <boost/program_options.hpp>
 
 #include "graphblas/mmio.hpp"
 #include "graphblas/types.hpp"
 
 // Utility functions
 
+namespace po = boost::program_options;
+
+void parseArgs( int argc, char**argv, po::variables_map& vm ) {
+  // Declare the supported options
+	po::options_description desc("Allowed options");
+	desc.add_options()
+	  ("help", "produce help message")
+		("nv", po::value<int>(), "B slab width")
+		("nt", po::value<int>(), "threads per block")
+		("major", po::value<std::string>(), "row or column")
+	;
+
+	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
+
+	if( vm.count("help") ) {
+		std::cout << desc << "\n";
+		return;
+	}
+}
+
 template<typename T>
 bool compare(const std::tuple<graphblas::Index,
-				                     graphblas::Index,
-														 T,
-														 graphblas::Index> &lhs, 
-						const std::tuple<graphblas::Index,
-						                 graphblas::Index,
-														 T,
-														 graphblas::Index> &rhs)
+				                      graphblas::Index,
+														  T,
+														  graphblas::Index> &lhs, 
+						 const std::tuple<graphblas::Index,
+						                  graphblas::Index,
+														  T,
+														  graphblas::Index> &rhs)
 {
   graphblas::Index a = std::get<0>(lhs);
   graphblas::Index b = std::get<0>(rhs);

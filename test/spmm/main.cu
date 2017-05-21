@@ -17,6 +17,7 @@
 #define BOOST_TEST_MODULE spmm_suite
 
 #include <boost/test/included/unit_test.hpp>
+#include <boost/program_options.hpp>
 #include <test/test.hpp>
 
 struct TestSPMM {
@@ -37,29 +38,34 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   std::vector<float> values;
 	graphblas::Index nrows, ncols, nvals;
 
+  // Parse arguments
+  namespace po = boost::program_options;
+  po::variables_map vm;
+  parseArgs( argc, argv, vm );
+
 	// Read in sparse matrix
   if (argc < 2) {
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
-	  readMtx( argv[1], row_indices, col_indices, values, nrows, ncols, nvals );
+	  readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, nvals );
   }
-  //printArray( "row_indices", row_indices );
-  //printArray( "col_indices", col_indices );
 
+  // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
+  a.build( row_indices, col_indices, values, nvals );
+  a.nrows( nrows );
+  a.ncols( ncols );
+  a.nvals( nvals );
+  a.print();
 
+  // Matrix B
   graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
   graphblas::Index max_ncols = std::min( MEM_SIZE/nrows, ncols );
   if( max_ncols<ncols ) std::cout << "Restricting col to: " << max_ncols <<
       std::endl;
 
   graphblas::Matrix<float> b(nrows, max_ncols);
-  a.build( row_indices, col_indices, values, nvals );
-  a.nrows( nrows );
-  a.ncols( ncols );
-  a.nvals( nvals );
-  a.print();
   std::vector<float> denseVal;
 
   // Row major order
