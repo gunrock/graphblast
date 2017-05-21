@@ -75,8 +75,9 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   #ifdef COL_MAJOR
   for( int i=0; i<max_ncols; i++ ) {
     for( int j=0; j<nrows; j++ ) {
-      if( i==j ) denseVal.push_back(1.0);
-      else denseVal.push_back(0.0);
+      denseVal.push_back(1.0);
+      //if( i==j ) denseVal.push_back(1.0);
+      //else denseVal.push_back(0.0);
     }
   }
   #endif

@@ -50,13 +50,13 @@ namespace backend
 			B.nvals( B_nvals );
 			GpuTimer myspmm;
       #ifdef COL_MAJOR
-			/*GpuTimer cusparse;
+			GpuTimer cusparse;
 			cusparse.Start();
 			err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
 			cusparse.Stop();
 			float cusparse_flop = 2.0*A_nvals*B_ncols;
       std::cout << "cusparse mxm: " << cusparse.ElapsedMillis() << " ms, " <<
-					cusparse_flop/cusparse.ElapsedMillis()/1000000.0 << " gflops\n";*/
+					cusparse_flop/cusparse.ElapsedMillis()/1000000.0 << " gflops\n";
 			C.dense.clear();
 			C.dense.allocate();
       #endif

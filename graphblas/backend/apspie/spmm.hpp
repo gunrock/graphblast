@@ -132,10 +132,12 @@ namespace backend
 
 			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
 				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
+					int   col = A_csrColInd[jj];
+					float val = A_csrVal[jj];
 				  #pragma unroll
 				  for( int ii=0; ii<NV; ii++ )
 					  //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,ii+slab);
-					  vals[ii] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii+slab];
+					  vals[ii] += val*B_denseVal[col*B_ncols+ii+slab];
         }
 
 			  // parallel reduction in register memory
@@ -149,7 +151,8 @@ namespace backend
 				  #pragma unroll
 				  for( int ii=0; ii<NV; ii++ )
 				    C_denseVal[row*B_ncols+ii+slab] = vals[ii];
-		}} // slab
+		  }
+		} // slab
 
   // Not unrolled last slab iteration
   //
@@ -171,10 +174,12 @@ namespace backend
 
 			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
 				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
+					int   col = A_csrColInd[jj];
+					float val = A_csrVal[jj];
           #pragma unroll
 				  for( int ii=0; ii<NV; ii++ )
 						if( ii+slab<B_ncols )
-					    vals[ii] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]*B_ncols+ii+slab];
+					    vals[ii] += val*B_denseVal[col*B_ncols+ii+slab];
 					  //printf("row:%d,col:%d,val:%f\n",row,ii,vals[ii]);
         }
 
@@ -193,7 +198,7 @@ namespace backend
 				    //printf("row:%d,col:%d,val:%f\n", row, ii, vals[ii]);
 				      C_denseVal[row*B_ncols+ii+slab] = vals[ii];
 		// incomplete slab
-	  }
+	    }
 	}
 
 	// Baseline implementation (col major) based on Bell/Garland 2008
@@ -216,30 +221,33 @@ namespace backend
     //  printf("row:%d\n", row);
 
     for( slab=0; slab<B_ncols-NV+1; slab+=NV ) {
-    row = warp_id;
+      row = warp_id;
 
-		if( row < A_nrows ) {
-      int row_start = A_csrRowPtr[row];
-			int row_end   = A_csrRowPtr[row+1];
+		  if( row < A_nrows ) {
+        int row_start = A_csrRowPtr[row];
+			  int row_end   = A_csrRowPtr[row+1];
 
-			// compute running sum per thread
-      #pragma unroll
-			for( int ii=0; ii<NV; ii++ )
-			  vals[ii] = 0.0;
+			  // compute running sum per thread
+        #pragma unroll
+			  for( int ii=0; ii<NV; ii++ )
+			    vals[ii] = 0.0;
 
-			for( int jj=row_start+lane; jj<row_end; jj+=32 )
-				//printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d,slab:%d\n", row, threadIdx.x, jj, row_start, row_end, slab);
-				#pragma unroll
-				for( int ii=0; ii<NV; ii++ )
+			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
+				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d,slab:%d\n", row, threadIdx.x, jj, row_start, row_end, slab);
+			    int   col = A_csrColInd[jj];
+				  float val = A_csrVal[jj];
+				  #pragma unroll
+				  for( int ii=0; ii<NV; ii++ )
 					//printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,threadIdx.x+(ii<<LOG_NT));
-					vals[ii] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]+A_nrows*(ii+slab)];
-    }
+					  vals[ii] += val*B_denseVal[col+A_nrows*(ii+slab)];
+			  }
+      }
 
 			// parallel reduction in shared memory
-				for( int offset = 16; offset > 0; offset /= 2 )
-          #pragma unroll
-					for( int ii=0; ii<NV; ii++ )
-					  vals[ii] += __shfl_down(vals[ii], offset);
+			for( int offset = 16; offset > 0; offset /= 2 )
+        #pragma unroll
+				for( int ii=0; ii<NV; ii++ )
+					vals[ii] += __shfl_down(vals[ii], offset);
 
 			// first thread writes the result
 			if( lane==0 )
@@ -259,27 +267,30 @@ namespace backend
       #pragma unroll
 			for( int ii=0; ii<NV; ii++ )
 			  vals[ii] = 0.0;
-			for( int jj=row_start+lane; jj<row_end; jj+=32 ) 
+			for( int jj=row_start+lane; jj<row_end; jj+=32 ) { 
 				//printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d,slab:%d\n", row, threadIdx.x, jj, row_start, row_end, slab);
+			  int   col = A_csrColInd[jj];
+				float val = A_csrVal[jj];
         #pragma unroll
 				for( int ii=0; ii<NV; ii++ )
 					if( ii+slab<B_ncols )
 					//printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,threadIdx.x+(ii<<LOG_NT));
-					  vals[ii] += A_csrVal[jj]*B_denseVal[A_csrColInd[jj]+A_nrows*(ii+slab)];
+					  vals[ii] += val*B_denseVal[col+A_nrows*(ii+slab)];
       }
+		}
 
-			// parallel reduction in shared memory
-				for( int offset = 16; offset > 0; offset /= 2 )
-          #pragma unroll
-					for( int ii=0; ii<NV; ii++ )
-					  vals[ii] += __shfl_down(vals[ii], offset);
+		// parallel reduction in shared memory
+		for( int offset = 16; offset > 0; offset /= 2 )
+      #pragma unroll
+			for( int ii=0; ii<NV; ii++ )
+				vals[ii] += __shfl_down(vals[ii], offset);
 
-			// first thread writes the result
-			if( lane==0 )
-        #pragma unroll
-				for( int ii=0; ii<NV; ii++ )
-					if( ii+slab<B_ncols )
-				    C_denseVal[row+A_nrows*(ii+slab)] = vals[ii];
+		// first thread writes the result
+		if( lane==0 )
+      #pragma unroll
+			for( int ii=0; ii<NV; ii++ )
+				if( ii+slab<B_ncols )
+				  C_denseVal[row+A_nrows*(ii+slab)] = vals[ii];
 	}
 
 	// Naive implementation (row major)
