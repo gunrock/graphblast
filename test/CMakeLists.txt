@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 
 # packages                                                                                                                                                                                                 
 find_package(CUDA)
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS program_options REQUIRED)
 
 set( PROJ_NAME      "/test" )
 set( PROJ_PATH      ${CMAKE_SOURCE_DIR})
@@ -49,10 +49,10 @@ set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
 #target_link_libraries( ${PROJ_NAME} grb )#${CUDA_CUSPARSE_LIBRARY} ${CUDA_CUBLAS_LIBRARY} )
 
 # standard compilation
-include_directories( ${PROJ_INCLUDES} )
+include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cu" )#${mgpu_SRC_FILES}
 cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cu" )#${mgpu_SRC_FILES}
-target_link_libraries( matrix${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )
-target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} )
+target_link_libraries( matrix${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 
