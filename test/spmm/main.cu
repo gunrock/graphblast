@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <string>
 
 #include <cstdio>
 #include <cstdlib>
@@ -42,6 +43,19 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   namespace po = boost::program_options;
   po::variables_map vm;
   parseArgs( argc, argv, vm );
+  int nv, nt;
+  bool row_major;
+  if( vm.count("nv") )
+    nv = vm["nv"].as<int>();
+  if( vm.count("nt") )
+    nt = vm["nt"].as<int>();
+  // row_major = true  means row major
+  // row_major = false means col major
+  if( vm.count("major") )
+    row_major = (vm["major"].as<std::string>()=="row");
+  std::cout << "nv:  " << nv        << "\n";
+  std::cout << "nt:  " << nt        << "\n";
+  std::cout << "row: " << row_major << "\n";
 
 	// Read in sparse matrix
   if (argc < 2) {

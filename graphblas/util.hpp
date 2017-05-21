@@ -25,14 +25,16 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
 	po::options_description desc("Allowed options");
 	desc.add_options()
 	  ("help", "produce help message")
-		("nv", po::value<int>(), "B slab width")
-		("nt", po::value<int>(), "threads per block")
-		("major", po::value<std::string>(), "row or column")
+		("nv", po::value<int>()->default_value(32), "B slab width")
+		("nt", po::value<int>()->default_value(64), "threads per block")
+		("major", po::value<std::string>()->default_value("row"), 
+		   "row or column")
 	;
 
 	po::store(po::parse_command_line(argc, argv, desc), vm);
 	po::notify(vm);
 
+	// Note: No help message is produced if Boost Unittest Framework is also used
 	if( vm.count("help") ) {
 		std::cout << desc << "\n";
 		return;
