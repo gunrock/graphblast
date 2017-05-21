@@ -48,19 +48,22 @@ namespace backend
 			A.nvals( A_nvals );
 			B.ncols( B_ncols );
 			B.nvals( B_nvals );
-			GpuTimer cusparse, myspmm;
-			/*cusparse.Start();
+			GpuTimer myspmm;
+      #ifdef COL_MAJOR
+			/*GpuTimer cusparse;
+			cusparse.Start();
 			err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
 			cusparse.Stop();
+			float cusparse_flop = 2.0*A_nvals*B_ncols;
+      std::cout << "cusparse mxm: " << cusparse.ElapsedMillis() << " ms, " <<
+					cusparse_flop/cusparse.ElapsedMillis()/1000000.0 << " gflops\n";*/
 			C.dense.clear();
-			C.dense.allocate();*/
+			C.dense.allocate();
+      #endif
 			myspmm.Start();
 			err = spmm( C.dense, op, A.sparse, B.dense );
 			myspmm.Stop();
-			float cusparse_flop = 2.0*A_nvals*B_ncols;
-			float myspmm_flop   = 2.0*A_nvals*min( B_ncols, 3200 );
-      //std::cout << "cusparse mxm: " << cusparse.ElapsedMillis() << " ms, " <<
-			//		cusparse_flop/cusparse.ElapsedMillis()/1000000.0 << " gflops\n";
+			float myspmm_flop   = 2.0*A_nvals*B_ncols;
       std::cout << "my spmm  mxm: " << myspmm.ElapsedMillis() << " ms, " <<
 					myspmm_flop/myspmm.ElapsedMillis()/1000000.0 << " gflops\n";
     }

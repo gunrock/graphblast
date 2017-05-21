@@ -1,4 +1,5 @@
 #define GRB_USE_APSPIE
+#define ROW_MAJOR
 //#define private public
 
 #include <iostream>
@@ -28,7 +29,7 @@ struct TestMatrix {
 
 BOOST_AUTO_TEST_SUITE(matrix_suite)
 
-BOOST_AUTO_TEST_CASE( matrix1 )
+/*BOOST_AUTO_TEST_CASE( matrix1 )
 {
   std::vector<graphblas::Index> row_indices = {0, 1, 2};
   std::vector<graphblas::Index> col_indices = {1, 1, 1};
@@ -114,11 +115,15 @@ BOOST_AUTO_TEST_CASE( matrix4 )
 		graphblas::Index row = row_indices[i];
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
-		std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
+		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
     // Row Major layout
+    #ifdef ROW_MAJOR
 		BOOST_ASSERT( val==out_denseVal[row*11+col] );
+    #endif
+    #ifdef COL_MAJOR
     // Column Major layout
-		//BOOST_ASSERT( val==out_denseVal[col*11+row] );
+		BOOST_ASSERT( val==out_denseVal[col*11+row] );
+    #endif
 	}
 }
 
@@ -170,13 +175,17 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
     // Row Major layout
+    #ifdef ROW_MAJOR
 		//std::cout << row << " " << col << " " << val << " " << out_denseVal[row*ncols+col] << std::endl;
 		BOOST_ASSERT( val==out_denseVal[row*ncols+col] );
+    #endif
     // Column Major layout
+    #ifdef COL_MAJOR
 		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
-		//BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+		BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+    #endif
 	}
-}
+}*/
 
 BOOST_AUTO_TEST_CASE( matrix6 )
 {
@@ -208,19 +217,23 @@ BOOST_AUTO_TEST_CASE( matrix6 )
   std::vector<float> denseVal;
 
 	// Row major order
+  #ifdef ROW_MAJOR
 	for( int i=0; i<nrows; i++ ) {
     for( int j=0; j<max_ncols; j++ ) {
       if( i==j ) denseVal.push_back(1.0);
 			else denseVal.push_back(0.0);
 		}
 	}
+  #endif
 	// Column major order
-	//for( int i=0; i<max_ncols; i++ ) {
-  //  for( int j=0; j<nrows; j++ ) {
-  //    if( i==j ) denseVal.push_back(1.0);
-	//		else denseVal.push_back(0.0);
-	//	}
-	//}
+  #ifdef COL_MAJOR
+	for( int i=0; i<max_ncols; i++ ) {
+    for( int j=0; j<nrows; j++ ) {
+      if( i==j ) denseVal.push_back(1.0);
+			else denseVal.push_back(0.0);
+		}
+	}
+  #endif
   b.build( denseVal );
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
@@ -237,17 +250,19 @@ BOOST_AUTO_TEST_CASE( matrix6 )
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
 		// Row major order
-		if( col<3200 ) {
-		//if( col<max_ncols ) {
+    #ifdef ROW_MAJOR
+		if( col<max_ncols ) {
 		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
 		  BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
     }
+    #endif
 		// Column major order
-		//if( col<3200 ) {
-		//if( col<max_ncols ) {
+    #ifdef COL_MAJOR
+		if( col<max_ncols ) {
 		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
-		//  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
-    //}
+		  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+    }
+    #endif
 }}
 
 BOOST_AUTO_TEST_SUITE_END() 
