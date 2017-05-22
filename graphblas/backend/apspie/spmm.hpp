@@ -169,8 +169,8 @@ namespace backend
       //  printf("row:%d,slab:%d\n", row, slab);
 
 		  if( row < A_nrows ) {
-        int row_start = A_csrRowPtr[row];
-			  int row_end   = A_csrRowPtr[row+1];
+        int row_start = __ldg(A_csrRowPtr+row);
+			  int row_end   = __ldg(A_csrRowPtr+row+1);
 
 			  // compute running sum per thread
         #pragma unroll
@@ -179,6 +179,8 @@ namespace backend
 
 			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
 				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
+					//int   col = __ldg(A_csrColInd+jj);
+					//float val = __ldg(A_csrVal+jj);
 					int   col = A_csrColInd[jj];
 					float val = A_csrVal[jj];
 				  #pragma unroll
@@ -211,8 +213,8 @@ namespace backend
       //  printf("row:%d,slab:%d\n", row, slab);
 
 		  if( row < A_nrows ) {
-        int row_start = A_csrRowPtr[row];
-			  int row_end   = A_csrRowPtr[row+1];
+        int row_start = __ldg(A_csrRowPtr+row);
+			  int row_end   = __ldg(A_csrRowPtr+row+1);
 
 			  // compute running sum per thread
         #pragma unroll
@@ -221,6 +223,8 @@ namespace backend
 
 			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
 				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
+					//int   col = __ldg(A_csrColInd+jj);
+					//float val = __ldg(A_csrVal+jj);
 					int   col = A_csrColInd[jj];
 					float val = A_csrVal[jj];
           #pragma unroll
