@@ -83,7 +83,7 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
 
   // Matrix B
   graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
-  graphblas::Index max_ncols = std::min( MEM_SIZE/nrows, ncols );
+  graphblas::Index max_ncols = std::min( MEM_SIZE/nrows/32*32, ncols );
   if( DEBUG && max_ncols<ncols ) std::cout << "Restricting col to: " 
       << max_ncols << std::endl;
 

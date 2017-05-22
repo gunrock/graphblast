@@ -193,14 +193,14 @@ namespace backend
 			  // parallel reduction in register memory
 				for( int offset = 16; offset > 0; offset /= 2 )
           #pragma unroll
-					for( int ii=0; ii<TB; ii++ )
-					  vals[ii] += __shfl_down(vals[ii], offset);
+          for( int ii=0; ii<TB; ii++ )
+            vals[ii] += __shfl_xor(vals[ii], offset);
+            //vals[ii] += __shfl_down(vals[ii], offset);
 
-			  // first thread writes the result
-			  if( lane==0 )
-				  #pragma unroll
-				  for( int ii=0; ii<TB; ii++ )
-				    C_denseVal[row*B_ncols+ii+slab] = vals[ii];
+        // first thread writes the result
+				if( lane<32 )
+          C_denseVal[row*B_ncols+lane+slab] = vals[lane];
+
 		  }
 		} // slab
 
@@ -239,16 +239,14 @@ namespace backend
 				// TODO: need to accumulate to another variable (not vals[ii])
 				for( int offset = 16; offset > 0; offset /= 2 )
           #pragma unroll
-					for( int ii=0; ii<TB; ii++ )
-					  vals[ii] += __shfl_down(vals[ii], offset);
+          for( int ii=0; ii<TB; ii++ )
+            vals[ii] += __shfl_xor(vals[ii], offset);
+            //vals[ii] += __shfl_down(vals[ii], offset);
 
-			  // first thread writes the result
-			  if( lane==0 )
-					#pragma unroll
-				  for( int ii=0; ii<TB; ii++ )
-						if( ii+slab<B_ncols )
-				    //printf("row:%d,col:%d,val:%f\n", row, ii, vals[ii]);
-				      C_denseVal[row*B_ncols+ii+slab] = vals[ii];
+        // first thread writes the result
+				if( lane<32 && lane+slab<B_ncols )
+          C_denseVal[row*B_ncols+lane+slab] = vals[lane];
+
 		// incomplete slab
 	    }
 	}

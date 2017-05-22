@@ -10,7 +10,7 @@ do
 	  do
 			for nt in 32 64 128 256 512 1024
 			do
-        benchmark/test --tb=$tb --nt=$nt --major=col /data-2/gunrock_dataset/large/$i/$i.mtx
+        benchmark/test --tb=$tb --nt=$nt /data-2/gunrock_dataset/large/$i/$i.mtx
 		  done
 	  done	
   fi
