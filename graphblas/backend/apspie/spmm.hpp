@@ -69,6 +69,7 @@ namespace backend
     const int T        = TA;
     const int NTHREADS = NT;
     const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
+		//CUDA_SAFE_CALL( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
     if( ROW_MAJOR )
 			switch( TB ) {
 				case 1:
@@ -275,8 +276,8 @@ namespace backend
       row = warp_id;
 
 		  if( row < A_nrows ) {
-        int row_start = A_csrRowPtr[row];
-			  int row_end   = A_csrRowPtr[row+1];
+        int row_start = __ldg(A_csrRowPtr+row);
+			  int row_end   = __ldg(A_csrRowPtr+row+1);
 
 			  // compute running sum per thread
         #pragma unroll
@@ -289,7 +290,7 @@ namespace backend
 				  float val = A_csrVal[jj];
 				  #pragma unroll
 				  for( int ii=0; ii<TB; ii++ )
-					  vals[ii] += val*B_denseVal[col+A_nrows*(ii+slab)];
+					  vals[ii] += val*__ldg(B_denseVal+col+A_nrows*(ii+slab));
 			  }
       }
 
@@ -310,8 +311,8 @@ namespace backend
     row = warp_id;
 
 		if( row < A_nrows ) {
-      int row_start = A_csrRowPtr[row];
-			int row_end   = A_csrRowPtr[row+1];
+      int row_start = __ldg(A_csrRowPtr+row);
+			int row_end   = __ldg(A_csrRowPtr+row+1);
 
 			// compute running sum per thread
       #pragma unroll
@@ -324,7 +325,7 @@ namespace backend
         #pragma unroll
 				for( int ii=0; ii<TB; ii++ )
 					if( ii+slab<B_ncols )
-					  vals[ii] += val*B_denseVal[col+A_nrows*(ii+slab)];
+					  vals[ii] += val*__ldg(B_denseVal+col+A_nrows*(ii+slab));
       }
 		}
 
