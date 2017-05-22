@@ -153,11 +153,13 @@ namespace backend
 			const c* B_denseVal, c* C_denseVal )
 	{
 		float vals[TB];
+    __shared__ float sh_vals[1024];
 
 		int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
 		int warp_id   = thread_id>>5;                      // global warp idx
 		int lane      = thread_id & (32 - 1);
     int row, slab;
+    float val;
 
 	  for( slab=0; slab<B_ncols-TB+1; slab+=TB ) {
 		//for( slab=0; slab<min(B_ncols-TB+1,100*TB); slab+=TB )
@@ -191,15 +193,29 @@ namespace backend
         }
 
 			  // parallel reduction in register memory
-				for( int offset = 16; offset > 0; offset /= 2 )
+				//for( int offset = 16; offset > 0; offset /= 2 )
           #pragma unroll
-          for( int ii=0; ii<TB; ii++ )
-            vals[ii] += __shfl_xor(vals[ii], offset);
+          for( int ii=0; ii<TB; ii++ ) {
+            vals[ii] += __shfl_xor(vals[ii], 16);
+            vals[ii] += __shfl_xor(vals[ii], 8 );
+            vals[ii] += __shfl_xor(vals[ii], 4 );
+            vals[ii] += __shfl_xor(vals[ii], 2 );
+            vals[ii] += __shfl_xor(vals[ii], 1 );
+				    if( ii==lane ) val = vals[ii];
             //vals[ii] += __shfl_down(vals[ii], offset);
+			    }
 
         // first thread writes the result
-				if( lane<32 )
-          C_denseVal[row*B_ncols+lane+slab] = vals[lane];
+		    if( lane==0 )
+          #pragma unroll
+			    for( int ii=0; ii<TB; ii++ ) {
+				      C_denseVal[row*B_ncols+ii+slab] = vals[ii];
+							//sh_vals[threadIdx.x-lane+ii] = vals[ii];
+              //printf("ii:%d,ind:%d\n",ii,threadIdx.x-lane+ii);
+          }
+
+				//__syncthreads();
+        //C_denseVal[row*B_ncols+slab+lane] = sh_vals[threadIdx.x];
 
 		  }
 		} // slab
@@ -209,7 +225,7 @@ namespace backend
 
 		// one warp per row
 		// Note: Must reset this value every slab
-      row = warp_id;
+      /*row = warp_id;
 		  //if( threadIdx.x==0 )
       //  printf("row:%d,slab:%d\n", row, slab);
 
@@ -237,18 +253,32 @@ namespace backend
 
 			  // parallel reduction in register memory
 				// TODO: need to accumulate to another variable (not vals[ii])
-				for( int offset = 16; offset > 0; offset /= 2 )
+				//for( int offset = 16; offset > 0; offset /= 2 )
           #pragma unroll
-          for( int ii=0; ii<TB; ii++ )
-            vals[ii] += __shfl_xor(vals[ii], offset);
+          for( int ii=0; ii<TB; ii++ ) {
+            //vals[ii] += __shfl_xor(vals[ii], offset);
+            vals[ii] += __shfl_xor(vals[ii], 16);
+            vals[ii] += __shfl_xor(vals[ii], 8 );
+            vals[ii] += __shfl_xor(vals[ii], 4 );
+            vals[ii] += __shfl_xor(vals[ii], 2 );
+            vals[ii] += __shfl_xor(vals[ii], 1 );
+				    if( ii==lane ) val = vals[ii];
             //vals[ii] += __shfl_down(vals[ii], offset);
+          }
 
         // first thread writes the result
-				if( lane<32 && lane+slab<B_ncols )
-          C_denseVal[row*B_ncols+lane+slab] = vals[lane];
+		      if( lane==0 )
+            #pragma unroll
+			      for( int ii=0; ii<TB; ii++ ) {
+				      //C_denseVal[row*B_ncols+ii+slab] = vals[ii];
+							sh_vals[threadIdx.x-lane+ii] = vals[ii];
+              //printf("ii:%d,ind:%d\n",ii,threadIdx.x-lane+ii);
+            }
 
-		// incomplete slab
-	    }
+				__syncthreads();
+				if( lane+slab<B_ncols )
+          C_denseVal[row*B_ncols+lane+slab] = sh_vals[threadIdx.x];
+	  }*/
 	}
 
 	// Baseline implementation (col major) based on Bell/Garland 2008

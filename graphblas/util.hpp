@@ -27,7 +27,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
 	  ("help", "produce help message")
 		("ta", po::value<int>()->default_value(32), "threads per A row")
 		("tb", po::value<int>()->default_value(32), "B slab width")
-		("nt", po::value<int>()->default_value(128), "threads per block")
+		("nt", po::value<int>()->default_value(64), "threads per block")
 		("major", po::value<std::string>()->default_value("row"), 
 		   "row or column")
 		("debug", po::value<bool>()->default_value(false), "debug on")

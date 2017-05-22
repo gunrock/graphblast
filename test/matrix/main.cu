@@ -1,5 +1,5 @@
 #define GRB_USE_APSPIE
-#define ROW_MAJOR
+//#define ROW_MAJOR
 //#define private public
 
 #include <iostream>
@@ -29,7 +29,7 @@ struct TestMatrix {
 
 BOOST_AUTO_TEST_SUITE(matrix_suite)
 
-/*BOOST_AUTO_TEST_CASE( matrix1 )
+BOOST_AUTO_TEST_CASE( matrix1 )
 {
   std::vector<graphblas::Index> row_indices = {0, 1, 2};
   std::vector<graphblas::Index> col_indices = {1, 1, 1};
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE( matrix4 )
 
 	GpuTimer gpu_mxm;
 	gpu_mxm.Start();
-  graphblas::mxm<float, float, float>( c, op, a, b );
+  graphblas::mxm<float, float, float>( c, op, a, b, 32, 32, 64, true );
   gpu_mxm.Stop();
 	float elapsed_mxm = gpu_mxm.ElapsedMillis();
 	std::cout << "mxm: " << elapsed_mxm << " ms\n";
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 
 	// Read in chesapeake.mtx
   char const *argv = "../dataset/small/chesapeake.mtx";
-	readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals );
+	readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
 
   graphblas::Matrix<float> a(nrows, ncols);
   graphblas::Matrix<float> b(nrows, ncols);
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 
 	GpuTimer gpu_mxm;
 	gpu_mxm.Start();
-  graphblas::mxm<float, float, float>( c, op, a, b );
+  graphblas::mxm<float, float, float>( c, op, a, b, 32, 32, 64, true );
   gpu_mxm.Stop();
 	float elapsed_mxm = gpu_mxm.ElapsedMillis();
 	std::cout << "mxm: " << elapsed_mxm << " ms\n";
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 		BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
     #endif
 	}
-}*/
+}
 
 BOOST_AUTO_TEST_CASE( matrix6 )
 {
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE( matrix6 )
 
 	// Read in ak2010.mtx
   char const *argv = "/data-2/gunrock_dataset/large/ak2010/ak2010.mtx";
-	readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals );
+	readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
 
   graphblas::Matrix<float> a(nrows, ncols);
 
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE( matrix6 )
   graphblas::Semiring op;
 
 	cudaProfilerStart();
-  graphblas::mxm<float, float, float>( c, op, a, b );
+  graphblas::mxm<float, float, float>( c, op, a, b, 32, 32, 64, true );
   cudaProfilerStop();
 
 	std::vector<float> out_denseVal;

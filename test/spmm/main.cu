@@ -122,10 +122,10 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
     float            val = values[i];
     if( col<max_ncols ) {
       // Row major order
-      if( ROW_MAJOR )
-      //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
+      if( ROW_MAJOR ) {
+        //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
         BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
-      else
+      } else
       // Column major order
       //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
         BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
