@@ -13,25 +13,10 @@
 #include "graphblas/util.hpp"
 #include "graphblas/graphblas.hpp"
 
-#define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE spmm_suite
-
-#include <boost/test/included/unit_test.hpp>
 #include <boost/program_options.hpp>
 #include <test/test.hpp>
 
-struct TestSPMM {
-  TestSPMM() :
-    argc( boost::unit_test::framework::master_test_suite().argc ),
-    argv( boost::unit_test::framework::master_test_suite().argv ) {}
-
-  int argc;
-  char **argv;
-};
-
-BOOST_AUTO_TEST_SUITE(spmm_suite)
-
-BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
+int main( int argc, char** argv )
 {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
@@ -112,7 +97,7 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   cudaProfilerStart();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
   cudaProfilerStop();
-
+  /*
   std::vector<float> out_denseVal;
   if( DEBUG ) c.print();
   c.extractTuples( out_denseVal );
@@ -130,7 +115,6 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
       //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
         BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
     }
-  }
+  }*/
+  return 0;
 }
-
-BOOST_AUTO_TEST_SUITE_END()

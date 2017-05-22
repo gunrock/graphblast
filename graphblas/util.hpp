@@ -25,10 +25,12 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
 	po::options_description desc("Allowed options");
 	desc.add_options()
 	  ("help", "produce help message")
-		("nv", po::value<int>()->default_value(32), "B slab width")
+		("ta", po::value<int>()->default_value(32), "threads per A row")
+		("tb", po::value<int>()->default_value(32), "B slab width")
 		("nt", po::value<int>()->default_value(64), "threads per block")
 		("major", po::value<std::string>()->default_value("row"), 
 		   "row or column")
+		("debug", po::value<bool>()->default_value(false), "debug on")
 	;
 
 	po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -276,7 +278,8 @@ int readMtx( const char *fname,
 	           std::vector<T>& values,
 			       graphblas::Index& nrows,
 			       graphblas::Index& ncols,
-			       graphblas::Index& nvals )
+			       graphblas::Index& nvals,
+			       const bool DEBUG	)
 {
   int ret_code;
   MM_typecode matcode;
@@ -311,8 +314,8 @@ int readMtx( const char *fname,
     makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
   customSort<T>( row_indices, col_indices, values );
 
-  mm_write_banner(stdout, matcode);
-  mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
+  if( DEBUG ) mm_write_banner(stdout, matcode);
+  if( DEBUG ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
 
   return ret_code; //TODO: parse ret_code
 }
