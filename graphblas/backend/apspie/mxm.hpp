@@ -28,7 +28,18 @@ namespace backend
   Info mxm( Matrix<c>&       C,
 	  			  const Semiring&  op,
 		  			const Matrix<a>& A,
-			  		const Matrix<b>& B )
+			  		const Matrix<b>& B );
+
+	// For testing
+  template <typename c, typename a, typename b>
+  Info mxm( Matrix<c>&       C,
+	  			  const Semiring&  op,
+		  			const Matrix<a>& A,
+			  		const Matrix<b>& B,
+				    const int TA,
+				    const int TB,
+				    const int NT,
+				    const bool ROW_MAJOR )
   {
 		Storage A_storage, B_storage;
 		A.get_storage( A_storage );
@@ -49,23 +60,23 @@ namespace backend
 			B.ncols( B_ncols );
 			B.nvals( B_nvals );
 			GpuTimer myspmm;
-      #ifdef COL_MAJOR
-			GpuTimer cusparse;
-			cusparse.Start();
-			err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
-			cusparse.Stop();
-			float cusparse_flop = 2.0*A_nvals*B_ncols;
-      std::cout << "cusparse mxm: " << cusparse.ElapsedMillis() << " ms, " <<
-					cusparse_flop/cusparse.ElapsedMillis()/1000000.0 << " gflops\n";
-			C.dense.clear();
-			C.dense.allocate();
-      #endif
+      /*if( !ROW_MAJOR ) {
+			  GpuTimer cusparse;
+			  cusparse.Start();
+			  err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
+			  cusparse.Stop();
+			  float cusparse_flop = 2.0*A_nvals*B_ncols;
+        std::cout << "cusparse, " << cusparse.ElapsedMillis() << ", " <<
+					cusparse_flop/cusparse.ElapsedMillis()/1000000.0 << "\n";
+			  C.dense.clear();
+			  C.dense.allocate();
+			}*/
 			myspmm.Start();
-			err = spmm( C.dense, op, A.sparse, B.dense );
+			err = spmm( C.dense, op, A.sparse, B.dense, TA, TB, NT, ROW_MAJOR );
 			myspmm.Stop();
 			float myspmm_flop   = 2.0*A_nvals*B_ncols;
-      std::cout << "my spmm  mxm: " << myspmm.ElapsedMillis() << " ms, " <<
-					myspmm_flop/myspmm.ElapsedMillis()/1000000.0 << " gflops\n";
+      std::cout << "my, " << myspmm.ElapsedMillis() << ", " <<
+					myspmm_flop/myspmm.ElapsedMillis()/1000000.0 << "\n";
     }
 		return err;
 	}

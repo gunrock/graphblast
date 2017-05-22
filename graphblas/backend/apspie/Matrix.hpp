@@ -81,6 +81,17 @@ namespace backend
                      const Semiring&  op,
                      const Matrix<a>& A,
                      const Matrix<b>& B );
+
+		// For testing
+    template <typename c, typename a, typename b>
+    friend Info mxm( Matrix<c>&       C,
+                     const Semiring&  op,
+                     const Matrix<a>& A,
+                     const Matrix<b>& B,
+					           const int TA,
+					           const int TB,
+					           const int NT,
+					           const bool ROW_MAJOR );
   };
 
   template <typename T>

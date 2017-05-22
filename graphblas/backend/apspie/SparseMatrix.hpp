@@ -98,6 +98,17 @@ namespace backend
                       const SparseMatrix<a>& A,
                       const DenseMatrix<b>&  B );
 
+		// For testing
+		template <typename c, typename a, typename b>
+		friend Info spmm( DenseMatrix<c>&        C,
+                      const Semiring&        op,
+                      const SparseMatrix<a>& A,
+                      const DenseMatrix<b>&  B,
+					            const int TA,
+					            const int TB,
+					            const int NT,
+					            const bool ROW_MAJOR );
+
 		template <typename c, typename a, typename b>
 		friend Info cusparse_spmm( DenseMatrix<c>&        C,
                                const Semiring&        op,

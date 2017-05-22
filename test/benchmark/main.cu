@@ -97,10 +97,10 @@ int main( int argc, char** argv )
   cudaProfilerStart();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
   cudaProfilerStop();
-  /*
+  
   std::vector<float> out_denseVal;
   if( DEBUG ) c.print();
-  c.extractTuples( out_denseVal );
+  /*c.extractTuples( out_denseVal );
   for( int i=0; i<nvals; i++ ) {
     graphblas::Index row = row_indices[i];
     graphblas::Index col = col_indices[i];

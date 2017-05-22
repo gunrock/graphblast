@@ -71,12 +71,23 @@ namespace backend
     // Keep track of whether host values are up-to-date with device values 
 		bool need_update;
 
-		template <typename c, typename a, typename b>
+    template <typename c, typename a, typename b>
 		friend Info spmm( DenseMatrix<c>&        C,
                       const Semiring&        op,
                       const SparseMatrix<a>& A,
                       const DenseMatrix<b>&  B );
 
+		// For testing
+    template <typename c, typename a, typename b>
+		friend Info spmm( DenseMatrix<c>&        C,
+                      const Semiring&        op,
+                      const SparseMatrix<a>& A,
+                      const DenseMatrix<b>&  B,
+					            const int TA,
+					            const int TB,
+					            const int NT,
+					            const bool ROW_MAJOR );
+		
 		template <typename c, typename a, typename b>
 		friend Info cusparse_spmm( DenseMatrix<c>&        C,
                                const Semiring&        op,
