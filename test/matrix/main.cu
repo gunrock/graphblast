@@ -1,5 +1,5 @@
 #define GRB_USE_APSPIE
-//#define ROW_MAJOR
+#define COL
 //#define private public
 
 #include <iostream>
@@ -71,8 +71,7 @@ BOOST_AUTO_TEST_CASE( matrix3 )
 	BOOST_ASSERT( err == graphblas::GrB_INDEX_OUT_OF_BOUNDS );
 }
 
-// SpMM unit test
-// Assert: error: out of dimension tuple passed into build
+// SpMM unit test (test_cc)
 BOOST_AUTO_TEST_CASE( matrix4 )
 {
   std::vector<graphblas::Index> row_indices = {0, 1, 2, 2, 2, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 8, 9, 9, 10, 10};
@@ -103,7 +102,12 @@ BOOST_AUTO_TEST_CASE( matrix4 )
 
 	GpuTimer gpu_mxm;
 	gpu_mxm.Start();
+  #ifdef ROW
   graphblas::mxm<float, float, float>( c, op, a, b, 32, 32, 64, true );
+  #endif
+  #ifdef COL
+  graphblas::mxm<float, float, float>( c, op, a, b, 32, 32, 64, false );
+  #endif
   gpu_mxm.Stop();
 	float elapsed_mxm = gpu_mxm.ElapsedMillis();
 	std::cout << "mxm: " << elapsed_mxm << " ms\n";
@@ -115,13 +119,14 @@ BOOST_AUTO_TEST_CASE( matrix4 )
 		graphblas::Index row = row_indices[i];
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
-		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
     // Row Major layout
-    #ifdef ROW_MAJOR
+    #ifdef ROW
+		//std::cout << row << " " << col << " " << val << " " << out_denseVal[row*11+col] << std::endl;
 		BOOST_ASSERT( val==out_denseVal[row*11+col] );
     #endif
-    #ifdef COL_MAJOR
+    #ifdef COL
     // Column Major layout
+		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
 		BOOST_ASSERT( val==out_denseVal[col*11+row] );
     #endif
 	}
@@ -162,7 +167,12 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 
 	GpuTimer gpu_mxm;
 	gpu_mxm.Start();
+  #ifdef ROW
   graphblas::mxm<float, float, float>( c, op, a, b, 32, 32, 64, true );
+  #endif
+  #ifdef COL
+  graphblas::mxm<float, float, float>( c, op, a, b, 32, 32, 64, false );
+  #endif
   gpu_mxm.Stop();
 	float elapsed_mxm = gpu_mxm.ElapsedMillis();
 	std::cout << "mxm: " << elapsed_mxm << " ms\n";
@@ -175,12 +185,12 @@ BOOST_AUTO_TEST_CASE( matrix5 )
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
     // Row Major layout
-    #ifdef ROW_MAJOR
+    #ifdef ROW
 		//std::cout << row << " " << col << " " << val << " " << out_denseVal[row*ncols+col] << std::endl;
 		BOOST_ASSERT( val==out_denseVal[row*ncols+col] );
     #endif
     // Column Major layout
-    #ifdef COL_MAJOR
+    #ifdef COL
 		//std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
 		BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
     #endif
@@ -201,7 +211,7 @@ BOOST_AUTO_TEST_CASE( matrix6 )
   graphblas::Matrix<float> a(nrows, ncols);
 
 	graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
-	graphblas::Index max_ncols = std::min( MEM_SIZE/nrows, ncols );
+	graphblas::Index max_ncols = std::min( MEM_SIZE/nrows/32*32, ncols );
   if( max_ncols<ncols ) std::cout << "Restricting col to: " << max_ncols <<
 	    std::endl;
 
@@ -217,7 +227,7 @@ BOOST_AUTO_TEST_CASE( matrix6 )
   std::vector<float> denseVal;
 
 	// Row major order
-  #ifdef ROW_MAJOR
+  #ifdef ROW
 	for( int i=0; i<nrows; i++ ) {
     for( int j=0; j<max_ncols; j++ ) {
       if( i==j ) denseVal.push_back(1.0);
@@ -226,7 +236,7 @@ BOOST_AUTO_TEST_CASE( matrix6 )
 	}
   #endif
 	// Column major order
-  #ifdef COL_MAJOR
+  #ifdef COL
 	for( int i=0; i<max_ncols; i++ ) {
     for( int j=0; j<nrows; j++ ) {
       if( i==j ) denseVal.push_back(1.0);
@@ -239,7 +249,12 @@ BOOST_AUTO_TEST_CASE( matrix6 )
   graphblas::Semiring op;
 
 	cudaProfilerStart();
+  #ifdef ROW
   graphblas::mxm<float, float, float>( c, op, a, b, 32, 32, 64, true );
+  #endif
+  #ifdef COL
+  graphblas::mxm<float, float, float>( c, op, a, b, 32, 32, 64, false );
+  #endif
   cudaProfilerStop();
 
 	std::vector<float> out_denseVal;
@@ -250,14 +265,14 @@ BOOST_AUTO_TEST_CASE( matrix6 )
 		graphblas::Index col = col_indices[i];
     float            val = values[i];
 		// Row major order
-    #ifdef ROW_MAJOR
+    #ifdef ROW
 		if( col<max_ncols ) {
 		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
 		  BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
     }
     #endif
 		// Column major order
-    #ifdef COL_MAJOR
+    #ifdef COL
 		if( col<max_ncols ) {
 		  //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
 		  BOOST_ASSERT( val==out_denseVal[col*nrows+row] );

@@ -153,17 +153,13 @@ namespace backend
 			const c* B_denseVal, c* C_denseVal )
 	{
 		float vals[TB];
-    __shared__ float sh_vals[1024];
 
 		int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
 		int warp_id   = thread_id>>5;                      // global warp idx
 		int lane      = thread_id & (32 - 1);
     int row, slab;
-    float val;
 
-	  for( slab=0; slab<B_ncols-TB+1; slab+=TB ) {
-		//for( slab=0; slab<min(B_ncols-TB+1,100*TB); slab+=TB )
-    //const int slab = 0;
+	  for( slab=0; slab<B_ncols; slab+=TB ) {
 
 		// one warp per row
 		// Note: Must reset this value every slab
@@ -181,11 +177,9 @@ namespace backend
 			    vals[ii] = 0.0;
 
 			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
-				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
-					//int   col = __ldg(A_csrColInd+jj);
-					//float val = __ldg(A_csrVal+jj);
 					int   col = A_csrColInd[jj];
 					float val = A_csrVal[jj];
+
 				  #pragma unroll
 				  for( int ii=0; ii<TB; ii++ )
 					  //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,ii+slab);
@@ -201,8 +195,6 @@ namespace backend
             vals[ii] += __shfl_xor(vals[ii], 4 );
             vals[ii] += __shfl_xor(vals[ii], 2 );
             vals[ii] += __shfl_xor(vals[ii], 1 );
-				    if( ii==lane ) val = vals[ii];
-            //vals[ii] += __shfl_down(vals[ii], offset);
 			    }
 
         // first thread writes the result
@@ -300,7 +292,7 @@ namespace backend
 		//if( threadIdx.x==0 )
     //  printf("row:%d\n", row);
 
-    for( slab=0; slab<B_ncols-TB+1; slab+=TB ) {
+    for( slab=0; slab<B_ncols; slab+=TB ) {
       row = warp_id;
 
 		  if( row < A_nrows ) {
@@ -323,10 +315,14 @@ namespace backend
       }
 
 			// parallel reduction in shared memory
-			for( int offset = 16; offset > 0; offset /= 2 )
-        #pragma unroll
-				for( int ii=0; ii<TB; ii++ )
-					vals[ii] += __shfl_down(vals[ii], offset);
+      #pragma unroll
+      for( int ii=0; ii<TB; ii++ ) {
+        vals[ii] += __shfl_xor(vals[ii], 16);
+        vals[ii] += __shfl_xor(vals[ii], 8 );
+        vals[ii] += __shfl_xor(vals[ii], 4 );
+        vals[ii] += __shfl_xor(vals[ii], 2 );
+        vals[ii] += __shfl_xor(vals[ii], 1 );
+      }
 
 			// first thread writes the result
 			if( lane==0 )
@@ -336,7 +332,7 @@ namespace backend
 		}
 
 		// Incomplete slab
-    row = warp_id;
+    /*row = warp_id;
 
 		if( row < A_nrows ) {
       int row_start = __ldg(A_csrRowPtr+row);
@@ -368,7 +364,7 @@ namespace backend
       #pragma unroll
 			for( int ii=0; ii<TB; ii++ )
 				if( ii+slab<B_ncols )
-				  C_denseVal[row+A_nrows*(ii+slab)] = vals[ii];
+				  C_denseVal[row+A_nrows*(ii+slab)] = vals[ii];*/
 	}
 
   template<typename c, typename a, typename b>
