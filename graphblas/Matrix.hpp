@@ -46,6 +46,7 @@ namespace graphblas
 		// This should be a private method used to set storage type {Sparse, Dense}
     //Info set_storage( const Storage mat_type ); 
     Info clear();
+    Info print();
 
 		// Accessors
 		Info extractTuples( std::vector<Index>& row_indices,
@@ -53,7 +54,6 @@ namespace graphblas
 												std::vector<T>&     values ) const;
 		// Dense variant of extractTuples not in GraphBLAS spec
 		Info extractTuples( std::vector<T>& values ) const;
-    Info print() const;
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
@@ -88,6 +88,16 @@ namespace graphblas
 					           const int TB,
 					           const int NT,
 					           const bool ROW_MAJOR );
+
+		template <typename c, typename a, typename b>
+    friend Info mxmCompute( Matrix<c>&       C,
+                     const Semiring&  op,
+                     const Matrix<a>& A,
+                     const Matrix<b>& B,
+					           const int TA,
+					           const int TB,
+					           const int NT,
+					           const int ROW_MAJOR );
 	};
 
   template <typename T>
@@ -143,13 +153,13 @@ namespace graphblas
 		return matrix.clear();
 	}
 
-	// Accessors
   template <typename T>
-  Info Matrix<T>::print() const
+  Info Matrix<T>::print()
   {
     return matrix.print();
   }
 
+	// Accessors
 	template <typename T>
   Info Matrix<T>::nrows( Index& nrows ) const
 	{

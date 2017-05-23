@@ -57,11 +57,10 @@ namespace backend
 	  // private method for allocation
 		Info allocate();	
     Info clear();
+    Info print(); 
+    Info printCSR( const char* str ); // private method for pretty printing
 
 		// Accessors
-    Info print() const;    // Const, because host memory unmodified
-		// private method for pretty printing
-    Info printCSR( const char* str ) const;
 		Info nrows( Index& nrows ) const;
 		Info ncols( Index& ncols ) const;
 		Info nvals( Index& nvals ) const;
@@ -114,6 +113,24 @@ namespace backend
                                const Semiring&        op,
                                const SparseMatrix<a>& A,
                                const DenseMatrix<b>&  B );
+
+		template <typename c, typename a, typename b>
+		friend Info cusparse_spgemm( SparseMatrix<c>&       C,
+                                 const Semiring&        op,
+                                 const SparseMatrix<a>& A,
+                                 const SparseMatrix<b>& B );
+
+		template <typename c, typename a, typename b>
+		friend Info cusparse_spgemm_analyze( SparseMatrix<c>&       C,
+                                 const Semiring&        op,
+                                 const SparseMatrix<a>& A,
+                                 const SparseMatrix<b>& B );
+
+		template <typename c, typename a, typename b>
+		friend Info cusparse_spgemm_compute( SparseMatrix<c>&       C,
+                                 const Semiring&        op,
+                                 const SparseMatrix<a>& A,
+                                 const SparseMatrix<b>& B );
   };
 
   template <typename T>
@@ -226,14 +243,21 @@ namespace backend
 	Info SparseMatrix<T>::allocate()
 	{
     // Host malloc
-    h_csrRowPtr = (Index*)malloc((nrows_+1)*sizeof(Index));
-    h_csrColInd = (Index*)malloc(nvals_*sizeof(Index));
-    h_csrVal    = (T*)    malloc(nvals_*sizeof(T));
+    if( nrows_!=0 && h_csrRowPtr == NULL ) 
+			h_csrRowPtr = (Index*)malloc((nrows_+1)*sizeof(Index));
+    if( nvals_!=0 && h_csrColInd == NULL )
+			h_csrColInd = (Index*)malloc(nvals_*sizeof(Index));
+    if( nvals_!=0 && h_csrVal == NULL )
+			h_csrVal    = (T*)    malloc(nvals_*sizeof(T));
 
     // Device malloc
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrRowPtr, (nrows_+1)*sizeof(Index)));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrColInd, nvals_*sizeof(Index)));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrVal,    nvals_*sizeof(T))); 
+    if( nrows_!=0 && d_csrRowPtr==NULL )
+			CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrRowPtr, 
+					(nrows_+1)*sizeof(Index)));
+    if( nvals_!=0 && d_csrColInd==NULL )
+			CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrColInd, nvals_*sizeof(Index)));
+    if( nvals_!=0 && d_csrVal==NULL )
+			CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrVal,    nvals_*sizeof(T))); 
    
 	 	if( h_csrRowPtr==NULL ) return GrB_OUT_OF_MEMORY;
 	 	if( h_csrColInd==NULL ) return GrB_OUT_OF_MEMORY;
@@ -258,10 +282,11 @@ namespace backend
 	}
 
   template <typename T>
-  Info SparseMatrix<T>::print() const
+  Info SparseMatrix<T>::print()
 	{
     // Device memcpy
 		if( need_update ) {
+			allocate();
       CUDA_SAFE_CALL(cudaMemcpy(h_csrVal,    d_csrVal,    
 			  	nvals_*sizeof(T), cudaMemcpyDeviceToHost));
       CUDA_SAFE_CALL(cudaMemcpy(h_csrColInd, d_csrColInd, 
@@ -277,7 +302,7 @@ namespace backend
 	}
 
 	template <typename T>
-	Info SparseMatrix<T>::printCSR( const char* str ) const
+	Info SparseMatrix<T>::printCSR( const char* str )
 	{
 		Index length = std::min(20, nrows_);
     std::cout << str << ":\n";

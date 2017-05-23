@@ -30,6 +30,8 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
 		("nt", po::value<int>()->default_value(64), "threads per block")
 		("major", po::value<std::string>()->default_value("row"), 
 		   "row or column")
+		("split", po::value<bool>()->default_value(false), 
+		   "split spgemm computation")
 		("debug", po::value<bool>()->default_value(false), "debug on")
 	;
 

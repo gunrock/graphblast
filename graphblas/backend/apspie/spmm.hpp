@@ -19,13 +19,13 @@ namespace graphblas
 namespace backend
 {
 	template<typename c, int TB>
-	__global__ void spmv_csr_vector_row_kernel( const Index A_nrows, 
+	__global__ void spmm_row_kernel( const Index A_nrows, 
 			const Index B_ncols, const Index A_ncols, const Index A_nvals,
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal );
 
 	template<typename c, int TB>
-	__global__ void spmv_csr_vector_col_kernel( const Index A_nrows, 
+	__global__ void spmm_col_kernel( const Index A_nrows, 
 			const Index B_ncols, const Index A_ncols, const Index A_nvals,
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal );
@@ -73,32 +73,32 @@ namespace backend
     if( ROW_MAJOR )
 			switch( TB ) {
 				case 1:
-          spmv_csr_vector_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 2:
-          spmv_csr_vector_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 4:
-          spmv_csr_vector_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 8:
-          spmv_csr_vector_row_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_row_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 16:
-          spmv_csr_vector_row_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_row_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 32:
-          spmv_csr_vector_row_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_row_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
@@ -106,32 +106,32 @@ namespace backend
 		else
 			switch( TB ) {
 				case 1:
-          spmv_csr_vector_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 2:
-          spmv_csr_vector_col_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_col_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 4:
-          spmv_csr_vector_col_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_col_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 8:
-          spmv_csr_vector_col_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_col_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 16:
-          spmv_csr_vector_col_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_col_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
 					break;
 				case 32:
-          spmv_csr_vector_col_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+          spmm_col_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
           break;
@@ -147,7 +147,7 @@ namespace backend
 	// Baseline implementation (row major) based on Bell/Garland 2008
 	//
 	template<typename c, int TB>
-	__global__ void spmv_csr_vector_row_kernel( const Index A_nrows, 
+	__global__ void spmm_row_kernel( const Index A_nrows, 
 			const Index B_ncols, const Index A_ncols, const Index A_nvals,
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal )
@@ -276,7 +276,7 @@ namespace backend
 	// Baseline implementation (col major) based on Bell/Garland 2008
 	//
 	template<typename c, int TB>
-	__global__ void spmv_csr_vector_col_kernel( const Index A_nrows, 
+	__global__ void spmm_col_kernel( const Index A_nrows, 
 			const Index B_ncols, const Index A_ncols, const Index A_nvals,
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal )
@@ -405,9 +405,6 @@ namespace backend
 
     cusparseMatDescr_t descr;
     cusparseCreateMatDescr( &descr );
-
-    cusparseSetMatType( descr, CUSPARSE_MATRIX_TYPE_GENERAL );
-    cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
 
     cusparseSetMatType( descr, CUSPARSE_MATRIX_TYPE_GENERAL );
     cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
