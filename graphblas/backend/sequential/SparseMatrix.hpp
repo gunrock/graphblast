@@ -26,13 +26,11 @@ namespace backend
     public:
     SparseMatrix()
 			 	: nrows_(0), ncols_(0), nvals_(0), 
-				h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL),
-        d_csrColInd(NULL), d_csrRowPtr(NULL), d_csrVal(NULL) {}
+				h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL) {}
 
     SparseMatrix( const Index nrows, const Index ncols )
 			  : nrows_(nrows), ncols_(ncols), nvals_(0),
-				h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL),
-        d_csrColInd(NULL), d_csrRowPtr(NULL), d_csrVal(NULL) {}
+				h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL) {}
 
 	  // C API Methods
 	  Info build( const std::vector<Index>& row_indices,

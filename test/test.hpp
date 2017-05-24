@@ -13,7 +13,7 @@ void BOOST_ASSERT_LIST( const T* lhs, const S* rhs, int length=5 )
 template <typename T, typename S>
 void BOOST_ASSERT_LIST( std::vector<T>& lhs, const S* rhs, int length=5 )
 {
-  length = lhs.size();
+  //length = lhs.size();
 	for( int i=0; i<length; i++ )
     BOOST_ASSERT( lhs[i] == rhs[i] );
 }
@@ -21,7 +21,7 @@ void BOOST_ASSERT_LIST( std::vector<T>& lhs, const S* rhs, int length=5 )
 template <typename T, typename S>
 void BOOST_ASSERT_LIST( std::vector<T>& lhs, std::vector<S>& rhs, int length=5 )
 {
-	length = std::max( lhs.size(), rhs.size() );
+	length = std::min( lhs.size(), rhs.size() );
   for( int i=0; i<length; i++ )
     BOOST_ASSERT( lhs[i] == rhs[i] );
 }
@@ -29,7 +29,7 @@ void BOOST_ASSERT_LIST( std::vector<T>& lhs, std::vector<S>& rhs, int length=5 )
 template <typename T, typename S>
 void BOOST_ASSERT_LIST( const T* lhs, std::vector<S>& rhs, int length=5 )
 {
-	length = rhs.size();
+	//length = rhs.size();
   for( int i=0; i<length; i++ )
     BOOST_ASSERT( lhs[i] == rhs[i] );
 }

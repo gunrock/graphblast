@@ -26,10 +26,9 @@ namespace backend
   {
     public:
     DenseMatrix() 
-        : nrows_(0), ncols_(0), nvals_(0), h_denseVal(NULL), d_denseVal(NULL){}
+        : nrows_(0), ncols_(0), nvals_(0), h_denseVal(NULL){}
     DenseMatrix( const Index nrows, const Index ncols ) 
-				: nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), 
-        h_denseVal(NULL), d_denseVal(NULL) {}
+				: nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), h_denseVal(NULL){}
 
     // Assignment Constructor
 		// // TODO: Replaces dup in C++

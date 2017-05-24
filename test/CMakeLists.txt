@@ -52,13 +52,15 @@ set(CMAKE_EXE_LINKER_FLAGS "-Wl,--start-group $ENV{MKLROOT}/lib/intel64/libmkl_i
 include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} $ENV{MKLROOT} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cu" )#${mgpu_SRC_FILES}
-cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cu" )#${mgpu_SRC_FILES}
-cuda_add_executable( spgemm${PROJ_NAME} "spgemm/main.cu" )#${mgpu_SRC_FILES}
-cuda_add_executable( benchmark_spmm${PROJ_NAME} "benchmark_spmm/main.cu" )#${mgpu_SRC_FILES}
-cuda_add_executable( benchmark_spgemm${PROJ_NAME} "benchmark_spgemm/main.cu" )#${mgpu_SRC_FILES}
+cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cu" )#${mgpu_SRC_FILES}
+#cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cu" )#${mgpu_SRC_FILES}
+#cuda_add_executable( spgemm${PROJ_NAME} "spgemm/main.cu" )#${mgpu_SRC_FILES}
+#cuda_add_executable( benchmark_spmm${PROJ_NAME} "benchmark_spmm/main.cu" )#${mgpu_SRC_FILES}
+#cuda_add_executable( benchmark_spgemm${PROJ_NAME} "benchmark_spgemm/main.cu" )#${mgpu_SRC_FILES}
 target_link_libraries( matrix${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-target_link_libraries( spgemm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-target_link_libraries( benchmark_spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-target_link_libraries( benchmark_spgemm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+target_link_libraries( mmio${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( spgemm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( benchmark_spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( benchmark_spgemm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 
