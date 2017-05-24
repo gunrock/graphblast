@@ -76,16 +76,9 @@ namespace backend
                      const Matrix<b>&  B,
                      const Descriptor& desc );
 
-		// In <graphblas/mxm.hpp>
+		// In <graphblas/backend/apspie/mxm.hpp>
     template <typename c, typename a, typename b>
     friend Info mxm( Matrix<c>&       C,
-                     const Semiring&  op,
-                     const Matrix<a>& A,
-                     const Matrix<b>& B );
-
-		// In <graphblas/mxm.hpp>
-    template <typename c, typename a, typename b>
-    friend Info mxmCompute( Matrix<c>&       C,
                      const Semiring&  op,
                      const Matrix<a>& A,
                      const Matrix<b>& B );

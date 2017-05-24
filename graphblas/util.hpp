@@ -32,6 +32,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
 		   "row or column")
 		("split", po::value<bool>()->default_value(false), 
 		   "split spgemm computation")
+		("iter", po::value<int>()->default_value(10), "number of iterations")
 		("debug", po::value<bool>()->default_value(false), "debug on")
 	;
 

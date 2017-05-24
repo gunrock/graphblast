@@ -59,38 +59,14 @@ namespace backend
 		if( A_storage == Sparse && B_storage == Sparse) {
       if( C_storage == Unknown )
 				err = C.setStorage( Sparse );
-			GpuTimer myspmm, cusparse;
-			cusparse.Start();
 			err = cusparse_spgemm( C.sparse, op, A.sparse, B.sparse );
-			cusparse.Stop();
-			std::cout << "cusparse, " << cusparse.ElapsedMillis() << "\n";
 		} else if( A_storage == Sparse && B_storage == Dense ) {
 			if( C_storage == Unknown )
 			  err = C.setStorage( Dense );
-			Index A_nvals;
-			Index B_ncols;
-			Index B_nvals;
-			A.nvals( A_nvals );
-			B.ncols( B_ncols );
-			B.nvals( B_nvals );
-			GpuTimer myspmm;
-      if( !ROW_MAJOR ) {
-			  GpuTimer cusparse;
-			  cusparse.Start();
+      if( TA==0 && TB==0 && NT==0 )
 			  err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
-			  cusparse.Stop();
-			  float cusparse_flop = 2.0*A_nvals*B_ncols;
-        std::cout << "cusparse, " << cusparse.ElapsedMillis() << ", " <<
-					cusparse_flop/cusparse.ElapsedMillis()/1000000.0 << "\n";
-			  C.dense.clear();
-			  C.dense.allocate();
-			}
-			myspmm.Start();
-			err = spmm( C.dense, op, A.sparse, B.dense, TA, TB, NT, ROW_MAJOR );
-			myspmm.Stop();
-			float myspmm_flop   = 2.0*A_nvals*B_ncols;
-      std::cout << "my, " << myspmm.ElapsedMillis() << ", " <<
-					myspmm_flop/myspmm.ElapsedMillis()/1000000.0 << "\n";
+			else
+			  err = spmm( C.dense, op, A.sparse, B.dense, TA, TB, NT, ROW_MAJOR );
     }
 		return err;
 	}

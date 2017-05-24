@@ -97,7 +97,7 @@ namespace graphblas
 					           const int TA,
 					           const int TB,
 					           const int NT,
-					           const int ROW_MAJOR );
+					           const bool ROW_MAJOR );
 	};
 
   template <typename T>
