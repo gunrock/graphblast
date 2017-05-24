@@ -31,8 +31,8 @@ set(CUDA_NVCC_FLAGS -arch=sm_35;-lineinfo;-O3;-use_fast_math;-lineinfo;-Xptxas=-
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_21)
 
 # needed for cudamalloc
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
-#set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
+set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11 -m64")
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,--start-group $ENV{MKLROOT}/lib/intel64/libmkl_intel_lp64.a $ENV{MKLROOT}/lib/intel64/libmkl_gnu_thread.a $ENV{MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lgomp -lpthread -lm -ldl")
 #set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --verbose")
 
 # ptx generation
@@ -49,7 +49,7 @@ set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
 #target_link_libraries( ${PROJ_NAME} grb )#${CUDA_CUSPARSE_LIBRARY} ${CUDA_CUBLAS_LIBRARY} )
 
 # standard compilation
-include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} )
+include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} $ENV{MKLROOT} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cu" )#${mgpu_SRC_FILES}
 cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cu" )#${mgpu_SRC_FILES}

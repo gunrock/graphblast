@@ -1,4 +1,5 @@
-#define GRB_USE_APSPIE
+//#define GRB_USE_APSPIE
+#define GRB_USE_SEQUENTIAL
 
 #include <vector>
 #include <cstdio>
