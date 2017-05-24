@@ -26,11 +26,11 @@ namespace backend
     public:
     SparseMatrix()
 			 	: nrows_(0), ncols_(0), nvals_(0), 
-				h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL) {}
+				csrColInd(NULL), csrRowPtr(NULL), csrVal(NULL) {}
 
     SparseMatrix( const Index nrows, const Index ncols )
 			  : nrows_(nrows), ncols_(ncols), nvals_(0),
-				h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL) {}
+				csrColInd(NULL), csrRowPtr(NULL), csrVal(NULL) {}
 
 	  // C API Methods
 	  Info build( const std::vector<Index>& row_indices,
@@ -69,16 +69,16 @@ namespace backend
     Index nvals_;
 
 		// CSR format
-    Index* h_csrColInd;
-    Index* h_csrRowPtr;
-    T*     h_csrVal;
+    Index* csrColInd;
+    Index* csrRowPtr;
+    T*     csrVal;
 
     // CSC format
 		// TODO: add CSC support. 
 		// -this will be useful and necessary for direction-optimized SpMV
-		/*Index* h_cscRowInd;
-		Index* h_cscColPtr;
-    T*     h_cscVal;*/
+		/*Index* cscRowInd;
+		Index*   cscColPtr;
+    T*       cscVal;*/
 
     // TODO: add sequential single-threaded spmm
 		template <typename c, typename a, typename b>
@@ -148,37 +148,37 @@ namespace backend
 
     // Set all rowPtr to 0
     for( Index i=0; i<=nrows_; i++ )
-      h_csrRowPtr[i] = 0;
+      csrRowPtr[i] = 0;
     // Go through all elements to see how many fall in each row
     for( Index i=0; i<nvals_; i++ ) {
 			row = row_indices[i];
 		  if( row>=nrows_ ) return GrB_INDEX_OUT_OF_BOUNDS;
-      h_csrRowPtr[ row ]++;
+      csrRowPtr[ row ]++;
 		}
     // Cumulative sum to obtain rowPtr
     for( Index i=0; i<nrows_; i++ ) {
-      temp = h_csrRowPtr[i];
-      h_csrRowPtr[i] = cumsum;
+      temp = csrRowPtr[i];
+      csrRowPtr[i] = cumsum;
       cumsum += temp;
     }
-    h_csrRowPtr[nrows_] = nvals;
+    csrRowPtr[nrows_] = nvals;
 
     // Store colInd and val
     for( Index i=0; i<nvals_; i++ ) {
       row = row_indices[i];
-      dest= h_csrRowPtr[row];
+      dest= csrRowPtr[row];
 			col = col_indices[i];
 			if( col>=ncols_ ) return GrB_INDEX_OUT_OF_BOUNDS;
-      h_csrColInd[dest] = col;
-      h_csrVal[dest]    = values[i];
-      h_csrRowPtr[row]++;
+      csrColInd[dest] = col;
+      csrVal[dest]    = values[i];
+      csrRowPtr[row]++;
     }
     cumsum = 0;
     
     // Undo damage done to rowPtr
     for( Index i=0; i<=nrows_; i++ ) {
-      temp = h_csrRowPtr[i];
-      h_csrRowPtr[i] = cumsum;
+      temp = csrRowPtr[i];
+      csrRowPtr[i] = cumsum;
       cumsum = temp;
     }
 
@@ -195,10 +195,10 @@ namespace backend
 		values.clear();
 
 		for( Index row=0; row<nrows_; row++ ) {
-		  for( Index ind=h_csrRowPtr[row]; ind<h_csrRowPtr[row+1]; ind++ ) {
+		  for( Index ind=csrRowPtr[row]; ind<csrRowPtr[row+1]; ind++ ) {
         row_indices.push_back(row);
-				col_indices.push_back(h_csrColInd[ind]);
-				values.push_back(     h_csrVal[ind]);
+				col_indices.push_back(csrColInd[ind]);
+				values.push_back(     csrVal[ind]);
 			}
 		}
 
@@ -217,16 +217,16 @@ namespace backend
 	Info SparseMatrix<T>::allocate()
 	{
     // Host malloc
-    if( nrows_!=0 && h_csrRowPtr == NULL ) 
-			h_csrRowPtr = (Index*)malloc((nrows_+1)*sizeof(Index));
-    if( nvals_!=0 && h_csrColInd == NULL )
-			h_csrColInd = (Index*)malloc(nvals_*sizeof(Index));
-    if( nvals_!=0 && h_csrVal == NULL )
-			h_csrVal    = (T*)    malloc(nvals_*sizeof(T));
+    if( nrows_!=0 && csrRowPtr == NULL ) 
+			csrRowPtr = (Index*)malloc((nrows_+1)*sizeof(Index));
+    if( nvals_!=0 && csrColInd == NULL )
+			csrColInd = (Index*)malloc(nvals_*sizeof(Index));
+    if( nvals_!=0 && csrVal == NULL )
+			csrVal    = (T*)    malloc(nvals_*sizeof(T));
 
-	 	if( h_csrRowPtr==NULL ) return GrB_OUT_OF_MEMORY;
-	 	if( h_csrColInd==NULL ) return GrB_OUT_OF_MEMORY;
-	 	if( h_csrVal==NULL )    return GrB_OUT_OF_MEMORY;
+	 	if( csrRowPtr==NULL ) return GrB_OUT_OF_MEMORY;
+	 	if( csrColInd==NULL ) return GrB_OUT_OF_MEMORY;
+	 	if( csrVal==NULL )    return GrB_OUT_OF_MEMORY;
 
 		return GrB_SUCCESS;
 	}
@@ -234,18 +234,18 @@ namespace backend
   template <typename T>
 	Info SparseMatrix<T>::clear()
 	{
-    if( h_csrRowPtr ) free( h_csrRowPtr );
-    if( h_csrColInd ) free( h_csrColInd );
-    if( h_csrVal )    free( h_csrVal );
+    if( csrRowPtr ) free( csrRowPtr );
+    if( csrColInd ) free( csrColInd );
+    if( csrVal )    free( csrVal );
     return GrB_SUCCESS;
 	}
 
   template <typename T>
   Info SparseMatrix<T>::print()
 	{
-    printArray( "csrColInd", h_csrColInd );
-		printArray( "csrRowPtr", h_csrRowPtr );
-		printArray( "csrVal",    h_csrVal );
+    printArray( "csrColInd", csrColInd );
+		printArray( "csrRowPtr", csrRowPtr );
+		printArray( "csrVal",    csrVal );
 		printCSR( "pretty print" );
 		return GrB_SUCCESS;
 	}
@@ -257,10 +257,10 @@ namespace backend
     std::cout << str << ":\n";
 
 		for( Index row=0; row<length; row++ ) {
-      Index col_start = h_csrRowPtr[row];
-			Index col_end   = h_csrRowPtr[row+1];
+      Index col_start = csrRowPtr[row];
+			Index col_end   = csrRowPtr[row+1];
 			for( Index col=0; col<length; col++ ) {
-				Index col_ind = h_csrColInd[col_start];
+				Index col_ind = csrColInd[col_start];
 				if( col_start<col_end && col_ind==col ) {
 					std::cout << "x ";
 					col_start++;

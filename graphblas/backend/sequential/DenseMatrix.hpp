@@ -26,9 +26,9 @@ namespace backend
   {
     public:
     DenseMatrix() 
-        : nrows_(0), ncols_(0), nvals_(0), h_denseVal(NULL){}
+        : nrows_(0), ncols_(0), nvals_(0), denseVal(NULL){}
     DenseMatrix( const Index nrows, const Index ncols ) 
-				: nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), h_denseVal(NULL){}
+				: nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), denseVal(NULL){}
 
     // Assignment Constructor
 		// // TODO: Replaces dup in C++
@@ -64,7 +64,7 @@ namespace backend
     Index nvals_;
 
 		// Dense format
-		T* h_denseVal;
+		T* denseVal;
 		T* d_denseVal;
 
 		// TODO:
@@ -100,7 +100,7 @@ namespace backend
 
 		// Host copy
 		for( graphblas::Index i=0; i<nvals_; i++ )
-				h_denseVal[i] = values[i];
+				denseVal[i] = values[i];
 
 		return GrB_SUCCESS;
 	}
@@ -118,9 +118,9 @@ namespace backend
 	Info DenseMatrix<T>::allocate()
 	{
     // Host alloc
-    h_denseVal = (T*)malloc(nvals_*sizeof(T));
+    denseVal = (T*)malloc(nvals_*sizeof(T));
     for( Index i=0; i<nvals_; i++ )
-			h_denseVal[i] = (T) 0;
+			denseVal[i] = (T) 0;
 
 		return GrB_SUCCESS;
 	}
@@ -128,7 +128,7 @@ namespace backend
   template <typename T>
 	Info DenseMatrix<T>::clear()
 	{
-    if( h_denseVal ) free( h_denseVal );
+    if( denseVal ) free( denseVal );
     return GrB_SUCCESS;
 	}
 
@@ -138,7 +138,7 @@ namespace backend
     values.clear();
 
     for( Index i=0; i<nvals_; i++ ) {
-      values.push_back( h_denseVal[i] );
+      values.push_back( denseVal[i] );
     }
     return GrB_SUCCESS;
 	}
@@ -146,7 +146,7 @@ namespace backend
   template <typename T>
   Info DenseMatrix<T>::print() const
 	{
-    printArray( "denseVal", h_denseVal );
+    printArray( "denseVal", denseVal );
 		printDense();
 		return GrB_SUCCESS;
 	}
@@ -159,12 +159,12 @@ namespace backend
       for( int col=0; col<length; col++ ) {
 				// Print row major order matrix in row major order
         #ifdef ROW_MAJOR
-        if( h_denseVal[row*ncols_+col]!=0.0 ) std::cout << "x ";
+        if( denseVal[row*ncols_+col]!=0.0 ) std::cout << "x ";
 				else std::cout << "0 ";
         #endif
 				// Print column major order matrix in row major order (Transposition)
         #ifdef COL_MAJOR
-        if( h_denseVal[col*nrows_+row]!=0.0 ) std::cout << "x ";
+        if( denseVal[col*nrows_+row]!=0.0 ) std::cout << "x ";
 				else std::cout << "0 ";
         #endif
 			}

@@ -3,8 +3,7 @@
 
 #include <iostream>
 
-#include <cuda.h>
-#include <cusparse.h>
+#include <mkl.h>
 
 #include "graphblas/backend/sequential/SparseMatrix.hpp"
 #include "graphblas/types.hpp"
@@ -24,7 +23,7 @@ namespace backend
                    const SparseMatrix<a>& A,
                    const SparseMatrix<b>& B )
   {
-    /*Index A_nrows, A_ncols, A_nvals;
+    Index A_nrows, A_ncols, A_nvals;
     Index B_nrows, B_ncols, B_nvals;
     Index C_nrows, C_ncols, C_nvals;
 
@@ -50,111 +49,50 @@ namespace backend
     // Domain compatibility check
     // TODO: add domain compatibility check
 
-    // SpGEMM Computation
-    cusparseHandle_t handle;
-    cusparseCreate( &handle );
-    cusparseSetPointerMode( handle, CUSPARSE_POINTER_MODE_HOST );
-
-    cusparseMatDescr_t descr;
-    cusparseCreateMatDescr( &descr );
-
-    cusparseSetMatType( descr, CUSPARSE_MATRIX_TYPE_GENERAL );
-    cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
-    cusparseStatus_t status;
-
-		int baseC;
-		int *nnzTotalDevHostPtr = &(C_nvals);
-		//if( C.d_csrRowPtr==NULL )
-    //  CUDA_SAFE_CALL( cudaMalloc( &C.d_csrRowPtr, (A_nrows+1)*sizeof(Index) ));
+    // SpGEMM Analyze
+		int request = 1;
+		int sort    = 7;
+		int info    = 0;
+		if( C.csrRowPtr==NULL )
+				C.csrRowPtr = (Index*) malloc( (A_nrows+1)*sizeof(Index) );
 
 		// Analyze
-    status = cusparseXcsrgemmNnz( handle,
-        CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
-				A_nrows, B_ncols, A_ncols, 
-				descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
-        descr, C.d_csrRowPtr, nnzTotalDevHostPtr );
-
-    switch( status ) {
-        case CUSPARSE_STATUS_SUCCESS:
-            //std::cout << "SpMM successful!\n";
-            break;
-        case CUSPARSE_STATUS_NOT_INITIALIZED:
-            std::cout << "Error: Library not initialized.\n";
-            break;
-        case CUSPARSE_STATUS_INVALID_VALUE:
-            std::cout << "Error: Invalid parameters m, n, or nnz.\n";
-            break;
-        case CUSPARSE_STATUS_EXECUTION_FAILED:
-            std::cout << "Error: Failed to launch GPU.\n";
-            break;
-        case CUSPARSE_STATUS_ALLOC_FAILED:
-            std::cout << "Error: Resources could not be allocated.\n";
-            break;
-        case CUSPARSE_STATUS_ARCH_MISMATCH:
-            std::cout << "Error: Device architecture does not support.\n";
-            break;
-        case CUSPARSE_STATUS_INTERNAL_ERROR:
-            std::cout << "Error: An internal operation failed.\n";
-            break;
-        case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
-            std::cout << "Error: Matrix type not supported.\n";
+		// Note: one-based indexing
+    mkl_scsrmultcsr((char*)'N', &request, &sort,
+                    &A_nrows, &A_ncols, &B_ncols,
+                    A.csrVal, A.csrColInd, A.csrRowPtr,
+                    B.csrVal, B.csrColInd, B.csrRowPtr,
+                    NULL, NULL, &C_nrows,
+                    NULL, &info);
+    if( info!=0 ) {
+      std::cout << "Error: code " << info << "\n";
     }
 
-    if( nnzTotalDevHostPtr != NULL )
-			C_nvals = *nnzTotalDevHostPtr;
-    else {
-      CUDA_SAFE_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr+A_nrows, 
-					sizeof(Index), cudaMemcpyDeviceToHost ));
-			CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
-				  sizeof(Index), cudaMemcpyDeviceToHost ));
-			C_nvals -= baseC;
+	  C_nvals = C.csrRowPtr[A_nrows]-1;
+		if( C_nvals >= C.nvals_ ) {
+				free(C.csrColInd);
+				free(C.csrVal);
+				C.csrColInd = (Index*) malloc (C_nvals*sizeof(Index));
+				C.csrVal    = (c*    ) malloc (C_nvals*sizeof(c    ));
 		}
 
-		if( C_nvals >= C.nvals_ ) {
-			CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
-			CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, C_nvals*sizeof(c) ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,    C_nvals*sizeof(c) ));
-		}
+    // SpGEMM Compute
+		request = 2;
+		sort    = 8; // Sort output rows in C
 
     // Compute
-    status = cusparseScsrgemm( handle,
-        CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
-				A_nrows, B_ncols, A_ncols, 
-				descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
-        descr,          C.d_csrVal, C.d_csrRowPtr, C.d_csrColInd );
-
-    switch( status ) {
-        case CUSPARSE_STATUS_SUCCESS:
-            //std::cout << "SpMM successful!\n";
-            break;
-        case CUSPARSE_STATUS_NOT_INITIALIZED:
-            std::cout << "Error: Library not initialized.\n";
-            break;
-        case CUSPARSE_STATUS_INVALID_VALUE:
-            std::cout << "Error: Invalid parameters m, n, or nnz.\n";
-            break;
-        case CUSPARSE_STATUS_EXECUTION_FAILED:
-            std::cout << "Error: Failed to launch GPU.\n";
-            break;
-        case CUSPARSE_STATUS_ALLOC_FAILED:
-            std::cout << "Error: Resources could not be allocated.\n";
-            break;
-        case CUSPARSE_STATUS_ARCH_MISMATCH:
-            std::cout << "Error: Device architecture does not support.\n";
-            break;
-        case CUSPARSE_STATUS_INTERNAL_ERROR:
-            std::cout << "Error: An internal operation failed.\n";
-            break;
-        case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
-            std::cout << "Error: Matrix type not supported.\n";
+    mkl_scsrmultcsr((char*)'N', &request, &sort,
+                    &A_nrows, &A_ncols, &B_ncols,
+                    A.csrVal, A.csrColInd, A.csrRowPtr,
+                    B.csrVal, B.csrColInd, B.csrRowPtr,
+                    C.csrVal, C.csrColInd, C.csrRowPtr,
+                    NULL, &info);
+    if( info!=0 ) {
+      std::cout << "Error: code " << info << "\n";
     }
 
-    C.need_update = true;  // Set flag that we need to copy data from GPU
     C.nvals_ = C_nvals;     // Update nnz count for C
-		return GrB_SUCCESS;*/
+		return GrB_SUCCESS;
   }
 
   template<typename c, typename a, typename b>

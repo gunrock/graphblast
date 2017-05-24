@@ -114,8 +114,10 @@ namespace backend
 		if( C_nvals >= C.nvals_ ) {
 			CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
 			CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, C_nvals*sizeof(c) ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,    C_nvals*sizeof(c) ));
+		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
+					C_nvals*sizeof(Index) ));
+		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
+					C_nvals*sizeof(c) ));
 		}
 
     // Compute
