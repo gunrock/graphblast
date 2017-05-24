@@ -43,19 +43,19 @@ namespace backend
                 const Index nvals );
     Info build( const std::vector<T>& values );
 		// Private method for setting storage type of matrix
-		Info set_storage( const Storage mat_type );
+		Info setStorage( const Storage mat_type );
     Info clear(); 
+		Info print();
 
 		// Accessors
     Info extractTuples( std::vector<Index>& row_indices,
                         std::vector<Index>& col_indices,
                         std::vector<T>&     values ) const;
     Info extractTuples( std::vector<T>& values ) const;
-		Info print() const;
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const; 
-		Info get_storage( Storage& mat_type ) const;
+		Info getStorage( Storage& mat_type ) const;
 
     private:
     Index nrows_;
@@ -76,11 +76,36 @@ namespace backend
                      const Matrix<b>&  B,
                      const Descriptor& desc );
 
+		// In <graphblas/backend/apspie/mxm.hpp>
     template <typename c, typename a, typename b>
     friend Info mxm( Matrix<c>&       C,
                      const Semiring&  op,
                      const Matrix<a>& A,
                      const Matrix<b>& B );
+
+		// In <graphblas/backend/apspie/mxm.hpp>
+		// For testing
+    template <typename c, typename a, typename b>
+    friend Info mxm( Matrix<c>&       C,
+                     const Semiring&  op,
+                     const Matrix<a>& A,
+                     const Matrix<b>& B,
+					           const int TA,
+					           const int TB,
+					           const int NT,
+					           const bool ROW_MAJOR );
+
+		// In <graphblas/backend/apspie/mxm.hpp>
+		// For testing
+    template <typename c, typename a, typename b>
+    friend Info mxmCompute( Matrix<c>&       C,
+                     const Semiring&  op,
+                     const Matrix<a>& A,
+                     const Matrix<b>& B,
+					           const int TA,
+					           const int TB,
+					           const int NT,
+					           const bool ROW_MAJOR );
   };
 
   template <typename T>
@@ -144,7 +169,7 @@ namespace backend
 
   // Private method that sets mat_type, clears and allocates
   template <typename T>
-	Info Matrix<T>::set_storage( const Storage mat_type )
+	Info Matrix<T>::setStorage( const Storage mat_type )
 	{
     Info err;
     mat_type_ = mat_type;
@@ -169,7 +194,7 @@ namespace backend
   }
 
   template <typename T>
-	Info Matrix<T>::print() const
+	Info Matrix<T>::print()
 	{
 		if( mat_type_ == Sparse ) return sparse.print();
 	  else if( mat_type_ == Dense ) return dense.print();
@@ -201,7 +226,7 @@ namespace backend
 	}
 
   template <typename T>
-	Info Matrix<T>::get_storage( Storage& mat_type ) const
+	Info Matrix<T>::getStorage( Storage& mat_type ) const
 	{
     mat_type = mat_type_;
 		return GrB_SUCCESS;

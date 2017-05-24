@@ -21,13 +21,43 @@ namespace graphblas
 		return backend::mxm( C.matrix, mask, accum, op, A.matrix, B.matrix, desc );
 	}
 
-	template <typename c, typename a, typename b> 
+	template <typename c, typename a, typename b>
 	Info mxm( Matrix<c>&       C,
 					  const Semiring&  op,
 						const Matrix<a>& A,
 						const Matrix<b>& B )
 	{
     return backend::mxm( C.matrix, op, A.matrix, B.matrix );
+	}
+
+	// For testing
+	template <typename c, typename a, typename b>
+	Info mxm( Matrix<c>&       C,
+					  const Semiring&  op,
+						const Matrix<a>& A,
+						const Matrix<b>& B,
+				    const int TA,
+				    const int TB,
+				    const int NT,
+				    const bool ROW_MAJOR )
+	{
+    return backend::mxm( C.matrix, op, A.matrix, B.matrix, TA, TB, NT, 
+						ROW_MAJOR );
+	}
+
+	// For testing
+	template <typename c, typename a, typename b>
+	Info mxmCompute( Matrix<c>&       C,
+					  const Semiring&  op,
+						const Matrix<a>& A,
+						const Matrix<b>& B,
+				    const int TA,
+				    const int TB,
+				    const int NT,
+				    const bool ROW_MAJOR )
+	{
+    return backend::mxmCompute( C.matrix, op, A.matrix, B.matrix, TA, TB, NT, 
+						ROW_MAJOR );
 	}
 
 }  // graphblas

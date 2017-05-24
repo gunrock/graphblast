@@ -10,45 +10,35 @@
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 #include "graphblas/types.hpp"
 
-#define VT     32
-#define NV     32
-#define LOG_NT  7
-#define NT    128
-//#define NT   1024
+//#define TA     32
+//#define TB     32
+//#define NT     64
 
 namespace graphblas
 {
 namespace backend
 {
-	template<typename c>
-	__global__ void spmv_csr_vector_row_kernel( const Index A_nrows, 
+	template<typename c, int TB>
+	__global__ void spmm_row_kernel( const Index A_nrows, 
 			const Index B_ncols, const Index A_ncols, const Index A_nvals,
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal );
 
-	template<typename c>
-	__global__ void spmv_csr_vector_col_kernel( const Index A_nrows, 
+	template<typename c, int TB>
+	__global__ void spmm_col_kernel( const Index A_nrows, 
 			const Index B_ncols, const Index A_ncols, const Index A_nvals,
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal );
-
-	template<typename c>
-	__global__ void spmm_row_kernel( const Index A_nrows, const Index B_ncols, 
-			const Index A_ncols, const Index A_nvals, 
-			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
-			const c* B_denseVal, c* C_denseVal );
-
-	template<typename c>
-  __global__ void spmm_col_kernel( const Index A_nrows, const Index B_ncols, 
-	  	const Index A_ncols, const Index A_nvals, 
-		  const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
-		  const c* B_denseVal, c* C_denseVal );
 
   template<typename c, typename a, typename b>
 	Info spmm( DenseMatrix<c>&        C,
              const Semiring&        op,
              const SparseMatrix<a>& A,
-             const DenseMatrix<b>&  B )
+             const DenseMatrix<b>&  B,
+				     const int TA,
+				     const int TB,
+				     const int NT,
+				     const bool ROW_MAJOR	)
   {
     Index A_nrows, A_ncols, A_nvals;
     Index B_nrows, B_ncols;
@@ -76,19 +66,77 @@ namespace backend
     // TODO: add domain compatibility check
 
     // Computation
-    const int T        = VT;
+    const int T        = TA;
     const int NTHREADS = NT;
     const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
-    #ifdef ROW_MAJOR
-    spmv_csr_vector_row_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, 
-		  A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, 
-			C.d_denseVal );
-    #endif
-    #ifdef COL_MAJOR
-    spmv_csr_vector_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, 
-		  A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, 
-			C.d_denseVal );
-    #endif
+		//CUDA_SAFE_CALL( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
+    if( ROW_MAJOR )
+			switch( TB ) {
+				case 1:
+          spmm_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 2:
+          spmm_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 4:
+          spmm_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 8:
+          spmm_row_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 16:
+          spmm_row_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 32:
+          spmm_row_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+			}
+		else
+			switch( TB ) {
+				case 1:
+          spmm_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 2:
+          spmm_col_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 4:
+          spmm_col_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 8:
+          spmm_col_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 16:
+          spmm_col_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+					break;
+				case 32:
+          spmm_col_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+				    B.d_denseVal, C.d_denseVal );
+          break;
+			}
+
     //spmm_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
     //  A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
 
@@ -98,22 +146,20 @@ namespace backend
 
 	// Baseline implementation (row major) based on Bell/Garland 2008
 	//
-	template<typename c>
-	__global__ void spmv_csr_vector_row_kernel( const Index A_nrows, 
+	template<typename c, int TB>
+	__global__ void spmm_row_kernel( const Index A_nrows, 
 			const Index B_ncols, const Index A_ncols, const Index A_nvals,
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal )
 	{
-		float vals[NV];
+		float vals[TB];
 
 		int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
 		int warp_id   = thread_id>>5;                      // global warp idx
 		int lane      = thread_id & (32 - 1);
     int row, slab;
 
-	  for( slab=0; slab<B_ncols-NV+1; slab+=NV ) {
-		//for( slab=0; slab<min(B_ncols-NV+1,100*NV); slab+=NV )
-    //const int slab = 0;
+	  for( slab=0; slab<B_ncols; slab+=TB ) {
 
 		// one warp per row
 		// Note: Must reset this value every slab
@@ -122,35 +168,47 @@ namespace backend
       //  printf("row:%d,slab:%d\n", row, slab);
 
 		  if( row < A_nrows ) {
-        int row_start = A_csrRowPtr[row];
-			  int row_end   = A_csrRowPtr[row+1];
+        int row_start = __ldg(A_csrRowPtr+row);
+			  int row_end   = __ldg(A_csrRowPtr+row+1);
 
 			  // compute running sum per thread
         #pragma unroll
-			  for( int ii=0; ii<NV; ii++ )
+			  for( int ii=0; ii<TB; ii++ )
 			    vals[ii] = 0.0;
 
 			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
-				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
 					int   col = A_csrColInd[jj];
 					float val = A_csrVal[jj];
+
 				  #pragma unroll
-				  for( int ii=0; ii<NV; ii++ )
+				  for( int ii=0; ii<TB; ii++ )
 					  //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,ii+slab);
-					  vals[ii] += val*B_denseVal[col*B_ncols+ii+slab];
+					  vals[ii] += val*__ldg(B_denseVal+col*B_ncols+ii+slab);
         }
 
 			  // parallel reduction in register memory
-				for( int offset = 16; offset > 0; offset /= 2 )
+				//for( int offset = 16; offset > 0; offset /= 2 )
           #pragma unroll
-					for( int ii=0; ii<NV; ii++ )
-					  vals[ii] += __shfl_down(vals[ii], offset);
+          for( int ii=0; ii<TB; ii++ ) {
+            vals[ii] += __shfl_xor(vals[ii], 16);
+            vals[ii] += __shfl_xor(vals[ii], 8 );
+            vals[ii] += __shfl_xor(vals[ii], 4 );
+            vals[ii] += __shfl_xor(vals[ii], 2 );
+            vals[ii] += __shfl_xor(vals[ii], 1 );
+			    }
 
-			  // first thread writes the result
-			  if( lane==0 )
-				  #pragma unroll
-				  for( int ii=0; ii<NV; ii++ )
-				    C_denseVal[row*B_ncols+ii+slab] = vals[ii];
+        // first thread writes the result
+		    if( lane==0 )
+          #pragma unroll
+			    for( int ii=0; ii<TB; ii++ ) {
+				      C_denseVal[row*B_ncols+ii+slab] = vals[ii];
+							//sh_vals[threadIdx.x-lane+ii] = vals[ii];
+              //printf("ii:%d,ind:%d\n",ii,threadIdx.x-lane+ii);
+          }
+
+				//__syncthreads();
+        //C_denseVal[row*B_ncols+slab+lane] = sh_vals[threadIdx.x];
+
 		  }
 		} // slab
 
@@ -159,57 +217,71 @@ namespace backend
 
 		// one warp per row
 		// Note: Must reset this value every slab
-      row = warp_id;
+      /*row = warp_id;
 		  //if( threadIdx.x==0 )
       //  printf("row:%d,slab:%d\n", row, slab);
 
 		  if( row < A_nrows ) {
-        int row_start = A_csrRowPtr[row];
-			  int row_end   = A_csrRowPtr[row+1];
+        int row_start = __ldg(A_csrRowPtr+row);
+			  int row_end   = __ldg(A_csrRowPtr+row+1);
 
 			  // compute running sum per thread
         #pragma unroll
-			  for( int ii=0; ii<NV; ii++ )
+			  for( int ii=0; ii<TB; ii++ )
 			    vals[ii] = 0.0;
 
 			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
 				  //printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d\n", row, threadIdx.x, jj, row_start, row_end);
+					//int   col = __ldg(A_csrColInd+jj);
+					//float val = __ldg(A_csrVal+jj);
 					int   col = A_csrColInd[jj];
 					float val = A_csrVal[jj];
           #pragma unroll
-				  for( int ii=0; ii<NV; ii++ )
+				  for( int ii=0; ii<TB; ii++ )
 						if( ii+slab<B_ncols )
-					    vals[ii] += val*B_denseVal[col*B_ncols+ii+slab];
-					  //printf("row:%d,col:%d,val:%f\n",row,ii,vals[ii]);
+					    vals[ii] += val*__ldg(B_denseVal+col*B_ncols+ii+slab);
+					    //vals[ii] += val*B_denseVal[col*B_ncols+ii+slab];
         }
 
 			  // parallel reduction in register memory
 				// TODO: need to accumulate to another variable (not vals[ii])
-				for( int offset = 16; offset > 0; offset /= 2 )
+				//for( int offset = 16; offset > 0; offset /= 2 )
           #pragma unroll
-					for( int ii=0; ii<NV; ii++ )
-					  vals[ii] += __shfl_down(vals[ii], offset);
+          for( int ii=0; ii<TB; ii++ ) {
+            //vals[ii] += __shfl_xor(vals[ii], offset);
+            vals[ii] += __shfl_xor(vals[ii], 16);
+            vals[ii] += __shfl_xor(vals[ii], 8 );
+            vals[ii] += __shfl_xor(vals[ii], 4 );
+            vals[ii] += __shfl_xor(vals[ii], 2 );
+            vals[ii] += __shfl_xor(vals[ii], 1 );
+				    if( ii==lane ) val = vals[ii];
+            //vals[ii] += __shfl_down(vals[ii], offset);
+          }
 
-			  // first thread writes the result
-			  if( lane==0 )
-					#pragma unroll
-				  for( int ii=0; ii<NV; ii++ )
-						if( ii+slab<B_ncols )
-				    //printf("row:%d,col:%d,val:%f\n", row, ii, vals[ii]);
-				      C_denseVal[row*B_ncols+ii+slab] = vals[ii];
-		// incomplete slab
-	    }
+        // first thread writes the result
+		      if( lane==0 )
+            #pragma unroll
+			      for( int ii=0; ii<TB; ii++ ) {
+				      //C_denseVal[row*B_ncols+ii+slab] = vals[ii];
+							sh_vals[threadIdx.x-lane+ii] = vals[ii];
+              //printf("ii:%d,ind:%d\n",ii,threadIdx.x-lane+ii);
+            }
+
+				__syncthreads();
+				if( lane+slab<B_ncols )
+          C_denseVal[row*B_ncols+lane+slab] = sh_vals[threadIdx.x];
+	  }*/
 	}
 
 	// Baseline implementation (col major) based on Bell/Garland 2008
 	//
-	template<typename c>
-	__global__ void spmv_csr_vector_col_kernel( const Index A_nrows, 
+	template<typename c, int TB>
+	__global__ void spmm_col_kernel( const Index A_nrows, 
 			const Index B_ncols, const Index A_ncols, const Index A_nvals,
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal )
 	{
-		float vals[NV];
+		float vals[TB];
 
 		int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
 		int warp_id   = thread_id>>5;                      // global warp idx
@@ -220,16 +292,16 @@ namespace backend
 		//if( threadIdx.x==0 )
     //  printf("row:%d\n", row);
 
-    for( slab=0; slab<B_ncols-NV+1; slab+=NV ) {
+    for( slab=0; slab<B_ncols; slab+=TB ) {
       row = warp_id;
 
 		  if( row < A_nrows ) {
-        int row_start = A_csrRowPtr[row];
-			  int row_end   = A_csrRowPtr[row+1];
+        int row_start = __ldg(A_csrRowPtr+row);
+			  int row_end   = __ldg(A_csrRowPtr+row+1);
 
 			  // compute running sum per thread
         #pragma unroll
-			  for( int ii=0; ii<NV; ii++ )
+			  for( int ii=0; ii<TB; ii++ )
 			    vals[ii] = 0.0;
 
 			  for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
@@ -237,230 +309,64 @@ namespace backend
 			    int   col = A_csrColInd[jj];
 				  float val = A_csrVal[jj];
 				  #pragma unroll
-				  for( int ii=0; ii<NV; ii++ )
-					//printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,threadIdx.x+(ii<<LOG_NT));
-					  vals[ii] += val*B_denseVal[col+A_nrows*(ii+slab)];
+				  for( int ii=0; ii<TB; ii++ )
+					  vals[ii] += val*__ldg(B_denseVal+col+A_nrows*(ii+slab));
 			  }
       }
 
 			// parallel reduction in shared memory
-			for( int offset = 16; offset > 0; offset /= 2 )
-        #pragma unroll
-				for( int ii=0; ii<NV; ii++ )
-					vals[ii] += __shfl_down(vals[ii], offset);
+      #pragma unroll
+      for( int ii=0; ii<TB; ii++ ) {
+        vals[ii] += __shfl_xor(vals[ii], 16);
+        vals[ii] += __shfl_xor(vals[ii], 8 );
+        vals[ii] += __shfl_xor(vals[ii], 4 );
+        vals[ii] += __shfl_xor(vals[ii], 2 );
+        vals[ii] += __shfl_xor(vals[ii], 1 );
+      }
 
 			// first thread writes the result
 			if( lane==0 )
 				#pragma unroll
-				for( int ii=0; ii<NV; ii++ )
+				for( int ii=0; ii<TB; ii++ )
 				  C_denseVal[row+A_nrows*(ii+slab)] = vals[ii];
 		}
 
 		// Incomplete slab
-    row = warp_id;
+    /*row = warp_id;
 
 		if( row < A_nrows ) {
-      int row_start = A_csrRowPtr[row];
-			int row_end   = A_csrRowPtr[row+1];
+      int row_start = __ldg(A_csrRowPtr+row);
+			int row_end   = __ldg(A_csrRowPtr+row+1);
 
 			// compute running sum per thread
       #pragma unroll
-			for( int ii=0; ii<NV; ii++ )
+			for( int ii=0; ii<TB; ii++ )
 			  vals[ii] = 0.0;
 			for( int jj=row_start+lane; jj<row_end; jj+=32 ) { 
 				//printf("row:%d,tid:%d,jj:%d,row_start:%d,row_end:%d,slab:%d\n", row, threadIdx.x, jj, row_start, row_end, slab);
 			  int   col = A_csrColInd[jj];
 				float val = A_csrVal[jj];
         #pragma unroll
-				for( int ii=0; ii<NV; ii++ )
+				for( int ii=0; ii<TB; ii++ )
 					if( ii+slab<B_ncols )
-					//printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,threadIdx.x+(ii<<LOG_NT));
-					  vals[ii] += val*B_denseVal[col+A_nrows*(ii+slab)];
+					  vals[ii] += val*__ldg(B_denseVal+col+A_nrows*(ii+slab));
       }
 		}
 
 		// parallel reduction in shared memory
 		for( int offset = 16; offset > 0; offset /= 2 )
       #pragma unroll
-			for( int ii=0; ii<NV; ii++ )
+			for( int ii=0; ii<TB; ii++ )
 				vals[ii] += __shfl_down(vals[ii], offset);
 
 		// first thread writes the result
 		if( lane==0 )
       #pragma unroll
-			for( int ii=0; ii<NV; ii++ )
+			for( int ii=0; ii<TB; ii++ )
 				if( ii+slab<B_ncols )
-				  C_denseVal[row+A_nrows*(ii+slab)] = vals[ii];
+				  C_denseVal[row+A_nrows*(ii+slab)] = vals[ii];*/
 	}
 
-	// Naive implementation (row major)
-	// Notes: performs much worse than cuSPARSE col major csrmm
-	template<typename c>
-	__global__ void spmm_row_kernel( const Index A_nrows, const Index B_ncols, 
-			const Index A_ncols, const Index A_nvals, 
-			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
-			const c* B_denseVal, c* C_denseVal )
-	{
-		const Index idx = blockIdx.x*blockDim.x + threadIdx.x;
-    const int   idb = threadIdx.x;
-		const int   T   = VT;
-    const int   L_c = NV;
-		const Index i   = idx/T;
-		const int   sid = idb/T;  // equivalent to (idx%blk)/T
-    const int   idp = idb%T;
-		const int   blk = NT;
-
-		c sv[L_c];
-		__shared__ c sdata[blk/T*L_c];
-
-    if( i<A_nrows ) {
-			const int max_batch = B_ncols/L_c;
-			for( int batch=0; batch<max_batch; batch++ ) {
-        sv[0] = 0.0; sv[1] = 0.0; sv[2] = 0.0; sv[3] = 0.0;
-			  //const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i])/T;
-			  const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
-			  for( int j=0; j<max; j++ ) {
-          Index ind = A_csrRowPtr[i]+j*T+idp;
-				  if( ind<A_csrRowPtr[i+1] ) {
-				    c     val = A_csrVal[ind];
-				    Index col = A_csrColInd[ind];
-				    sv[0] += val*B_denseVal[0+batch*L_c+col*B_ncols];
-				    sv[1] += val*B_denseVal[1+batch*L_c+col*B_ncols];
-				    sv[2] += val*B_denseVal[2+batch*L_c+col*B_ncols];
-				    sv[3] += val*B_denseVal[3+batch*L_c+col*B_ncols];
-            //printf("tid:%d,row:%d,col:%d,val:%f,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, col, val, sv[0], sv[1], sv[2], sv[3] );
-			  }}
-			  if( idp!=0 ) {
-		      sdata[sid*L_c+0] = sv[0];
-	  		  sdata[sid*L_c+1] = sv[1];
-		  	  sdata[sid*L_c+2] = sv[2];
-			    sdata[sid*L_c+3] = sv[3];
-          //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, sv[0], sv[1], sv[2], sv[3] );
-        }
-        __syncthreads();
-			  if( idp==0 ) {
-				  C_denseVal[0+batch*L_c+i*B_ncols] = sdata[sid*L_c+0]+sv[0];
-			    C_denseVal[1+batch*L_c+i*B_ncols] = sdata[sid*L_c+1]+sv[1];
-			    C_denseVal[2+batch*L_c+i*B_ncols] = sdata[sid*L_c+2]+sv[2];
-			    C_denseVal[3+batch*L_c+i*B_ncols] = sdata[sid*L_c+3]+sv[3];
-        //printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
-        //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );
-			}}
-			const int rem = B_ncols-max_batch*L_c;
-			//if( idb==0 ) printf("Remainder:%d\n", rem);
-			if( rem!=0 ) {
-        sv[0] = 0.0; sv[1] = 0.0; sv[2] = 0.0;
-			  const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
-			  for( int j=0; j<max; j++ ) {
-          Index ind = A_csrRowPtr[i]+j*T+idp;
-			    if( ind<A_csrRowPtr[i+1] ) {
-		        c     val = A_csrVal[ind];
-				    Index col = A_csrColInd[ind];
-				                sv[0] += val*B_denseVal[0+max_batch*L_c+col*B_ncols];
-				    if( rem>1 ) sv[1] += val*B_denseVal[1+max_batch*L_c+col*B_ncols];
-				    if( rem>2 ) sv[2] += val*B_denseVal[2+max_batch*L_c+col*B_ncols];
-            //printf("tid:%d,row:%d,col:%d,val:%f,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, col, val, sv[0], sv[1], sv[2], sv[3] );
-			    }}
-			    if( idp!=0 ) {
-		                    sdata[sid*L_c+0] = sv[0];
-	  		    if( rem>1 ) sdata[sid*L_c+1] = sv[1];
-		  	    if( rem>2 ) sdata[sid*L_c+2] = sv[2];
-            //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, sv[0], sv[1], sv[2], sv[3] );
-          }
-          __syncthreads();
-			    if( idp==0 ) {
-								        C_denseVal[0+max_batch*L_c+i*B_ncols] = sdata[sid*L_c+0]+sv[0];
-						if( rem>1 ) C_denseVal[1+max_batch*L_c+i*B_ncols] = sdata[sid*L_c+1]+sv[1];
-			      if( rem>2 ) C_denseVal[2+max_batch*L_c+i*B_ncols] = sdata[sid*L_c+2]+sv[2];
-        //printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
-        //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );
-	}}}}
-
-	// Naive implementation (col major)
-	// Notes: performs much worse than cuSPARSE col major csrmm
-	template<typename c>
-	__global__ void spmm_col_kernel( const Index A_nrows, const Index B_ncols, 
-			const Index A_ncols, const Index A_nvals, 
-			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
-			const c* B_denseVal, c* C_denseVal )
-	{
-		const Index idx = blockIdx.x*blockDim.x + threadIdx.x;
-    const int   idb = threadIdx.x;
-		const int   T   = VT;
-    const int   L_c = NV;
-		const Index i   = idx/T;
-		const int   sid = idb/T;     // equivalent to (idx%blk)/T
-    const int   idp = idb&(T-1); // equivalent to (idb%T)
-		const int   blk = NT;
-
-		c sv[L_c];
-		__shared__ c sdata[blk/T*L_c];
-
-    if( i<A_nrows ) {
-			const int max_batch = B_ncols/L_c;
-			for( int batch=0; batch<max_batch; batch++ ) {
-        #pragma unroll
-			  for( int k=0; k<L_c; k++ )
-					sv[k] = 0.0;
-			  //const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i])/T;
-			  const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
-			  for( int j=0; j<max; j++ ) {
-          Index ind = A_csrRowPtr[i]+j*T+idp;
-				  if( ind<A_csrRowPtr[i+1] ) {
-				    c     val = A_csrVal[ind];
-				    Index col = A_csrColInd[ind];
-            #pragma unroll
-						for( int k=0; k<L_c; k++ )
-							sv[k] += val*B_denseVal[(k+batch*L_c)*A_ncols+col];
-            //printf("tid:%d,row:%d,col:%d,val:%f,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, col, val, sv[0], sv[1], sv[2], sv[3] );
-			  }}
-			  if( idp!=0 ) {
-          #pragma unroll
-					for( int k=0; k<L_c; k++ )
-						sdata[sid*L_c+k] = sv[k];
-          //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, sv[0], sv[1], sv[2], sv[3] );
-        }
-        __syncthreads();
-			  if( idp==0 ) {
-          #pragma unroll
-					for( int k=0; k<L_c; k++ )
-						C_denseVal[(k+batch*L_c)*A_nrows+i] = sdata[sid*L_c+k]+sv[k];
-        //printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
-        //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );
-			}}
-			/*const int rem = B_ncols-max_batch*L_c;
-			//if( idb==0 ) printf("Remainder:%d\n", rem);
-			if( rem!=0 ) {
-        #pragma unroll
-			  for( int k=0; k<L_c-1; k++ )
-					sv[k] = 0.0;
-			  const int max = (A_csrRowPtr[i+1]-A_csrRowPtr[i]+T-1)/T;
-			  for( int j=0; j<max; j++ ) {
-          Index ind = A_csrRowPtr[i]+j*T+idp;
-			    if( ind<A_csrRowPtr[i+1] ) {
-		        c     val = A_csrVal[ind];
-				    Index col = A_csrColInd[ind];
-				                sv[0] += val*B_denseVal[(0+max_batch*L_c)*A_ncols+col];
-				    if( rem>1 ) sv[1] += val*B_denseVal[(1+max_batch*L_c)*A_ncols+col];
-				    if( rem>2 ) sv[2] += val*B_denseVal[(2+max_batch*L_c)*A_ncols+col];
-            //printf("tid:%d,row:%d,col:%d,val:%f,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, col, val, sv[0], sv[1], sv[2], sv[3] );
-			    }}
-			    if( idp!=0 ) {
-		                    sdata[sid*L_c+0] = sv[0];
-	  		    if( rem>1 ) sdata[sid*L_c+1] = sv[1];
-		  	    if( rem>2 ) sdata[sid*L_c+2] = sv[2];
-            //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, sv[0], sv[1], sv[2], sv[3] );
-          }
-          __syncthreads();
-			    if( idp==0 ) {
-								        C_denseVal[(0+max_batch*L_c)*A_nrows+i] = sdata[sid*L_c+0]+sv[0];
-						if( rem>1 ) C_denseVal[(1+max_batch*L_c)*A_nrows+i] = sdata[sid*L_c+1]+sv[1];
-			      if( rem>2 ) C_denseVal[(2+max_batch*L_c)*A_nrows+i] = sdata[sid*L_c+2]+sv[2];
-        //printf("tid:%d,row:%d,sv0:%d,sv1:%d,sv2:%d,sv3:%d\n", idb, i, 0*A_ncols+i, 1*A_ncols+i, 2*A_ncols+i, 3*A_ncols+i );
-        //printf("tid:%d,row:%d,sv0:%f,sv1:%f,sv2:%f,sv3:%f\n", idb, i, C_denseVal[0*A_ncols+i], C_denseVal[1*A_ncols+i], C_denseVal[2*A_ncols+i], C_denseVal[3*A_ncols+i] );}}*/
-	}}
-	
-	
   template<typename c, typename a, typename b>
   Info cusparse_spmm( DenseMatrix<c>&        C,
                       const Semiring&        op,
@@ -502,9 +408,6 @@ namespace backend
 
     cusparseSetMatType( descr, CUSPARSE_MATRIX_TYPE_GENERAL );
     cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
-
-    cusparseSetMatType( descr, CUSPARSE_MATRIX_TYPE_GENERAL );
-    cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
     cusparseStatus_t status;
     float alpha = 1.0;
     float beta  = 0.0;
@@ -517,7 +420,7 @@ namespace backend
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
-            std::cout << "SpMM successful!\n";
+            //std::cout << "SpMM successful!\n";
             break;
         case CUSPARSE_STATUS_NOT_INITIALIZED:
             std::cout << "Error: Library not initialized.\n";
