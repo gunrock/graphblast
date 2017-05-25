@@ -1,4 +1,5 @@
-#define GRB_USE_APSPIE
+#define GRB_USE_SEQUENTIAL
+//#define GRB_USE_APSPIE
 //#define private public
 
 #include <iostream>
@@ -16,15 +17,6 @@
 
 #include <boost/test/included/unit_test.hpp>
 #include "test/test.hpp"
-
-struct TestMatrix {
-  TestMatrix() :
-    argc( boost::unit_test::framework::master_test_suite().argc ),
-    argv( boost::unit_test::framework::master_test_suite().argv ) {}
-
-  int argc;
-  char **argv;
-};
 
 BOOST_AUTO_TEST_SUITE(matrix_suite)
 
