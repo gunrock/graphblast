@@ -5,9 +5,6 @@
 #include <iostream>
 #include <typeinfo>
 
-#include <cuda.h>
-#include <cuda_runtime_api.h>
-
 #include "graphblas/backend/sequential/Matrix.hpp"
 #include "graphblas/backend/sequential/sequential.hpp"
 #include "graphblas/backend/sequential/util.hpp"

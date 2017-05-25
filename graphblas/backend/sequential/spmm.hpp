@@ -3,9 +3,6 @@
 
 #include <iostream>
 
-#include <cuda.h>
-#include <cusparse.h>
-
 #include "graphblas/backend/sequential/SparseMatrix.hpp"
 #include "graphblas/backend/sequential/DenseMatrix.hpp"
 #include "graphblas/types.hpp"
@@ -18,6 +15,7 @@ namespace graphblas
 {
 namespace backend
 {
+	//TODO
   template<typename c, typename a, typename b>
 	Info spmm( DenseMatrix<c>&        C,
              const Semiring&        op,
@@ -26,7 +24,9 @@ namespace backend
 				     const int TA,
 				     const int TB,
 				     const int NT,
-				     const bool ROW_MAJOR	);
+				     const bool ROW_MAJOR	)
+  {
+	}
 
   template<typename c, typename a, typename b>
   Info mkl_spmm( DenseMatrix<c>&        C,

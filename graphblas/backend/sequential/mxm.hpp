@@ -3,8 +3,6 @@
 
 #include <iostream>
 
-#include <cuda.h>
-
 #include "graphblas/backend/sequential/Matrix.hpp"
 #include "graphblas/backend/sequential/SparseMatrix.hpp"
 #include "graphblas/backend/sequential/DenseMatrix.hpp"
