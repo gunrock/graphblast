@@ -10,7 +10,7 @@ do
 	  #do
 		#	for nt in 32 64 128 256 512 1024
 		#	do
-        benchmark_spgemm/test --iter=1 --split=true --major=cusparse2 /data-2/gunrock_dataset/large/$i/$i.mtx
+        benchmark_spgemm/test --iter=10 --device=0 --major=cusparse /data/gunrock_dataset/large/$i/$i.mtx
         #benchmark_spgemm/test --iter=10 --split=true /data-2/gunrock_dataset/large/$i/$i.mtx
         #benchmark_spgemm/test --tb=$tb --nt=$nt /data-2/gunrock_dataset/large/$i/$i.mtx
 		#  done

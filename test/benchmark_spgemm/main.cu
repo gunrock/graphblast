@@ -34,7 +34,7 @@ int main( int argc, char** argv )
   namespace po = boost::program_options;
   po::variables_map vm;
   parseArgs( argc, argv, vm );
-  int TA, TB, NT, NUM_ITER;
+  int TA, TB, NT, NUM_ITER, DEVICE;
   bool ROW_MAJOR, DEBUG, SPLIT;
   if( vm.count("ta") )
     TA       = vm["ta"].as<int>(); // default values of TA, TB, NT will be used
@@ -48,6 +48,12 @@ int main( int argc, char** argv )
     SPLIT    = vm["split"].as<bool>();
   if( vm.count("iter") )
     NUM_ITER = vm["iter"].as<int>();
+  if( vm.count("device") ) {
+    DEVICE   = vm["device"].as<int>();
+    cudaDeviceProp prop;
+    CUDA_SAFE_CALL( cudaGetDeviceProperties( &prop, DEVICE ));
+    if( DEBUG ) std::cout << "Using device: " << DEVICE << ", " << prop.name << "\n";
+  }
   // ROW_MAJOR == 1: means row major
   // ROW_MAJOR == 0: means col major
   // TA == 0 && TB == 0 && NT == 0: means cusparse
