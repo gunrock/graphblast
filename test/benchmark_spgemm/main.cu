@@ -1,5 +1,5 @@
-#define GRB_USE_SEQUENTIAL
-//#define GRB_USE_APSPIE
+//#define GRB_USE_SEQUENTIAL
+#define GRB_USE_APSPIE
 //#define private public
 
 #include <iostream>
@@ -56,6 +56,8 @@ int main( int argc, char** argv )
     ROW_MAJOR = (major=="row");
     if( major=="cusparse" ) {
       TA = 0; TB = 0; NT = 0;
+    } else if( major=="cusparse2" ) {
+      TA = 0; TB = 0; NT = 1;
     }
   }
 
@@ -104,7 +106,7 @@ int main( int argc, char** argv )
   GpuTimer gpu_mxm;
   //cudaProfilerStart();
   gpu_mxm.Start();
-  for( int i=0; i<10; i++ ) {
+  for( int i=0; i<NUM_ITER; i++ ) {
     if( SPLIT )
       graphblas::mxmCompute<float, float, float>( c, op, a, b, TA, TB, NT, 
           ROW_MAJOR );

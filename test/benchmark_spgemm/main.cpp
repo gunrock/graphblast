@@ -104,7 +104,7 @@ int main( int argc, char** argv )
   GpuTimer gpu_mxm;
   //cudaProfilerStart();
   gpu_mxm.Start();
-  for( int i=0; i<10; i++ ) {
+  for( int i=0; i<NUM_ITER; i++ ) {
     if( SPLIT )
       graphblas::mxmCompute<float, float, float>( c, op, a, b, TA, TB, NT, 
           ROW_MAJOR );

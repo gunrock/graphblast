@@ -3,16 +3,18 @@
 ARCH="GEN_SM15"
 
 echo "data, milliseconds, gflops"
-for i in ak2010 #belgium_osm coAuthorsDBLP delaunay_n13 delaunay_n21 webbase-1M soc-LiveJournal1 kron_g500-logn21
+for i in mc2depi pwtk pdb1HYS consph hood webbase-1M #belgium_osm coAuthorsDBLP delaunay_n13 delaunay_n21 webbase-1M soc-LiveJournal1 kron_g500-logn21
 do
   if [ "$ARCH" = "GEN_SM15" ] ; then
-    for tb in 1 2 4 8 16 32
-	  do
-			for nt in 32 64 128 256 512 1024
-			do
-        benchmark/test --tb=$tb --nt=$nt /data-2/gunrock_dataset/large/$i/$i.mtx
-		  done
-	  done	
+    #for tb in 1 2 4 8 16 32
+	  #do
+		#	for nt in 32 64 128 256 512 1024
+		#	do
+        benchmark_spgemm/test --iter=1 --split=true --major=cusparse2 /data-2/gunrock_dataset/large/$i/$i.mtx
+        #benchmark_spgemm/test --iter=10 --split=true /data-2/gunrock_dataset/large/$i/$i.mtx
+        #benchmark_spgemm/test --tb=$tb --nt=$nt /data-2/gunrock_dataset/large/$i/$i.mtx
+		#  done
+	  #done	
   fi
 done
 

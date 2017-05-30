@@ -131,6 +131,18 @@ namespace backend
                                  const Semiring&        op,
                                  const SparseMatrix<a>& A,
                                  const SparseMatrix<b>& B );
+
+		template <typename c, typename a, typename b>
+		friend Info cusparse_spgemm2( SparseMatrix<c>&       C,
+                                 const Semiring&        op,
+                                 const SparseMatrix<a>& A,
+                                 const SparseMatrix<b>& B );
+
+		template <typename c, typename a, typename b>
+		friend Info cusparse_spgemm2_compute( SparseMatrix<c>&       C,
+                                 const Semiring&        op,
+                                 const SparseMatrix<a>& A,
+                                 const SparseMatrix<b>& B );
   };
 
   template <typename T>

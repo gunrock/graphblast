@@ -59,7 +59,10 @@ namespace backend
 		if( A_storage == Sparse && B_storage == Sparse) {
       if( C_storage == Unknown )
 				err = C.setStorage( Sparse );
-			err = cusparse_spgemm( C.sparse, op, A.sparse, B.sparse );
+			if( TA==0 && TB==0 && NT==1 )
+				err = cusparse_spgemm2( C.sparse, op, A.sparse, B.sparse );
+			else
+				err = cusparse_spgemm( C.sparse, op, A.sparse, B.sparse );
 		} else if( A_storage == Sparse && B_storage == Dense ) {
 			if( C_storage == Unknown )
 			  err = C.setStorage( Dense );
@@ -126,7 +129,10 @@ namespace backend
 		if( A_storage == Sparse && B_storage == Sparse) {
       if( C_storage == Unknown )
 				err = C.setStorage( Sparse );
-			err = cusparse_spgemm_compute( C.sparse, op, A.sparse, B.sparse );
+			if( TA==0 && TB==0 && NT==1 )
+			  err = cusparse_spgemm2_compute( C.sparse, op, A.sparse, B.sparse );
+			else
+			  err = cusparse_spgemm_compute( C.sparse, op, A.sparse, B.sparse );
     }
 		return err;
 	}
