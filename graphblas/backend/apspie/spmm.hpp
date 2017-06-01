@@ -72,7 +72,7 @@ namespace backend
 		//CUDA_SAFE_CALL( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
     if( ROW_MAJOR )
 			switch( TB ) {
-				case 1:
+				/*case 1:
           spmm_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
@@ -81,7 +81,7 @@ namespace backend
           spmm_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
-					break;
+					break;*/
 				case 4:
           spmm_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
@@ -105,7 +105,7 @@ namespace backend
 			}
 		else
 			switch( TB ) {
-				case 1:
+				/*case 1:
           spmm_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
@@ -114,7 +114,7 @@ namespace backend
           spmm_col_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
 				    B.d_denseVal, C.d_denseVal );
-					break;
+					break;*/
 				case 4:
           spmm_col_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
 				    B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
@@ -152,7 +152,8 @@ namespace backend
 			const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
 			const c* B_denseVal, c* C_denseVal )
 	{
-		float vals[TB];
+		float  vals[TB];
+    float4 raws[TB>>2];
 
 		int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
 		int warp_id   = thread_id>>5;                      // global warp idx
@@ -180,10 +181,49 @@ namespace backend
 					int   col = A_csrColInd[jj];
 					float val = A_csrVal[jj];
 
-				  #pragma unroll
-				  for( int ii=0; ii<TB; ii++ )
-					  //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,ii+slab);
-					  vals[ii] += val*__ldg(B_denseVal+col*B_ncols+ii+slab);
+          #pragma unroll
+					for( int ii=0; ii<8; ii++ ) {
+            raws[ii] = __ldg((float4*)(B_denseVal+col*B_ncols+(ii<<2)+slab));
+					  //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,(ii<<2)+slab);
+					  printf("row:%d,col:%d,tid:%d,0:%.0f,1:%.0f,2:%.0f,3:%.0f,idx:%d\n",row,col,thread_id,raws[ii].x,raws[ii].y,raws[ii].z,raws[ii].w, col*B_ncols+(ii<<2)+slab);
+						//vals[(ii<<2)  ] += val*raws[ii].x;
+						//vals[(ii<<2)+1] += val*raws[ii].y;
+						//vals[(ii<<2)+2] += val*raws[ii].z;
+						//vals[(ii<<2)+3] += val*raws[ii].w;
+					}
+					vals[ 0] += val*raws[0].x;
+					vals[ 1] += val*raws[0].y;
+					vals[ 2] += val*raws[0].z;
+					vals[ 3] += val*raws[0].w;
+					vals[ 4] += val*raws[1].x;
+					vals[ 5] += val*raws[1].y;
+					vals[ 6] += val*raws[1].z;
+					vals[ 7] += val*raws[1].w;
+					vals[ 8] += val*raws[2].x;
+					vals[ 9] += val*raws[2].y;
+					vals[10] += val*raws[2].z;
+					vals[11] += val*raws[2].w;
+					vals[12] += val*raws[3].x;
+					vals[13] += val*raws[3].y;
+					vals[14] += val*raws[3].z;
+					vals[15] += val*raws[3].w;
+					vals[16] += val*raws[4].x;
+					vals[17] += val*raws[4].y;
+					vals[18] += val*raws[4].z;
+					vals[19] += val*raws[4].w;
+					vals[20] += val*raws[5].x;
+					vals[21] += val*raws[5].y;
+					vals[22] += val*raws[5].z;
+					vals[23] += val*raws[5].w;
+					vals[24] += val*raws[6].x;
+					vals[25] += val*raws[6].y;
+					vals[26] += val*raws[6].z;
+					vals[27] += val*raws[6].w;
+					vals[28] += val*raws[7].x;
+					vals[29] += val*raws[7].y;
+					vals[30] += val*raws[7].z;
+					vals[31] += val*raws[7].w;
+					
         }
 
 			  // parallel reduction in register memory

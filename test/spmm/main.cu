@@ -48,7 +48,6 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   std::vector<graphblas::Index> col_indices = {1, 0, 0, 1, 4, 0, 2, 1, 2, 2, 3, 4, 3, 4, 5, 7, 7, 8, 7, 8};
   std::vector<float> values (20, 1.0);
   graphblas::Matrix<float> a(11, 11);
-  graphblas::Matrix<float> b(11, 11);
   graphblas::Index nvals = 20;
   graphblas::Index nrows, ncols;
   a.build( row_indices, col_indices, values, 20 );
@@ -59,15 +58,32 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   BOOST_ASSERT( ncols==11 );
   BOOST_ASSERT( nvals==20 );
   a.print();
+  
+  graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
+  graphblas::Index max_ncols = std::min( MEM_SIZE/nrows/32*32, ncols );
+  if( ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
+  if( DEBUG && max_ncols!=ncols ) std::cout << "Restricting col to: " 
+      << max_ncols << std::endl;
+  graphblas::Matrix<float> b(11, max_ncols);
+
   std::vector<float> denseVal;
-  for( int i=0; i<11; i++ ) {
-    for( int j=0; j<11; j++ ) {
-      if( i==j ) denseVal.push_back(1.0);
-      else denseVal.push_back(0.0);
+  if( ROW_MAJOR )
+    for( int i=0; i<11; i++ ) {
+      for( int j=0; j<max_ncols; j++ ) {
+        if( i==j ) denseVal.push_back(1.0);
+        else denseVal.push_back(0.0);
+      }
     }
-  }
+  else
+    for( int i=0; i<max_ncols; i++ ) {
+      for( int j=0; j<11; j++ ) {
+        if( i==j ) denseVal.push_back(1.0);
+        else denseVal.push_back(0.0);
+      }
+    }
+    
   b.build( denseVal );
-  graphblas::Matrix<float> c(11, 11);
+  graphblas::Matrix<float> c(11, max_ncols);
   graphblas::Semiring op;
 
   GpuTimer gpu_mxm;
@@ -87,7 +103,7 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
     // Row Major layout
     if( ROW_MAJOR )
     //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*11+col] << std::endl;
-    BOOST_ASSERT( val==out_denseVal[row*11+col] );
+    BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
     else
     // Column Major layout
     //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
@@ -96,7 +112,7 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
 }
 
 // SpMM unit test (chesapeake)
-BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
+/*BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
 {
   if( DEBUG ) {
     std::cout << "ta:    " << TA        << "\n";
@@ -214,9 +230,12 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
 
-  cudaProfilerStart();
+  GpuTimer gpu_mxm;
+  gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
-  cudaProfilerStop();
+  gpu_mxm.Stop();
+  float elapsed_mxm = gpu_mxm.ElapsedMillis();
+  std::cout << "mxm: " << elapsed_mxm << " ms\n";
 
   std::vector<float> out_denseVal;
   if( DEBUG ) c.print();
@@ -236,6 +255,6 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
         BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
     }
   }
-}
+}*/
 
 BOOST_AUTO_TEST_SUITE_END()

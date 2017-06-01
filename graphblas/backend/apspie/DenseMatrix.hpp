@@ -181,15 +181,15 @@ namespace backend
     for( int row=0; row<length; row++ ) {
       for( int col=0; col<length; col++ ) {
 				// Print row major order matrix in row major order
-        #ifdef ROW_MAJOR
+        //#ifdef ROW_MAJOR
         if( h_denseVal[row*ncols_+col]!=0.0 ) std::cout << "x ";
 				else std::cout << "0 ";
-        #endif
+        //#endif
 				// Print column major order matrix in row major order (Transposition)
-        #ifdef COL_MAJOR
-        if( h_denseVal[col*nrows_+row]!=0.0 ) std::cout << "x ";
-				else std::cout << "0 ";
-        #endif
+        //#ifdef COL_MAJOR
+        //if( h_denseVal[col*nrows_+row]!=0.0 ) std::cout << "x ";
+				//else std::cout << "0 ";
+        //#endif
 			}
 			std::cout << std::endl;
 		}
