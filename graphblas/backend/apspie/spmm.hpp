@@ -191,7 +191,7 @@ namespace backend
             vals[(ii<<2)+2] += val*raws[ii].z;
             vals[(ii<<2)+3] += val*raws[ii].w;
           }
-          vals[ 0] += val*raws[0].x;
+          /*vals[ 0] += val*raws[0].x;
           vals[ 1] += val*raws[0].y;
           vals[ 2] += val*raws[0].z;
           vals[ 3] += val*raws[0].w;
@@ -222,7 +222,7 @@ namespace backend
           vals[28] += val*raws[7].x;
           vals[29] += val*raws[7].y;
           vals[30] += val*raws[7].z;
-          vals[31] += val*raws[7].w;
+          vals[31] += val*raws[7].w;*/
           
         }
 
