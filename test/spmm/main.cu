@@ -61,7 +61,7 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   
   graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
   graphblas::Index max_ncols = std::min( MEM_SIZE/nrows/32*32, ncols );
-  if( ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
+  if( ncols%32!=0 && max_ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
   if( DEBUG && max_ncols!=ncols ) std::cout << "Restricting col to: " 
       << max_ncols << std::endl;
   graphblas::Matrix<float> b(11, max_ncols);
@@ -101,18 +101,19 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
     graphblas::Index col = col_indices[i];
     float            val = values[i];
     // Row Major layout
-    if( ROW_MAJOR )
-    //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*11+col] << std::endl;
-    BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
-    else
+    if( ROW_MAJOR ) {
+      std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
+      BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
+    } else {
     // Column Major layout
-    //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*11+row] << std::endl;
-    BOOST_ASSERT( val==out_denseVal[col*11+row] );
+    //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
+      BOOST_ASSERT( val==out_denseVal[col*11+row] );
+    }
   }
 }
 
 // SpMM unit test (chesapeake)
-/*BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
+BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
 {
   if( DEBUG ) {
     std::cout << "ta:    " << TA        << "\n";
@@ -131,7 +132,6 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, DEBUG );
 
   graphblas::Matrix<float> a(nrows, ncols);
-  graphblas::Matrix<float> b(nrows, ncols);
   a.build( row_indices, col_indices, values, nvals );
   a.nrows( nrows );
   a.ncols( ncols );
@@ -141,14 +141,22 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
   BOOST_ASSERT( ncols==39 );
   BOOST_ASSERT( nvals==340 );
   std::vector<float> denseVal;
+
+  graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
+  graphblas::Index max_ncols = std::min( MEM_SIZE/nrows/32*32, ncols );
+  if( ncols%32!=0 && max_ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
+  if( DEBUG && max_ncols!=ncols ) std::cout << "Restricting col to: " 
+      << max_ncols << std::endl;
+
+  graphblas::Matrix<float> b(nrows, max_ncols);
   for( int i=0; i<nrows; i++ ) {
-    for( int j=0; j<ncols; j++ ) {
+    for( int j=0; j<max_ncols; j++ ) {
       if( i==j ) denseVal.push_back(1.0);
       else denseVal.push_back(0.0);
     }
   }
   b.build( denseVal );
-  graphblas::Matrix<float> c(nrows, ncols);
+  graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
 
   GpuTimer gpu_mxm;
@@ -166,13 +174,14 @@ BOOST_FIXTURE_TEST_CASE( spmm1, TestSPMM )
     graphblas::Index col = col_indices[i];
     float            val = values[i];
     // Row Major layout
-    if( ROW_MAJOR )
-    //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*ncols+col] << std::endl;
-    BOOST_ASSERT( val==out_denseVal[row*ncols+col] );
-    else
+    if( ROW_MAJOR ) {
+      std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
+      BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
+    } else {
     // Column Major layout
     //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
-    BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+      BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+    }
   }
 }
 
@@ -205,7 +214,8 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   // Matrix B
   graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
   graphblas::Index max_ncols = std::min( MEM_SIZE/nrows/32*32, ncols );
-  if( DEBUG && max_ncols<ncols ) std::cout << "Restricting col to: " 
+  if( ncols%32!=0 && max_ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
+  if( DEBUG && max_ncols!=ncols ) std::cout << "Restricting col to: " 
       << max_ncols << std::endl;
 
   graphblas::Matrix<float> b(nrows, max_ncols);
@@ -247,7 +257,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
     if( col<max_ncols ) {
       // Row major order
       if( ROW_MAJOR ) {
-        //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
+        std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
         BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
       } else
       // Column major order
@@ -255,6 +265,6 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
         BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
     }
   }
-}*/
+}
 
 BOOST_AUTO_TEST_SUITE_END()

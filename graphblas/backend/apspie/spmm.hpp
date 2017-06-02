@@ -185,11 +185,11 @@ namespace backend
           for( int ii=0; ii<8; ii++ ) {
             raws[ii] = __ldg((float4*)(B_denseVal+col*B_ncols+(ii<<2)+slab));
             //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,(ii<<2)+slab);
-            printf("row:%d,col:%d,tid:%d,0:%.0f,1:%.0f,2:%.0f,3:%.0f,idx:%d\n",row,col,thread_id,raws[ii].x,raws[ii].y,raws[ii].z,raws[ii].w, col*B_ncols+(ii<<2)+slab);
-            //vals[(ii<<2)  ] += val*raws[ii].x;
-            //vals[(ii<<2)+1] += val*raws[ii].y;
-            //vals[(ii<<2)+2] += val*raws[ii].z;
-            //vals[(ii<<2)+3] += val*raws[ii].w;
+            //printf("row:%d,col:%d,tid:%d,0:%.0f,1:%.0f,2:%.0f,3:%.0f,idx:%d\n",row,col,thread_id,raws[ii].x,raws[ii].y,raws[ii].z,raws[ii].w, col*B_ncols+(ii<<2)+slab);
+            vals[(ii<<2)  ] += val*raws[ii].x;
+            vals[(ii<<2)+1] += val*raws[ii].y;
+            vals[(ii<<2)+2] += val*raws[ii].z;
+            vals[(ii<<2)+3] += val*raws[ii].w;
           }
           vals[ 0] += val*raws[0].x;
           vals[ 1] += val*raws[0].y;
