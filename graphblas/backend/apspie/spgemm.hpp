@@ -33,7 +33,7 @@ namespace backend
     A.nvals( A_nvals );
     B.nrows( B_nrows );
     B.ncols( B_ncols );
-		B.nvals( B_nvals );
+    B.nvals( B_nvals );
     C.nrows( C_nrows );
     C.ncols( C_ncols );
 
@@ -62,17 +62,17 @@ namespace backend
     cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
     cusparseStatus_t status;
 
-		int baseC;
-		int *nnzTotalDevHostPtr = &(C_nvals);
-		//if( C.d_csrRowPtr==NULL )
+    int baseC;
+    int *nnzTotalDevHostPtr = &(C_nvals);
+    //if( C.d_csrRowPtr==NULL )
     //  CUDA_SAFE_CALL( cudaMalloc( &C.d_csrRowPtr, (A_nrows+1)*sizeof(Index) ));
 
-		// Analyze
+    // Analyze
     status = cusparseXcsrgemmNnz( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
-				A_nrows, B_ncols, A_ncols, 
-				descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        A_nrows, B_ncols, A_ncols, 
+        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
         descr, C.d_csrRowPtr, nnzTotalDevHostPtr );
 
     switch( status ) {
@@ -102,30 +102,30 @@ namespace backend
     }
 
     if( nnzTotalDevHostPtr != NULL )
-			C_nvals = *nnzTotalDevHostPtr;
+      C_nvals = *nnzTotalDevHostPtr;
     else {
       CUDA_SAFE_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr+A_nrows, 
-					sizeof(Index), cudaMemcpyDeviceToHost ));
-			CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
-				  sizeof(Index), cudaMemcpyDeviceToHost ));
-			C_nvals -= baseC;
-		}
+          sizeof(Index), cudaMemcpyDeviceToHost ));
+      CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
+          sizeof(Index), cudaMemcpyDeviceToHost ));
+      C_nvals -= baseC;
+    }
 
-		if( C_nvals >= C.nvals_ ) {
-			CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
-			CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
-					C_nvals*sizeof(Index) ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
-					C_nvals*sizeof(c) ));
-		}
+    if( C_nvals >= C.nvals_ ) {
+      CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
+      CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
+      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
+          C_nvals*sizeof(Index) ));
+      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
+          C_nvals*sizeof(c) ));
+    }
 
     // Compute
     status = cusparseScsrgemm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
-				A_nrows, B_ncols, A_ncols, 
-				descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
+        A_nrows, B_ncols, A_ncols, 
+        descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
+        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
         descr,          C.d_csrVal, C.d_csrRowPtr, C.d_csrColInd );
 
     switch( status ) {
@@ -156,7 +156,7 @@ namespace backend
 
     C.need_update = true;  // Set flag that we need to copy data from GPU
     C.nvals_ = C_nvals;     // Update nnz count for C
-		return GrB_SUCCESS;
+    return GrB_SUCCESS;
   }
 
   template<typename c, typename a, typename b>
@@ -174,7 +174,7 @@ namespace backend
     A.nvals( A_nvals );
     B.nrows( B_nrows );
     B.ncols( B_ncols );
-		B.nvals( B_nvals );
+    B.nvals( B_nvals );
     C.nrows( C_nrows );
     C.ncols( C_ncols );
 
@@ -203,17 +203,17 @@ namespace backend
     cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
     cusparseStatus_t status;
 
-		int baseC;
-		int *nnzTotalDevHostPtr = &(C_nvals);
-		//if( C.d_csrRowPtr==NULL )
+    int baseC;
+    int *nnzTotalDevHostPtr = &(C_nvals);
+    //if( C.d_csrRowPtr==NULL )
     //  CUDA_SAFE_CALL( cudaMalloc( &C.d_csrRowPtr, (A_nrows+1)*sizeof(Index) ));
 
-		// Analyze
+    // Analyze
     status = cusparseXcsrgemmNnz( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
-				A_nrows, B_ncols, A_ncols, 
-				descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        A_nrows, B_ncols, A_ncols, 
+        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
         descr, C.d_csrRowPtr, nnzTotalDevHostPtr );
 
     switch( status ) {
@@ -243,25 +243,25 @@ namespace backend
     }
 
     if( nnzTotalDevHostPtr != NULL )
-			C_nvals = *nnzTotalDevHostPtr;
+      C_nvals = *nnzTotalDevHostPtr;
     else {
       CUDA_SAFE_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr+A_nrows, 
-					sizeof(Index), cudaMemcpyDeviceToHost ));
-			CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
-				  sizeof(Index), cudaMemcpyDeviceToHost ));
-			C_nvals -= baseC;
-		}
+          sizeof(Index), cudaMemcpyDeviceToHost ));
+      CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
+          sizeof(Index), cudaMemcpyDeviceToHost ));
+      C_nvals -= baseC;
+    }
 
-		if( C_nvals >= C.nvals_ ) {
-			CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
-			CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, C_nvals*sizeof(c) ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,    C_nvals*sizeof(c) ));
-		}
+    if( C_nvals >= C.nvals_ ) {
+      CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
+      CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
+      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, C_nvals*sizeof(c) ));
+      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,    C_nvals*sizeof(c) ));
+    }
 
     C.need_update = true;  // Set flag that we need to copy data from GPU
     C.nvals_ = C_nvals;     // Update nnz count for C
-		return GrB_SUCCESS;
+    return GrB_SUCCESS;
   }
 
   template<typename c, typename a, typename b>
@@ -279,7 +279,7 @@ namespace backend
     A.nvals( A_nvals );
     B.nrows( B_nrows );
     B.ncols( B_ncols );
-		B.nvals( B_nvals );
+    B.nvals( B_nvals );
     C.nrows( C_nrows );
     C.ncols( C_ncols );
 
@@ -311,9 +311,9 @@ namespace backend
     // Compute
     status = cusparseScsrgemm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
-				A_nrows, B_ncols, A_ncols, 
-				descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
+        A_nrows, B_ncols, A_ncols, 
+        descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
+        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
         descr,          C.d_csrVal, C.d_csrRowPtr, C.d_csrColInd );
 
     switch( status ) {
@@ -343,7 +343,7 @@ namespace backend
     }
 
     C.need_update = true;  // Set flag that we need to copy data from GPU
-		return GrB_SUCCESS;
+    return GrB_SUCCESS;
   }
 
   template<typename c, typename a, typename b>
@@ -361,7 +361,7 @@ namespace backend
     A.nvals( A_nvals );
     B.nrows( B_nrows );
     B.ncols( B_ncols );
-		B.nvals( B_nvals );
+    B.nvals( B_nvals );
     C.nrows( C_nrows );
     C.ncols( C_ncols );
 
@@ -382,12 +382,12 @@ namespace backend
     cusparseHandle_t handle;
     cusparseCreate( &handle );
 
-		csrgemm2Info_t info = NULL;
-		size_t bufferSize;
-		void *buffer = NULL;
-		// nnzTotalDevHostPtr points to host memory
-		c alpha = 1.0;
-		c beta  = 0.0;
+    csrgemm2Info_t info = NULL;
+    size_t bufferSize;
+    void *buffer = NULL;
+    // nnzTotalDevHostPtr points to host memory
+    c alpha = 1.0;
+    c beta  = 0.0;
     cusparseSetPointerMode( handle, CUSPARSE_POINTER_MODE_HOST );
 
     cusparseMatDescr_t descr;
@@ -397,9 +397,9 @@ namespace backend
     cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
     cusparseStatus_t status;
 
-		int baseC;
-		int *nnzTotalDevHostPtr = &(C_nvals);
-		//if( C.d_csrRowPtr==NULL )
+    int baseC;
+    int *nnzTotalDevHostPtr = &(C_nvals);
+    //if( C.d_csrRowPtr==NULL )
     //  CUDA_SAFE_CALL( cudaMalloc( &C.d_csrRowPtr, (A_nrows+1)*sizeof(Index) ));
 
     // step 1: create an opaque structure
@@ -409,9 +409,9 @@ namespace backend
     status = cusparseScsrgemm2_bufferSizeExt( handle, 
         A_nrows, B_ncols, A_ncols, &alpha,
         descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd,
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
         &beta,
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
         info, &bufferSize );
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -441,12 +441,12 @@ namespace backend
 
     CUDA_SAFE_CALL( cudaMalloc(&buffer, bufferSize));
 
-		// Analyze
+    // Analyze
     status = cusparseXcsrgemm2Nnz( handle,
-				A_nrows, B_ncols, A_ncols, 
-				descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        A_nrows, B_ncols, A_ncols, 
+        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
         descr, C.d_csrRowPtr, nnzTotalDevHostPtr, info, buffer );
 
     switch( status ) {
@@ -476,31 +476,31 @@ namespace backend
     }
 
     if( nnzTotalDevHostPtr != NULL )
-			C_nvals = *nnzTotalDevHostPtr;
+      C_nvals = *nnzTotalDevHostPtr;
     else {
       CUDA_SAFE_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr+A_nrows, 
-					sizeof(Index), cudaMemcpyDeviceToHost ));
-			CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
-				  sizeof(Index), cudaMemcpyDeviceToHost ));
-			C_nvals -= baseC;
-		}
+          sizeof(Index), cudaMemcpyDeviceToHost ));
+      CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
+          sizeof(Index), cudaMemcpyDeviceToHost ));
+      C_nvals -= baseC;
+    }
 
-		if( C_nvals >= C.nvals_ ) {
-			CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
-			CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
-					C_nvals*sizeof(Index) ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
-					C_nvals*sizeof(c) ));
-		}
+    if( C_nvals >= C.nvals_ ) {
+      CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
+      CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
+      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
+          C_nvals*sizeof(Index) ));
+      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
+          C_nvals*sizeof(c) ));
+    }
 
     // Compute
     status = cusparseScsrgemm2( handle,
-				A_nrows, B_ncols, A_ncols, &alpha, 
-				descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
+        A_nrows, B_ncols, A_ncols, &alpha, 
+        descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
+        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
         &beta,
-				descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
         descr,          C.d_csrVal, C.d_csrRowPtr, C.d_csrColInd,
         info,  buffer );
 
@@ -532,7 +532,7 @@ namespace backend
 
     C.need_update = true;  // Set flag that we need to copy data from GPU
     C.nvals_ = C_nvals;     // Update nnz count for C
-		return GrB_SUCCESS;
+    return GrB_SUCCESS;
   }
 
   template<typename c, typename a, typename b>
@@ -550,7 +550,7 @@ namespace backend
     A.nvals( A_nvals );
     B.nrows( B_nrows );
     B.ncols( B_ncols );
-		B.nvals( B_nvals );
+    B.nvals( B_nvals );
     C.nrows( C_nrows );
     C.ncols( C_ncols );
 
@@ -571,12 +571,12 @@ namespace backend
     cusparseHandle_t handle;
     cusparseCreate( &handle );
 
-		csrgemm2Info_t info = NULL;
-		size_t bufferSize;
-		void *buffer = NULL;
-		// nnzTotalDevHostPtr points to host memory
-		c alpha = 1.0;
-		c beta  = 0.0;
+    csrgemm2Info_t info = NULL;
+    size_t bufferSize;
+    void *buffer = NULL;
+    // nnzTotalDevHostPtr points to host memory
+    c alpha = 1.0;
+    c beta  = 0.0;
     cusparseSetPointerMode( handle, CUSPARSE_POINTER_MODE_HOST );
 
     cusparseMatDescr_t descr;
@@ -586,9 +586,9 @@ namespace backend
     cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
     cusparseStatus_t status;
 
-		int baseC;
-		int *nnzTotalDevHostPtr = &(C_nvals);
-		//if( C.d_csrRowPtr==NULL )
+    int baseC;
+    int *nnzTotalDevHostPtr = &(C_nvals);
+    //if( C.d_csrRowPtr==NULL )
     //  CUDA_SAFE_CALL( cudaMalloc( &C.d_csrRowPtr, (A_nrows+1)*sizeof(Index) ));
 
     // step 1: create an opaque structure
@@ -598,9 +598,9 @@ namespace backend
     status = cusparseScsrgemm2_bufferSizeExt( handle, 
         A_nrows, B_ncols, A_ncols, &alpha,
         descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd,
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
         &beta,
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
         info, &bufferSize );
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -630,12 +630,12 @@ namespace backend
 
     CUDA_SAFE_CALL( cudaMalloc(&buffer, bufferSize));
 
-		// Analyze
+    // Analyze
     status = cusparseXcsrgemm2Nnz( handle,
-				A_nrows, B_ncols, A_ncols, 
-				descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
-				descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        A_nrows, B_ncols, A_ncols, 
+        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
         descr, C.d_csrRowPtr, nnzTotalDevHostPtr, info, buffer );
 
     switch( status ) {
@@ -665,40 +665,40 @@ namespace backend
     }
 
     if( nnzTotalDevHostPtr != NULL )
-			C_nvals = *nnzTotalDevHostPtr;
+      C_nvals = *nnzTotalDevHostPtr;
     else {
       CUDA_SAFE_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr+A_nrows, 
-					sizeof(Index), cudaMemcpyDeviceToHost ));
-			CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
-				  sizeof(Index), cudaMemcpyDeviceToHost ));
-			C_nvals -= baseC;
-		}
+          sizeof(Index), cudaMemcpyDeviceToHost ));
+      CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
+          sizeof(Index), cudaMemcpyDeviceToHost ));
+      C_nvals -= baseC;
+    }
 
-		if( C_nvals >= C.nvals_ ) {
-			CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
-			CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
-					C_nvals*sizeof(Index) ));
-		  CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
-					C_nvals*sizeof(c) ));
-		}
+    if( C_nvals >= C.nvals_ ) {
+      CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
+      CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
+      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
+          C_nvals*sizeof(Index) ));
+      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
+          C_nvals*sizeof(c) ));
+    }
 
     // Compute
-		//
-		GpuTimer mxm;
-		mxm.Start();
-		for( int i=0; i<100; i++ ) {
+    //
+    GpuTimer mxm;
+    mxm.Start();
+    for( int i=0; i<100; i++ ) {
       status = cusparseScsrgemm2( handle,
-				A_nrows, B_ncols, A_ncols, &alpha, 
-				descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-				descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
+        A_nrows, B_ncols, A_ncols, &alpha, 
+        descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
+        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
         &beta,
-				descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
         descr,          C.d_csrVal, C.d_csrRowPtr, C.d_csrColInd,
         info,  buffer );
     }
-		mxm.Stop();
-		std::cout << mxm.ElapsedMillis()/100.0 << "\n";
+    mxm.Stop();
+    std::cout << mxm.ElapsedMillis()/100.0 << "\n";
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -728,7 +728,7 @@ namespace backend
 
     C.need_update = true;  // Set flag that we need to copy data from GPU
     C.nvals_ = C_nvals;     // Update nnz count for C
-		return GrB_SUCCESS;
+    return GrB_SUCCESS;
   }
 
 }  // backend
