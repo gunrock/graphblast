@@ -181,7 +181,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
+  graphblas::Index nrows, ncols, nvals;
 
   if( DEBUG ) {
     std::cout << "ta:    " << TA        << "\n";

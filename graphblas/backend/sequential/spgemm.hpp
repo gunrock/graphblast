@@ -32,7 +32,7 @@ namespace backend
     A.nvals( A_nvals );
     B.nrows( B_nrows );
     B.ncols( B_ncols );
-		B.nvals( B_nvals );
+    B.nvals( B_nvals );
     C.nrows( C_nrows );
     C.ncols( C_ncols );
 
@@ -50,14 +50,14 @@ namespace backend
     // TODO: add domain compatibility check
 
     // SpGEMM Analyze
-		int request = 1;
-		int sort    = 7;
-		int info    = 0;
-		if( C.csrRowPtr==NULL )
-				C.csrRowPtr = (Index*) malloc( (A_nrows+1)*sizeof(Index) );
+    int request = 1;
+    int sort    = 7;
+    int info    = 0;
+    if( C.csrRowPtr==NULL )
+        C.csrRowPtr = (Index*) malloc( (A_nrows+1)*sizeof(Index) );
 
-		// Analyze
-		// Note: one-based indexing
+    // Analyze
+    // Note: one-based indexing
     mkl_scsrmultcsr((char*)"N", &request, &sort,
                     &A_nrows, &A_ncols, &B_ncols,
                     A.csrVal, A.csrColInd, A.csrRowPtr,
@@ -68,17 +68,17 @@ namespace backend
       std::cout << "Error: code " << info << "\n";
     }
 
-	  C_nvals = C.csrRowPtr[A_nrows]-1;
-		if( C_nvals >= C.nvals_ ) {
-				free(C.csrColInd);
-				free(C.csrVal);
-				C.csrColInd = (Index*) malloc (C_nvals*sizeof(Index));
-				C.csrVal    = (c*    ) malloc (C_nvals*sizeof(c    ));
-		}
+    C_nvals = C.csrRowPtr[A_nrows]-1;
+    if( C_nvals >= C.nvals_ ) {
+        free(C.csrColInd);
+        free(C.csrVal);
+        C.csrColInd = (Index*) malloc (C_nvals*sizeof(Index));
+        C.csrVal    = (c*    ) malloc (C_nvals*sizeof(c    ));
+    }
 
     // SpGEMM Compute
-		request = 2;
-		sort    = 8; // Sort output rows in C
+    request = 2;
+    sort    = 8; // Sort output rows in C
 
     // Compute
     mkl_scsrmultcsr((char*)"N", &request, &sort,
@@ -92,7 +92,7 @@ namespace backend
     }
 
     C.nvals_ = C_nvals;     // Update nnz count for C
-		return GrB_SUCCESS;
+    return GrB_SUCCESS;
   }
 
   template<typename c, typename a, typename b>

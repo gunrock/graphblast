@@ -15,18 +15,18 @@ namespace graphblas
 {
 namespace backend
 {
-	//TODO
+  //TODO
   template<typename c, typename a, typename b>
-	Info spmm( DenseMatrix<c>&        C,
+  Info spmm( DenseMatrix<c>&        C,
              const Semiring&        op,
              const SparseMatrix<a>& A,
              const DenseMatrix<b>&  B,
-				     const int TA,
-				     const int TB,
-				     const int NT,
-				     const bool ROW_MAJOR	)
+             const int TA,
+             const int TB,
+             const int NT,
+             const bool ROW_MAJOR )
   {
-	}
+  }
 
   template<typename c, typename a, typename b>
   Info mkl_spmm( DenseMatrix<c>&        C,

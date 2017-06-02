@@ -28,7 +28,7 @@ int main( int argc, char** argv )
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
+  graphblas::Index nrows, ncols, nvals;
 
   // Parse arguments
   namespace po = boost::program_options;
@@ -76,12 +76,12 @@ int main( int argc, char** argv )
     std::cout << "split: " << SPLIT     << "\n";
   }
 
-	// Read in sparse matrix
+  // Read in sparse matrix
   if (argc < 2) {
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
-	  readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
+    readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
     nvals, DEBUG );
   }
 

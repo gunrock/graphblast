@@ -29,8 +29,8 @@ namespace backend
     ~Matrix() {};
 
     // C API Methods
-		//
-		// Mutators
+    //
+    // Mutators
     Info build( const std::vector<Index>& row_indices,
                 const std::vector<Index>& col_indices,
                 const std::vector<T>&     values,
@@ -42,12 +42,12 @@ namespace backend
                 const std::vector<T>&     values,
                 const Index nvals );
     Info build( const std::vector<T>& values );
-		// Private method for setting storage type of matrix
-		Info setStorage( const Storage mat_type );
+    // Private method for setting storage type of matrix
+    Info setStorage( const Storage mat_type );
     Info clear(); 
-		Info print();
+    Info print();
 
-		// Accessors
+    // Accessors
     Info extractTuples( std::vector<Index>& row_indices,
                         std::vector<Index>& col_indices,
                         std::vector<T>&     values ) const;
@@ -55,17 +55,17 @@ namespace backend
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const; 
-		Info getStorage( Storage& mat_type ) const;
+    Info getStorage( Storage& mat_type ) const;
 
     private:
     Index nrows_;
     Index ncols_;
 
-		SparseMatrix<T> sparse;
-		DenseMatrix<T>  dense;
+    SparseMatrix<T> sparse;
+    DenseMatrix<T>  dense;
 
-		// Keeps track of whether matrix is Sparse or Dense
-		Storage mat_type_;
+    // Keeps track of whether matrix is Sparse or Dense
+    Storage mat_type_;
 
     template <typename c, typename m, typename a, typename b>
     friend Info mxm( Matrix<c>&        C,
@@ -76,46 +76,46 @@ namespace backend
                      const Matrix<b>&  B,
                      const Descriptor& desc );
 
-		// In <graphblas/backend/sequential/mxm.hpp>
+    // In <graphblas/backend/sequential/mxm.hpp>
     template <typename c, typename a, typename b>
     friend Info mxm( Matrix<c>&       C,
                      const Semiring&  op,
                      const Matrix<a>& A,
                      const Matrix<b>& B );
 
-		// In <graphblas/backend/sequential/mxm.hpp>
-		// For testing
+    // In <graphblas/backend/sequential/mxm.hpp>
+    // For testing
     template <typename c, typename a, typename b>
     friend Info mxm( Matrix<c>&       C,
                      const Semiring&  op,
                      const Matrix<a>& A,
                      const Matrix<b>& B,
-					           const int TA,
-					           const int TB,
-					           const int NT,
-					           const bool ROW_MAJOR );
+                     const int TA,
+                     const int TB,
+                     const int NT,
+                     const bool ROW_MAJOR );
 
-		// In <graphblas/backend/sequential/mxm.hpp>
-		// For testing
+    // In <graphblas/backend/sequential/mxm.hpp>
+    // For testing
     template <typename c, typename a, typename b>
     friend Info mxmCompute( Matrix<c>&       C,
                      const Semiring&  op,
                      const Matrix<a>& A,
                      const Matrix<b>& B,
-					           const int TA,
-					           const int TB,
-					           const int NT,
-					           const bool ROW_MAJOR );
+                     const int TA,
+                     const int TB,
+                     const int NT,
+                     const bool ROW_MAJOR );
   };
 
   template <typename T>
   Matrix<T>::Matrix( const Index nrows, const Index ncols )
-			: nrows_(nrows), ncols_(ncols), mat_type_(Unknown)
+      : nrows_(nrows), ncols_(ncols), mat_type_(Unknown)
   {
-		// Transfer nrows ncols to Sparse/DenseMatrix data member
-		sparse.nnew( nrows_, ncols_ );
-	  dense.nnew( nrows_, ncols_ );
-	}
+    // Transfer nrows ncols to Sparse/DenseMatrix data member
+    sparse.nnew( nrows_, ncols_ );
+    dense.nnew( nrows_, ncols_ );
+  }
 
   template <typename T>
   Info Matrix<T>::build( const std::vector<Index>& row_indices,
@@ -142,7 +142,7 @@ namespace backend
   template <typename T>
   Info Matrix<T>::build( const std::vector<T>& values )
   {
-		mat_type_ = Dense;
+    mat_type_ = Dense;
     return dense.build( values );
   }
 
@@ -165,12 +165,12 @@ namespace backend
       return dense.extractTuples( values );
     else
       return GrB_UNINITIALIZED_OBJECT;
-	}
+  }
 
   // Private method that sets mat_type, clears and allocates
   template <typename T>
-	Info Matrix<T>::setStorage( const Storage mat_type )
-	{
+  Info Matrix<T>::setStorage( const Storage mat_type )
+  {
     Info err;
     mat_type_ = mat_type;
     if( mat_type_ == Sparse ) {
@@ -194,43 +194,43 @@ namespace backend
   }
 
   template <typename T>
-	Info Matrix<T>::print()
-	{
-		if( mat_type_ == Sparse ) return sparse.print();
-	  else if( mat_type_ == Dense ) return dense.print();
+  Info Matrix<T>::print()
+  {
+    if( mat_type_ == Sparse ) return sparse.print();
+    else if( mat_type_ == Dense ) return dense.print();
     else return GrB_UNINITIALIZED_OBJECT;
-	}
+  }
 
   template <typename T>
   Info Matrix<T>::nrows( Index& nrows ) const 
-	{
-		if( mat_type_ == Sparse ) return sparse.nrows( nrows );
-	  else if( mat_type_ == Dense ) return dense.nrows( nrows );
+  {
+    if( mat_type_ == Sparse ) return sparse.nrows( nrows );
+    else if( mat_type_ == Dense ) return dense.nrows( nrows );
     else return GrB_UNINITIALIZED_OBJECT;
-	}
+  }
 
   template <typename T>
   Info Matrix<T>::ncols( Index& ncols ) const
-	{
-		if( mat_type_ == Sparse ) return sparse.ncols( ncols );
-	  else if( mat_type_ == Dense ) return dense.ncols( ncols );
+  {
+    if( mat_type_ == Sparse ) return sparse.ncols( ncols );
+    else if( mat_type_ == Dense ) return dense.ncols( ncols );
     else return GrB_UNINITIALIZED_OBJECT;
-	}
+  }
 
   template <typename T>
   Info Matrix<T>::nvals( Index& nvals ) const 
-	{
-		if( mat_type_ == Sparse ) return sparse.nvals( nvals );
-	  else if( mat_type_ == Dense ) return dense.nvals( nvals );
+  {
+    if( mat_type_ == Sparse ) return sparse.nvals( nvals );
+    else if( mat_type_ == Dense ) return dense.nvals( nvals );
     else return GrB_UNINITIALIZED_OBJECT;
-	}
+  }
 
   template <typename T>
-	Info Matrix<T>::getStorage( Storage& mat_type ) const
-	{
+  Info Matrix<T>::getStorage( Storage& mat_type ) const
+  {
     mat_type = mat_type_;
-		return GrB_SUCCESS;
-	}
+    return GrB_SUCCESS;
+  }
 } // backend
 } // graphblas
 

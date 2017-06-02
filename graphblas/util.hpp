@@ -22,40 +22,40 @@ namespace po = boost::program_options;
 
 void parseArgs( int argc, char**argv, po::variables_map& vm ) {
   // Declare the supported options
-	po::options_description desc("Allowed options");
-	desc.add_options()
-	  ("help", "produce help message")
-		("ta", po::value<int>()->default_value(32), "threads per A row")
-		("tb", po::value<int>()->default_value(32), "B slab width")
-		("nt", po::value<int>()->default_value(64), "threads per block")
-		("major", po::value<std::string>()->default_value("row"), 
-		   "row or column")
-		("split", po::value<bool>()->default_value(false), 
-		   "split spgemm computation")
-		("iter", po::value<int>()->default_value(10), "number of iterations")
-		("device", po::value<int>()->default_value(0), "GPU device number")
-		("debug", po::value<bool>()->default_value(false), "debug on")
-	;
+  po::options_description desc("Allowed options");
+  desc.add_options()
+    ("help", "produce help message")
+    ("ta", po::value<int>()->default_value(32), "threads per A row")
+    ("tb", po::value<int>()->default_value(32), "B slab width")
+    ("nt", po::value<int>()->default_value(64), "threads per block")
+    ("major", po::value<std::string>()->default_value("row"), 
+       "row or column")
+    ("split", po::value<bool>()->default_value(false), 
+       "split spgemm computation")
+    ("iter", po::value<int>()->default_value(10), "number of iterations")
+    ("device", po::value<int>()->default_value(0), "GPU device number")
+    ("debug", po::value<bool>()->default_value(false), "debug on")
+  ;
 
-	po::store(po::parse_command_line(argc, argv, desc), vm);
-	po::notify(vm);
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);
 
-	// Note: No help message is produced if Boost Unittest Framework is also used
-	if( vm.count("help") ) {
-		std::cout << desc << "\n";
-		return;
-	}
+  // Note: No help message is produced if Boost Unittest Framework is also used
+  if( vm.count("help") ) {
+    std::cout << desc << "\n";
+    return;
+  }
 }
 
 template<typename T>
 bool compare(const std::tuple<graphblas::Index,
-				                      graphblas::Index,
-														  T,
-														  graphblas::Index> &lhs, 
-						 const std::tuple<graphblas::Index,
-						                  graphblas::Index,
-														  T,
-														  graphblas::Index> &rhs)
+                              graphblas::Index,
+                              T,
+                              graphblas::Index> &lhs, 
+             const std::tuple<graphblas::Index,
+                              graphblas::Index,
+                              T,
+                              graphblas::Index> &rhs)
 {
   graphblas::Index a = std::get<0>(lhs);
   graphblas::Index b = std::get<0>(rhs);
@@ -67,20 +67,20 @@ bool compare(const std::tuple<graphblas::Index,
 
 template<typename T>
 void customSort( std::vector<graphblas::Index>& row_indices,
-				         std::vector<graphblas::Index>& col_indices,
-								 std::vector<T>& values )
+                 std::vector<graphblas::Index>& col_indices,
+                 std::vector<T>& values )
 {
   graphblas::Index nvals = row_indices.size();
-	std::vector<std::tuple<graphblas::Index,
-			                   graphblas::Index,
-												 T,
-												 graphblas::Index> > my_tuple;
+  std::vector<std::tuple<graphblas::Index,
+                         graphblas::Index,
+                         T,
+                         graphblas::Index> > my_tuple;
 
   for(graphblas::Index i=0;i<nvals;++i){
-		my_tuple.push_back(std::make_tuple( row_indices[i], col_indices[i], 
-								values[i], i));
+    my_tuple.push_back(std::make_tuple( row_indices[i], col_indices[i], 
+                values[i], i));
   }
-	std::sort( my_tuple.begin(), my_tuple.end(), compare<T> );
+  std::sort( my_tuple.begin(), my_tuple.end(), compare<T> );
     
   std::vector<graphblas::Index> v1 = row_indices;
   std::vector<graphblas::Index> v2 = col_indices;
@@ -96,9 +96,9 @@ void customSort( std::vector<graphblas::Index>& row_indices,
 
 template<typename T, typename mtxT>
 void readTuples( std::vector<graphblas::Index>& row_indices,
-			           std::vector<graphblas::Index>& col_indices,
-			           std::vector<T>& values,
-			           const graphblas::Index nvals,
+                 std::vector<graphblas::Index>& col_indices,
+                 std::vector<T>& values,
+                 const graphblas::Index nvals,
                  FILE* f)
 {
   graphblas::Index row_ind, col_ind;
@@ -128,9 +128,9 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       value = (T) raw_value;
 
       values.push_back(value);
-			//std::cout << value << std::endl;
+      //std::cout << value << std::endl;
       //std::cout << "The first row is " << row_ind-1 << " " <<  col_ind-1
-			//<< std::endl;
+      //<< std::endl;
 
       // Finds max csr row.
       /*int csr_max = 0;
@@ -154,15 +154,15 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       }*/
   }}
   //std::cout << "The biggest row was " << csr_row << " with " << csr_max << 
-	//" elements.\n";
+  //" elements.\n";
   //std::cout << "The first row has " << csr_first << " elements.\n";
 }
 
 template<typename T>
 void readTuples( std::vector<graphblas::Index>& row_indices,
-			           std::vector<graphblas::Index>& col_indices,
-			           std::vector<T>& values,
-			           const graphblas::Index nvals,
+                 std::vector<graphblas::Index>& col_indices,
+                 std::vector<T>& values,
+                 const graphblas::Index nvals,
                  FILE* f)
 {
   graphblas::Index row_ind, col_ind;
@@ -204,7 +204,7 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       }*/
   }}
   //std::cout << "The biggest row was " << csr_row << " with " << csr_max << 
-	//" elements.\n";
+  //" elements.\n";
   //std::cout << "The first row has " << csr_first << " elements.\n";
 }
 
@@ -246,10 +246,10 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
     if( remove_self_loops && curr_row == curr )
       col_indices[i] = -1;
 
-	// Duplicates
+  // Duplicates
     if( curr == last && curr_row == last_row ) {
       //printf("Curr: %d, Last: %d, Curr_row: %d, Last_row: %d\n", curr, last, 
-	  //  curr_row, last_row );
+    //  curr_row, last_row );
       col_indices[i] = -1;
   }}
 
@@ -277,13 +277,13 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
 
 template<typename T>
 int readMtx( const char *fname,
-    		     std::vector<graphblas::Index>& row_indices,
-	           std::vector<graphblas::Index>& col_indices,
-	           std::vector<T>& values,
-			       graphblas::Index& nrows,
-			       graphblas::Index& ncols,
-			       graphblas::Index& nvals,
-			       const bool DEBUG	)
+             std::vector<graphblas::Index>& row_indices,
+             std::vector<graphblas::Index>& col_indices,
+             std::vector<T>& values,
+             graphblas::Index& nrows,
+             graphblas::Index& ncols,
+             graphblas::Index& nvals,
+             const bool DEBUG )
 {
   int ret_code;
   MM_typecode matcode;
@@ -312,8 +312,8 @@ int readMtx( const char *fname,
     readTuples<T>( row_indices, col_indices, values, nvals, f );
 
   // If graph is symmetric, replicate it out in memory
-	if( mm_is_symmetric(matcode) )
-	// If user wants to treat MTX as a directed graph
+  if( mm_is_symmetric(matcode) )
+  // If user wants to treat MTX as a directed graph
   //if( undirected )
     makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
   customSort<T>( row_indices, col_indices, values );
@@ -338,10 +338,10 @@ template<typename T>
 void printArray( const char* str, std::vector<T>& array, int length=40 )
 {
   if( length>40 ) length=40;
-	std::cout << str << ":\n";
-	for( int i=0;i<length;i++ )
+  std::cout << str << ":\n";
+  for( int i=0;i<length;i++ )
     std::cout << "[" << i << "]:" << array[i] << " ";
-	std::cout << "\n";
+  std::cout << "\n";
 }
 
 struct CpuTimer {
