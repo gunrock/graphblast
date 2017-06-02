@@ -22,7 +22,7 @@ namespace backend
   __global__ void spmm_row_kernel( const Index A_nrows, 
       const Index B_ncols, const Index A_ncols, const Index A_nvals,
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
-      const c* B_denseVal, c* C_denseVal );
+      const c* B_denseVal, float4* C_denseVal );
 
   template<typename c, int TB>
   __global__ void spmm_col_kernel( const Index A_nrows, 
@@ -85,22 +85,22 @@ namespace backend
         case 4:
           spmm_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal, (float4*) C.d_denseVal );
           break;
         case 8:
           spmm_row_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal, (float4*) C.d_denseVal );
           break;
         case 16:
           spmm_row_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal, (float4*) C.d_denseVal );
           break;
         case 32:
           spmm_row_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal, (float4*) C.d_denseVal );
           break;
       }
     else
@@ -150,7 +150,7 @@ namespace backend
   __global__ void spmm_row_kernel( const Index A_nrows, 
       const Index B_ncols, const Index A_ncols, const Index A_nvals,
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
-      const c* B_denseVal, c* C_denseVal )
+      const c* B_denseVal, float4* C_denseVal )
   {
     float  vals[TB];
     float4 raws[TB>>2];
@@ -239,10 +239,42 @@ namespace backend
 
         // first thread writes the result
         if( lane==0 )
+          raws[0].x = vals[ 0];
+          raws[0].y = vals[ 1];
+          raws[0].z = vals[ 2];
+          raws[0].w = vals[ 3];
+          raws[1].x = vals[ 4];
+          raws[1].y = vals[ 5];
+          raws[1].z = vals[ 6];
+          raws[1].w = vals[ 7];
+          raws[2].x = vals[ 8];
+          raws[2].y = vals[ 9];
+          raws[2].z = vals[10];
+          raws[2].w = vals[11];
+          raws[3].x = vals[12];
+          raws[3].y = vals[13];
+          raws[3].z = vals[14];
+          raws[3].w = vals[15];
+          raws[4].x = vals[16];
+          raws[4].y = vals[17];
+          raws[4].z = vals[18];
+          raws[4].w = vals[19];
+          raws[5].x = vals[20];
+          raws[5].y = vals[21];
+          raws[5].z = vals[22];
+          raws[5].w = vals[23];
+          raws[6].x = vals[24];
+          raws[6].y = vals[25];
+          raws[6].z = vals[26];
+          raws[6].w = vals[27];
+          raws[7].x = vals[28];
+          raws[7].y = vals[29];
+          raws[7].z = vals[30];
+          raws[7].w = vals[31];
           #pragma unroll
-          for( int ii=0; ii<TB; ii++ ) {
-              C_denseVal[row*B_ncols+ii+slab] = vals[ii];
-              //sh_vals[threadIdx.x-lane+ii] = vals[ii];
+          for( int ii=0; ii<(TB>>2); ii++ ) {
+              C_denseVal[(row*B_ncols+(ii<<2)+slab)>>2] = raws[ii];
+              //C_denseVal[row*B_ncols+ii+slab] = vals[ii];
               //printf("ii:%d,ind:%d\n",ii,threadIdx.x-lane+ii);
           }
 
