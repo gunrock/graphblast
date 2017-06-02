@@ -166,7 +166,8 @@ namespace backend
       dest= csrRowPtr[row];
 			col = col_indices[i];
 			if( col>=ncols_ ) return GrB_INDEX_OUT_OF_BOUNDS;
-      csrColInd[dest] = col;
+      csrColInd[dest] = col+1;      // One-based indexing uses col+1
+      //csrColInd[dest] = col;      // Zero-based indexing uses col+1
       csrVal[dest]    = values[i];
       csrRowPtr[row]++;
     }
@@ -175,7 +176,8 @@ namespace backend
     // Undo damage done to rowPtr
     for( Index i=0; i<=nrows_; i++ ) {
       temp = csrRowPtr[i];
-      csrRowPtr[i] = cumsum;
+      csrRowPtr[i] = cumsum+1;      // One-based indexing
+      //csrRowPtr[i] = cumsum;      // Zero-based indexing
       cumsum = temp;
     }
 
