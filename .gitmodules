@@ -1,0 +1,3 @@
+[submodule "ext/moderngpu"]
+	path = ext/moderngpu
+	url = https://ctcyang@github.com/ctcyang/moderngpu.git
