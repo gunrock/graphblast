@@ -10,7 +10,6 @@ namespace graphblas
   typedef int Index;
   typedef int Info;
 
-  class Descriptor{};
   class BinaryOp{};
   class Semiring{};
 
