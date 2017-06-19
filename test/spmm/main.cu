@@ -241,9 +241,11 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   graphblas::Semiring op;
 
   GpuTimer gpu_mxm;
+  cudaProfilerStart();
   gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
   gpu_mxm.Stop();
+  cudaProfilerStop();
   float elapsed_mxm = gpu_mxm.ElapsedMillis();
   std::cout << "mxm: " << elapsed_mxm << " ms\n";
 

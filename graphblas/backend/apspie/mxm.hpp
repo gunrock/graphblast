@@ -66,10 +66,16 @@ namespace backend
     } else if( A_storage == Sparse && B_storage == Dense ) {
       if( C_storage == Unknown )
         err = C.setStorage( Dense );
-      if( TA==0 && TB==0 && NT==0 )
+      if( TA==0 && TB==0 && NT==0 ) {
+        //std::cout << "cusparse\n";
         err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
-      else
+      } else if( TA==0 && TB==0 && NT==1 ) {
+        //std::cout << "texture\n";
         err = spmm( C.dense, op, A.sparse, B.dense, TA, TB, NT, ROW_MAJOR );
+      } else {
+        //std::cout << "moderngpu\n";
+        err = moderngpu_spmm( C.dense, op, A.sparse, B.dense );
+      }
     }
     return err;
   }
