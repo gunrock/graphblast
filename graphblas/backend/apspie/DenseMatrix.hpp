@@ -93,6 +93,12 @@ namespace backend
                                const Semiring&        op,
                                const SparseMatrix<a>& A,
                                const DenseMatrix<b>&  B );
+    
+    template <typename c, typename a, typename b>
+    friend Info moderngpu_spmm( DenseMatrix<c>&        C,
+                                const Semiring&        op,
+                                const SparseMatrix<a>& A,
+                                const DenseMatrix<b>&  B );
   };
 
   template <typename T>
