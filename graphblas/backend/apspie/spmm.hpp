@@ -468,9 +468,9 @@ namespace backend
     // Computation
     mgpu::ContextPtr context = mgpu::CreateCudaDevice(0);
 
-    mgpu::SpmvCsrBinary( A.d_csrVal, A.d_csrColInd, A_nvals, A.d_csrRowPtr, 
+    mgpu::SpmmCsrBinary( A.d_csrVal, A.d_csrColInd, A_nvals, A.d_csrRowPtr, 
         A_nrows, B.d_denseVal, true, C.d_denseVal, (c) 0, mgpu::multiplies<c>(),
-        mgpu::plus<c>(), *context );
+        mgpu::plus<c>(), B_nrows, *context );
 
     C.need_update = true;  // Set flag that we need to copy data from GPU
     return GrB_SUCCESS;
