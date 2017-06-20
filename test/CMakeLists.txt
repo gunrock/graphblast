@@ -40,8 +40,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "-fpermissive -m64" )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 #set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/lib/libiomp5 -liomp5" )
-#set(CMAKE_EXE_LINKER_FLAGS "-lboost_unit_test_framework -Wl,--start-group $ENV{MKLROOT}/lib/intel64/libmkl_intel_lp64.a $ENV{MKLROOT}/lib/intel64/libmkl_gnu_thread.a $ENV{MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lgomp -lpthread -lm -ldl")
 #set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --verbose")
 
 # ptx generation
@@ -63,13 +61,13 @@ include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} $ENV{MKLROOT} ${Open
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 #cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cu" )#${mgpu_SRC_FILES}
 #cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cu" )#${mgpu_SRC_FILES}
-cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cu" ${mgpu_SRC_FILES} )
+#cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cu" ${mgpu_SRC_FILES} )
 #cuda_add_executable( spgemm${PROJ_NAME} "spgemm/main.cu" )#${mgpu_SRC_FILES}
 cuda_add_executable( benchmark_spmm${PROJ_NAME} "benchmark_spmm/main.cu" ${mgpu_SRC_FILES} )
 #cuda_add_executable( benchmark_spgemm${PROJ_NAME} "benchmark_spgemm/main.cu" )#${mgpu_SRC_FILES}
 #target_link_libraries( matrix${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 #target_link_libraries( mmio${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 #target_link_libraries( spgemm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} ${MKL_LIBRARIES} )
 target_link_libraries( benchmark_spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 #target_link_libraries( benchmark_spgemm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )

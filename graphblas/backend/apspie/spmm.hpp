@@ -34,15 +34,14 @@ namespace backend
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
       const c* B_denseVal, c* C_denseVal );
 
-  template<typename c, typename a, typename b>
+  template<typename c, typename m, typename a, typename b>
   Info spmm( DenseMatrix<c>&        C,
+             const SparseMatrix<m>& mask,
+             const BinaryOp&        accum,
              const Semiring&        op,
              const SparseMatrix<a>& A,
              const DenseMatrix<b>&  B,
-             const int TA,
-             const int TB,
-             const int NT,
-             const bool ROW_MAJOR )
+             const Descriptor&      desc )
   {
     Index A_nrows, A_ncols, A_nvals;
     Index B_nrows, B_ncols;
@@ -69,12 +68,20 @@ namespace backend
     // Domain compatibility check
     // TODO: add domain compatibility check
 
+    // Read descriptor
+    Desc_value mode, ta, tb, nt;
+    desc.get( GrB_MODE, mode );
+    desc.get( GrB_TA  , ta );
+    desc.get( GrB_TB  , tb );
+    desc.get( GrB_NT  , nt );
+
     // Computation
-    const int T        = TA;
-    const int NTHREADS = NT;
+    const int T        = static_cast<int>(ta);
+    const int TB       = static_cast<int>(tb);
+    const int NTHREADS = static_cast<int>(nt);
     const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
     //CUDA_SAFE_CALL( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
-    if( ROW_MAJOR )
+    if( mode == GrB_FIXEDROW )
       switch( TB ) {
         /*case 1:
           spmm_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
@@ -106,9 +113,7 @@ namespace backend
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
             B.d_denseVal, C.d_denseVal );
           break;
-      }
-    else
-      switch( TB ) {
+      } else switch( TB ) {
         /*case 1:
           spmm_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
@@ -430,7 +435,7 @@ namespace backend
   }
 
   template<typename c, typename a, typename b>
-  Info moderngpu_spmm( DenseMatrix<c>&        C,
+  Info mergepath_spmm( DenseMatrix<c>&        C,
                        const Semiring&        op,
                        const SparseMatrix<a>& A,
                        const DenseMatrix<b>&  B )

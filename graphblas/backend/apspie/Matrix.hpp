@@ -4,7 +4,7 @@
 #include <vector>
 #include <iostream>
 
-#include "graphblas/backend/apspie/Descriptor.hpp"
+//#include "graphblas/backend/apspie/Descriptor.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 

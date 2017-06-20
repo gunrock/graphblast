@@ -98,15 +98,14 @@ namespace backend
                       const DenseMatrix<b>&  B );
 
     // For testing
-    template <typename c, typename a, typename b>
+    template <typename c, typename m, typename a, typename b>
     friend Info spmm( DenseMatrix<c>&        C,
+                      const SparseMatrix<m>& mask,
+                      const BinaryOp&        accum,
                       const Semiring&        op,
                       const SparseMatrix<a>& A,
                       const DenseMatrix<b>&  B,
-                      const int TA,
-                      const int TB,
-                      const int NT,
-                      const bool ROW_MAJOR );
+                      const Descriptor&      desc );
 
     template <typename c, typename a, typename b>
     friend Info cusparse_spmm( DenseMatrix<c>&        C,
@@ -115,7 +114,7 @@ namespace backend
                                const DenseMatrix<b>&  B );
 
     template <typename c, typename a, typename b>
-    friend Info moderngpu_spmm( DenseMatrix<c>&        C,
+    friend Info mergepath_spmm( DenseMatrix<c>&        C,
                                 const Semiring&        op,
                                 const SparseMatrix<a>& A,
                                 const DenseMatrix<b>&  B );

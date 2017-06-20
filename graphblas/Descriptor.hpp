@@ -12,13 +12,16 @@
 
 namespace graphblas
 {
+  template<typename T>
+  class Matrix;
+
   class Descriptor
   {
     public:
     // Default Constructor, Standard Constructor (Replaces new in C++)
-    //   -it's imperative to call constructor using matrix or the constructed object
-    //     won't be tied to this outermost layer
-    Descriptor();
+    //   -it's imperative to call constructor using descriptor or else the 
+    //     constructed object won't be tied to this outermost layer
+    Descriptor() : descriptor() {}
 
     // Assignment Constructor
     // TODO:
@@ -30,24 +33,48 @@ namespace graphblas
     // C API Methods
     //
     // Mutators
-    Info set( Desc_field& field, Desc_value& value );
+    Info set( const Desc_field field, Desc_value value );
+    Info set( const Desc_field field, int value );
 
     // Accessors
-    Info get( Desc_field& field, Desc_value& value ) const;
+    Info get( const Desc_field field, Desc_value& value ) const;
 
     private:
     // Data members that are same for all backends
-    backend::Descriptor desc;
+    backend::Descriptor descriptor;
+
+    template <typename c, typename m, typename a, typename b>
+    friend Info mxm( Matrix<c>&        C,
+                     const Matrix<m>&  mask,
+                     const BinaryOp&   accum,
+                     const Semiring&   op,
+                     const Matrix<a>&  A,
+                     const Matrix<b>&  B,
+                     const Descriptor& desc );
+
+    template <typename c, typename a, typename b>
+    friend Info mxm( Matrix<c>&        C,
+                     const int         mask,
+                     const int         accum,
+                     const Semiring&   op,
+                     const Matrix<a>&  A,
+                     const Matrix<b>&  B,
+                     const Descriptor& desc );
   };
 
-  Info Descriptor::set( Desc_field& field, Desc_value& value )
+  Info Descriptor::set( const Desc_field field, Desc_value value )
   {
-    return desc.set( field, value );
+    return descriptor.set( field, value );
   }
 
-  Info Descriptor::get( Desc_field& field, Desc_value& value ) const
+  Info Descriptor::set( const Desc_field field, int value )
   {
-    return desc.get( field, value );
+    return descriptor.set( field, static_cast<Desc_value>(value) );
+  }
+
+  Info Descriptor::get( const Desc_field field, Desc_value& value ) const
+  {
+    return descriptor.get( field, value );
   }
 
 }  // graphblas

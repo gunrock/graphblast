@@ -49,6 +49,7 @@ namespace backend
     // private method for allocation
     Info allocate();  
     Info clear();
+    Info setMajor( const Major major_type );
 
     // Accessors
     Info extractTuples( std::vector<T>& values ) const;
@@ -68,6 +69,9 @@ namespace backend
     T* h_denseVal;
     T* d_denseVal;
 
+    // Keeps track of GrB_ROWMAJOR or GrB_COLMAJOR
+    Major major_type_;
+
     // Keep track of whether host values are up-to-date with device values 
     bool need_update;
 
@@ -78,15 +82,14 @@ namespace backend
                       const DenseMatrix<b>&  B );
 
     // For testing
-    template <typename c, typename a, typename b>
+    template <typename c, typename m, typename a, typename b>
     friend Info spmm( DenseMatrix<c>&        C,
+                      const SparseMatrix<m>& mask,
+                      const BinaryOp&        accum,
                       const Semiring&        op,
                       const SparseMatrix<a>& A,
                       const DenseMatrix<b>&  B,
-                      const int TA,
-                      const int TB,
-                      const int NT,
-                      const bool ROW_MAJOR );
+                      const Descriptor&      desc );
     
     template <typename c, typename a, typename b>
     friend Info cusparse_spmm( DenseMatrix<c>&        C,
@@ -95,7 +98,7 @@ namespace backend
                                const DenseMatrix<b>&  B );
     
     template <typename c, typename a, typename b>
-    friend Info moderngpu_spmm( DenseMatrix<c>&        C,
+    friend Info mergepath_spmm( DenseMatrix<c>&        C,
                                 const Semiring&        op,
                                 const SparseMatrix<a>& A,
                                 const DenseMatrix<b>&  B );
@@ -154,6 +157,13 @@ namespace backend
   }
 
   template <typename T>
+  Info DenseMatrix<T>::setMajor( const Major major_type )
+  {
+    major_type_ = major_type;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
   Info DenseMatrix<T>::extractTuples( std::vector<T>& values ) const
   {
     values.clear();
@@ -187,15 +197,14 @@ namespace backend
     for( int row=0; row<length; row++ ) {
       for( int col=0; col<length; col++ ) {
         // Print row major order matrix in row major order
-        //#ifdef ROW_MAJOR
-        if( h_denseVal[row*ncols_+col]!=0.0 ) std::cout << "x ";
-        else std::cout << "0 ";
-        //#endif
+        if( major_type_ == GrB_ROWMAJOR ) {
+          if( h_denseVal[row*ncols_+col]!=0.0 ) std::cout << "x ";
+          else std::cout << "0 ";
         // Print column major order matrix in row major order (Transposition)
-        //#ifdef COL_MAJOR
-        //if( h_denseVal[col*nrows_+row]!=0.0 ) std::cout << "x ";
-        //else std::cout << "0 ";
-        //#endif
+        } else if (major_type_ == GrB_COLMAJOR ) {
+          if( h_denseVal[col*nrows_+row]!=0.0 ) std::cout << "x ";
+          else std::cout << "0 ";
+        }
       }
       std::cout << std::endl;
     }

@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "graphblas/Descriptor.hpp"
 #include "graphblas/types.hpp"
+#include "graphblas/Descriptor.hpp"
 
 // Opaque data members from the right backend
 #define __GRB_BACKEND_MATRIX_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/Matrix.hpp>
@@ -20,7 +20,7 @@ namespace graphblas
     // Default Constructor, Standard Constructor (Replaces new in C++)
     //   -it's imperative to call constructor using matrix or the constructed object
     //     won't be tied to this outermost layer
-    Matrix();
+    Matrix() : matrix() {}
     Matrix( const Index nrows, const Index ncols ) : matrix( nrows, ncols ) {}
 
     // Assignment Constructor (Replaces dup in C++)
@@ -75,30 +75,14 @@ namespace graphblas
                      const Descriptor& desc );
 
     template <typename c, typename a, typename b>
-    friend Info mxm( Matrix<c>&       C,
-                     const Semiring&  op,
-                     const Matrix<a>& A,
-                     const Matrix<b>& B );
+    friend Info mxm( Matrix<c>&        C,
+                     const int         mask,
+                     const int         accum,
+                     const Semiring&   op,
+                     const Matrix<a>&  A,
+                     const Matrix<b>&  B,
+                     const Descriptor& desc );
 
-    template <typename c, typename a, typename b>
-    friend Info mxm( Matrix<c>&       C,
-                     const Semiring&  op,
-                     const Matrix<a>& A,
-                     const Matrix<b>& B,
-                     const int TA,
-                     const int TB,
-                     const int NT,
-                     const bool ROW_MAJOR );
-
-    template <typename c, typename a, typename b>
-    friend Info mxmCompute( Matrix<c>&       C,
-                     const Semiring&  op,
-                     const Matrix<a>& A,
-                     const Matrix<b>& B,
-                     const int TA,
-                     const int TB,
-                     const int NT,
-                     const bool ROW_MAJOR );
   };
 
   template <typename T>
