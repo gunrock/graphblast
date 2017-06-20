@@ -8,19 +8,28 @@
 namespace graphblas
 {
   typedef int Index;
-  typedef int Info;
 
   class BinaryOp{};
   class Semiring{};
 
-  static const uint8_t GrB_SUCCESS             = 0;
-  static const uint8_t GrB_OUT_OF_MEMORY       = 1;
-  static const uint8_t GrB_INDEX_OUT_OF_BOUNDS = 2;
-  static const uint8_t GrB_PANIC               = 3;
-  static const uint8_t GrB_UNINITIALIZED_OBJECT= 4;
-  static const uint8_t GrB_DIMENSION_MISMATCH  = 5;
-
-  enum Storage {Unknown,Sparse,Dense};
+  enum Storage {GrB_UNKNOWN,
+                GrB_SPARSE,
+                GrB_DENSE};
+  enum Info {GrB_SUCCESS,
+             GrB_OUT_OF_MEMORY,
+             GrB_INDEX_OUT_OF_BOUNDS,
+             GrB_PANIC,
+             GrB_UNINITIALIZED_OBJECT,  
+             GrB_DIMENSION_MISMATCH};
+  enum Desc_field {GrB_MODE, 
+                   GrB_TA, 
+                   GrB_TB, 
+                   GrB_NT};
+  enum Desc_value {GrB_CUSPARSE,
+                   GrB_CUSPARSE2,
+                   GrB_FIXEDROW,
+                   GrB_FIXEDCOL,
+                   GrB_MERGEPATH};
 }
 
 #endif  // GRB_TYPES_HPP

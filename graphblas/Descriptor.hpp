@@ -30,20 +30,24 @@ namespace graphblas
     // C API Methods
     //
     // Mutators
+    Info set( Desc_field& field, Desc_value& value );
+
+    // Accessors
+    Info get( Desc_field& field, Desc_value& value ) const;
 
     private:
     // Data members that are same for all backends
     backend::Descriptor desc;
   };
 
-  Info Descriptor::set( Descriptor& desc_, Desc_value& desc_value )
+  Info Descriptor::set( Desc_field& field, Desc_value& value )
   {
-    return desc.set( desc_, desc_value );
+    return desc.set( field, value );
   }
 
-  Info Descriptor::get( Descriptor& desc_, Desc_value& desc_value ) const
+  Info Descriptor::get( Desc_field& field, Desc_value& value ) const
   {
-    return desc.get( desc_, desc_value );
+    return desc.get( field, value );
   }
 
 }  // graphblas

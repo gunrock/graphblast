@@ -5,6 +5,8 @@
 
 namespace graphblas
 {
+namespace backend
+{
   class Descriptor
   {
     public:
@@ -23,26 +25,29 @@ namespace graphblas
     // C API Methods
     //
     // Mutators
+    Info set( Desc_field& field, Desc_value& value );
+
+    // Accessors
+    Info get( Desc_field& field, Desc_value& value ) const;
 
     private:
     // Data members that are same for all backends
-    GrB_MODE mode;
-    GrB_TA   ta;
-    GrB_TB   tb;
-    GrB_NT   nt;
+    Desc_value desc[4];
   };
 
   Info Descriptor::set( Desc_field& field, Desc_value& value )
   {
+    desc[field] = value;
     return GrB_SUCCESS;
   }
 
   Info Descriptor::get( Desc_field& field, Desc_value& value ) const
   {
-    
+    value = desc[field];
     return GrB_SUCCESS;
   }
 
+}  // backend
 }  // graphblas
 
 #endif  // GRB_DESCRIPTOR_HPP

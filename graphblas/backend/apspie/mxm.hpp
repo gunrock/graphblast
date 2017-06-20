@@ -49,26 +49,26 @@ namespace backend
     Desc_value desc_value;
     desc.get( GrB_MODE, desc_value );
     
-    if( A_storage == Sparse && B_storage == Sparse) {
-      if( C_storage == Unknown )
-        err = C.storageSet( Sparse );
-      if( 
+    if( A_storage == GrB_SPARSE && B_storage == GrB_SPARSE) {
+      if( C_storage == GrB_UNKNOWN )
+        err = C.storageSet( GrB_SPARSE );
+      if( GrB_MODE == GrB_CUSPARSE2 )
         err = cusparse_spgemm2( C.sparse, op, A.sparse, B.sparse );
-      else
+      else if( GrB_MODE == GrB_CUSPARSE )
         err = cusparse_spgemm( C.sparse, op, A.sparse, B.sparse );
     } else if( A_storage == Sparse && B_storage == Dense ) {
-      if( C_storage == Unknown )
+      if( C_storage == GrB_UNKNOWN )
         err = C.storageSet( Dense );
-      if( desc_value==GrB_CUSPARSE ) {
+      if( desc_value == GrB_CUSPARSE ) {
         //std::cout << "cusparse\n";
         err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
-      } else if( desc_value==GrB_FIXEDROW ) {
+      } else if( desc_value == GrB_FIXEDROW ) {
         //std::cout << "fixedrow\n";
         err = spmm( C.dense, op, A.sparse, B.dense );
-      } else if( desc_value==GrB_FIXEDCOL ) {
+      } else if( desc_value == GrB_FIXEDCOL ) {
         //std::cout << "fixedcol\n";
         err = spmm( C.dense, op, A.sparse, B.dense );
-      } else if( desc_value==GrB_MERGEPATH ) {
+      } else if( desc_value == GrB_MERGEPATH ) {
         //std::cout << "mergepath\n";
         err = mergepath_spmm( C.dense, op, A.sparse, B.dense );
       }

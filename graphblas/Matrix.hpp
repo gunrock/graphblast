@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "graphblas/Descriptor.hpp"
 #include "graphblas/types.hpp"
 
 // Opaque data members from the right backend
