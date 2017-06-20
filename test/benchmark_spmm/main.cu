@@ -69,11 +69,12 @@ int main( int argc, char** argv )
   }
 
   if( DEBUG ) {
-    std::cout << "mode:  " << mode      << "\n";
-    std::cout << "ta:    " << TA        << "\n";
-    std::cout << "tb:    " << TB        << "\n";
-    std::cout << "nt:    " << NT        << "\n";
-    std::cout << "debug: " << DEBUG     << "\n";
+    std::cout << "mode:  " << mode     << "\n";
+    std::cout << "ta:    " << TA       << "\n";
+    std::cout << "tb:    " << TB       << "\n";
+    std::cout << "nt:    " << NT       << "\n";
+    std::cout << "iter:  " << NUM_ITER << "\n";
+    std::cout << "debug: " << DEBUG    << "\n";
   }
 
   // Read in sparse matrix
