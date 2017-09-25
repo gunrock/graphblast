@@ -221,6 +221,13 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   graphblas::Matrix<float> b(nrows, max_ncols);
   std::vector<float> denseVal;
 
+  // default values of TA, TB, NT will be used
+  graphblas::Descriptor desc;
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  desc.set( graphblas::GrB_NT, NT );
+  desc.set( graphblas::GrB_TA, TA );
+  desc.set( graphblas::GrB_TB, TB );
+
   // Row major order
   if( ROW_MAJOR )
     for( int i=0; i<nrows; i++ )
@@ -243,7 +250,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   GpuTimer gpu_mxm;
   cudaProfilerStart();
   gpu_mxm.Start();
-  graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
+  graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
   gpu_mxm.Stop();
   cudaProfilerStop();
   float elapsed_mxm = gpu_mxm.ElapsedMillis();

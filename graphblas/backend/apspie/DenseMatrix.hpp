@@ -52,7 +52,7 @@ namespace backend
     Info setMajor( const Major major_type );
 
     // Accessors
-    Info extractTuples( std::vector<T>& values ) const;
+    Info extractTuples( std::vector<T>& values );
     Info print() const; // Const, because host memory unmodified
     // private method for pretty printing
     Info printDense() const;
@@ -73,7 +73,7 @@ namespace backend
     Major major_type_;
 
     // Keep track of whether host values are up-to-date with device values 
-    bool need_update;
+    bool need_update_;
 
     template <typename c, typename a, typename b>
     friend Info spmm( DenseMatrix<c>&        C,
@@ -107,7 +107,7 @@ namespace backend
   template <typename T>
   Info DenseMatrix<T>::build( const std::vector<T>& values )
   {
-    need_update = false;
+    need_update_ = false;
 
     allocate();
 
@@ -116,7 +116,7 @@ namespace backend
         h_denseVal[i] = values[i];
 
     // Device memcpy
-    CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T),
+    CUDA(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T),
         cudaMemcpyHostToDevice));
 
     //printArrayDevice( "B matrix GPU", d_denseVal );
@@ -141,8 +141,8 @@ namespace backend
       h_denseVal[i] = (T) 0;
 
     // Device alloc
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_denseVal, nvals_*sizeof(T)));
-    CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T), 
+    CUDA(cudaMalloc((void**)&d_denseVal, nvals_*sizeof(T)));
+    CUDA(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T), 
         cudaMemcpyHostToDevice));
 
     return GrB_SUCCESS;
@@ -152,7 +152,7 @@ namespace backend
   Info DenseMatrix<T>::clear()
   {
     if( h_denseVal ) free( h_denseVal );
-    if( d_denseVal ) CUDA_SAFE_CALL(cudaFree( d_denseVal ));
+    if( d_denseVal ) CUDA(cudaFree( d_denseVal ));
     return GrB_SUCCESS;
   }
 
@@ -164,12 +164,12 @@ namespace backend
   }
 
   template <typename T>
-  Info DenseMatrix<T>::extractTuples( std::vector<T>& values ) const
+  Info DenseMatrix<T>::extractTuples( std::vector<T>& values )
   {
     values.clear();
 
-    if( need_update )
-      CUDA_SAFE_CALL(cudaMemcpy(h_denseVal, d_denseVal, 
+    if( need_update_ )
+      CUDA(cudaMemcpy(h_denseVal, d_denseVal, 
           nvals_*sizeof(T), cudaMemcpyDeviceToHost));
     
     for( Index i=0; i<nvals_; i++ ) {
@@ -181,8 +181,8 @@ namespace backend
   template <typename T>
   Info DenseMatrix<T>::print() const
   {
-    if( need_update )
-      CUDA_SAFE_CALL(cudaMemcpy(h_denseVal, d_denseVal, 
+    if( need_update_ )
+      CUDA(cudaMemcpy(h_denseVal, d_denseVal, 
           nvals_*sizeof(T), cudaMemcpyDeviceToHost));
 
     printArray( "denseVal", h_denseVal );

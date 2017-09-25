@@ -80,76 +80,76 @@ namespace backend
     const int TB       = static_cast<int>(tb);
     const int NTHREADS = static_cast<int>(nt);
     const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
-    //CUDA_SAFE_CALL( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
+    //CUDA( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
     if( mode == GrB_FIXEDROW )
       switch( TB ) {
         /*case 1:
           spmm_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 2:
           spmm_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;*/
         case 4:
           spmm_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 8:
           spmm_row_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 16:
           spmm_row_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 32:
           spmm_row_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
       } else switch( TB ) {
         /*case 1:
           spmm_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 2:
           spmm_col_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;*/
         case 4:
           spmm_col_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 8:
           spmm_col_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 16:
           spmm_col_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 32:
           spmm_col_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
       }
 
     //spmm_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
-    //  A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
+    //  A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_, B.d_denseVal, C.d_denseVal );
 
-    C.need_update = true;
+    C.need_update_ = true;
     return GrB_SUCCESS;
   }
 
@@ -399,7 +399,7 @@ namespace backend
     float beta  = 0.0;
     status = cusparseScsrmm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
-        &alpha, descr, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, B.d_denseVal,
+        &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, B.d_denseVal,
         A_ncols,      // ldb = max(1,k) since op(A) = A
         &beta, C.d_denseVal,
         A_nrows );    // ldc = max(1,m) since op(A) = A
@@ -430,7 +430,7 @@ namespace backend
             std::cout << "Error: Matrix type not supported.\n";
     }
 
-    C.need_update = true;  // Set flag that we need to copy data from GPU
+    C.need_update_ = true;  // Set flag that we need to copy data from GPU
     return GrB_SUCCESS;
   }
 
@@ -467,12 +467,15 @@ namespace backend
 
     // Computation
     mgpu::ContextPtr context = mgpu::CreateCudaDevice(0);
-
-    mgpu::SpmmCsrBinary( A.d_csrVal, A.d_csrColInd, A_nvals, A.d_csrRowPtr, 
+    CUDA( cudaDeviceSynchronize() );
+    std::cout << "Success creating mgpu context\n";
+    mgpu::SpmmCsrBinary( A.d_csrVal_, A.d_csrColInd_, A_nvals, A.d_csrRowPtr_, 
         A_nrows, B.d_denseVal, true, C.d_denseVal, (c) 0, mgpu::multiplies<c>(),
         mgpu::plus<c>(), B_nrows, *context );
+    std::cout << "Finished SpmmCsrBinary\n";
+    CUDA( cudaDeviceSynchronize() );
 
-    C.need_update = true;  // Set flag that we need to copy data from GPU
+    C.need_update_ = true;  // Set flag that we need to copy data from GPU
     return GrB_SUCCESS;
   }
 

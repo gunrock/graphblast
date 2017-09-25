@@ -1,5 +1,5 @@
-#define GRB_USE_SEQUENTIAL
-//#define GRB_USE_APSPIE
+//#define GRB_USE_SEQUENTIAL
+#define GRB_USE_APSPIE
 //#define private public
 
 #include <iostream>

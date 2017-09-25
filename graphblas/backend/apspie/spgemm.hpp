@@ -64,16 +64,16 @@ namespace backend
 
     int baseC;
     int *nnzTotalDevHostPtr = &(C_nvals);
-    //if( C.d_csrRowPtr==NULL )
-    //  CUDA_SAFE_CALL( cudaMalloc( &C.d_csrRowPtr, (A_nrows+1)*sizeof(Index) ));
+    //if( C.d_csrRowPtr_==NULL )
+    //  CUDA( cudaMalloc( &C.d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
 
     // Analyze
     status = cusparseXcsrgemmNnz( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
         A_nrows, B_ncols, A_ncols, 
-        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
-        descr, C.d_csrRowPtr, nnzTotalDevHostPtr );
+        descr, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, 
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr, C.d_csrRowPtr_, nnzTotalDevHostPtr );
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -104,19 +104,19 @@ namespace backend
     if( nnzTotalDevHostPtr != NULL )
       C_nvals = *nnzTotalDevHostPtr;
     else {
-      CUDA_SAFE_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr+A_nrows, 
+      CUDA( cudaMemcpy( &(C_nvals), C.d_csrRowPtr_+A_nrows, 
           sizeof(Index), cudaMemcpyDeviceToHost ));
-      CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
+      CUDA( cudaMemcpy( &(baseC), C.d_csrRowPtr_, 
           sizeof(Index), cudaMemcpyDeviceToHost ));
       C_nvals -= baseC;
     }
 
     if( C_nvals >= C.nvals_ ) {
-      CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
-      CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
+      CUDA( cudaFree( C.d_csrColInd_ ));
+      CUDA( cudaFree( C.d_csrVal_    ));
+      CUDA( cudaMalloc( (void**) &C.d_csrColInd_, 
           C_nvals*sizeof(Index) ));
-      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
+      CUDA( cudaMalloc( (void**) &C.d_csrVal_,
           C_nvals*sizeof(c) ));
     }
 
@@ -124,9 +124,9 @@ namespace backend
     status = cusparseScsrgemm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
         A_nrows, B_ncols, A_ncols, 
-        descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
-        descr,          C.d_csrVal, C.d_csrRowPtr, C.d_csrColInd );
+        descr, A_nvals, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, 
+        descr, B_nvals, B.d_csrVal_, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr,          C.d_csrVal_, C.d_csrRowPtr_, C.d_csrColInd_ );
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -154,7 +154,7 @@ namespace backend
             std::cout << "Error: Matrix type not supported.\n";
     }
 
-    C.need_update = true;  // Set flag that we need to copy data from GPU
+    C.need_update_ = true;  // Set flag that we need to copy data from GPU
     C.nvals_ = C_nvals;     // Update nnz count for C
     return GrB_SUCCESS;
   }
@@ -205,16 +205,16 @@ namespace backend
 
     int baseC;
     int *nnzTotalDevHostPtr = &(C_nvals);
-    //if( C.d_csrRowPtr==NULL )
-    //  CUDA_SAFE_CALL( cudaMalloc( &C.d_csrRowPtr, (A_nrows+1)*sizeof(Index) ));
+    //if( C.d_csrRowPtr_==NULL )
+    //  CUDA( cudaMalloc( &C.d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
 
     // Analyze
     status = cusparseXcsrgemmNnz( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
         A_nrows, B_ncols, A_ncols, 
-        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
-        descr, C.d_csrRowPtr, nnzTotalDevHostPtr );
+        descr, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, 
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr, C.d_csrRowPtr_, nnzTotalDevHostPtr );
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -245,21 +245,21 @@ namespace backend
     if( nnzTotalDevHostPtr != NULL )
       C_nvals = *nnzTotalDevHostPtr;
     else {
-      CUDA_SAFE_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr+A_nrows, 
+      CUDA( cudaMemcpy( &(C_nvals), C.d_csrRowPtr_+A_nrows, 
           sizeof(Index), cudaMemcpyDeviceToHost ));
-      CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
+      CUDA( cudaMemcpy( &(baseC), C.d_csrRowPtr_, 
           sizeof(Index), cudaMemcpyDeviceToHost ));
       C_nvals -= baseC;
     }
 
     if( C_nvals >= C.nvals_ ) {
-      CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
-      CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, C_nvals*sizeof(c) ));
-      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,    C_nvals*sizeof(c) ));
+      CUDA( cudaFree( C.d_csrColInd_ ));
+      CUDA( cudaFree( C.d_csrVal_    ));
+      CUDA( cudaMalloc( (void**) &C.d_csrColInd_, C_nvals*sizeof(c) ));
+      CUDA( cudaMalloc( (void**) &C.d_csrVal_,    C_nvals*sizeof(c) ));
     }
 
-    C.need_update = true;  // Set flag that we need to copy data from GPU
+    C.need_update_ = true;  // Set flag that we need to copy data from GPU
     C.nvals_ = C_nvals;     // Update nnz count for C
     return GrB_SUCCESS;
   }
@@ -312,9 +312,9 @@ namespace backend
     status = cusparseScsrgemm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
         A_nrows, B_ncols, A_ncols, 
-        descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
-        descr,          C.d_csrVal, C.d_csrRowPtr, C.d_csrColInd );
+        descr, A_nvals, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, 
+        descr, B_nvals, B.d_csrVal_, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr,          C.d_csrVal_, C.d_csrRowPtr_, C.d_csrColInd_ );
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -342,7 +342,7 @@ namespace backend
             std::cout << "Error: Matrix type not supported.\n";
     }
 
-    C.need_update = true;  // Set flag that we need to copy data from GPU
+    C.need_update_ = true;  // Set flag that we need to copy data from GPU
     return GrB_SUCCESS;
   }
 
@@ -399,8 +399,8 @@ namespace backend
 
     int baseC;
     int *nnzTotalDevHostPtr = &(C_nvals);
-    //if( C.d_csrRowPtr==NULL )
-    //  CUDA_SAFE_CALL( cudaMalloc( &C.d_csrRowPtr, (A_nrows+1)*sizeof(Index) ));
+    //if( C.d_csrRowPtr_==NULL )
+    //  CUDA( cudaMalloc( &C.d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
 
     // step 1: create an opaque structure
     cusparseCreateCsrgemm2Info(&info);
@@ -408,10 +408,10 @@ namespace backend
     // step 2: allocate buffer for csrgemm2Nnz and csrgemm2
     status = cusparseScsrgemm2_bufferSizeExt( handle, 
         A_nrows, B_ncols, A_ncols, &alpha,
-        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd,
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_,
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
         &beta,
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
         info, &bufferSize );
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -439,15 +439,15 @@ namespace backend
             std::cout << "Error: Matrix type not supported.\n";
     }
 
-    CUDA_SAFE_CALL( cudaMalloc(&buffer, bufferSize));
+    CUDA( cudaMalloc(&buffer, bufferSize));
 
     // Analyze
     status = cusparseXcsrgemm2Nnz( handle,
         A_nrows, B_ncols, A_ncols, 
-        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
-        descr, C.d_csrRowPtr, nnzTotalDevHostPtr, info, buffer );
+        descr, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, 
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr, C.d_csrRowPtr_, nnzTotalDevHostPtr, info, buffer );
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -478,30 +478,30 @@ namespace backend
     if( nnzTotalDevHostPtr != NULL )
       C_nvals = *nnzTotalDevHostPtr;
     else {
-      CUDA_SAFE_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr+A_nrows, 
+      CUDA( cudaMemcpy( &(C_nvals), C.d_csrRowPtr_+A_nrows, 
           sizeof(Index), cudaMemcpyDeviceToHost ));
-      CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
+      CUDA( cudaMemcpy( &(baseC), C.d_csrRowPtr_, 
           sizeof(Index), cudaMemcpyDeviceToHost ));
       C_nvals -= baseC;
     }
 
     if( C_nvals >= C.nvals_ ) {
-      CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
-      CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
+      CUDA( cudaFree( C.d_csrColInd_ ));
+      CUDA( cudaFree( C.d_csrVal_    ));
+      CUDA( cudaMalloc( (void**) &C.d_csrColInd_, 
           C_nvals*sizeof(Index) ));
-      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
+      CUDA( cudaMalloc( (void**) &C.d_csrVal_,
           C_nvals*sizeof(c) ));
     }
 
     // Compute
     status = cusparseScsrgemm2( handle,
         A_nrows, B_ncols, A_ncols, &alpha, 
-        descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
+        descr, A_nvals, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, 
+        descr, B_nvals, B.d_csrVal_, B.d_csrRowPtr_, B.d_csrColInd_,
         &beta,
-        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
-        descr,          C.d_csrVal, C.d_csrRowPtr, C.d_csrColInd,
+        descr, B_nvals, B.d_csrVal_, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr,          C.d_csrVal_, C.d_csrRowPtr_, C.d_csrColInd_,
         info,  buffer );
 
     switch( status ) {
@@ -530,7 +530,7 @@ namespace backend
             std::cout << "Error: Matrix type not supported.\n";
     }
 
-    C.need_update = true;  // Set flag that we need to copy data from GPU
+    C.need_update_ = true;  // Set flag that we need to copy data from GPU
     C.nvals_ = C_nvals;     // Update nnz count for C
     return GrB_SUCCESS;
   }
@@ -588,8 +588,8 @@ namespace backend
 
     int baseC;
     int *nnzTotalDevHostPtr = &(C_nvals);
-    //if( C.d_csrRowPtr==NULL )
-    //  CUDA_SAFE_CALL( cudaMalloc( &C.d_csrRowPtr, (A_nrows+1)*sizeof(Index) ));
+    //if( C.d_csrRowPtr_==NULL )
+    //  CUDA( cudaMalloc( &C.d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
 
     // step 1: create an opaque structure
     cusparseCreateCsrgemm2Info(&info);
@@ -597,10 +597,10 @@ namespace backend
     // step 2: allocate buffer for csrgemm2Nnz and csrgemm2
     status = cusparseScsrgemm2_bufferSizeExt( handle, 
         A_nrows, B_ncols, A_ncols, &alpha,
-        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd,
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_,
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
         &beta,
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
         info, &bufferSize );
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -628,15 +628,15 @@ namespace backend
             std::cout << "Error: Matrix type not supported.\n";
     }
 
-    CUDA_SAFE_CALL( cudaMalloc(&buffer, bufferSize));
+    CUDA( cudaMalloc(&buffer, bufferSize));
 
     // Analyze
     status = cusparseXcsrgemm2Nnz( handle,
         A_nrows, B_ncols, A_ncols, 
-        descr, A_nvals, A.d_csrRowPtr, A.d_csrColInd, 
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
-        descr, B_nvals, B.d_csrRowPtr, B.d_csrColInd,
-        descr, C.d_csrRowPtr, nnzTotalDevHostPtr, info, buffer );
+        descr, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, 
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr, B_nvals, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr, C.d_csrRowPtr_, nnzTotalDevHostPtr, info, buffer );
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:
@@ -667,19 +667,19 @@ namespace backend
     if( nnzTotalDevHostPtr != NULL )
       C_nvals = *nnzTotalDevHostPtr;
     else {
-      CUDA_SAFE_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr+A_nrows, 
+      CUDA( cudaMemcpy( &(C_nvals), C.d_csrRowPtr_+A_nrows, 
           sizeof(Index), cudaMemcpyDeviceToHost ));
-      CUDA_SAFE_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr, 
+      CUDA( cudaMemcpy( &(baseC), C.d_csrRowPtr_, 
           sizeof(Index), cudaMemcpyDeviceToHost ));
       C_nvals -= baseC;
     }
 
     if( C_nvals >= C.nvals_ ) {
-      CUDA_SAFE_CALL( cudaFree( C.d_csrColInd ));
-      CUDA_SAFE_CALL( cudaFree( C.d_csrVal    ));
-      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrColInd, 
+      CUDA( cudaFree( C.d_csrColInd_ ));
+      CUDA( cudaFree( C.d_csrVal_    ));
+      CUDA( cudaMalloc( (void**) &C.d_csrColInd_, 
           C_nvals*sizeof(Index) ));
-      CUDA_SAFE_CALL( cudaMalloc( (void**) &C.d_csrVal,
+      CUDA( cudaMalloc( (void**) &C.d_csrVal_,
           C_nvals*sizeof(c) ));
     }
 
@@ -690,11 +690,11 @@ namespace backend
     for( int i=0; i<100; i++ ) {
       status = cusparseScsrgemm2( handle,
         A_nrows, B_ncols, A_ncols, &alpha, 
-        descr, A_nvals, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, 
-        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
+        descr, A_nvals, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, 
+        descr, B_nvals, B.d_csrVal_, B.d_csrRowPtr_, B.d_csrColInd_,
         &beta,
-        descr, B_nvals, B.d_csrVal, B.d_csrRowPtr, B.d_csrColInd,
-        descr,          C.d_csrVal, C.d_csrRowPtr, C.d_csrColInd,
+        descr, B_nvals, B.d_csrVal_, B.d_csrRowPtr_, B.d_csrColInd_,
+        descr,          C.d_csrVal_, C.d_csrRowPtr_, C.d_csrColInd_,
         info,  buffer );
     }
     mxm.Stop();
@@ -726,7 +726,7 @@ namespace backend
             std::cout << "Error: Matrix type not supported.\n";
     }
 
-    C.need_update = true;  // Set flag that we need to copy data from GPU
+    C.need_update_ = true;  // Set flag that we need to copy data from GPU
     C.nvals_ = C_nvals;     // Update nnz count for C
     return GrB_SUCCESS;
   }

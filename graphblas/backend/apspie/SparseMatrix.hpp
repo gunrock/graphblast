@@ -26,13 +26,13 @@ namespace backend
     public:
     SparseMatrix()
         : nrows_(0), ncols_(0), nvals_(0), 
-        h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL),
-        d_csrColInd(NULL), d_csrRowPtr(NULL), d_csrVal(NULL) {}
+        h_csrColInd_(NULL), h_csrRowPtr_(NULL), h_csrVal_(NULL),
+        d_csrColInd_(NULL), d_csrRowPtr_(NULL), d_csrVal_(NULL) {}
 
     SparseMatrix( const Index nrows, const Index ncols )
         : nrows_(nrows), ncols_(ncols), nvals_(0),
-        h_csrColInd(NULL), h_csrRowPtr(NULL), h_csrVal(NULL),
-        d_csrColInd(NULL), d_csrRowPtr(NULL), d_csrVal(NULL) {}
+        h_csrColInd_(NULL), h_csrRowPtr_(NULL), h_csrVal_(NULL),
+        d_csrColInd_(NULL), d_csrRowPtr_(NULL), d_csrVal_(NULL) {}
 
     // C API Methods
     Info build( const std::vector<Index>& row_indices,
@@ -49,16 +49,18 @@ namespace backend
 
     Info extractTuples( std::vector<Index>& row_indices,
                         std::vector<Index>& col_indices,
-                        std::vector<T>&     values ) const;
+                        std::vector<T>&     values );
 
     // Mutators
     // private method for setting nrows and ncols
     Info nnew( const Index nrows, const Index ncols );
     // private method for allocation
-    Info allocate();  
-    Info clear();
+    Info allocate(); // 3 ways to allocate: (1) dup, (2) build, (3) spgemm 
+    Info clear();    // 1 way to free: (1) clear
     Info print(); 
     Info printCSR( const char* str ); // private method for pretty printing
+    Info cpuToGpu();
+    Info gpuToCpu();
 
     // Accessors
     Info nrows( Index& nrows ) const;
@@ -71,25 +73,25 @@ namespace backend
     Index nvals_;
 
     // CSR format
-    Index* h_csrColInd;
-    Index* h_csrRowPtr;
-    T*     h_csrVal;
-    Index* d_csrColInd;
-    Index* d_csrRowPtr;
-    T*     d_csrVal;
+    Index* h_csrColInd_;
+    Index* h_csrRowPtr_;
+    T*     h_csrVal_;
+    Index* d_csrColInd_;
+    Index* d_csrRowPtr_;
+    T*     d_csrVal_;
 
     // CSC format
     // TODO: add CSC support. 
     // -this will be useful and necessary for direction-optimized SpMV
-    /*Index* h_cscRowInd;
-    Index* h_cscColPtr;
-    T*     h_cscVal;
-    Index* d_cscRowInd;
-    Index* d_cscColPtr;
-    T*     d_csrVal;*/
+    /*Index* h_cscRowInd_;
+    Index* h_cscColPtr_;
+    T*     h_cscVal_;
+    Index* d_cscRowInd_;
+    Index* d_cscColPtr_;
+    T*     d_csrVal_;*/
 
     // Keep track of whether host values are up-to-date with device values
-    bool need_update;
+    bool need_update_;
 
     template <typename c, typename a, typename b>
     friend Info spmm( DenseMatrix<c>&        C,
@@ -164,88 +166,75 @@ namespace backend
                                const std::vector<T>& values,
                                const Index nvals )
   {
+    Info err;
     nvals_ = nvals;
-    need_update = false;
+    need_update_ = false;
 
-    allocate();
+    err = allocate();
 
     // Convert to CSR/CSC
     Index temp, row, col, dest, cumsum=0;
 
     // Set all rowPtr to 0
     for( Index i=0; i<=nrows_; i++ )
-      h_csrRowPtr[i] = 0;
+      h_csrRowPtr_[i] = 0;
     // Go through all elements to see how many fall in each row
     for( Index i=0; i<nvals_; i++ ) {
       row = row_indices[i];
       if( row>=nrows_ ) return GrB_INDEX_OUT_OF_BOUNDS;
-      h_csrRowPtr[ row ]++;
+      h_csrRowPtr_[ row ]++;
     }
     // Cumulative sum to obtain rowPtr
     for( Index i=0; i<nrows_; i++ ) {
-      temp = h_csrRowPtr[i];
-      h_csrRowPtr[i] = cumsum;
+      temp = h_csrRowPtr_[i];
+      h_csrRowPtr_[i] = cumsum;
       cumsum += temp;
     }
-    h_csrRowPtr[nrows_] = nvals;
+    h_csrRowPtr_[nrows_] = nvals;
 
     // Store colInd and val
     for( Index i=0; i<nvals_; i++ ) {
       row = row_indices[i];
-      dest= h_csrRowPtr[row];
+      dest= h_csrRowPtr_[row];
       col = col_indices[i];
       if( col>=ncols_ ) return GrB_INDEX_OUT_OF_BOUNDS;
-      h_csrColInd[dest] = col;
-      h_csrVal[dest]    = values[i];
-      h_csrRowPtr[row]++;
+      h_csrColInd_[dest] = col;
+      h_csrVal_[dest]    = values[i];
+      h_csrRowPtr_[row]++;
     }
     cumsum = 0;
     
     // Undo damage done to rowPtr
     for( Index i=0; i<=nrows_; i++ ) {
-      temp = h_csrRowPtr[i];
-      h_csrRowPtr[i] = cumsum;
+      temp = h_csrRowPtr_[i];
+      h_csrRowPtr_[i] = cumsum;
       cumsum = temp;
     }
 
-    // Device memcpy
-    CUDA_SAFE_CALL(cudaMemcpy(d_csrVal,    h_csrVal,    nvals_*sizeof(T),
-        cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_csrColInd, h_csrColInd, nvals_*sizeof(Index),
-        cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_csrRowPtr, h_csrRowPtr, 
-        (nrows_+1)*sizeof(Index), cudaMemcpyHostToDevice));
+    err = cpuToGpu();
 
-    return GrB_SUCCESS;
+    return err;
   }
 
   template <typename T>
   Info SparseMatrix<T>::extractTuples( std::vector<Index>& row_indices,
                                        std::vector<Index>& col_indices,
-                                       std::vector<T>&     values ) const
+                                       std::vector<T>&     values )
   {
+    Info err = gpuToCpu();
     row_indices.clear();
     col_indices.clear();
     values.clear();
 
-    if( need_update ) {
-      CUDA_SAFE_CALL(cudaMemcpy(h_csrVal,    d_csrVal,    
-          nvals_*sizeof(T), cudaMemcpyDeviceToHost));
-      CUDA_SAFE_CALL(cudaMemcpy(h_csrColInd, d_csrColInd, 
-          nvals_*sizeof(Index), cudaMemcpyDeviceToHost));
-      CUDA_SAFE_CALL(cudaMemcpy(h_csrRowPtr, d_csrRowPtr, 
-          (nrows_+1)*sizeof(Index), cudaMemcpyDeviceToHost));
-    }
-
     for( Index row=0; row<nrows_; row++ ) {
-      for( Index ind=h_csrRowPtr[row]; ind<h_csrRowPtr[row+1]; ind++ ) {
+      for( Index ind=h_csrRowPtr_[row]; ind<h_csrRowPtr_[row+1]; ind++ ) {
         row_indices.push_back(row);
-        col_indices.push_back(h_csrColInd[ind]);
-        values.push_back(     h_csrVal[ind]);
+        col_indices.push_back(h_csrColInd_[ind]);
+        values.push_back(     h_csrVal_[ind]);
       }
     }
 
-    return GrB_SUCCESS;
+    return err;
   }
 
   template <typename T>
@@ -260,28 +249,28 @@ namespace backend
   Info SparseMatrix<T>::allocate()
   {
     // Host malloc
-    if( nrows_!=0 && h_csrRowPtr == NULL ) 
-      h_csrRowPtr = (Index*)malloc((nrows_+1)*sizeof(Index));
-    if( nvals_!=0 && h_csrColInd == NULL )
-      h_csrColInd = (Index*)malloc(nvals_*sizeof(Index));
-    if( nvals_!=0 && h_csrVal == NULL )
-      h_csrVal    = (T*)    malloc(nvals_*sizeof(T));
+    if( nrows_!=0 && h_csrRowPtr_ == NULL ) 
+      h_csrRowPtr_ = (Index*)malloc((nrows_+1)*sizeof(Index));
+    if( nvals_!=0 && h_csrColInd_ == NULL )
+      h_csrColInd_ = (Index*)malloc(nvals_*sizeof(Index));
+    if( nvals_!=0 && h_csrVal_ == NULL )
+      h_csrVal_    = (T*)    malloc(nvals_*sizeof(T));
 
     // Device malloc
-    if( nrows_!=0 && d_csrRowPtr==NULL )
-      CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrRowPtr, 
+    if( nrows_!=0 && d_csrRowPtr_==NULL )
+      CUDA(cudaMalloc((void**)&d_csrRowPtr_, 
           (nrows_+1)*sizeof(Index)));
-    if( nvals_!=0 && d_csrColInd==NULL )
-      CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrColInd, nvals_*sizeof(Index)));
-    if( nvals_!=0 && d_csrVal==NULL )
-      CUDA_SAFE_CALL(cudaMalloc((void**)&d_csrVal,    nvals_*sizeof(T))); 
+    if( nvals_!=0 && d_csrColInd_==NULL )
+      CUDA(cudaMalloc((void**)&d_csrColInd_, nvals_*sizeof(Index)));
+    if( nvals_!=0 && d_csrVal_==NULL )
+      CUDA(cudaMalloc((void**)&d_csrVal_,    nvals_*sizeof(T))); 
    
-    if( h_csrRowPtr==NULL ) return GrB_OUT_OF_MEMORY;
-    if( h_csrColInd==NULL ) return GrB_OUT_OF_MEMORY;
-    if( h_csrVal==NULL )    return GrB_OUT_OF_MEMORY;
-    if( d_csrRowPtr==NULL ) return GrB_OUT_OF_MEMORY;
-    if( d_csrColInd==NULL ) return GrB_OUT_OF_MEMORY;
-    if( d_csrVal==NULL )    return GrB_OUT_OF_MEMORY;
+    if( h_csrRowPtr_==NULL ) return GrB_OUT_OF_MEMORY;
+    if( h_csrColInd_==NULL ) return GrB_OUT_OF_MEMORY;
+    if( h_csrVal_==NULL )    return GrB_OUT_OF_MEMORY;
+    if( d_csrRowPtr_==NULL ) return GrB_OUT_OF_MEMORY;
+    if( d_csrColInd_==NULL ) return GrB_OUT_OF_MEMORY;
+    if( d_csrVal_==NULL )    return GrB_OUT_OF_MEMORY;
 
     return GrB_SUCCESS;
   }
@@ -289,33 +278,48 @@ namespace backend
   template <typename T>
   Info SparseMatrix<T>::clear()
   {
-    if( h_csrRowPtr ) free( h_csrRowPtr );
-    if( h_csrColInd ) free( h_csrColInd );
-    if( h_csrVal )    free( h_csrVal );
-    if( d_csrRowPtr ) CUDA_SAFE_CALL(cudaFree( d_csrRowPtr ));
-    if( d_csrColInd ) CUDA_SAFE_CALL(cudaFree( d_csrColInd ));
-    if( d_csrVal )    CUDA_SAFE_CALL(cudaFree( d_csrVal ));
+    if( h_csrRowPtr_ )
+    {
+      free( h_csrRowPtr_ );
+      h_csrRowPtr_ = NULL;
+    }
+    if( h_csrColInd_ ) 
+    {
+      free( h_csrColInd_ );
+      h_csrColInd_ = NULL;
+    }
+    if( h_csrVal_ )
+    {
+      free( h_csrVal_ );
+      h_csrVal_ = NULL;
+    }
+    if( d_csrRowPtr_ )
+    {
+      CUDA(cudaFree( d_csrRowPtr_ ));
+      d_csrRowPtr_ = NULL;
+    }
+    if( d_csrColInd_ )
+    {
+      CUDA(cudaFree( d_csrColInd_ ));
+      d_csrColInd_ = NULL;
+    }
+    if( d_csrVal_ )
+    {
+      CUDA(cudaFree( d_csrVal_ ));
+      d_csrVal_ = NULL;
+    }
     return GrB_SUCCESS;
   }
 
   template <typename T>
   Info SparseMatrix<T>::print()
   {
-    // Device memcpy
-    if( need_update ) {
-      allocate();
-      CUDA_SAFE_CALL(cudaMemcpy(h_csrVal,    d_csrVal,    
-          nvals_*sizeof(T), cudaMemcpyDeviceToHost));
-      CUDA_SAFE_CALL(cudaMemcpy(h_csrColInd, d_csrColInd, 
-          nvals_*sizeof(Index), cudaMemcpyDeviceToHost));
-      CUDA_SAFE_CALL(cudaMemcpy(h_csrRowPtr, d_csrRowPtr, 
-          (nrows_+1)*sizeof(Index), cudaMemcpyDeviceToHost));
-    }
-    printArray( "csrColInd", h_csrColInd );
-    printArray( "csrRowPtr", h_csrRowPtr );
-    printArray( "csrVal",    h_csrVal );
+    Info err = gpuToCpu();
+    printArray( "csrColInd", h_csrColInd_ );
+    printArray( "csrRowPtr", h_csrRowPtr_ );
+    printArray( "csrVal",    h_csrVal_ );
     printCSR( "pretty print" );
-    return GrB_SUCCESS;
+    return err;
   }
 
   template <typename T>
@@ -325,10 +329,10 @@ namespace backend
     std::cout << str << ":\n";
 
     for( Index row=0; row<length; row++ ) {
-      Index col_start = h_csrRowPtr[row];
-      Index col_end   = h_csrRowPtr[row+1];
+      Index col_start = h_csrRowPtr_[row];
+      Index col_end   = h_csrRowPtr_[row+1];
       for( Index col=0; col<length; col++ ) {
-        Index col_ind = h_csrColInd[col_start];
+        Index col_ind = h_csrColInd_[col_start];
         if( col_start<col_end && col_ind==col ) {
           std::cout << "x ";
           col_start++;
@@ -338,6 +342,38 @@ namespace backend
       }
       std::cout << std::endl;
     }
+    return GrB_SUCCESS;
+  }
+
+  // Copies graph to GPU
+  template <typename T>
+  Info SparseMatrix<T>::cpuToGpu()
+  {
+    CUDA( cudaMemcpy( d_csrRowPtr_, h_csrRowPtr_, (nrows_+1)*sizeof(Index),
+        cudaMemcpyHostToDevice ) );
+    CUDA( cudaMemcpy( d_csrColInd_, h_csrColInd_, nvals_*sizeof(Index),
+        cudaMemcpyHostToDevice ) );
+    CUDA( cudaMemcpy( d_csrVal_,    h_csrVal_,    nvals_*sizeof(T),
+        cudaMemcpyHostToDevice ) );
+    CUDA( cudaDeviceSynchronize() );
+    return GrB_SUCCESS;
+  }
+
+  // Copies graph to CPU
+  template <typename T>
+  Info SparseMatrix<T>::gpuToCpu()
+  {
+    if( need_update_ )
+    {
+      CUDA( cudaMemcpy( h_csrRowPtr_, d_csrRowPtr_, (nrows_+1)*sizeof(Index),
+          cudaMemcpyDeviceToHost ) );
+      CUDA( cudaMemcpy( h_csrColInd_, d_csrColInd_, nvals_*sizeof(Index),
+          cudaMemcpyDeviceToHost ) );
+      CUDA( cudaMemcpy( h_csrVal_,    d_csrVal_,    nvals_*sizeof(T),
+          cudaMemcpyDeviceToHost ) );
+      CUDA( cudaDeviceSynchronize() );
+    }
+    need_update_ = false;
     return GrB_SUCCESS;
   }
 

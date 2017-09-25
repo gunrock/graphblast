@@ -20,7 +20,6 @@ int main( int argc, char** argv )
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
   graphblas::Index nrows, ncols, nvals;
-  graphblas::Descriptor desc;
 
   // Parse arguments
   namespace po = boost::program_options;
@@ -37,6 +36,7 @@ int main( int argc, char** argv )
     NT       = vm["nt"].as<int>();
 
   // default values of TA, TB, NT will be used
+  graphblas::Descriptor desc;
   desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
   desc.set( graphblas::GrB_NT, NT );
   desc.set( graphblas::GrB_TA, TA );
@@ -136,7 +136,7 @@ int main( int argc, char** argv )
   gpu_mxm.Start();
   for( int i=0; i<NUM_ITER; i++ )
     graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
-  cudaDeviceSynchronize();
+  CUDA( cudaDeviceSynchronize() );
   gpu_mxm.Stop();
   
   float flop = 2.0*nvals*max_ncols;

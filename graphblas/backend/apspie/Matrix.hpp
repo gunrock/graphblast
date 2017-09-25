@@ -49,10 +49,12 @@ namespace backend
     Info print();
 
     // Accessors
+    
+    // Needs copy to cpu vector, so is not const
     Info extractTuples( std::vector<Index>& row_indices,
                         std::vector<Index>& col_indices,
-                        std::vector<T>&     values ) const;
-    Info extractTuples( std::vector<T>& values ) const;
+                        std::vector<T>&     values );
+    Info extractTuples( std::vector<T>& values );
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const; 
@@ -150,19 +152,17 @@ namespace backend
   template <typename T>
   Info Matrix<T>::extractTuples( std::vector<Index>& row_indices,
                                  std::vector<Index>& col_indices,
-                                 std::vector<T>&     values ) const
+                                 std::vector<T>&     values )
   {
     if( mat_type_ == GrB_SPARSE ) 
       return sparse.extractTuples( row_indices, col_indices, values );
-    else if( mat_type_ == GrB_DENSE ) 
-      return dense.extractTuples( row_indices, col_indices, values );
     else
       return GrB_UNINITIALIZED_OBJECT;
   }
 
   // Method that returns Tuples in dense format
   template <typename T>
-  Info Matrix<T>::extractTuples( std::vector<T>& values ) const
+  Info Matrix<T>::extractTuples( std::vector<T>& values )
   {
     if( mat_type_ == GrB_DENSE ) 
       return dense.extractTuples( values );
