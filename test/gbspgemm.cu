@@ -107,19 +107,20 @@ int main( int argc, char** argv )
   // Warmup
   GpuTimer warmup;
   warmup.Start();
-  graphblas::mxm<float, float, float>( c, boost::none, 
-    boost::none, boost::none, a, b, boost::none );
+  graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, 
+    graphblas::GrB_NULL, graphblas::GrB_NULL, a, b, graphblas::GrB_NULL );
   warmup.Stop();
  
   GpuTimer gpu_mxm;
   //cudaProfilerStart();
   gpu_mxm.Start();
   for( int i=0; i<NUM_ITER; i++ ) {
-    if( SPLIT )
-      graphblas::mxmCompute<float, float, float>( c, op, a, b, TA, TB, NT, 
-          ROW_MAJOR );
-    else
-    graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
+    //if( SPLIT )
+    //  graphblas::mxmCompute<float, float, float>( c, op, a, b, TA, TB, NT, 
+    //      ROW_MAJOR );
+    //else
+    graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, 
+      graphblas::GrB_NULL, graphblas::GrB_NULL, a, b, graphblas::GrB_NULL );
   }
   //cudaProfilerStop();
   gpu_mxm.Stop();

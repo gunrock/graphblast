@@ -12,12 +12,12 @@ namespace graphblas
 {
   template <typename c, typename m, typename a, typename b>
   Info mxm( Matrix<c>&                         C,
-            const boost::optional<Matrix<m>&>  mask = ,
-            const boost::optional<BinaryOp&>   accum,
-            const boost::optional<Semiring&>   op,
-            const Matrix<a>&                   A,
-            const Matrix<b>&                   B,
-            const boost::optional<Descriptor&> desc = ) 
+            const boost::optional<Matrix<m>&>  mask = boost::none,
+            const boost::optional<BinaryOp&>   accum= boost::none,
+            const boost::optional<Semiring&>   op   = boost::none,
+            const Matrix<a>&                   A    = boost::none,
+            const Matrix<b>&                   B    = boost::none,
+            const boost::optional<Descriptor&> desc = boost::none ) 
   {
     return backend::mxm( C.matrix, mask.matrix, accum, op, A.matrix, B.matrix, 
         desc.descriptor );

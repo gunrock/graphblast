@@ -1,6 +1,7 @@
 #ifndef GRB_TYPES_HPP
 
 #define GRB_TYPES_HPP
+#define GrB_NULL GrB_BOOST::none
 
 #include <cstddef>
 #include <cstdint>
@@ -11,12 +12,11 @@ namespace graphblas
 {
   typedef int           Index;
   typedef int           BinaryOp;
-  typedef boost::none_t GrB_NULL;
 
   class Semiring{};
   //template<typename T> class Matrix;
 
-  //static int GrB_NULL = 0;
+  namespace GrB_BOOST = boost;
 
   enum Storage {GrB_UNKNOWN,
                 GrB_SPARSE,
