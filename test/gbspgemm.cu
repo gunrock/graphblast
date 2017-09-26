@@ -21,6 +21,7 @@
 #include "graphblas/graphblas.hpp"
 
 #include <boost/program_options.hpp>
+#include <boost/none.hpp>
 #include <test/test.hpp>
 
 int main( int argc, char** argv )
@@ -106,7 +107,8 @@ int main( int argc, char** argv )
   // Warmup
   GpuTimer warmup;
   warmup.Start();
-  graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
+  graphblas::mxm<float, float, float>( c, boost::none, 
+    boost::none, boost::none, a, b, boost::none );
   warmup.Stop();
  
   GpuTimer gpu_mxm;

@@ -91,9 +91,10 @@ namespace graphblas
                          const std::vector<T>& values,
                          const Index nvals,
                          const Matrix& mask,
-                         const BinaryOp& dup)
+                         const BinaryOp& dup )
   {
-    return matrix.build( row_indices, col_indices, values, nvals, mask, dup );
+    return matrix.build( row_indices, col_indices, values, nvals, mask, dup, 
+        desc );
   }
 
   template <typename T>

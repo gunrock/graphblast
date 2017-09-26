@@ -2,6 +2,7 @@
 #define GRB_MXM_HPP
 
 //#include "graphblas/types.hpp"
+#include <boost/optional.hpp>
 
 #define __GRB_BACKEND_MXM_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/mxm.hpp>
 #include __GRB_BACKEND_MXM_HEADER
@@ -10,31 +11,16 @@
 namespace graphblas
 {
   template <typename c, typename m, typename a, typename b>
-  Info mxm( Matrix<c>&        C,
-            const Matrix<m>&  mask,
-            const BinaryOp&   accum,
-            const Semiring&   op,
-            const Matrix<a>&  A,
-            const Matrix<b>&  B,
-            const Descriptor& desc ) 
+  Info mxm( Matrix<c>&                         C,
+            const boost::optional<Matrix<m>&>  mask = ,
+            const boost::optional<BinaryOp&>   accum,
+            const boost::optional<Semiring&>   op,
+            const Matrix<a>&                   A,
+            const Matrix<b>&                   B,
+            const boost::optional<Descriptor&> desc = ) 
   {
-    return backend::mxm( C.matrix, mask, accum, op, A.matrix, B.matrix, 
+    return backend::mxm( C.matrix, mask.matrix, accum, op, A.matrix, B.matrix, 
         desc.descriptor );
-  }
-
-  template <typename c, typename a, typename b>
-  Info mxm( Matrix<c>&        C,
-            const int         mask,
-            const int         accum,
-            const Semiring&   op,
-            const Matrix<a>&  A,
-            const Matrix<b>&  B,
-            const Descriptor& desc )
-  {
-    Matrix<c> GrB_NULL_MATRIX;
-    BinaryOp  GrB_NULL_BINARYOP = 0;
-    return backend::mxm<c,c,a,b>( C.matrix, GrB_NULL_MATRIX.matrix, 
-        GrB_NULL_BINARYOP, op, A.matrix, B.matrix, desc.descriptor );
   }
 
   /*// For testing

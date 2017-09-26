@@ -55,6 +55,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 #set_target_properties( benchmark_spgemm${PROJ_NAME} PROPERTIES LINKER_LANGUAGE CXX )
 
 # standard compilation
+message( ${Boost_INCLUDE_DIRS} )
+message( ${Boost_LIBRARY_DIRS} )
 include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 cuda_add_executable( gmatrix "test/gmatrix.cu" )

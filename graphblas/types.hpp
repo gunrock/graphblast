@@ -5,15 +5,18 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <boost/none.hpp>
+
 namespace graphblas
 {
-  typedef int Index;
-  typedef int BinaryOp;
+  typedef int           Index;
+  typedef int           BinaryOp;
+  typedef boost::none_t GrB_NULL;
 
   class Semiring{};
   //template<typename T> class Matrix;
 
-  static int GrB_NULL = 0;
+  //static int GrB_NULL = 0;
 
   enum Storage {GrB_UNKNOWN,
                 GrB_SPARSE,
