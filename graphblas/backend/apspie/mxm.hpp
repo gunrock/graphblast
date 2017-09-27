@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include <boost/optional.hpp>
 #include <cuda.h>
 
 #include "graphblas/backend/apspie/Matrix.hpp"
@@ -11,7 +12,7 @@
 #include "graphblas/backend/apspie/spmm.hpp"
 #include "graphblas/backend/apspie/spgemm.hpp"
 #include "graphblas/types.hpp"
-
+i
 namespace graphblas
 {
 namespace backend
@@ -24,13 +25,13 @@ namespace backend
             const Matrix<b>& B );*/
 
   template <typename c, typename m, typename a, typename b>
-  Info mxm( Matrix<c>&        C,
-            const Matrix<m>&  mask,
-            const BinaryOp&   accum,
-            const Semiring&   op,
-            const Matrix<a>&  A,
-            const Matrix<b>&  B,
-            const Descriptor& desc ) 
+  Info mxm( Matrix<c>&                         C,
+            const boost::optional<Matrix<m>&>  mask,
+            const boost::optional<BinaryOp&>   accum,
+            const boost::optional<Semiring&>   op,
+            const Matrix<a>&                   A,
+            const Matrix<b>&                   B,
+            const boost::optional<Descriptor&> desc ) 
   {
     Storage A_storage, B_storage, C_storage;
     A.getStorage( A_storage );

@@ -19,8 +19,12 @@ namespace graphblas
             const Matrix<b>&                   B    = boost::none,
             const boost::optional<Descriptor&> desc = boost::none ) 
   {
-    return backend::mxm( C.matrix, mask.matrix, accum, op, A.matrix, B.matrix, 
-        desc.descriptor );
+    if( mask )
+      return backend::mxm( C.matrix, mask.matrix, accum, op, A.matrix, B.matrix,
+          desc );
+    else
+      return backend::mxm( C.matrix, boost::none, accum, op, A.matrix, B.matrix,
+          desc );
   }
 
   /*// For testing
