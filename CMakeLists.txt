@@ -46,7 +46,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 #add_custom_target( ptx ALL DEPENDS ${cuda_ptx_files} ${PROJ_HEADERS} "matrix/main.cu") #SOURCES main.cu ${PROJ_HEADERS} )
 
 # standard compilation
-#include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} ${MKL_INCLUDE_DIR} )
 #add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 #set_target_properties( grb PROPERTIES LINKER_LANGUAGE CXX )
 #add_executable( benchmark_spgemm${PROJ_NAME} "benchmark_spgemm/main.cu" )
@@ -56,16 +55,24 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 # standard compilation
 include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} )
+add_executable(        bmatrix "test/bmatrix.cpp" )
+target_link_libraries( bmatrix ${Boost_LIBRARIES} )
+
+# CUDA compilation
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
 cuda_add_executable( gmatrix "test/gmatrix.cu" )
 cuda_add_executable( gmmio "test/gmmio.cu" )
 cuda_add_executable( gspmm "test/gspmm.cu" ${mgpu_SRC_FILES} )
 cuda_add_executable( gspgemm "test/gspgemm.cu" )
+cuda_add_executable( gbmatrix "test/gbmatrix.cu" )
+cuda_add_executable( gbspmv "test/gbspmv.cu" ${mgpu_SRC_FILES} )
 cuda_add_executable( gbspmm "test/gbspmm.cu" ${mgpu_SRC_FILES} )
 cuda_add_executable( gbspgemm "test/gbspgemm.cu" )
 target_link_libraries( gmatrix grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 target_link_libraries( gmmio grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 target_link_libraries( gspmm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 target_link_libraries( gspgemm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+target_link_libraries( gbmatrix grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+target_link_libraries( gbspmv grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 target_link_libraries( gbspmm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 target_link_libraries( gbspgemm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES})
