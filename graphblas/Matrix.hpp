@@ -58,6 +58,7 @@ namespace graphblas
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
+    Info count() const;
     // This should be a private method
     //Info get_storage( Storage& mat_type ) const;
 
@@ -83,6 +84,14 @@ namespace graphblas
                      const Matrix<b>&  B,
                      const Descriptor& desc );
 
+    template <typename c, typename a, typename b>
+    friend Info mxv( Matrix<c>&        C,
+                     const int         mask,
+                     const int         accum,
+                     const Semiring&   op,
+                     const Matrix<a>&  A,
+                     const Matrix<b>&  B,
+                     const Descriptor& desc );
   };
 
   template <typename T>
@@ -161,6 +170,12 @@ namespace graphblas
   Info Matrix<T>::nvals( Index& nvals ) const
   {
     return matrix.nvals( nvals );
+  }
+
+  template <typename T>
+  Info Matrix<T>::count() const
+  {
+    return matrix.count();
   }
 
   // Private interface

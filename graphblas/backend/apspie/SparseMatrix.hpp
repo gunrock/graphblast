@@ -66,6 +66,7 @@ namespace backend
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
+    Info count() const;
 
     private:
     Index nrows_;
@@ -102,6 +103,21 @@ namespace backend
     // For testing
     template <typename c, typename m, typename a, typename b>
     friend Info spmm( DenseMatrix<c>&        C,
+                      const SparseMatrix<m>& mask,
+                      const BinaryOp&        accum,
+                      const Semiring&        op,
+                      const SparseMatrix<a>& A,
+                      const DenseMatrix<b>&  B,
+                      const Descriptor&      desc );
+
+    template <typename c, typename a, typename b>
+    friend Info spmv( DenseMatrix<c>&        C,
+                      const Semiring&        op,
+                      const SparseMatrix<a>& A,
+                      const DenseMatrix<b>&  B );
+
+    template <typename c, typename m, typename a, typename b>
+    friend Info spmv( DenseMatrix<c>&        C,
                       const SparseMatrix<m>& mask,
                       const BinaryOp&        accum,
                       const Semiring&        op,
@@ -325,13 +341,14 @@ namespace backend
   template <typename T>
   Info SparseMatrix<T>::printCSR( const char* str )
   {
-    Index length = std::min(20, nrows_);
+    Index row_length = std::min(20, nrows_);
+    Index col_length = std::min(20, ncols_);
     std::cout << str << ":\n";
 
-    for( Index row=0; row<length; row++ ) {
+    for( Index row=0; row<row_length; row++ ) {
       Index col_start = h_csrRowPtr_[row];
       Index col_end   = h_csrRowPtr_[row+1];
-      for( Index col=0; col<length; col++ ) {
+      for( Index col=0; col<col_length; col++ ) {
         Index col_ind = h_csrColInd_[col_start];
         if( col_start<col_end && col_ind==col ) {
           std::cout << "x ";
@@ -395,6 +412,20 @@ namespace backend
   Info SparseMatrix<T>::nvals( Index& nvals ) const
   {
     nvals = nvals_;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info SparseMatrix<T>::count() const
+  {
+    std::vector<int> count(32,0);
+    for( Index i=0; i<nrows_; i++ )
+    {
+      int diff = h_csrRowPtr_[i+1]-h_csrRowPtr_[i];
+      count[diff&31]++;
+    }
+
+    printArray( "count", count, 32 );
     return GrB_SUCCESS;
   }
 } // backend

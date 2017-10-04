@@ -60,6 +60,15 @@ namespace graphblas
                      const Matrix<a>&  A,
                      const Matrix<b>&  B,
                      const Descriptor& desc );
+
+    template <typename c, typename a, typename b>
+    friend Info mxv( Matrix<c>&        C,
+                     const int         mask,
+                     const int         accum,
+                     const Semiring&   op,
+                     const Matrix<a>&  A,
+                     const Matrix<b>&  B,
+                     const Descriptor& desc );
   };
 
   Info Descriptor::set( const Desc_field field, Desc_value value )

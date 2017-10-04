@@ -56,13 +56,14 @@ namespace backend
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const; 
     Info getStorage( Storage& mat_type ) const;
+    Info count() const;
 
     private:
     Index nrows_;
     Index ncols_;
 
-    SparseMatrix<T> sparse;
-    DenseMatrix<T>  dense;
+    SparseMatrix<T> sparse_;
+    DenseMatrix<T>  dense_;
 
     // Keeps track of whether matrix is Sparse or Dense
     Storage mat_type_;
@@ -113,8 +114,8 @@ namespace backend
       : nrows_(nrows), ncols_(ncols), mat_type_(Unknown)
   {
     // Transfer nrows ncols to Sparse/DenseMatrix data member
-    sparse.nnew( nrows_, ncols_ );
-    dense.nnew( nrows_, ncols_ );
+    sparse_.nnew( nrows_, ncols_ );
+    dense_.nnew( nrows_, ncols_ );
   }
 
   template <typename T>
@@ -126,7 +127,7 @@ namespace backend
                          const BinaryOp& dup )
   {
     mat_type_ = Sparse;
-    return sparse.build( row_indices, col_indices, values, nvals, mask.sparse, dup );
+    return sparse_.build( row_indices, col_indices, values, nvals, mask.sparse_, dup );
   }
 
   template <typename T>
@@ -136,14 +137,14 @@ namespace backend
                          const Index nvals )
   {
     mat_type_ = Sparse;
-    return sparse.build( row_indices, col_indices, values, nvals );
+    return sparse_.build( row_indices, col_indices, values, nvals );
   }
 
   template <typename T>
   Info Matrix<T>::build( const std::vector<T>& values )
   {
     mat_type_ = Dense;
-    return dense.build( values );
+    return dense_.build( values );
   }
 
   template <typename T>
@@ -152,9 +153,9 @@ namespace backend
                                  std::vector<T>&     values ) const
   {
     if( mat_type_ == Sparse ) 
-      return sparse.extractTuples( row_indices, col_indices, values );
+      return sparse_.extractTuples( row_indices, col_indices, values );
     /*else if( mat_type_ == Dense ) 
-      return dense.extractTuples( row_indices, col_indices, values );*/
+      return dense_.extractTuples( row_indices, col_indices, values );*/
     else
       return GrB_UNINITIALIZED_OBJECT;
   }
@@ -162,7 +163,7 @@ namespace backend
   Info Matrix<T>::extractTuples( std::vector<T>& values ) const
   {
     if( mat_type_ == Dense ) 
-      return dense.extractTuples( values );
+      return dense_.extractTuples( values );
     else
       return GrB_UNINITIALIZED_OBJECT;
   }
@@ -174,11 +175,11 @@ namespace backend
     Info err;
     mat_type_ = mat_type;
     if( mat_type_ == Sparse ) {
-      err = sparse.clear();
-      err = sparse.allocate();
+      err = sparse_.clear();
+      err = sparse_.allocate();
     } else {
-      err = dense.clear();
-      err = dense.allocate();
+      err = dense_.clear();
+      err = dense_.allocate();
     }
     return err;
   }
@@ -188,40 +189,40 @@ namespace backend
   {
     Info err;
     mat_type_ = Unknown;
-    err = sparse.clear();
-    err = dense.clear();
+    err = sparse_.clear();
+    err = dense_.clear();
     return err;
   }
 
   template <typename T>
   Info Matrix<T>::print()
   {
-    if( mat_type_ == Sparse ) return sparse.print();
-    else if( mat_type_ == Dense ) return dense.print();
+    if( mat_type_ == Sparse ) return sparse_.print();
+    else if( mat_type_ == Dense ) return dense_.print();
     else return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
   Info Matrix<T>::nrows( Index& nrows ) const 
   {
-    if( mat_type_ == Sparse ) return sparse.nrows( nrows );
-    else if( mat_type_ == Dense ) return dense.nrows( nrows );
+    if( mat_type_ == Sparse ) return sparse_.nrows( nrows );
+    else if( mat_type_ == Dense ) return dense_.nrows( nrows );
     else return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
   Info Matrix<T>::ncols( Index& ncols ) const
   {
-    if( mat_type_ == Sparse ) return sparse.ncols( ncols );
-    else if( mat_type_ == Dense ) return dense.ncols( ncols );
+    if( mat_type_ == Sparse ) return sparse_.ncols( ncols );
+    else if( mat_type_ == Dense ) return dense_.ncols( ncols );
     else return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
   Info Matrix<T>::nvals( Index& nvals ) const 
   {
-    if( mat_type_ == Sparse ) return sparse.nvals( nvals );
-    else if( mat_type_ == Dense ) return dense.nvals( nvals );
+    if( mat_type_ == Sparse ) return sparse_.nvals( nvals );
+    else if( mat_type_ == Dense ) return dense_.nvals( nvals );
     else return GrB_UNINITIALIZED_OBJECT;
   }
 
@@ -231,6 +232,13 @@ namespace backend
     mat_type = mat_type_;
     return GrB_SUCCESS;
   }
+
+  template <typename T>
+  Info Matrix<T>::count() const
+  {
+    return sparse_.count();
+  }
+
 } // backend
 } // graphblas
 

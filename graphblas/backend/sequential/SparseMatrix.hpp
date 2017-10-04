@@ -59,6 +59,7 @@ namespace backend
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
+    Info count() const;
 
     private:
     Index nrows_;
@@ -290,6 +291,20 @@ namespace backend
   Info SparseMatrix<T>::nvals( Index& nvals ) const
   {
     nvals = nvals_;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info SparseMatrix<T>::count() const
+  {
+    std::vector<int> count(32,0);
+    for( Index i=0; i<nrows_; i++ )
+    {
+      int diff = h_csrRowPtr_[i+1]-h_csrRowPtr_[i];
+      count[diff&31]++;
+    }
+
+    printArray( "count", count, 32 );
     return GrB_SUCCESS;
   }
 } // backend

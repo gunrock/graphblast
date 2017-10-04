@@ -7,6 +7,7 @@
 #include "graphblas/util.hpp"
 #include "graphblas/Descriptor.hpp"
 #include "graphblas/Matrix.hpp"
+#include "graphblas/mxv.hpp"
 #include "graphblas/mxm.hpp"
 
 #define __GRB_BACKEND_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/__GRB_BACKEND_ROOT.hpp>

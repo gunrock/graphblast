@@ -92,6 +92,21 @@ namespace backend
                       const Descriptor&      desc );
     
     template <typename c, typename a, typename b>
+    friend Info spmv( DenseMatrix<c>&        C,
+                      const Semiring&        op,
+                      const SparseMatrix<a>& A,
+                      const DenseMatrix<b>&  B );
+
+    template <typename c, typename m, typename a, typename b>
+    friend Info spmv( DenseMatrix<c>&        C,
+                      const SparseMatrix<m>& mask,
+                      const BinaryOp&        accum,
+                      const Semiring&        op,
+                      const SparseMatrix<a>& A,
+                      const DenseMatrix<b>&  B,
+                      const Descriptor&      desc );
+    
+    template <typename c, typename a, typename b>
     friend Info cusparse_spmm( DenseMatrix<c>&        C,
                                const Semiring&        op,
                                const SparseMatrix<a>& A,
@@ -108,6 +123,7 @@ namespace backend
   Info DenseMatrix<T>::build( const std::vector<T>& values )
   {
     need_update_ = false;
+    major_type_  = GrB_ROWMAJOR;
 
     allocate();
 
@@ -193,9 +209,11 @@ namespace backend
   template <typename T>
   Info DenseMatrix<T>::printDense() const
   {
-    int length=std::min(20,nrows_);
-    for( int row=0; row<length; row++ ) {
-      for( int col=0; col<length; col++ ) {
+    int row_length=std::min(20,nrows_);
+    int col_length=std::min(20,ncols_);
+
+    for( int row=0; row<row_length; row++ ) {
+      for( int col=0; col<col_length; col++ ) {
         // Print row major order matrix in row major order
         if( major_type_ == GrB_ROWMAJOR ) {
           if( h_denseVal[row*ncols_+col]!=0.0 ) std::cout << "x ";
