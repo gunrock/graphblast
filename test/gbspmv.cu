@@ -125,7 +125,7 @@ int main( int argc, char** argv )
 
   // Warmup
   cudaProfilerStart();
-  GpuTimer warmup;
+  graphblas::GpuTimer warmup;
   warmup.Start();
   graphblas::mxv<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
   CUDA( cudaDeviceSynchronize() );
@@ -133,7 +133,7 @@ int main( int argc, char** argv )
   cudaProfilerStop();
   
   // Benchmark
-  GpuTimer gpu_mxm;
+  graphblas::GpuTimer gpu_mxm;
   gpu_mxm.Start();
   for( int i=0; i<NUM_ITER; i++ )
     graphblas::mxv<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );

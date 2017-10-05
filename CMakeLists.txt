@@ -55,8 +55,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 # standard compilation
 include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} )
-add_executable(        bmatrix "test/bmatrix.cpp" )
-target_link_libraries( bmatrix ${Boost_LIBRARIES} )
+message( ${Boost_INCLUDE_DIRS} )
+message( ${Boost_LIBRARY_DIRS} )
+#add_executable(        bmatrix "test/bmatrix.cpp" )
+#target_link_libraries( bmatrix ${Boost_LIBRARIES} )
 
 # CUDA compilation
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )

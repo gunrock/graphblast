@@ -113,6 +113,12 @@ namespace backend
                                const DenseMatrix<b>&  B );
     
     template <typename c, typename a, typename b>
+    friend Info cusparse_spmm2( DenseMatrix<c>&        C,
+                                const Semiring&        op,
+                                const SparseMatrix<a>& A,
+                                const DenseMatrix<b>&  B );
+    
+    template <typename c, typename a, typename b>
     friend Info mergepath_spmm( DenseMatrix<c>&        C,
                                 const Semiring&        op,
                                 const SparseMatrix<a>& A,

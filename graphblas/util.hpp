@@ -344,6 +344,8 @@ void printArray( const char* str, std::vector<T>& array, int length=40 )
   std::cout << "\n";
 }
 
+namespace graphblas {
+
 struct CpuTimer {
 
 #if defined(CLOCK_PROCESS_CPUTIME_ID)
@@ -397,5 +399,6 @@ struct CpuTimer {
 
 #endif
 };
+}  // namespace graphblas
 
 #endif  // GRB_UTIL_HPP

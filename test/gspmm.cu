@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_SUITE(spmm_suite)
   graphblas::Matrix<float> c(11, max_ncols);
   graphblas::Semiring op;
 
-  GpuTimer gpu_mxm;
+  graphblas::GpuTimer gpu_mxm;
   gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
   gpu_mxm.Stop();
@@ -159,7 +159,7 @@ BOOST_FIXTURE_TEST_CASE( spmm2, TestSPMM )
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
 
-  GpuTimer gpu_mxm;
+  graphblas::GpuTimer gpu_mxm;
   gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
   gpu_mxm.Stop();
@@ -247,7 +247,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
 
-  GpuTimer gpu_mxm;
+  graphblas::GpuTimer gpu_mxm;
   cudaProfilerStart();
   gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );

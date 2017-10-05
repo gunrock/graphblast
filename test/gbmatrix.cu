@@ -38,7 +38,7 @@ int main( int argc, char** argv )
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  a.buildCount( row_indices, col_indices, values, nvals );
+  a.build( row_indices, col_indices, values, nvals );
   a.nrows( nrows );
   a.ncols( ncols );
   a.nvals( nvals );

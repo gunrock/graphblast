@@ -58,7 +58,7 @@ namespace graphblas
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
-    Info count() const;
+    Info printStats() const;
     // This should be a private method
     //Info get_storage( Storage& mat_type ) const;
 
@@ -173,9 +173,9 @@ namespace graphblas
   }
 
   template <typename T>
-  Info Matrix<T>::count() const
+  Info Matrix<T>::printStats() const
   {
-    return matrix.count();
+    return matrix.printStats();
   }
 
   // Private interface

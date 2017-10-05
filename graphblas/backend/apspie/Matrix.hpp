@@ -59,7 +59,7 @@ namespace backend
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const; 
     Info getStorage( Storage& mat_type ) const;
-    Info count() const;
+    Info printStats() const;
 
     private:
     Index nrows_;
@@ -264,10 +264,12 @@ namespace backend
   }
 
   template <typename T>
-  Info Matrix<T>::count() const
+  Info Matrix<T>::printStats() const
   {
-    return sparse_.count();
+    if( mat_type_ == GrB_SPARSE ) return sparse_.printStats();
+    return GrB_UNINITIALIZED_OBJECT;
   }
+
 } // backend
 } // graphblas
 

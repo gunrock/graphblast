@@ -8,7 +8,7 @@ for file in /data-2/gunrock_dataset/large/benchmark/*/
 do
   if [ "$OPTION" = "2" ] ; then
     folder=$(basename $file)
-    bin/gbspmm /data-2/gunrock_dataset/large/benchmark/$folder/$folder.mtx
+    bin/gbspmm --nt=64 /data-2/gunrock_dataset/large/benchmark/$folder/$folder.mtx
   fi
 done
 

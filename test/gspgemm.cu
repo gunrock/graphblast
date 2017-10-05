@@ -1,4 +1,3 @@
-//#define GRB_USE_SEQUENTIAL
 #define GRB_USE_APSPIE
 //#define private public
 
@@ -11,13 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#ifdef GRB_USE_SEQUENTIAL
-  #define GpuTimer CpuTimer
-#else
-  #ifdef GRB_USE_APSPIE
-  #include <cuda_profiler_api.h>
-  #endif
-#endif
+#include <cuda_profiler_api.h>
 
 #include "graphblas/mmio.hpp"
 #include "graphblas/util.hpp"
@@ -76,7 +69,7 @@ BOOST_AUTO_TEST_CASE( spgemm1 )
   graphblas::Matrix<float> c(11, 11);
   graphblas::Semiring op;
 
-  GpuTimer gpu_mxm, gpu_mxm2;
+  graphblas::GpuTimer gpu_mxm, gpu_mxm2;
   gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
   gpu_mxm.Stop();
@@ -148,7 +141,7 @@ BOOST_AUTO_TEST_CASE( spgemm2 )
   graphblas::Matrix<float> c(nrows, ncols);
   graphblas::Semiring op;
 
-  GpuTimer gpu_mxm;
+  graphblas::GpuTimer gpu_mxm;
   gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
   gpu_mxm.Stop();
@@ -203,7 +196,7 @@ BOOST_AUTO_TEST_CASE( spgemm3 )
   graphblas::Matrix<float> c(nrows, ncols);
   graphblas::Semiring op;
 
-  GpuTimer gpu_mxm;
+  graphblas::GpuTimer gpu_mxm;
   gpu_mxm.Start();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
   gpu_mxm.Stop();

@@ -14,6 +14,75 @@
 #include <boost/program_options.hpp>
 #include <test/test.hpp>
 
+template <typename T>
+void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix<T>& a, graphblas::Matrix<T>& b, graphblas::Semiring& op, graphblas::Descriptor& desc, graphblas::Index max_ncols, graphblas::Index nrows, graphblas::Index nvals, int NUM_ITER, bool DEBUG, bool ROW_MAJOR, std::vector<graphblas::Index>& row_indices, std::vector<graphblas::Index>& col_indices, std::vector<float>& values )
+{
+  // Warmup
+  cudaProfilerStart();
+  graphblas::GpuTimer warmup;
+  warmup.Start();
+  graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
+  warmup.Stop();
+  cudaProfilerStop();
+  
+  // Benchmark
+  graphblas::GpuTimer gpu_mxm;
+  gpu_mxm.Start();
+  for( int i=0; i<NUM_ITER; i++ )
+    graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
+  CUDA( cudaDeviceSynchronize() );
+  gpu_mxm.Stop();
+ 
+  float flop = 2.0*nvals*max_ncols;
+  float byte = nvals*(sizeof(T) + sizeof(graphblas::Index)) + nrows*(sizeof(graphblas::Index)+max_ncols*sizeof(T)*2);
+  if( DEBUG )
+  {
+    std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
+        flop/warmup.ElapsedMillis()/1000000.0 << ", " << byte/warmup.ElapsedMillis()/ 1000000.0 << "\n";
+    std::cout << "spmm, " << gpu_mxm.ElapsedMillis()/NUM_ITER << ", " <<
+        flop/gpu_mxm.ElapsedMillis()*NUM_ITER/1000000.0 << ", " << byte/gpu_mxm.ElapsedMillis()*NUM_ITER/1000000.0 << "\n";
+  }
+  else
+  {
+    std::cout << str << ", " << gpu_mxm.ElapsedMillis()/NUM_ITER << ", " <<
+        flop/gpu_mxm.ElapsedMillis()*NUM_ITER/1000000.0 << ", " << byte/gpu_mxm.ElapsedMillis()*NUM_ITER/1000000.0 << ", ";
+  }
+
+  std::vector<float> out_denseVal;
+  if( DEBUG ) 
+  {
+    c.print();
+    c.extractTuples( out_denseVal );
+    for( int i=0; i<nvals; i++ ) {
+      graphblas::Index row = row_indices[i];
+      graphblas::Index col = col_indices[i];
+      float            val = values[i];
+      if( col<max_ncols ) {
+        // Row major order
+        if( ROW_MAJOR )
+        {
+          if( val!=out_denseVal[row*max_ncols+col] )
+          {
+            std::cout << "FAIL: " << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
+            break;
+            //BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
+          }
+        }
+        // Column major order
+        else
+        {
+          if( val!=out_denseVal[col*nrows+row] )
+          {
+            std::cout << "FAIL: " << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
+            break;
+          //BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
+          }
+        }
+      }
+    }
+  }
+}
+
 int main( int argc, char** argv )
 {
   std::vector<graphblas::Index> row_indices;
@@ -93,59 +162,59 @@ int main( int argc, char** argv )
   a.ncols( ncols );
   a.nvals( nvals );
   if( DEBUG ) a.print();
+  else
+  {
+    std::cout << argv[argc-1] << ", " << nrows << ", " << ncols << ", " << nvals << ", ";
+    a.printStats();
+  }
 
   // Matrix B
   graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
-  graphblas::Index max_ncols = 64;//std::min( MEM_SIZE/nrows/32*32, ncols );
+  graphblas::Index max_ncols = min(ncols,64);
   if( ncols%32!=0 && max_ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
   if( DEBUG && max_ncols!=ncols ) std::cout << "Restricting col to: " 
       << max_ncols << std::endl;
 
-  graphblas::Matrix<float> b(nrows, max_ncols);
-  std::vector<float> denseVal;
+  graphblas::Matrix<float> b_row(ncols, max_ncols);
+  graphblas::Matrix<float> b_col(ncols, max_ncols);
+  std::vector<float> dense_row;
+  std::vector<float> dense_col;
 
   // Row major order
-  if( ROW_MAJOR )
-    for( int i=0; i<nrows; i++ )
-      for( int j=0; j<max_ncols; j++ ) {
-        if( i==j ) denseVal.push_back(1.0);
-        else denseVal.push_back(0.0);
-      }
-  else
+  for( int i=0; i<ncols; i++ )
+    for( int j=0; j<max_ncols; j++ ) {
+      if( i==j ) dense_row.push_back(1.0);
+      else dense_row.push_back(0.0);
+    }
   // Column major order
-    for( int i=0; i<max_ncols; i++ )
-      for( int j=0; j<nrows; j++ ) {
-        //denseVal.push_back(1.0);
-        if( i==j ) denseVal.push_back(1.0);
-        else denseVal.push_back(0.0);
-      }
-  b.build( denseVal );
+  for( int i=0; i<max_ncols; i++ )
+    for( int j=0; j<ncols; j++ ) {
+      if( i==j ) dense_col.push_back(1.0);
+      else dense_col.push_back(0.0);
+    }
+  b_row.build( dense_row );
+  b_col.build( dense_col );
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
 
-  // Warmup
-  cudaProfilerStart();
-  GpuTimer warmup;
-  warmup.Start();
-  graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
-  warmup.Stop();
-  cudaProfilerStop();
-  
-  // Benchmark
-  GpuTimer gpu_mxm;
-  gpu_mxm.Start();
-  for( int i=0; i<NUM_ITER; i++ )
-    graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
-  CUDA( cudaDeviceSynchronize() );
-  gpu_mxm.Stop();
-  
-  float flop = 2.0*nvals*max_ncols;
-  if( DEBUG ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
-    flop/warmup.ElapsedMillis()/1000000.0 << "\n";
-  std::cout << "spmm, " << gpu_mxm.ElapsedMillis()/NUM_ITER << ", " <<
-    flop/gpu_mxm.ElapsedMillis()*NUM_ITER/1000000.0 << "\n";  
-  
-  std::vector<float> out_denseVal;
+  // Test row splitting
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  ROW_MAJOR = true;
+  runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+
+  // Test cusparse
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
+  ROW_MAJOR = false;
+  runTest( "cusparse", c, a, b_col, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+
+  // Test cusparse
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
+  ROW_MAJOR = false;
+  runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+
+  if( !DEBUG ) std::cout << "\n";
+
+  /*std::vector<float> out_denseVal;
   if( DEBUG ) c.print();
   c.extractTuples( out_denseVal );
   for( int i=0; i<nvals; i++ ) {
@@ -162,6 +231,6 @@ int main( int argc, char** argv )
       //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
         BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
     }
-  }
+  }*/
   return 0;
 }

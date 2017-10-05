@@ -15,6 +15,8 @@ void printArrayDevice( const char* str, const T* array, int length=40 )
   if( temp ) free( temp );
 }
 
+namespace graphblas
+{
 struct GpuTimer
 {
   cudaEvent_t start;
@@ -50,5 +52,6 @@ struct GpuTimer
     return elapsed;
   }
 };
+}  // namespace graphblas
 
 #endif  // GRB_BACKEND_APSPIE_UTIL_HPP

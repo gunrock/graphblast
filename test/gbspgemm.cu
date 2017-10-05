@@ -1,4 +1,3 @@
-//#define GRB_USE_SEQUENTIAL
 #define GRB_USE_APSPIE
 //#define private public
 
@@ -8,13 +7,8 @@
 
 #include <cstdio>
 #include <cstdlib>
-#ifdef GRB_USE_SEQUENTIAL
-  #define GpuTimer CpuTimer
-#else
-  #ifdef GRB_USE_APSPIE
-  #include <cuda_profiler_api.h>
-  #endif
-#endif
+
+#include <cuda_profiler_api.h>
 
 #include "graphblas/mmio.hpp"
 #include "graphblas/util.hpp"
@@ -104,12 +98,12 @@ int main( int argc, char** argv )
   graphblas::Semiring op;
 
   // Warmup
-  GpuTimer warmup;
+  graphblas::GpuTimer warmup;
   warmup.Start();
   graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
   warmup.Stop();
  
-  GpuTimer gpu_mxm;
+  graphblas::GpuTimer gpu_mxm;
   //cudaProfilerStart();
   gpu_mxm.Start();
   for( int i=0; i<NUM_ITER; i++ ) {

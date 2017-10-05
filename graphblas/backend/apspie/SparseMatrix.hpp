@@ -66,7 +66,7 @@ namespace backend
     Info nrows( Index& nrows ) const;
     Info ncols( Index& ncols ) const;
     Info nvals( Index& nvals ) const;
-    Info count() const;
+    Info printStats() const;
 
     private:
     Index nrows_;
@@ -130,6 +130,12 @@ namespace backend
                                const Semiring&        op,
                                const SparseMatrix<a>& A,
                                const DenseMatrix<b>&  B );
+
+    template <typename c, typename a, typename b>
+    friend Info cusparse_spmm2( DenseMatrix<c>&        C,
+                                const Semiring&        op,
+                                const SparseMatrix<a>& A,
+                                const DenseMatrix<b>&  B );
 
     template <typename c, typename a, typename b>
     friend Info mergepath_spmm( DenseMatrix<c>&        C,
@@ -416,9 +422,27 @@ namespace backend
   }
 
   template <typename T>
-  Info SparseMatrix<T>::count() const
+  Info SparseMatrix<T>::printStats() const
   {
-    std::vector<int> count(32,0);
+    double row_mean = double( nvals_ )/nrows_;
+    double variance = 0.f;
+    double row_skew = 0.f;
+    for( Index row=0; row<nrows_; row++ )
+    {
+      Index length  = h_csrRowPtr_[row+1]-h_csrRowPtr_[row];
+      double delta  = double(length) - row_mean;
+      variance     += delta*delta;
+      row_skew     += delta*delta*delta;
+    }
+    variance       /= nrows_;
+    double row_std  = sqrt(variance);
+    row_skew        = row_skew/nrows_/pow(row_std, 3.0);
+    double row_var  = row_std/row_mean;
+
+    std::cout << row_mean << ", " << row_std << ", " << row_var << ", " << row_skew << ", ";
+
+    return GrB_SUCCESS;
+    /*std::vector<int> count(32,0);
     for( Index i=0; i<nrows_; i++ )
     {
       int diff = h_csrRowPtr_[i+1]-h_csrRowPtr_[i];
@@ -426,7 +450,7 @@ namespace backend
     }
 
     printArray( "count", count, 32 );
-    return GrB_SUCCESS;
+    return GrB_SUCCESS;*/
   }
 } // backend
 } // graphblas

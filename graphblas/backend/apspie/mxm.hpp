@@ -53,28 +53,39 @@ namespace backend
       if( C_storage == GrB_UNKNOWN )
         err = C.setStorage( GrB_SPARSE );
       if( mode == GrB_CUSPARSE2 )
-        err = cusparse_spgemm2( C.sparse, op, A.sparse, B.sparse );
+        err = cusparse_spgemm2( C.sparse_, op, A.sparse_, B.sparse_ );
       else if( mode == GrB_CUSPARSE )
-        err = cusparse_spgemm( C.sparse, op, A.sparse, B.sparse );
+        err = cusparse_spgemm( C.sparse_, op, A.sparse_, B.sparse_ );
     } else if( A_storage == GrB_SPARSE && B_storage == GrB_DENSE ) {
       if( C_storage == GrB_UNKNOWN )
         err = C.setStorage( GrB_DENSE );
       if( mode == GrB_CUSPARSE ) {
         //std::cout << "cusparse\n";
-        err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
-        err = C.dense.setMajor( GrB_COLMAJOR );
-      } else if( mode == GrB_FIXEDROW ) {
+        err = cusparse_spmm( C.dense_, op, A.sparse_, B.dense_ );
+        err = C.dense_.setMajor( GrB_COLMAJOR );
+      }
+      else if( mode == GrB_CUSPARSE2 )
+      {
+        err = cusparse_spmm2( C.dense_, op, A.sparse_, B.dense_ );
+        err = C.dense_.setMajor( GrB_COLMAJOR );
+      }
+      else if( mode == GrB_FIXEDROW )
+      {
         //std::cout << "fixedrow\n";
-        err = spmm( C.dense, mask.sparse, accum, op, A.sparse, B.dense, desc );
-        err = C.dense.setMajor( GrB_ROWMAJOR );
-      } else if( mode == GrB_FIXEDCOL ) {
+        err = spmm( C.dense_, mask.sparse_, accum, op, A.sparse_, B.dense_, desc );
+        err = C.dense_.setMajor( GrB_ROWMAJOR );
+      }
+      else if( mode == GrB_FIXEDCOL )
+      {
         //std::cout << "fixedcol\n";
-        err = spmm( C.dense, mask.sparse, accum, op, A.sparse, B.dense, desc );
-        err = C.dense.setMajor( GrB_COLMAJOR );
-      } else if( mode == GrB_MERGEPATH ) {
+        err = spmm( C.dense_, mask.sparse_, accum, op, A.sparse_, B.dense_, desc );
+        err = C.dense_.setMajor( GrB_COLMAJOR );
+      }
+      else if( mode == GrB_MERGEPATH )
+      {
         //std::cout << "mergepath\n";
-        err = mergepath_spmm( C.dense, op, A.sparse, B.dense );
-        err = C.dense.setMajor( GrB_COLMAJOR );
+        err = mergepath_spmm( C.dense_, op, A.sparse_, B.dense_ );
+        err = C.dense_.setMajor( GrB_COLMAJOR );
       }
     }
     return err;
