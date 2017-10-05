@@ -113,6 +113,11 @@ namespace backend
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
+        case 64:
+          spmm_row_kernel<c,64><<<NBLOCKS,NTHREADS>>>( A_nrows, 
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+            B.d_denseVal, C.d_denseVal );
+          break;
       } else switch( TB ) {
         /*case 1:
           spmm_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
@@ -192,7 +197,7 @@ namespace backend
           float val = A_csrVal[jj];
 
           #pragma unroll
-          for( int ii=0; ii<8; ii++ ) {
+          for( int ii=0; ii<16; ii++ ) {
             raws[ii] = __ldg((float4*)(B_denseVal+(col<<6)+(ii<<2)));
             //raws[ii] = __ldg((float4*)(B_denseVal+col*B_ncols+(ii<<2)+slab));
             //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,(ii<<2)+slab);
