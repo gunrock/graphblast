@@ -53,7 +53,7 @@ namespace backend
         err = C.setStorage( GrB_DENSE );
       if( mode == GrB_FIXEDROW ) {
         //std::cout << "fixedrow\n";
-        err = spmv( C.dense, mask.sparse_, accum, op, A.sparse_, B.dense_, desc );
+        err = spmv( C.dense_, mask.sparse_, accum, op, A.sparse_, B.dense_, desc );
         err = C.dense_.setMajor( GrB_ROWMAJOR );
       } else if( mode == GrB_FIXEDCOL ) {
         //std::cout << "fixedcol\n";

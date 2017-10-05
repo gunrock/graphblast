@@ -223,7 +223,8 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
 
   // default values of TA, TB, NT will be used
   graphblas::Descriptor desc;
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  //desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
   desc.set( graphblas::GrB_NT, NT );
   desc.set( graphblas::GrB_TA, TA );
   desc.set( graphblas::GrB_TB, TB );

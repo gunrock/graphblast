@@ -170,7 +170,7 @@ namespace backend
     int lane      = thread_id & (32 - 1);
     int row, slab;
 
-    for( slab=0; slab<B_ncols; slab+=TB ) {
+    //for( slab=0; slab<B_ncols; slab+=TB ) {
 
     // one warp per row
     // Note: Must reset this value every slab
@@ -193,7 +193,8 @@ namespace backend
 
           #pragma unroll
           for( int ii=0; ii<8; ii++ ) {
-            raws[ii] = __ldg((float4*)(B_denseVal+col*B_ncols+(ii<<2)+slab));
+            raws[ii] = __ldg((float4*)(B_denseVal+(col<<6)+(ii<<2)));
+            //raws[ii] = __ldg((float4*)(B_denseVal+col*B_ncols+(ii<<2)+slab));
             //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,(ii<<2)+slab);
             //printf("row:%d,col:%d,tid:%d,0:%.0f,1:%.0f,2:%.0f,3:%.0f,idx:%d\n",row,col,thread_id,raws[ii].x,raws[ii].y,raws[ii].z,raws[ii].w, col*B_ncols+(ii<<2)+slab);
             vals[(ii<<2)  ] += val*raws[ii].x;
@@ -251,12 +252,12 @@ namespace backend
           #pragma unroll
           for( int ii=0; ii<TB; ii++ )
           //for( int ii=0; ii<(TB>>2); ii++ )
-              //C_denseVal[((row*B_ncols+slab)>>2)+ii] = raws[ii];
-              C_denseVal[row*B_ncols+ii+slab] = vals[ii];
+              C_denseVal[(row<<6)+ii] = vals[ii];
+              //C_denseVal[row*B_ncols+ii+slab] = vals[ii];
               //printf("ii:%d,ind:%d\n",ii,threadIdx.x-lane+ii);
         }
       }
-    } // slab
+    //} // slab
   } // spmm_col_kernel
 
   // Baseline implementation (col major) based on Bell/Garland 2008
