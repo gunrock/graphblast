@@ -200,7 +200,8 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
     std::cout << "debug: " << DEBUG     << "\n";
   }
 
-  char const *argv = "/data-2/gunrock_dataset/large/ak2010/ak2010.mtx";
+  char const *argv = "dataset/small/test_cc.mtx";
+  //char const *argv = "/data-2/gunrock_dataset/large/ak2010/ak2010.mtx";
   readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, DEBUG );
 
   // Matrix A
@@ -258,8 +259,8 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   std::cout << "mxm: " << elapsed_mxm << " ms\n";
 
   std::vector<float> out_denseVal;
-  /*if( DEBUG ) c.print();
-  c.extractTuples( out_denseVal );
+  if( DEBUG ) c.print();
+  /*c.extractTuples( out_denseVal );
   for( int i=0; i<nvals; i++ ) {
     graphblas::Index row = row_indices[i];
     graphblas::Index col = col_indices[i];
