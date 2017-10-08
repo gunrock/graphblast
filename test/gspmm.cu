@@ -216,10 +216,10 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
   graphblas::Index max_ncols = 64;//std::min( MEM_SIZE/nrows/32*32, ncols );
   if( ncols%32!=0 && max_ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
-  if( DEBUG && max_ncols!=ncols ) std::cout << "Restricting col to: " 
+  if( DEBUG && max_ncols!=ncols ) std::cout << "Restricting col to: "
       << max_ncols << std::endl;
 
-  graphblas::Matrix<float> b(nrows, max_ncols);
+  graphblas::Matrix<float> b(ncols, max_ncols);
   std::vector<float> denseVal;
 
   // default values of TA, TB, NT will be used

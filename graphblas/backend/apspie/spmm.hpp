@@ -86,73 +86,73 @@ namespace backend
         /*case 1:
           spmm_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 2:
           spmm_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;*/
         case 4:
           spmm_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 8:
           spmm_row_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 16:
           spmm_row_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 32:
           spmm_row_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 64:
           spmm_row_kernel<c,64><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
       } else switch( TB ) {
         /*case 1:
           spmm_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 2:
           spmm_col_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;*/
         case 4:
           spmm_col_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 8:
           spmm_col_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 16:
           spmm_col_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 32:
           spmm_col_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
       }
 
     //spmm_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
-    //  A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_, B.d_denseVal, C.d_denseVal );
+    //  A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_, B.d_denseVal_, C.d_denseVal_ );
 
     C.need_update_ = true;
     return GrB_SUCCESS;
@@ -405,9 +405,9 @@ namespace backend
     float beta  = 0.0;
     status = cusparseScsrmm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
-        &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, B.d_denseVal,
+        &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, B.d_denseVal_,
         A_ncols,      // ldb = max(1,k) since op(A) = A
-        &beta, C.d_denseVal,
+        &beta, C.d_denseVal_,
         A_nrows );    // ldc = max(1,m) since op(A) = A
 
     switch( status ) {
@@ -488,9 +488,9 @@ namespace backend
         CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
         A_nrows, B_ncols, A_ncols, A_nvals,
         &alpha, descr, 
-        A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, B.d_denseVal,
+        A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, B.d_denseVal_,
         B_ncols,      // ldb = max(1,k) since op(A) = A
-        &beta, C.d_denseVal,
+        &beta, C.d_denseVal_,
         A_nrows );    // ldc = max(1,m) since op(A) = A
 
     switch( status ) {
@@ -541,6 +541,10 @@ namespace backend
     C.nrows( C_nrows );
     C.ncols( C_ncols );
 
+    std::cout << "A: " << A_nrows << " " << A_ncols << std::endl;
+    std::cout << "B: " << B_nrows << " " << B_ncols << std::endl;
+    std::cout << "C: " << C_nrows << " " << C_ncols << std::endl;
+
     // Dimension compatibility check
     if( (A_ncols != B_nrows) || (C_ncols != B_ncols) || (C_nrows != A_nrows ) )
     {
@@ -554,13 +558,16 @@ namespace backend
     // Domain compatibility check
     // TODO: add domain compatibility check
 
+    // Temporarily for testing purposes
+    C.allocate();
+
     // Computation
     mgpu::ContextPtr context = mgpu::CreateCudaDevice(0);
     CUDA( cudaDeviceSynchronize() );
     std::cout << "Success creating mgpu context\n";
     mgpu::SpmmCsrBinary( A.d_csrVal_, A.d_csrColInd_, A_nvals, A.d_csrRowPtr_, 
-        A_nrows, B.d_denseVal, true, C.d_denseVal, (c) 0, mgpu::multiplies<c>(),
-        mgpu::plus<c>(), B_nrows, *context );
+        A_nrows, B.d_denseVal_, false, C.d_denseVal_, (c) 0, 
+        mgpu::multiplies<c>(), mgpu::plus<c>(), B_ncols, *context );
     std::cout << "Finished SpmmCsrBinary\n";
     CUDA( cudaDeviceSynchronize() );
 

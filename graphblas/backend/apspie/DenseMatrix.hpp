@@ -26,10 +26,11 @@ namespace backend
   {
     public:
     DenseMatrix() 
-        : nrows_(0), ncols_(0), nvals_(0), h_denseVal(NULL), d_denseVal(NULL){}
+        : nrows_(0), ncols_(0), nvals_(0), h_denseVal_(NULL), d_denseVal_(NULL),
+          major_type_(GrB_ROWMAJOR), need_update_(false) {}
     DenseMatrix( const Index nrows, const Index ncols ) 
-        : nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), 
-        h_denseVal(NULL), d_denseVal(NULL) {}
+        : nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), h_denseVal_(NULL),
+          d_denseVal_(NULL), major_type_(GrB_ROWMAJOR), need_update_(false) {}
 
     // Assignment Constructor
     // // TODO: Replaces dup in C++
@@ -66,8 +67,8 @@ namespace backend
     Index nvals_;
 
     // Dense format
-    T* h_denseVal;
-    T* d_denseVal;
+    T* h_denseVal_;
+    T* d_denseVal_;
 
     // Keeps track of GrB_ROWMAJOR or GrB_COLMAJOR
     Major major_type_;
@@ -129,19 +130,18 @@ namespace backend
   Info DenseMatrix<T>::build( const std::vector<T>& values )
   {
     need_update_ = false;
-    major_type_  = GrB_ROWMAJOR;
 
     allocate();
 
     // Host copy
+    //std::cout << values.size() << " " << nvals_ << std::endl;
     for( graphblas::Index i=0; i<nvals_; i++ )
-        h_denseVal[i] = values[i];
+        h_denseVal_[i] = values[i];
 
     // Device memcpy
-    CUDA(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T),
+    CUDA(cudaMemcpy(d_denseVal_, h_denseVal_, nvals_*sizeof(T),
         cudaMemcpyHostToDevice));
 
-    //printArrayDevice( "B matrix GPU", d_denseVal );
     return GrB_SUCCESS;
   }
 
@@ -158,14 +158,22 @@ namespace backend
   Info DenseMatrix<T>::allocate()
   {
     // Host alloc
-    h_denseVal = (T*)malloc(nvals_*sizeof(T));
-    for( Index i=0; i<nvals_; i++ )
-      h_denseVal[i] = (T) 0;
+    if( nvals_>0 && h_denseVal_==NULL )
+    {
+      h_denseVal_ = (T*)malloc(nvals_*sizeof(T));
+    }
 
     // Device alloc
-    CUDA(cudaMalloc((void**)&d_denseVal, nvals_*sizeof(T)));
-    CUDA(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T), 
-        cudaMemcpyHostToDevice));
+    if( nvals_>0 && d_denseVal_==NULL )
+      CUDA(cudaMalloc((void**)&d_denseVal_, nvals_*sizeof(T)));
+
+    if( nvals_>0 && h_denseVal_!=NULL && d_denseVal_!=NULL )
+    {
+      for( Index i=0; i<nvals_; i++ )
+        h_denseVal_[i] = (T) 0;
+      CUDA(cudaMemcpy(d_denseVal_, h_denseVal_, nvals_*sizeof(T), 
+          cudaMemcpyHostToDevice));
+    }
 
     return GrB_SUCCESS;
   }
@@ -173,8 +181,8 @@ namespace backend
   template <typename T>
   Info DenseMatrix<T>::clear()
   {
-    if( h_denseVal ) free( h_denseVal );
-    if( d_denseVal ) CUDA(cudaFree( d_denseVal ));
+    if( h_denseVal_ ) free( h_denseVal_ );
+    if( d_denseVal_ ) CUDA(cudaFree( d_denseVal_ ));
     return GrB_SUCCESS;
   }
 
@@ -191,11 +199,11 @@ namespace backend
     values.clear();
 
     if( need_update_ )
-      CUDA(cudaMemcpy(h_denseVal, d_denseVal, 
+      CUDA(cudaMemcpy(h_denseVal_, d_denseVal_, 
           nvals_*sizeof(T), cudaMemcpyDeviceToHost));
     
     for( Index i=0; i<nvals_; i++ ) {
-      values.push_back( h_denseVal[i] );
+      values.push_back( h_denseVal_[i] );
     }
     return GrB_SUCCESS;
   }
@@ -204,10 +212,10 @@ namespace backend
   Info DenseMatrix<T>::print() const
   {
     if( need_update_ )
-      CUDA(cudaMemcpy(h_denseVal, d_denseVal, 
+      CUDA(cudaMemcpy(h_denseVal_, d_denseVal_, 
           nvals_*sizeof(T), cudaMemcpyDeviceToHost));
 
-    printArray( "denseVal", h_denseVal );
+    printArray( "denseVal", h_denseVal_, nvals_ );
     printDense();
     return GrB_SUCCESS;
   }
@@ -222,11 +230,11 @@ namespace backend
       for( int col=0; col<col_length; col++ ) {
         // Print row major order matrix in row major order
         if( major_type_ == GrB_ROWMAJOR ) {
-          if( h_denseVal[row*ncols_+col]!=0.0 ) std::cout << "x ";
+          if( h_denseVal_[row*ncols_+col]!=0.0 ) std::cout << "x ";
           else std::cout << "0 ";
         // Print column major order matrix in row major order (Transposition)
         } else if (major_type_ == GrB_COLMAJOR ) {
-          if( h_denseVal[col*nrows_+row]!=0.0 ) std::cout << "x ";
+          if( h_denseVal_[col*nrows_+row]!=0.0 ) std::cout << "x ";
           else std::cout << "0 ";
         }
       }

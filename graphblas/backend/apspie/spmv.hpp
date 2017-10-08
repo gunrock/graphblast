@@ -86,68 +86,68 @@ namespace backend
         case 1:
           spmv_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 2:
           spmv_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 4:
           spmv_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 8:
           spmv_row_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 16:
           spmv_row_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 32:
           spmv_row_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
       } else switch( TB ) {
         case 1:
           spmv_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 2:
           spmv_col_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 4:
           spmv_col_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 8:
           spmv_col_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 16:
           spmv_col_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
         case 32:
           spmv_col_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
             B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal, C.d_denseVal );
+            B.d_denseVal_, C.d_denseVal_ );
           break;
       }
 
     //spmv_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
-    //  A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_, B.d_denseVal, C.d_denseVal );
+    //  A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_, B.d_denseVal_, C.d_denseVal_ );
     C.need_update_ = true;
     return GrB_SUCCESS;
   }
@@ -346,9 +346,9 @@ namespace backend
     float beta  = 0.0;
     status = cusparseScsrmm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
-        &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, B.d_denseVal,
+        &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, B.d_denseVal_,
         A_ncols,      // ldb = max(1,k) since op(A) = A
-        &beta, C.d_denseVal,
+        &beta, C.d_denseVal_,
         A_nrows );    // ldc = max(1,m) since op(A) = A
 
     switch( status ) {
@@ -417,7 +417,7 @@ namespace backend
     CUDA( cudaDeviceSynchronize() );
     std::cout << "Success creating mgpu context\n";
     mgpu::SpmmCsrBinary( A.d_csrVal_, A.d_csrColInd_, A_nvals, A.d_csrRowPtr_, 
-        A_nrows, B.d_denseVal, true, C.d_denseVal, (c) 0, mgpu::multiplies<c>(),
+        A_nrows, B.d_denseVal_, true, C.d_denseVal_, (c) 0, mgpu::multiplies<c>(),
         mgpu::plus<c>(), B_nrows, *context );
     std::cout << "Finished SpmmCsrBinary\n";
     CUDA( cudaDeviceSynchronize() );
