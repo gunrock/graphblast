@@ -260,7 +260,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
 
   std::vector<float> out_denseVal;
   if( DEBUG ) c.print();
-  /*c.extractTuples( out_denseVal );
+  c.extractTuples( out_denseVal );
   for( int i=0; i<nvals; i++ ) {
     graphblas::Index row = row_indices[i];
     graphblas::Index col = col_indices[i];
@@ -268,14 +268,15 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
     if( col<max_ncols ) {
       // Row major order
       if( ROW_MAJOR ) {
-        //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
+        if( val!=out_denseVal[row*max_ncols+col] )
+          std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
         BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
       } else
       // Column major order
       //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
         BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
     }
-  }*/
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
