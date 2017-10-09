@@ -541,9 +541,9 @@ namespace backend
     C.nrows( C_nrows );
     C.ncols( C_ncols );
 
-    std::cout << "A: " << A_nrows << " " << A_ncols << std::endl;
-    std::cout << "B: " << B_nrows << " " << B_ncols << std::endl;
-    std::cout << "C: " << C_nrows << " " << C_ncols << std::endl;
+    //std::cout << "A: " << A_nrows << " " << A_ncols << std::endl;
+    //std::cout << "B: " << B_nrows << " " << B_ncols << std::endl;
+    //std::cout << "C: " << C_nrows << " " << C_ncols << std::endl;
 
     // Dimension compatibility check
     if( (A_ncols != B_nrows) || (C_ncols != B_ncols) || (C_nrows != A_nrows ) )
@@ -564,11 +564,11 @@ namespace backend
     // Computation
     mgpu::ContextPtr context = mgpu::CreateCudaDevice(0);
     CUDA( cudaDeviceSynchronize() );
-    std::cout << "Success creating mgpu context\n";
+    //std::cout << "Success creating mgpu context\n";
     mgpu::SpmmCsrBinary( A.d_csrVal_, A.d_csrColInd_, A_nvals, A.d_csrRowPtr_, 
         A_nrows, B.d_denseVal_, false, C.d_denseVal_, (c) 0, 
         mgpu::multiplies<c>(), mgpu::plus<c>(), B_ncols, *context );
-    std::cout << "Finished SpmmCsrBinary\n";
+    //std::cout << "Finished SpmmCsrBinary\n";
     CUDA( cudaDeviceSynchronize() );
 
     C.need_update_ = true;  // Set flag that we need to copy data from GPU

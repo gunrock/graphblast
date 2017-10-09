@@ -202,6 +202,11 @@ int main( int argc, char** argv )
   ROW_MAJOR = true;
   runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
+  // Test mergepath
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  ROW_MAJOR = true;
+  runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+
   // Test cusparse
   desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
   ROW_MAJOR = false;
