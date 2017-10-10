@@ -33,13 +33,22 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
   }
 
   // Warmup
-  cudaProfilerStart();
   graphblas::GpuTimer warmup;
-  warmup.Start();
-  graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
-  warmup.Stop();
-  cudaProfilerStop();
-  
+  if( str=="merge path" )
+  {
+    cudaProfilerStart();
+    warmup.Start();
+    graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
+    warmup.Stop();
+    cudaProfilerStop();
+  }
+  else
+  { 
+    warmup.Start();
+    graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
+    warmup.Stop();
+  }
+ 
   // Benchmark
   graphblas::GpuTimer gpu_mxm;
   gpu_mxm.Start();

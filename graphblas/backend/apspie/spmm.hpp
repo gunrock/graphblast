@@ -561,7 +561,7 @@ namespace backend
     // TODO: add domain compatibility check
 
     // Temporarily for testing purposes
-    C.allocate();
+    //C.allocate();
 
     // Computation
     //std::cout << "Success creating mgpu context\n";
