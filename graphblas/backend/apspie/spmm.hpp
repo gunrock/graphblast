@@ -5,6 +5,7 @@
 
 #include <cuda.h>
 #include <cusparse.h>
+#include <helper_math.h>
 
 #include <moderngpu.cuh>
 
@@ -167,7 +168,7 @@ namespace backend
       const c* B_denseVal, c* C_denseVal )
       //const c* B_denseVal, float4* C_denseVal )
   {
-    float  vals[TB];
+    //float  vals[TB];
     float4 raws[TB>>2];
 
     int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
@@ -189,8 +190,16 @@ namespace backend
 
         // compute running sum per thread
         #pragma unroll
-        for( int ii=0; ii<TB; ii++ )
-          vals[ii] = 0.0;
+        for( int ii=0; ii<TB>>2; ii++ )
+        {
+          raws[ii].x = 0.f;
+          raws[ii].y = 0.f;
+          raws[ii].z = 0.f;
+          raws[ii].w = 0.f;
+        }
+        //#pragma unroll
+        //for( int ii=0; ii<TB; ii++ )
+        //  vals[ii] = 0.0;
 
         for( int jj=row_start+lane; jj<row_end; jj+=32 ) {
           int   col = A_csrColInd[jj];
@@ -198,68 +207,60 @@ namespace backend
 
           #pragma unroll
           for( int ii=0; ii<16; ii++ ) {
-            raws[ii] = __ldg((float4*)(B_denseVal+(col<<6)+(ii<<2)));
+            raws[ii] += val*__ldg((float4*)(B_denseVal+(col<<6)+(ii<<2)));
             //raws[ii] = __ldg((float4*)(B_denseVal+col*B_ncols+(ii<<2)+slab));
             //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,(ii<<2)+slab);
             //printf("row:%d,col:%d,tid:%d,0:%.0f,1:%.0f,2:%.0f,3:%.0f,idx:%d\n",row,col,thread_id,raws[ii].x,raws[ii].y,raws[ii].z,raws[ii].w, col*B_ncols+(ii<<2)+slab);
-            vals[(ii<<2)  ] += val*raws[ii].x;
+            /*vals[(ii<<2)  ] += val*raws[ii].x;
             vals[(ii<<2)+1] += val*raws[ii].y;
             vals[(ii<<2)+2] += val*raws[ii].z;
-            vals[(ii<<2)+3] += val*raws[ii].w;
+            vals[(ii<<2)+3] += val*raws[ii].w;*/
           }
         }
 
         // parallel reduction in register memory
         //for( int offset = 16; offset > 0; offset /= 2 )
           #pragma unroll
+          for( int ii=0; ii<TB>>2; ii++ ) {
+            raws[ii].x += __shfl_xor(raws[ii].x, 16);
+            raws[ii].x += __shfl_xor(raws[ii].x, 8 );
+            raws[ii].x += __shfl_xor(raws[ii].x, 4 );
+            raws[ii].x += __shfl_xor(raws[ii].x, 2 );
+            raws[ii].x += __shfl_xor(raws[ii].x, 1 );
+            raws[ii].y += __shfl_xor(raws[ii].y, 16);
+            raws[ii].y += __shfl_xor(raws[ii].y, 8 );
+            raws[ii].y += __shfl_xor(raws[ii].y, 4 );
+            raws[ii].y += __shfl_xor(raws[ii].y, 2 );
+            raws[ii].y += __shfl_xor(raws[ii].y, 1 );
+            raws[ii].z += __shfl_xor(raws[ii].z, 16);
+            raws[ii].z += __shfl_xor(raws[ii].z, 8 );
+            raws[ii].z += __shfl_xor(raws[ii].z, 4 );
+            raws[ii].z += __shfl_xor(raws[ii].z, 2 );
+            raws[ii].z += __shfl_xor(raws[ii].z, 1 );
+            raws[ii].w += __shfl_xor(raws[ii].w, 16);
+            raws[ii].w += __shfl_xor(raws[ii].w, 8 );
+            raws[ii].w += __shfl_xor(raws[ii].w, 4 );
+            raws[ii].w += __shfl_xor(raws[ii].w, 2 );
+            raws[ii].w += __shfl_xor(raws[ii].w, 1 );
+          }
+          /*#pragma unroll
           for( int ii=0; ii<TB; ii++ ) {
             vals[ii] += __shfl_xor(vals[ii], 16);
             vals[ii] += __shfl_xor(vals[ii], 8 );
             vals[ii] += __shfl_xor(vals[ii], 4 );
             vals[ii] += __shfl_xor(vals[ii], 2 );
             vals[ii] += __shfl_xor(vals[ii], 1 );
-          }
+          }*/
 
         // first thread writes the result
         if( lane==0 ) {
-          /*raws[0].x = vals[ 0];
-          raws[0].y = vals[ 1];
-          raws[0].z = vals[ 2];
-          raws[0].w = vals[ 3];
-          raws[1].x = vals[ 4];
-          raws[1].y = vals[ 5];
-          raws[1].z = vals[ 6];
-          raws[1].w = vals[ 7];
-          raws[2].x = vals[ 8];
-          raws[2].y = vals[ 9];
-          raws[2].z = vals[10];
-          raws[2].w = vals[11];
-          raws[3].x = vals[12];
-          raws[3].y = vals[13];
-          raws[3].z = vals[14];
-          raws[3].w = vals[15];
-          raws[4].x = vals[16];
-          raws[4].y = vals[17];
-          raws[4].z = vals[18];
-          raws[4].w = vals[19];
-          raws[5].x = vals[20];
-          raws[5].y = vals[21];
-          raws[5].z = vals[22];
-          raws[5].w = vals[23];
-          raws[6].x = vals[24];
-          raws[6].y = vals[25];
-          raws[6].z = vals[26];
-          raws[6].w = vals[27];
-          raws[7].x = vals[28];
-          raws[7].y = vals[29];
-          raws[7].z = vals[30];
-          raws[7].w = vals[31];*/
           #pragma unroll
-          for( int ii=0; ii<TB; ii++ )
-          //for( int ii=0; ii<(TB>>2); ii++ )
-              C_denseVal[(row<<6)+ii] = vals[ii];
-              //C_denseVal[row*B_ncols+ii+slab] = vals[ii];
-              //printf("ii:%d,ind:%d\n",ii,threadIdx.x-lane+ii);
+          //for( int ii=0; ii<TB; ii++ )
+          for( int ii=0; ii<(TB>>2); ii++ )
+            reinterpret_cast<float4*>(C_denseVal)[(row<<4)+ii] = raws[ii];
+            //C_denseVal[(row<<6)+ii] = vals[ii];
+            //C_denseVal[row*B_ncols+ii+slab] = vals[ii];
+            //printf("ii:%d,ind:%d\n",ii,threadIdx.x-lane+ii);
         }
       }
     //} // slab
