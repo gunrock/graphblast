@@ -29,7 +29,7 @@ namespace backend
             const Semiring&   op,
             const Matrix<a>&  A,
             const Matrix<b>&  B,
-            const Descriptor& desc ) 
+            Descriptor&       desc ) 
   {
     Storage A_storage, B_storage, C_storage;
     A.getStorage( A_storage );

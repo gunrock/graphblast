@@ -78,7 +78,7 @@ namespace backend
                      const Semiring&   op,
                      const Matrix<a>&  A,
                      const Matrix<b>&  B,
-                     const Descriptor& desc );
+                     Descriptor&       desc );
 
     // In <graphblas/backend/apspie/mxm.hpp>
     template <typename c, typename a, typename b>
@@ -106,7 +106,7 @@ namespace backend
                      const Semiring&   op,
                      const Matrix<a>&  A,
                      const Matrix<b>&  B,
-                     const Descriptor& desc );
+                     Descriptor&       desc );
 
     template <typename c, typename a, typename b>
     friend Info mxv( Matrix<c>&       C,

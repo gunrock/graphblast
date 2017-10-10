@@ -1,5 +1,5 @@
 #define GRB_USE_APSPIE
-//#define private public
+#define private public
 
 #include <iostream>
 #include <algorithm>
@@ -10,6 +10,7 @@
 #include <cuda_profiler_api.h>
 
 #include "graphblas/graphblas.hpp"
+#include "../ext/moderngpu/include/constants.h"
 
 #include <boost/program_options.hpp>
 #include <test/test.hpp>
@@ -17,6 +18,20 @@
 template <typename T>
 void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix<T>& a, graphblas::Matrix<T>& b, graphblas::Semiring& op, graphblas::Descriptor& desc, graphblas::Index max_ncols, graphblas::Index nrows, graphblas::Index nvals, int NUM_ITER, bool DEBUG, bool ROW_MAJOR, std::vector<graphblas::Index>& row_indices, std::vector<graphblas::Index>& col_indices, std::vector<float>& values )
 {
+  if( str=="merge path" )
+  {
+    graphblas::Index a_nvals;
+    a.nvals( a_nvals );
+    int num_blocks = (a_nvals+MGPU_NV-1)/MGPU_NV;
+    int num_segreduce = (num_blocks + MGPU_NT - 1)/MGPU_NT;
+    CUDA( cudaMalloc( &desc.descriptor_.d_limits_,  
+        (num_blocks+1)*sizeof(graphblas::Index) ));
+    CUDA( cudaMalloc( &desc.descriptor_.d_carryin_, 
+        num_blocks*MGPU_BC*sizeof(T) ));
+    CUDA( cudaMalloc( &desc.descriptor_.d_carryout_,
+        num_segreduce*sizeof(T)      ));
+  }
+
   // Warmup
   cudaProfilerStart();
   graphblas::GpuTimer warmup;

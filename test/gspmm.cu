@@ -1,5 +1,5 @@
 #define GRB_USE_APSPIE
-//#define private public
+#define private public
 
 #include <iostream>
 #include <algorithm>
@@ -231,6 +231,17 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   desc.set( graphblas::GrB_NT, NT );
   desc.set( graphblas::GrB_TA, TA );
   desc.set( graphblas::GrB_TB, TB );
+
+  graphblas::Index a_nvals;
+  a.nvals( a_nvals );
+  int num_blocks = (a_nvals+MGPU_NV-1)/MGPU_NV;
+  int num_segreduce = (num_blocks + MGPU_NT - 1)/MGPU_NT;
+  CUDA( cudaMalloc( &desc.descriptor_.d_limits_,
+      (num_blocks+1)*sizeof(graphblas::Index) ));
+  CUDA( cudaMalloc( &desc.descriptor_.d_carryin_,
+      num_blocks*MGPU_BC*sizeof(float) ));
+  CUDA( cudaMalloc( &desc.descriptor_.d_carryout_,
+      num_segreduce*sizeof(float)      ));
 
   // Row major order
   if( ROW_MAJOR )

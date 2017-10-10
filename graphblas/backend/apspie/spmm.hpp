@@ -527,7 +527,8 @@ namespace backend
   Info mergepath_spmm( DenseMatrix<c>&        C,
                        const Semiring&        op,
                        const SparseMatrix<a>& A,
-                       const DenseMatrix<b>&  B )
+                       const DenseMatrix<b>&  B,
+                       Descriptor&            desc )
   {
     Index A_nrows, A_ncols, A_nvals;
     Index B_nrows, B_ncols;
@@ -562,14 +563,12 @@ namespace backend
     C.allocate();
 
     // Computation
-    mgpu::ContextPtr context = mgpu::CreateCudaDevice(0);
-    CUDA( cudaDeviceSynchronize() );
     //std::cout << "Success creating mgpu context\n";
     mgpu::SpmmCsrBinary( A.d_csrVal_, A.d_csrColInd_, A_nvals, A.d_csrRowPtr_, 
         A_nrows, B.d_denseVal_, false, C.d_denseVal_, (c) 0, 
-        mgpu::multiplies<c>(), mgpu::plus<c>(), B_ncols, *context );
+        mgpu::multiplies<c>(), mgpu::plus<c>(), B_ncols, desc.d_limits_, 
+        desc.d_carryin_, desc.d_carryout_, *desc.d_context_ );
     //std::cout << "Finished SpmmCsrBinary\n";
-    CUDA( cudaDeviceSynchronize() );
 
     C.need_update_ = true;  // Set flag that we need to copy data from GPU
     return GrB_SUCCESS;

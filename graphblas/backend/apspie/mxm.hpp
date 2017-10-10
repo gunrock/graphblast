@@ -30,7 +30,7 @@ namespace backend
             const Semiring&   op,
             const Matrix<a>&  A,
             const Matrix<b>&  B,
-            const Descriptor& desc ) 
+            Descriptor&       desc ) 
   {
     Storage A_storage, B_storage, C_storage;
     A.getStorage( A_storage );
@@ -47,8 +47,8 @@ namespace backend
     // -would like to have heuristic that decides when Sp x Sp = De
     Info err;
     Desc_value mode;
-    desc.get( GrB_MODE, mode );
-    
+    desc.get( GrB_MODE,  mode );
+
     if( A_storage == GrB_SPARSE && B_storage == GrB_SPARSE) {
       if( C_storage == GrB_UNKNOWN )
         err = C.setStorage( GrB_SPARSE );
@@ -84,7 +84,7 @@ namespace backend
       else if( mode == GrB_MERGEPATH )
       {
         //std::cout << "mergepath\n";
-        err = mergepath_spmm( C.dense_, op, A.sparse_, B.dense_ );
+        err = mergepath_spmm( C.dense_, op, A.sparse_, B.dense_, desc );
         err = C.dense_.setMajor( GrB_ROWMAJOR );
       }
     }

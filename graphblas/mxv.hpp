@@ -10,31 +10,31 @@
 namespace graphblas
 {
   template <typename c, typename m, typename a, typename b>
-  Info mxv( Matrix<c>&        C,
-            const Matrix<m>&  mask,
-            const BinaryOp&   accum,
-            const Semiring&   op,
-            const Matrix<a>&  A,
-            const Matrix<b>&  B,
-            const Descriptor& desc ) 
+  Info mxv( Matrix<c>&       C,
+            const Matrix<m>& mask,
+            const BinaryOp&  accum,
+            const Semiring&  op,
+            const Matrix<a>& A,
+            const Matrix<b>& B,
+            Descriptor&      desc ) 
   {
-    return backend::mxv( C.matrix, mask, accum, op, A.matrix, B.matrix, 
-        desc.descriptor );
+    return backend::mxv( C.matrix_, mask, accum, op, A.matrix_, 
+        B.matrix_, desc.descriptor_ );
   }
 
   template <typename c, typename a, typename b>
-  Info mxv( Matrix<c>&        C,
-            const int         mask,
-            const int         accum,
-            const Semiring&   op,
-            const Matrix<a>&  A,
-            const Matrix<b>&  B,
-            const Descriptor& desc )
+  Info mxv( Matrix<c>&       C,
+            const int        mask,
+            const int        accum,
+            const Semiring&  op,
+            const Matrix<a>& A,
+            const Matrix<b>& B,
+            Descriptor&      desc )
   {
     Matrix<c> GrB_NULL_MATRIX;
     BinaryOp  GrB_NULL_BINARYOP = 0;
-    return backend::mxv<c,c,a,b>( C.matrix, GrB_NULL_MATRIX.matrix, 
-        GrB_NULL_BINARYOP, op, A.matrix, B.matrix, desc.descriptor );
+    return backend::mxv<c,c,a,b>( C.matrix_, GrB_NULL_MATRIX.matrix_, 
+        GrB_NULL_BINARYOP, op, A.matrix_, B.matrix_, desc.descriptor_ );
   }
 
   /*// For testing
@@ -48,7 +48,7 @@ namespace graphblas
             const int NT,
             const bool ROW_MAJOR )
   {
-    return backend::mxmCompute( C.matrix, op, A.matrix, B.matrix, TA, TB, NT, 
+    return backend::mxmCompute( C.matrix_, op, A.matrix_, B.matrix_, TA, TB, NT, 
             ROW_MAJOR );
   }*/
 

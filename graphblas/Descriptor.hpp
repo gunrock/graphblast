@@ -19,9 +19,9 @@ namespace graphblas
   {
     public:
     // Default Constructor, Standard Constructor (Replaces new in C++)
-    //   -it's imperative to call constructor using descriptor or else the 
+    //   -it's imperative to call constructor using descriptor_ or else the 
     //     constructed object won't be tied to this outermost layer
-    Descriptor() : descriptor() {}
+    Descriptor() : descriptor_() {}
 
     // Assignment Constructor
     // TODO:
@@ -41,7 +41,7 @@ namespace graphblas
 
     private:
     // Data members that are same for all backends
-    backend::Descriptor descriptor;
+    backend::Descriptor descriptor_;
 
     template <typename c, typename m, typename a, typename b>
     friend Info mxm( Matrix<c>&        C,
@@ -73,17 +73,17 @@ namespace graphblas
 
   Info Descriptor::set( const Desc_field field, Desc_value value )
   {
-    return descriptor.set( field, value );
+    return descriptor_.set( field, value );
   }
 
   Info Descriptor::set( const Desc_field field, int value )
   {
-    return descriptor.set( field, static_cast<Desc_value>(value) );
+    return descriptor_.set( field, static_cast<Desc_value>(value) );
   }
 
   Info Descriptor::get( const Desc_field field, Desc_value& value ) const
   {
-    return descriptor.get( field, value );
+    return descriptor_.get( field, value );
   }
 
 }  // graphblas
