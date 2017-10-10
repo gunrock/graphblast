@@ -84,7 +84,7 @@ namespace backend
       else if( mode == GrB_MERGEPATH )
       {
         //std::cout << "mergepath\n";
-        err = mergepath_spmm( C.dense_, op, A.sparse_, B.dense_ );
+        //err = mergepath_spmm( C.dense_, op, A.sparse_, B.dense_ );
         err = C.dense_.setMajor( GrB_COLMAJOR );
       }
     }

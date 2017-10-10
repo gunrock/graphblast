@@ -517,7 +517,7 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  template<typename c, typename a, typename b>
+  /*template<typename c, typename a, typename b>
   Info mergepath_spmm( DenseMatrix<c>&        C,
                        const Semiring&        op,
                        const SparseMatrix<a>& A,
@@ -560,7 +560,7 @@ namespace backend
 
     C.need_update_ = true;  // Set flag that we need to copy data from GPU
     return GrB_SUCCESS;
-  }
+  }*/
 
 }  // backend
 }  // graphblas
