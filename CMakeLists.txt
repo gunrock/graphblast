@@ -19,6 +19,7 @@ set( PROJ_LIBRARIES "" )
 set( PROJ_INCLUDES  "./" "ext/moderngpu/include" "$ENV{CUDA_HOME}/samples/common/inc/" )
 set( mgpu_SRC_FILES "ext/moderngpu/src/mgpucontext.cu" "ext/moderngpu/src/mgpuutil.cpp")
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+set( CUDA_PROPAGATE_HOST_FLAGS OFF )
 
 #set( CUDA_CURAND_LIBRARY "$ENV{CUDA_HOME}/lib64/libcurand.so" )
 #set( CUDA_CUBLAS_LIBRARY "$ENV{CUDA_HOME}/lib64/libcublas.so" )
@@ -29,7 +30,7 @@ set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
 FILE( GLOB_RECURSE PROJ_HEADERS graphblas/*.hpp)
 
 # nvcc flags
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_35 -lineinfo -O3 -use_fast_math -Xptxas=-v")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_35 -lineinfo -O3 -use_fast_math -Xptxas=-v -std=c++11")
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-Xptxas=-v;-dlcm=ca;-maxrregcount=64)
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_21)
 
