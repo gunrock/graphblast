@@ -206,7 +206,7 @@ namespace backend
           float val = A_csrVal[jj];
 
           #pragma unroll
-          for( int ii=0; ii<16; ii++ ) {
+          for( int ii=0; ii<64>>2; ii++ ) {
             raws[ii] += val*__ldg((float4*)(B_denseVal+(col<<6)+(ii<<2)));
             //raws[ii] = __ldg((float4*)(B_denseVal+col*B_ncols+(ii<<2)+slab));
             //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,(ii<<2)+slab);
