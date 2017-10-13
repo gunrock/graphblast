@@ -204,7 +204,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   //char const *argv = "dataset/small/chesapeake.mtx";
   //char const *argv = "/data-2/gunrock_dataset/large/delaunay_n10/delaunay_n10.mtx";
   //char const *argv = "/data-2/gunrock_dataset/large/ak2010/ak2010.mtx";
-  char const *argv = "/data-2/gunrock_dataset/large/benchmark/ASIC_320k/ASIC_320k.mtx";
+  char const *argv = "/home/ctcyang/GraphBLAS/dataset/large/ASIC_320k/ASIC_320k.mtx";
   readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, DEBUG );
 
   // Matrix A
@@ -228,7 +228,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   // default values of TA, TB, NT will be used
   graphblas::Descriptor desc;
   desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
-  //desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  //desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
   desc.set( graphblas::GrB_NT, NT );
   desc.set( graphblas::GrB_TA, TA );
   desc.set( graphblas::GrB_TB, TB );
@@ -271,6 +271,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   cudaProfilerStop();
   float elapsed_mxm = gpu_mxm.ElapsedMillis();
   std::cout << "mxm: " << elapsed_mxm << " ms\n";
+  //ROW_MAJOR=false;
 
   std::vector<float> out_denseVal;
   if( DEBUG ) c.print();
