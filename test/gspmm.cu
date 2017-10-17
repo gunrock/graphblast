@@ -204,7 +204,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   //char const *argv = "/home/ctcyang/GraphBLAS/dataset/small/chesapeake.mtx";
   //char const *argv = "/data-2/gunrock_dataset/large/delaunay_n10/delaunay_n10.mtx";
   //char const *argv = "/data-2/gunrock_dataset/large/benchmark2/12month1/12month1.mtx";
-  char const *argv = "/data-2/gunrock_dataset/large/benchmark/ASIC_320k/ASIC_320k.mtx";
+  char const *argv = "/home/ctcyang/GraphBLAS/dataset/large/ASIC_320k/ASIC_320k.mtx";
   readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, DEBUG );
 
   // Matrix A

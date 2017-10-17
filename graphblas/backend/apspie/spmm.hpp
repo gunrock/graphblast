@@ -99,20 +99,20 @@ namespace backend
     //CUDA( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
     if( mode == GrB_FIXEDROW )
       switch( TB ) {
-        /*case 1:
-          spmm_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
+        case 1:
+          spmm_row_kernel2<c,1><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
           break;
         case 2:
-          spmm_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
-          break;*/
+          spmm_row_kernel2<c,2><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
         case 4:
-          spmm_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
+          spmm_row_kernel2<c,4><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
           break;
         case 8:
           spmm_row_kernel2<c,8><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
@@ -287,8 +287,9 @@ namespace backend
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
       const c* B_denseVal, c* C_denseVal )
   {
-    float val_store = 0.f;
     float vals[TB];
+    int   col_all[TB];
+    float val_all[TB];
 
     int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
     int warp_id   = thread_id>>5;                      // global warp idx
@@ -300,16 +301,18 @@ namespace backend
     //if( threadIdx.x==0 )
     //  printf("row:%d\n", row);
 
-    if( row < A_nrows ) {
+    if( row < A_nrows )
+    {
       int row_start = __ldg(A_csrRowPtr+row);
       int row_end   = __ldg(A_csrRowPtr+row+1);
 
       int   col = -1;
       float val = 0.f;
+      float sum = 0.f;
       int   jj  = row_start+lane_id;
 
       //TODO: add popc() and ballot to query which to shfl
-      for( int jj_start=row_start; jj_start<row_end; jj_start+=TB )
+      for( int jj_start=row_start; jj_start<row_end; jj_start+=32 )
       {
         //#pragma unroll
         //for( int ii=0; ii<TB; ii++ )
@@ -321,54 +324,40 @@ namespace backend
         }
         else
         {
-          col = -1;
+          col = 0;
           val = 0.f;
         }
-        jj+=TB;
+        jj+=32;
         //if( warp_id==0 ) printf("tid:%d,col:%d,val:%f\n", threadIdx.x, col, val);
-
-        #pragma unroll
-        for( int ii=0; ii<TB; ii++ )
+        for( int kk=0; kk<32; kk+=TB )
         {
-          int col_all = __shfl(col, ii);
-          if( col_all>=0 )
-            vals[ii]= __ldg(B_offset+col_all);
-          else
-            vals[ii] = 0.f;
+          #pragma unroll
+          for( int ii=0; ii<TB; ii++ )
+          {
+            col_all[ii] = __shfl(col, ii+kk);
+            val_all[ii] = __shfl(val, ii+kk);
+            //sum        += val_all[ii]*__ldg(B_offset+col_all[ii]);
+            vals[   ii] = val_all[ii]*__ldg(B_offset+col_all[ii]);
+            //vals[   ii] = __ldg(B_offset+col_all[ii]);
+          }
+
           //if( warp_id==0 && blockIdx.y==0 )
           //  printf("row:%d,tid:%d,col_all:%d,ii:%d,load_id:%d,val:%f\n",row,thread_id,col_all>>6, ii, col_all+lane_id+((blockIdx.y&1)<<5), vals[ii]);
+
+          #pragma unroll
+          for( int ii=0; ii<TB; ii++ )
+          {
+            //val_all[ii] = __shfl(val, ii+kk);
+            //sum += val_all[ii]*vals[ii];
+            sum += vals[ii];
+          //  if( threadIdx.x==1 && warp_id==0 && blockIdx.y==0 ) printf("tid:%d,ii:%d,val:%f\n", threadIdx.x, ii, vals[ii]);
+          }
+
+          //if( warp_id==0 && blockIdx.y==0 ) printf("tid:%d,val:%f\n", threadIdx.x, vals[0]);
         }
-
-        #pragma unroll
-        for( int ii=0; ii<TB; ii++ )
-        {
-          float val_all  = __shfl(val, ii);
-          vals[ii]*= val_all;
-          //if( warp_id==0 && blockIdx.y==0 ) printf("tid:%d,ii:%d,val_all:%f,val:%f\n", threadIdx.x, ii, val_all, vals[ii]); 
-        }
-
-        #pragma unroll
-        for( int ii=0; ii<TB; ii+=2 )
-          vals[ii]+= vals[ii+1];
-        //  if( threadIdx.x==1 && warp_id==0 && blockIdx.y==0 ) printf("tid:%d,ii:%d,val:%f\n", threadIdx.x, ii, vals[ii]);
-        #pragma unroll
-        for( int ii=0; ii<TB; ii+=4 )
-          vals[ii]+= vals[ii+2];
-        #pragma unroll
-        for( int ii=0; ii<TB; ii+=8 )
-          vals[ii]+= vals[ii+4];
-        #pragma unroll
-        for( int ii=0; ii<TB; ii+=16 )
-          vals[ii]+=vals[ii+8];
-        if( TB>16 )
-          vals[0]+=vals[16];
-
-        val_store += vals[0];
-
-        //if( warp_id==0 && blockIdx.y==0 ) printf("tid:%d,val:%f\n", threadIdx.x, vals[0]);
       }
 
-      C_denseVal[C_offset] = val_store;
+      C_denseVal[C_offset] = sum;
     }
   } // spmm_col_kernel
 
