@@ -44,4 +44,9 @@ int main( int argc, char** argv )
   a.nvals( nvals );
   if( DEBUG ) a.print();
 
+  a.extractTuples( row_indices, col_indices, values );
+
+  for( int i=0; i<nvals; i++ )
+    std::cout << i << " " << row_indices[i] << " " << col_indices[i] << " " <<
+        values[i] << std::endl;
 }
