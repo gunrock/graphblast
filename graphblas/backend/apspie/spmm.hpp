@@ -27,7 +27,12 @@ namespace backend
       const Index B_ncols, const Index A_ncols, const Index A_nvals,
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
       const c* B_denseVal, c* C_denseVal );
-      //const c* B_denseVal, float4* C_denseVal );
+
+  template<typename c, int TB>
+  __global__ void spmm_row_kernel2( const Index A_nrows, 
+      const Index B_ncols, const Index A_ncols, const Index A_nvals,
+      const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
+      const c* B_denseVal, c* C_denseVal );
 
   template<typename c, int TB>
   __global__ void spmm_col_kernel( const Index A_nrows, 
@@ -81,43 +86,53 @@ namespace backend
     const int TB       = static_cast<int>(tb);
     const int NTHREADS = static_cast<int>(nt);
     const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
+
+    dim3 NT;
+    dim3 NB;
+    NT.x = NTHREADS;
+    NT.y = 1;
+    NT.z = 1;
+    NB.x = NBLOCKS;
+    NB.y = B_ncols>>5;
+    NB.z = 1;
+
     //CUDA( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
     if( mode == GrB_FIXEDROW )
       switch( TB ) {
-        /*case 1:
-          spmm_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
+        case 1:
+          spmm_row_kernel2<c,1><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
           break;
         case 2:
-          spmm_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
-          break;*/
+          spmm_row_kernel2<c,2><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
         case 4:
-          spmm_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
+          spmm_row_kernel2<c,4><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
           break;
         case 8:
-          spmm_row_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
+          spmm_row_kernel2<c,8><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
           break;
         case 16:
-          spmm_row_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
+          spmm_row_kernel2<c,16><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
           break;
         case 32:
-          spmm_row_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
+          spmm_row_kernel2<c,32><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
           break;
         case 64:
-          spmm_row_kernel<c,64><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
-            B.d_denseVal_, C.d_denseVal_ );
+          spmm_row_kernel2<c,32><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
           break;
       } else switch( TB ) {
         /*case 1:
@@ -174,7 +189,7 @@ namespace backend
     int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
     int warp_id   = thread_id>>5;                      // global warp idx
     int lane      = thread_id & (32 - 1);
-    int row, slab;
+    int row;
 
     //for( slab=0; slab<B_ncols; slab+=TB ) {
 
@@ -264,6 +279,86 @@ namespace backend
         }
       }
     //} // slab
+  } // spmm_col_kernel
+
+  template<typename c, int TB>
+  __global__ void spmm_row_kernel2( const Index A_nrows, 
+      const Index B_ncols, const Index A_ncols, const Index A_nvals,
+      const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
+      const c* B_denseVal, c* C_denseVal )
+  {
+    float vals[TB];
+    int   col_all[TB];
+    float val_all[TB];
+
+    int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
+    int warp_id   = thread_id>>5;                      // global warp idx
+    int lane_id   = thread_id & (32 - 1);
+    int row       = warp_id;
+    const c* B_offset = B_denseVal+lane_id+((blockIdx.y&1)<<5);
+    int C_offset  = (row<<6)+lane_id+((blockIdx.y&1)<<5);
+
+    //if( threadIdx.x==0 )
+    //  printf("row:%d\n", row);
+
+    if( row < A_nrows )
+    {
+      int row_start = __ldg(A_csrRowPtr+row);
+      int row_end   = __ldg(A_csrRowPtr+row+1);
+
+      int   col = -1;
+      float val = 0.f;
+      float sum = 0.f;
+      int   jj  = row_start+lane_id;
+
+      //TODO: add popc() and ballot to query which to shfl
+      for( int jj_start=row_start; jj_start<row_end; jj_start+=32 )
+      {
+        //#pragma unroll
+        //for( int ii=0; ii<TB; ii++ )
+        //  vals[ii] = 0.f;
+        if( jj<row_end )
+        {
+          col = __ldg(A_csrColInd+jj)<<6;
+          val = __ldg(A_csrVal+jj);
+        }
+        else
+        {
+          col = 0;
+          val = 0.f;
+        }
+        jj+=32;
+        //if( warp_id==0 ) printf("tid:%d,col:%d,val:%f\n", threadIdx.x, col, val);
+        for( int kk=0; kk<32; kk+=TB )
+        {
+          #pragma unroll
+          for( int ii=0; ii<TB; ii++ )
+          {
+            col_all[ii] = __shfl(col, ii+kk);
+            val_all[ii] = __shfl(val, ii+kk);
+            //sum        += val_all[ii]*__ldg(B_offset+col_all[ii]);
+            vals[   ii] = val_all[ii]*__ldg(B_offset+col_all[ii]);
+            //vals[   ii] = __ldg(B_offset+col_all[ii]);
+          }
+
+          //if( warp_id==0 && blockIdx.y==0 )
+          //  printf("row:%d,tid:%d,col_all:%d,ii:%d,load_id:%d,val:%f\n",row,thread_id,col_all>>6, ii, col_all+lane_id+((blockIdx.y&1)<<5), vals[ii]);
+
+          #pragma unroll
+          for( int ii=0; ii<TB; ii++ )
+          {
+            //val_all[ii] = __shfl(val, ii+kk);
+            //sum += val_all[ii]*vals[ii];
+            sum += vals[ii];
+          //  if( threadIdx.x==1 && warp_id==0 && blockIdx.y==0 ) printf("tid:%d,ii:%d,val:%f\n", threadIdx.x, ii, vals[ii]);
+          }
+
+          //if( warp_id==0 && blockIdx.y==0 ) printf("tid:%d,val:%f\n", threadIdx.x, vals[0]);
+        }
+      }
+
+      C_denseVal[C_offset] = sum;
+    }
   } // spmm_col_kernel
 
   // Baseline implementation (col major) based on Bell/Garland 2008

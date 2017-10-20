@@ -34,6 +34,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
        "split spgemm computation")
     ("iter", po::value<int>()->default_value(10), "number of iterations")
     ("device", po::value<int>()->default_value(0), "GPU device number")
+    ("max_ncols", po::value<int>()->default_value(64), "number of columns in B")
     ("debug", po::value<bool>()->default_value(false), "debug on")
   ;
 

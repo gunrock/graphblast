@@ -75,7 +75,7 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
   std::vector<float> out_denseVal;
   if( DEBUG ) 
   {
-    c.print();
+    //c.print();
     c.extractTuples( out_denseVal );
     for( int i=0; i<nvals; i++ ) {
       graphblas::Index row = row_indices[i];
@@ -118,7 +118,7 @@ int main( int argc, char** argv )
   namespace po = boost::program_options;
   po::variables_map vm;
   parseArgs( argc, argv, vm );
-  int TA, TB, NT, NUM_ITER;
+  int TA, TB, NT, NUM_ITER, MAX_NCOLS;
   bool ROW_MAJOR, DEBUG;
   std::string mode;
   if( vm.count("ta") )
@@ -127,6 +127,8 @@ int main( int argc, char** argv )
     TB       = vm["tb"].as<int>();
   if( vm.count("nt") )
     NT       = vm["nt"].as<int>();
+  if( vm.count("max_ncols") )
+    MAX_NCOLS= vm["max_ncols"].as<int>();
 
   // default values of TA, TB, NT will be used
   graphblas::Descriptor desc;
@@ -194,8 +196,8 @@ int main( int argc, char** argv )
 
   // Matrix B
   graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
-  graphblas::Index max_ncols = min(ncols,64);
-  if( ncols%32!=0 && max_ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
+  graphblas::Index max_ncols = MAX_NCOLS;
+  //if( ncols%32!=0 && max_ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
   if( DEBUG && max_ncols!=ncols ) std::cout << "Restricting col to: " 
       << max_ncols << std::endl;
 
@@ -235,7 +237,7 @@ int main( int argc, char** argv )
   desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
   ROW_MAJOR = false;
   runTest( "cusparse", c, a, b_col, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
-
+  
   // Test cusparse
   desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
   ROW_MAJOR = false;
