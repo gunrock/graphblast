@@ -200,7 +200,8 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
     std::cout << "debug: " << DEBUG     << "\n";
   }
 
-  char const *argv = "dataset/small/test_bc.mtx";
+  //char const *argv = "dataset/small/test_bc.mtx";
+  char const *argv = "dataset/small/test_dc.mtx";
   //char const *argv = "dataset/small/chesapeake.mtx";
   //char const *argv = "/data-2/gunrock_dataset/large/delaunay_n10/delaunay_n10.mtx";
   //char const *argv = "/data-2/gunrock_dataset/large/ak2010/ak2010.mtx";
