@@ -1,14 +1,22 @@
-OPTION="2"
+OPTION="5"
 
-if [ "$OPTION" = "2" ] || ["$OPTION" = "3" ] || ["$OPTION" = "4" ] ; then
+if [ "$OPTION" = "2" ] || ["$OPTION" = "3" ] || ["$OPTION" = "4" ] || ["$OPTION" = "5" ] ; then
   cat result/spmm_schema
 fi
+
+for file in /data-2/gunrock_dataset/large/benchmark3/*/
+do
+  if [ "$OPTION" = "5" ] ; then
+    folder=$(basename $file)
+    bin/gbspmm --tb=4 --nt=256 /data-2/gunrock_dataset/large/benchmark3/$folder/$folder.mtx
+  fi
+done
 
 for file in /data-2/gunrock_dataset/large/benchmark2/*/
 do
   if [ "$OPTION" = "4" ] ; then
     folder=$(basename $file)
-    bin/gbspmm --tb=64 --nt=64 /data-2/gunrock_dataset/large/benchmark2/$folder/$folder.mtx
+    bin/gbspmm --tb=4 --nt=256 /data-2/gunrock_dataset/large/benchmark2/$folder/$folder.mtx
   fi
 done
 

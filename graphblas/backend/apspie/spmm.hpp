@@ -657,13 +657,20 @@ namespace backend
 
     // Temporarily for testing purposes
     //C.allocate();
+    Desc_value tb, nt;
+    desc.get( GrB_TB  , tb );
+    desc.get( GrB_NT  , nt );
+
+    // Computation
+    const int TB       = static_cast<int>(tb);
+    const int NT       = static_cast<int>(nt);
 
     // Computation
     //std::cout << "Success creating mgpu context\n";
     mgpu::SpmmCsrBinary( A.d_csrVal_, A.d_csrColInd_, A_nvals, A.d_csrRowPtr_, 
         A_nrows, B.d_denseVal_, false, C.d_denseVal_, (c) 0, 
         mgpu::multiplies<c>(), mgpu::plus<c>(), B_ncols, desc.d_limits_, 
-        desc.d_carryin_, desc.d_carryout_, *desc.d_context_ );
+        desc.d_carryin_, desc.d_carryout_, TB, NT, *desc.d_context_ );
     //std::cout << "Finished SpmmCsrBinary\n";
 
     C.need_update_ = true;  // Set flag that we need to copy data from GPU

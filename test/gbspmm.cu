@@ -223,16 +223,6 @@ int main( int argc, char** argv )
   graphblas::Matrix<float> c(nrows, max_ncols);
   graphblas::Semiring op;
 
-  // Test row splitting
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
-  ROW_MAJOR = true;
-  runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
-
-  // Test mergepath
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
-  ROW_MAJOR = true;
-  runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
-
   // Test cusparse
   desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
   ROW_MAJOR = false;
@@ -242,6 +232,16 @@ int main( int argc, char** argv )
   desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
   ROW_MAJOR = false;
   runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+
+  // Test row splitting
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  ROW_MAJOR = true;
+  runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+
+  // Test mergepath
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  ROW_MAJOR = true;
+  runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
   if( !DEBUG ) std::cout << "\n";
 

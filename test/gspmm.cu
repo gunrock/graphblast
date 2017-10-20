@@ -23,7 +23,7 @@
 struct TestSPMM {
   TestSPMM() :
     TA(32),
-    TB(16),
+    TB(4),
     NT(256),
     ROW_MAJOR(true),
     DEBUG(true) {}
@@ -204,7 +204,8 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   //char const *argv = "/home/ctcyang/GraphBLAS/dataset/small/chesapeake.mtx";
   //char const *argv = "/data-2/gunrock_dataset/large/delaunay_n10/delaunay_n10.mtx";
   //char const *argv = "/data-2/gunrock_dataset/large/benchmark2/12month1/12month1.mtx";
-  char const *argv = "/home/ctcyang/GraphBLAS/dataset/large/ASIC_320k/ASIC_320k.mtx";
+  char const *argv = "/data-2/gunrock_dataset/large/benchmark/ASIC_320k/ASIC_320k.mtx";
+  //char const *argv = "/home/ctcyang/GraphBLAS/dataset/large/ASIC_320k/ASIC_320k.mtx";
   readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, DEBUG );
 
   // Matrix A
@@ -227,8 +228,8 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
 
   // default values of TA, TB, NT will be used
   graphblas::Descriptor desc;
-  //desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  //desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
   //desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
   desc.set( graphblas::GrB_NT, NT );
   desc.set( graphblas::GrB_TA, TA );
@@ -236,12 +237,12 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
 
   graphblas::Index a_nvals;
   a.nvals( a_nvals );
-  int num_blocks = (a_nvals+MGPU_NV-1)/MGPU_NV;
-  int num_segreduce = (num_blocks + MGPU_NT - 1)/MGPU_NT;
+  int num_blocks = (a_nvals+NT-1)/NT;
+  int num_segreduce = (num_blocks + NT - 1)/NT;
   CUDA( cudaMalloc( &desc.descriptor_.d_limits_,
       (num_blocks+1)*sizeof(graphblas::Index) ));
   CUDA( cudaMalloc( &desc.descriptor_.d_carryin_,
-      num_blocks*MGPU_BC*sizeof(float) ));
+      num_blocks*max_ncols*sizeof(float) ));
   CUDA( cudaMalloc( &desc.descriptor_.d_carryout_,
       num_segreduce*sizeof(float)      ));
 
