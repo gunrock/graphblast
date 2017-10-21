@@ -4,13 +4,19 @@ if [ "$OPTION" = "2" ] || ["$OPTION" = "3" ] || ["$OPTION" = "4" ] || ["$OPTION"
   cat result/spmm_schema
 fi
 
-for file in /data-2/gunrock_dataset/large/benchmark3/*/
-do
-  if [ "$OPTION" = "5" ] ; then
-    folder=$(basename $file)
-    bin/gbspmm --tb=32 --nt=128 /data-2/gunrock_dataset/large/benchmark3/$folder/$folder.mtx
-  fi
-done
+if [ "$OPTION" = "5" ] ; then
+  for tb in 64 #1 2 4 8 16 32
+  do
+    for nt in 32 64 128 256 512 1024
+    do
+      for file in /data-2/gunrock_dataset/large/benchmark3/*/
+      do
+        folder=$(basename $file)
+        bin/gsweeprow --tb=$tb --nt=$nt /data-2/gunrock_dataset/large/benchmark3/$folder/$folder.mtx
+      done
+    done
+  done
+fi
 
 for file in /data-2/gunrock_dataset/large/benchmark2/*/
 do

@@ -23,8 +23,8 @@
 struct TestSPMM {
   TestSPMM() :
     TA(32),
-    TB(4),
-    NT(256),
+    TB(32),
+    NT(128),
     ROW_MAJOR(true),
     DEBUG(true) {}
 
@@ -228,9 +228,9 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
 
   // default values of TA, TB, NT will be used
   graphblas::Descriptor desc;
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  //desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
   //desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
-  //desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
   desc.set( graphblas::GrB_NT, NT );
   desc.set( graphblas::GrB_TA, TA );
   desc.set( graphblas::GrB_TB, TB );
@@ -273,7 +273,7 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
   cudaProfilerStop();
   float elapsed_mxm = gpu_mxm.ElapsedMillis();
   std::cout << "mxm: " << elapsed_mxm << " ms\n";
-  //ROW_MAJOR=false;
+  ROW_MAJOR=false;
 
   std::vector<float> out_denseVal;
   if( DEBUG ) c.print();

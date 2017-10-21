@@ -35,6 +35,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
     ("iter", po::value<int>()->default_value(10), "number of iterations")
     ("device", po::value<int>()->default_value(0), "GPU device number")
     ("max_ncols", po::value<int>()->default_value(64), "number of columns in B")
+    ("dense", po::value<int>()->default_value(1), "number of rows in dense")
     ("debug", po::value<bool>()->default_value(false), "debug on")
   ;
 
