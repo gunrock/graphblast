@@ -34,7 +34,7 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
 
   // Warmup
   graphblas::GpuTimer warmup;
-  if( str=="merge path" )
+  if( str=="row split" )
   {
     cudaProfilerStart();
     warmup.Start();
@@ -217,14 +217,14 @@ int main( int argc, char** argv )
   graphblas::Semiring op;
 
   // Test cusparse
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
+  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
   ROW_MAJOR = false;
   runTest( "cusparse", c, a, b_col, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
   
   // Test cusparse
   desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
   ROW_MAJOR = false;
-  runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
 
   // Test row splitting
   desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
@@ -232,9 +232,9 @@ int main( int argc, char** argv )
   runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
   // Test mergepath
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
   ROW_MAJOR = true;
-  runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
 
   if( !DEBUG ) std::cout << "\n";
 

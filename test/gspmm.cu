@@ -23,7 +23,7 @@
 struct TestSPMM {
   TestSPMM() :
     TA(32),
-    TB(4),
+    TB(8),
     NT(256),
     ROW_MAJOR(true),
     DEBUG(true) {}
