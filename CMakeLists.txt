@@ -16,7 +16,7 @@ set( PROJ_PATH      ${CMAKE_SOURCE_DIR})
 set( PROJ_OUT_PATH  ${CMAKE_BINARY_DIR})
 set( PROJ_HEADERS   "" )
 set( PROJ_LIBRARIES "" )
-set( PROJ_INCLUDES  "./" "ext/moderngpu/include")
+set( PROJ_INCLUDES  "./" "ext/moderngpu/include" "ext/cub")
 set( mgpu_SRC_FILES "ext/moderngpu/src/mgpucontext.cu" "ext/moderngpu/src/mgpuutil.cpp")
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 

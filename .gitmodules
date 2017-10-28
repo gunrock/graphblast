@@ -1,3 +1,6 @@
 [submodule "ext/moderngpu"]
 	path = ext/moderngpu
 	url = https://ctcyang@github.com/ctcyang/moderngpu.git
+[submodule "ext/cub"]
+	path = ext/cub
+	url = https://ctcyang@github.com/NVlabs/cub.git

@@ -12,6 +12,7 @@ namespace graphblas
 {
   typedef int           Index;
   typedef int           BinaryOp;
+  typedef float         T;
 
   class Semiring{};
   //template<typename T> class Matrix;
