@@ -228,17 +228,17 @@ void testCusparseSpgemm( char const* tsv, const int select )
   BOOST_ASSERT( I_row_indices[nrows]==nrows );
 
   // Matrix adj (adjacency matrix) and adj_t (adjacency matrix transpose)
-  graphblas::SparseMatrix<float> adj(nrows, ncols);
-  graphblas::SparseMatrix<float> I(  nrows, ncols, nrows );
+  graphblas::Matrix<float> adj(nrows, ncols);
+  graphblas::Matrix<float> I(  nrows, ncols, nrows );
   err = adj.build( row_indices, col_indices, values, nvals );
-  err = adj.gpuToCpu();
+  //err = adj.gpuToCpu();
   //check( adj );
   //adj.print();
   err = I.build( I_row_indices, I_row_indices, I_values, nrows);
-  err = I.gpuToCpu();
+  //err = I.gpuToCpu();
   //check( I );
 
-  graphblas::SparseMatrix<float> C(  nrows, ncols);
+  graphblas::Matrix<float> C(  nrows, ncols);
   if( select==1 )
     err = graphblas::cusparse_spgemm( C, adj, I );
   else if( select==2 )
@@ -261,7 +261,7 @@ void testFill( const int nrows, const int ncols )
   graphblas::Info err;
 
   // Matrix adj (adjacency matrix) and adj_t (adjacency matrix transpose)
-  graphblas::SparseMatrix<float> adj;
+  graphblas::Matrix<float> adj;
 
   // initialize curr_partitions nx1
   err = adj.nnew( nrows, ncols, nrows );

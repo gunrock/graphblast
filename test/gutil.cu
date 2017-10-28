@@ -76,21 +76,4 @@ BOOST_AUTO_TEST_CASE( util8 )
   testCountUnique( correct_val, 3 );
 }
 
-/*BOOST_FIXTURE_TEST_CASE( dup12, TestMatrix )
-{
-  std::map<graphblas::Index,graphblas::Index> out_edge;
-  out_edge.insert({{2, 1}, {3, 0}, {4,1}});
-  std::vector<graphblas::Index> correct = {1, 2, 3, 0, 2, 4, 3, 4, -1, 5, 6, 2, 6, -1, 6, 8, 9, 10, 9, 10};
-  testEwiseSubCol( "data/small/test_cc.tsv", out_edge, correct);
-}
-
-BOOST_FIXTURE_TEST_CASE( dup18, TestMatrix )
-{
-  std::map<graphblas::Index,graphblas::Index> out_edge;
-  out_edge.insert( {{1,1}, {2,0}, {4,1}, {5,2}, {6,1}, {7,1}, {8,10}} );
-  std::vector<graphblas::Index> correct_ind = {1, 2, 3, 0, 2, 4, 5, 3, 4, 5, 5, 6, 2, 5, 6, 5, 6, 5, 5, 8, 9, 10, 5, 9, 10 };
-  std::vector<graphblas::T>     correct_val = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 10, 1, 1 };
-  testEwiseAddCol( "data/small/test_cc.tsv", out_edge, correct_ind, correct_val);
-}*/
-
 BOOST_AUTO_TEST_SUITE_END()
