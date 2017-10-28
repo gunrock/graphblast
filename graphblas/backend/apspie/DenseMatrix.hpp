@@ -34,7 +34,7 @@ namespace backend
     // Mutators
     Info dup( const DenseMatrix& rhs );
     // assume values are in column major format
-    Info build( const std::vector<T>& values );
+    Info build( const std::vector<T>* values, Index nvals );
     // private method for setting nrows and ncols
     Info nnew( const Index nrows, const Index ncols );
     // private method for allocation
@@ -101,8 +101,10 @@ namespace backend
   }
 
   template <typename T>
-  Info DenseMatrix<T>::build( const std::vector<T>& values )
+  Info DenseMatrix<T>::build( const std::vector<T>* values, Index nvals )
   {
+    if( nvals > nvals_ ) return GrB_DIMENSION_MISMATCH;
+
     Info err = allocate();
     if( err != GrB_SUCCESS ) return err;
 

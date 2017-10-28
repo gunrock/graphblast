@@ -1,5 +1,5 @@
-#ifndef SBP_BACKEND_APSPIE_APSPIE_HPP
-#define SBP_BACKEND_APSPIE_APSPIE_HPP
+#ifndef GRB_BACKEND_APSPIE_APSPIE_HPP
+#define GRB_BACKEND_APSPIE_APSPIE_HPP
 
 #define CUDA_SAFE_CALL_NO_SYNC(call) do {                               \
   cudaError err = call;                                                 \
@@ -27,4 +27,4 @@
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 
-#endif  // SBP_BACKEND_APSPIE_APSPIE_HPP
+#endif  // GRB_BACKEND_APSPIE_APSPIE_HPP

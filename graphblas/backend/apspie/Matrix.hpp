@@ -34,12 +34,12 @@ namespace backend
     Info nnew( const Index nrows, const Index ncols );
     Info nnew( const Index nrows, const Index ncols, const Index nvals );
     Info dup( const Matrix& rhs );
-    Info build( std::vector<Index>& row_indices,
-                std::vector<Index>& col_indices,
-                std::vector<T>&     values,
-                const Index         nvals,
-                const bool          transpose=false );
-    Info build( const std::vector<T>& values );
+    Info build( const std::vector<Index>* row_indices,
+                const std::vector<Index>* col_indices,
+                const std::vector<T>*     values,
+                Index                     nvals,
+                const BinaryOp            dup ); 
+    Info build( const std::vector<T>* values, Index nvals );
     Info buildFromVec( const Vector<T>& a );
     // Private method for setting storage type of matrix
     Info setStorage( const Storage mat_type );
@@ -140,22 +140,23 @@ namespace backend
     return GrB_PANIC;
   }
 
+  // Not const to allow sorting
   template <typename T>
-  Info Matrix<T>::build( std::vector<Index>& row_indices,
-                         std::vector<Index>& col_indices,
-                         std::vector<T>&     values,
-                         const Index         nvals,
-                         const bool          transpose )
+  Info Matrix<T>::build( const std::vector<Index>* row_indices,
+                         const std::vector<Index>* col_indices,
+                         const std::vector<T>*     values,
+                         Index                     nvals,
+                         const BinaryOp            dup )
   {
     mat_type_ = GrB_SPARSE;
-    return sparse_.build( row_indices, col_indices, values, nvals, transpose );
+    return sparse_.build( row_indices, col_indices, values, nvals, dup );
   }
 
   template <typename T>
-  Info Matrix<T>::build( const std::vector<T>& values )
+  Info Matrix<T>::build( const std::vector<T>* values, Index nvals )
   {
     mat_type_ = GrB_DENSE;
-    return dense_.build( values );
+    return dense_.build( values, nvals );
   }
 
   template <typename T>

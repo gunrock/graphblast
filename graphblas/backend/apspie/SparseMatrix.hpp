@@ -52,11 +52,11 @@ namespace backend
     // C API Methods
     Info dup( const SparseMatrix& rhs );
 
-    Info build( std::vector<Index>& row_indices,
-                std::vector<Index>& col_indices,
-                std::vector<T>&     values,
-                const Index         nvals,
-                const bool          tranpose=false );
+    Info build( const std::vector<Index>* row_indices,
+                const std::vector<Index>* col_indices,
+                const std::vector<T>*     values,
+                Index                     nvals,
+                const BinaryOp            dup );
 
     // No longer an accessor for GPU version
     Info extractTuples( std::vector<Index>& row_indices,
@@ -163,11 +163,11 @@ namespace backend
   }
 
   template <typename T>
-  Info SparseMatrix<T>::build( std::vector<Index>& row_indices_t,
-                               std::vector<Index>& col_indices_t,
-                               std::vector<T>&     values,
-                               const Index         nvals,
-                               const bool          transpose )
+  Info SparseMatrix<T>::build( const std::vector<Index>* row_indices,
+                               const std::vector<Index>* col_indices,
+                               const std::vector<T>*     values,
+                               Index                     nvals,
+                               const BinaryOp            dup )
   {
     nvals_ = nvals;
     Info err = allocate();
@@ -176,19 +176,19 @@ namespace backend
 
     // Convert to CSR if tranpose is false
     //            CSC if tranpose is true
-    std::vector<Index> &row_indices = transpose ? col_indices_t : 
+    /*std::vector<Index> &row_indices = transpose ? col_indices_t : 
       row_indices_t;
     std::vector<Index> &col_indices = transpose ? row_indices_t :
       col_indices_t;
 
-    customSort<T>( row_indices, col_indices, values );
+    customSort<T>( row_indices, col_indices, values );*/
     
     // Set all rowPtr to 0
     for( Index i=0; i<=nrows_; i++ )
       h_csrRowPtr_[i] = 0;
     // Go through all elements to see how many fall in each row
     for( Index i=0; i<nvals_; i++ ) {
-      row = row_indices[i];
+      row = (*row_indices)[i];
       if( row>=nrows_ ) return GrB_INDEX_OUT_OF_BOUNDS;
       h_csrRowPtr_[ row ]++;
     }
@@ -202,12 +202,12 @@ namespace backend
 
     // Store colInd and val
     for( Index i=0; i<nvals_; i++ ) {
-      row = row_indices[i];
+      row = (*row_indices)[i];
       dest= h_csrRowPtr_[row];
-      col = col_indices[i];
+      col = (*col_indices)[i];
       if( col>=ncols_ ) return GrB_INDEX_OUT_OF_BOUNDS;
       h_csrColInd_[dest] = col;
-      h_csrVal_[dest]    = values[i];
+      h_csrVal_[dest]    = (*values)[i];
       h_csrRowPtr_[row]++;
     }
     cumsum = 0;
