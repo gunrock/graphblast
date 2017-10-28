@@ -427,19 +427,28 @@ namespace backend
     double row_mean = double( nvals_ )/nrows_;
     double variance = 0.f;
     double row_skew = 0.f;
+    int    vars[33];
+    int    big      = 0;
+    for( int i=0; i<33; i++ )
+      vars[i] = 0;
     for( Index row=0; row<nrows_; row++ )
     {
       Index length  = h_csrRowPtr_[row+1]-h_csrRowPtr_[row];
       double delta  = double(length) - row_mean;
       variance     += delta*delta;
       row_skew     += delta*delta*delta;
+      if( length<32 ) vars[length]++;
+      else vars[32]++;
+      if( length>=10000 ) big++;
     }
     variance       /= nrows_;
     double row_std  = sqrt(variance);
     row_skew        = row_skew/nrows_/pow(row_std, 3.0);
     double row_var  = row_std/row_mean;
 
-    std::cout << row_mean << ", " << row_std << ", " << row_var << ", " << row_skew << ", ";
+    for( int i=0; i<33; i++ )
+      std::cout << vars[i] << ", ";
+    std::cout << big << ", " << row_mean << ", " << row_std << ", " << row_var << ", " << row_skew << ", ";
 
     return GrB_SUCCESS;
     /*std::vector<int> count(32,0);
