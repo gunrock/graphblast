@@ -1,4 +1,5 @@
-#define GRB_USE_APSPIE
+//#define GRB_USE_APSPIE
+#define GRB_USE_SEQUENTIAL
 
 #include <vector>
 #include <iostream>
@@ -15,7 +16,6 @@
 
 BOOST_AUTO_TEST_SUITE( mmio_suite )
 
-// TODO: avoid repeating this code by making it into function
 // test_cc.mtx
 BOOST_AUTO_TEST_CASE( mmio1 )
 {
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE( mmio2 )
 
   // Read in chesapeake.mtx
   char const *argv = "dataset/small/simulated_blockmodel_graph_50_nodes.mtx";
-  readTsv( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
+  readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
 
   int rhs[12] = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1};
   //for( int i=0; i<12; i++ ) std::cout << row_indices[i] << "\n";

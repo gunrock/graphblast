@@ -7,15 +7,15 @@
 
 #include <boost/program_options.hpp>
 
-#include "stochastic/stochastic.hpp"
+#include "graphblas/graphblas.hpp"
 #include "test/test.hpp"
 
 int main( int argc, char** argv )
 {
-  std::vector<stochastic::Index> row_indices;
-  std::vector<stochastic::Index> col_indices;
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
-  stochastic::Index nrows, ncols, nvals;
+  graphblas::Index nrows, ncols, nvals;
 
   // Parse arguments
   namespace po = boost::program_options;
@@ -68,7 +68,7 @@ int main( int argc, char** argv )
   }
 
   // Matrix A
-  stochastic::Matrix<float> a(nrows, ncols);
+  graphblas::Matrix<float> a(nrows, ncols);
   a.build( row_indices, col_indices, values, nvals );
   a.nrows( nrows );
   a.ncols( ncols );
@@ -76,18 +76,18 @@ int main( int argc, char** argv )
   if( DEBUG ) a.print();
 
   // Matrix B
-  stochastic::Matrix<float> b(nrows, ncols);
+  graphblas::Matrix<float> b(nrows, ncols);
   b.build( row_indices, col_indices, values, nvals );
   b.nrows( nrows );
   b.ncols( ncols );
   b.nvals( nvals );
 
-  stochastic::Matrix<float> c(nrows, ncols);
+  graphblas::Matrix<float> c(nrows, ncols);
 
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  stochastic::mxm<float, float, float>( c, a, b );
+  graphblas::mxm<float, float, float>( c, a, b );
   warmup.Stop();
  
   CpuTimer cpu_mxm;
@@ -95,9 +95,9 @@ int main( int argc, char** argv )
   cpu_mxm.Start();
   for( int i=0; i<NUM_ITER; i++ ) {
     if( SPLIT )
-      stochastic::mxmCompute<float, float, float>( c, a, b );
+      graphblas::mxmCompute<float, float, float>( c, a, b );
     else
-    stochastic::mxm<float, float, float>( c, a, b );
+    graphblas::mxm<float, float, float>( c, a, b );
   }
   //cudaProfilerStop();
   cpu_mxm.Stop();
@@ -111,8 +111,8 @@ int main( int argc, char** argv )
   if( DEBUG ) c.print();
   /*c.extractTuples( out_denseVal );
   for( int i=0; i<nvals; i++ ) {
-    stochastic::Index row = row_indices[i];
-    stochastic::Index col = col_indices[i];
+    graphblas::Index row = row_indices[i];
+    graphblas::Index col = col_indices[i];
     float            val = values[i];
     if( col<max_ncols ) {
       // Row major order
