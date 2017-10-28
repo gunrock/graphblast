@@ -24,6 +24,8 @@
 #include "graphblas/backend/apspie/transpose.hpp"
 #include "graphblas/backend/apspie/reduce.hpp"
 #include "graphblas/backend/apspie/util.hpp"
+#include "graphblas/backend/apspie/SparseVector.hpp"
+#include "graphblas/backend/apspie/DenseVector.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 

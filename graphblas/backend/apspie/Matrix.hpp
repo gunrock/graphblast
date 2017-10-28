@@ -18,11 +18,12 @@ namespace backend
   {
     public:
     // Default Constructor, Standard Constructor 
-    // Replaces new in C++
+    // Alternative to new in C++
     Matrix() : nrows_(0), ncols_(0), sparse_(0,0), dense_(0,0),
                mat_type_(GrB_SPARSE) {}
-    Matrix( const Index nrows, const Index ncols );
-    Matrix( const Index nrows, const Index ncols, const Index nvals );
+    Matrix( const Index nrows, const Index ncols )
+        : nrows_(nrows), ncols_(ncols), sparse_(nrows,ncols), 
+          dense_(nrows,ncols), mat_type_(GrB_SPARSE) {}
 
     // Destructor
     // TODO
@@ -32,7 +33,6 @@ namespace backend
 
     // Mutators
     Info nnew( const Index nrows, const Index ncols );
-    Info nnew( const Index nrows, const Index ncols, const Index nvals );
     Info dup( const Matrix& rhs );
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
@@ -86,42 +86,12 @@ namespace backend
   };
 
   template <typename T>
-  Matrix<T>::Matrix( const Index nrows, const Index ncols )
-      : nrows_(nrows), ncols_(ncols), mat_type_(GrB_SPARSE)
-  {
-    // Transfer nrows ncols to Sparse/DenseMatrix data member
-    sparse_.nnew( nrows, ncols );
-    dense_.nnew( nrows, ncols );
-  }
-
-  template <typename T>
-  Matrix<T>::Matrix( const Index nrows, const Index ncols, const Index nvals )
-      : nrows_(nrows), ncols_(ncols), mat_type_(GrB_SPARSE)
-  {
-    // Transfer nrows ncols to Sparse/DenseMatrix data member
-    sparse_.nnew( nrows, ncols, nvals );
-    dense_.nnew( nrows, ncols );
-  }
-
-  template <typename T>
   Info Matrix<T>::nnew( const Index nrows, const Index ncols )
   {
     Info err;
 
     // Transfer nrows ncols to Sparse/DenseMatrix data member
     err = sparse_.nnew( nrows, ncols );
-    err = dense_.nnew( nrows, ncols );
-    return err;
-  }
-
-  template <typename T>
-  Info Matrix<T>::nnew( const Index nrows, const Index ncols, 
-                        const Index nvals )
-  {
-    Info err;
-
-    // Transfer nrows ncols to Sparse/DenseMatrix data member
-    err = sparse_.nnew( nrows, ncols, nvals );
     err = dense_.nnew( nrows, ncols );
     return err;
   }

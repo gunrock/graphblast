@@ -11,8 +11,9 @@
 #include "graphblas/types.hpp"
 #include "graphblas/util.hpp"
 
-#include "graphblas/backend/apspie/apspie.hpp"
 #include "graphblas/backend/apspie/Matrix.hpp"
+#include "graphblas/backend/apspie/SparseVector.hpp"
+#include "graphblas/backend/apspie/DenseVector.hpp"
 
 namespace graphblas
 {
@@ -22,261 +23,214 @@ namespace backend
   class Vector
   {
     public:
-    Vector() : nvals_(0), ncapacity_(0), h_val_(NULL), d_val_(NULL), 
-               need_update_(0)
-    {
-      allocate(nvals_);
-    }
-
-    Vector( const Index nvals )
-        : nvals_(nvals), ncapacity_(0), h_val_(NULL), d_val_(NULL), 
-          need_update_(0)
-    {
-      allocate(nvals_);
-    }
+    Vector() : nvals_(0), sparse_(0), dense_(0), vec_type_(GrB_UNKNOWN) {}
+    Vector( Index nvals )
+        : nvals_(nvals), sparse_(nvals), dense_(nvals), 
+          vec_type_(GrB_UNKNOWN) {}
 
     // C API Methods
-    Info dup( const Vector& rhs );
-
-    Info build( const std::vector<T>& values,
-                const Index     nvals );
-
-    // No longer an accessor for GPU version
-    Info extract( std::vector<T>& values );
-
-    // Mutators
-    Info nnew( const Index nvals );
-    // private method for allocation
-    Info allocate( const Index nvals );  
-    Info resize( const Index nvals );
-    Info fill( const Index vals );
+    Info nnew(  Index nsize );
+    Info dup(   const Vector* rhs );
     Info clear();
+    Info size(  Index* nsize_ ) const;
+    Info nvals( Index* nvals_ ) const;
+    Info build( const std::vector<Index>* indices,
+                const std::vector<T>*     values,
+                Index                     nvals,
+                const BinaryOp*           dup );
+    Info build( const std::vector<T>* values,
+                Index                 nvals );
+    Info setElement(     T val,
+                         Index index );
+    Info extractElement( T*    val,
+                         Index index );
+    Info extractTuples(  std::vector<Index>* indices,
+                         std::vector<T>*     values,
+                         Index*              n );
+    Info extractTuples(  std::vector<T>* values,
+                         Index*          n );
+
+    // private method for allocation
+    void operator=( Vector* rhs );
+    const T& operator[]( Index ind );
+    Info resize( Index nvals );
+    Info fill( Index vals );
     Info print( bool forceUpdate = false );
-    Info cpuToGpu();
-    Info gpuToCpu( bool forceUpdate = false );
     Info countUnique( Index& count );
-    const T& operator[]( const Index ind );
 
-    // Accessors
-    Info getNvals( Index& nvals ) const;
- 
-    // Accessors
-
-    private:
-    Index nvals_;      // 3 ways to set: (1) dup (2) build (3) nnew (4) resize
-                       //                (5) allocate
-    Index ncapacity_;
-    T*    h_val_;
-    T*    d_val_;
-
-    bool  need_update_; // set to true by changing Vector
-                       // set to false by gpuToCpu()
+    private: 
+    Index           nvals_;      // 3 ways to set: (1) dup  (2) build 
+                                 //                (3) resize
+                                 // Note: not set by nnew()
+    SparseVector<T> sparse_;
+    DenseVector<T>  dense_;
+    Storage         vec_type_;
   };
 
   template <typename T>
-  Info Vector<T>::dup( const Vector& rhs )
+  Info Vector<T>::nnew( Index nsize )
   {
     Info err;
-    nvals_ = rhs.nvals_;
-
-    if( d_val_==NULL && h_val_==NULL )
-      err = allocate( rhs.nvals_ );
-    if( err != GrB_SUCCESS ) return err;
-
-    //std::cout << "copying " << nrows_+1 << " rows\n";
-    //std::cout << "copying " << nvals_+1 << " rows\n";
-
-    CUDA( cudaMemcpy( d_val_, rhs.d_val_, nvals_*sizeof(T),
-        cudaMemcpyDeviceToDevice ) );
-
-    need_update_ = true;
-    return err; 
-  }
-
-  template <typename T>
-  Info Vector<T>::build( const std::vector<T>& values,
-                         const Index           nvals )
-  {
-    Info err;
-
-    if( d_val_==NULL && h_val_==NULL  )
-      err = allocate( nvals );
-    else while( ncapacity_ < nvals )
-      err = resize( nvals );
-    nvals_ = nvals;
-    if( err != GrB_SUCCESS ) return err;
-
-    for( Index i=0; i<nvals; i++ )
-      h_val_[i] = values[i];
-
-    err = cpuToGpu();
-
+    err = sparse_.nnew( nsize );
+    err = dense_.nnew( nsize );
     return err;
   }
 
   template <typename T>
-  Info Vector<T>::extract( std::vector<T>& values )
+  Info Vector<T>::dup( const Vector* rhs )
   {
-    Info err = gpuToCpu();
-    values.clear();
+    vec_type_ = rhs->vec_type_;
+    if( vec_type_ == GrB_SPARSE )
+      return sparse_.dup( rhs->sparse_ );
+    else if( vec_type_ == GrB_SPARSE )
+      return dense_.dup( rhs->dense_ );
+    return GrB_PANIC;
+  }
 
-    for( Index i=0; i<nvals_; i++ )
-      values.push_back( h_val_[i]);
-
+  template <typename T>
+	Info Vector<T>::clear()
+  {
+    Info err;
+    mat_type_ = GrB_UNKNOWN;
+    err = sparse_.clear();
+    err = dense_.clear();
     return err;
   }
 
   template <typename T>
-  Info Vector<T>::nnew( const Index nvals )
+	Info Vector<T>::size( Index* nsize_ ) const
   {
-    nvals_ = nvals;
-    return GrB_SUCCESS;
+    if( vec_type_ == GrB_SPARSE ) return sparse_.size( nsize_ );
+    else if( vec_type_ == GrB_DENSE ) return dense_.size( nsize_ );
+    else return GrB_UNINITIALIZED_OBJECT;
+  }
+  
+  template <typename T>
+	Info Vector<T>::nvals( Index* nvals_ ) const
+  {
+    if( vec_type_ == GrB_SPARSE ) return sparse_.nvals( nvals_ );
+    else if( vec_type_ == GrB_DENSE ) return dense_.nvals( nvals_ );
+    else return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
-  Info Vector<T>::allocate( const Index nvals )
+  Info Vector<T>::build( const std::vector<Index>* indices,
+                         const std::vector<T>*     values,
+                         Index                     nvals,
+                         const BinaryOp*           dup )
   {
-    // Allocate just enough (different from CPU impl since kcap_ratio=1.)
-    //ncapacity_ = nvals_;
-    ncapacity_ = nvals;
+    vec_type_ = GrB_SPARSE;
+    return sparse_.build( indices, values, nvals, dup );
+  }
 
-    // Host malloc
-    if( nvals!=0 && h_val_ == NULL )
-      h_val_ = (T*) malloc(ncapacity_*sizeof(T));
-    else
-      return GrB_UNINITIALIZED_OBJECT;
+  template <typename T>
+  Info Vector<T>::build( const std::vector<T>* values,
+                         Index                 nvals )
+  {
+    vec_type_ = GrB_DENSE;
+    return dense_.build( values, nvals );
+  }
 
-    // GPU malloc
-    if( nvals!=0 && d_val_ == NULL )
-      CUDA( cudaMalloc( &d_val_, ncapacity_*sizeof(T)) );
-    else
-      return GrB_UNINITIALIZED_OBJECT;
+  template <typename T>
+	Info Vector<T>::setElement( T val,
+	           									Index index )
+  {
+    if( vec_type_ == GrB_SPARSE ) return sparse_.setElement( val, index );
+    else if( vec_type_ == GrB_DENSE ) return dense_.setElement( val, index );
+    else return GrB_UNINITIALIZED_OBJECT;
+  }
 
+  template <typename T>
+	Info Vector<T>::extractElement( T*    val,
+											            Index index )
+  {
+    if( vec_type_ == GrB_SPARSE ) 
+      return sparse_.extractElement( val, index );
+    else if( vec_type_ == GrB_DENSE ) 
+      return dense_.extractElement( val, index );
+    else return GrB_UNINITIALIZED_OBJECT;
+  }
 
-    if( h_val_==NULL || d_val_==NULL )
-      return GrB_OUT_OF_MEMORY;
+  template <typename T>
+	Info Vector<T>::extractTuples( std::vector<Index>* indices,
+											           std::vector<T>*     values,
+											           Index*              n )
+  {
+    if( vec_type_ == GrB_SPARSE )
+      return sparse_.extractTuples( indices, values, n );
+    else if( vec_type_ == GrB_DENSE )
+      return dense_.extractTuples( indices, values, n );
+    else return GrB_UNINITIALIZED_OBJECT;
+  }
 
-    return GrB_SUCCESS;
+  template <typename T>
+	Info Vector<T>::extractTuples(  std::vector<T>* values,
+											            Index*          n )
+  {
+    if( vec_type_ == GrB_SPARSE )
+      return sparse_.extractTuples( values, n );
+    else if( vec_type_ == GrB_DENSE )
+      return dense_.extractTuples( values, n );
+    else return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  // private method for allocation
+  template <typename T>
+  void Vector<T>::operator=( Vector* rhs )
+  {
+    vec_type_ = rhs->vec_type_;
+    if( vec_type_ == GrB_SPARSE )
+      sparse_ = rhs->sparse_;
+    else if( vec_type_ == GrB_DENSE )
+      dense_ = rhs->dense_;
+    else return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  template <typename T>
+  const T& Vector<T>::operator[]( Index ind )
+  {
+    if( vec_type_ == GrB_SPARSE )
+      return sparse_[ind];
+    else if( vec_type_ == GrB_DENSE )
+      return dense_[ind];
+    else return GrB_UNINITIALIZED_OBJECT;
   }
 
   // Copies the val to arrays kresize_ratio x bigger than capacity
   template <typename T>
-  Info Vector<T>::resize( const Index nvals )
+  Info Vector<T>::resize( Index nvals )
   {
-    T* h_tempVal = h_val_;
-    T* d_tempVal = d_val_;
-
-    // Compute how much to copy
-    Index to_copy = min(nvals, nvals_);    
-
-    ncapacity_ = nvals;
-    h_val_ = (T*) malloc( ncapacity_*sizeof(T) );
-    if( h_tempVal!=NULL )
-      memcpy( h_val_, h_tempVal, to_copy*sizeof(T) );
-
-    CUDA( cudaMalloc( &d_val_, ncapacity_*sizeof(T)) );
-    if( d_tempVal!=NULL )
-      CUDA( cudaMemcpy( d_val_, d_tempVal, to_copy*sizeof(T), 
-          cudaMemcpyDeviceToDevice) );
-    nvals_ = nvals;
-
-    free( h_tempVal );
-    CUDA( cudaFree(d_tempVal) );
-
-    return GrB_SUCCESS;
+    if( vec_type_ == GrB_SPARSE )
+      return sparse_.resize(nvals );
+    else if( vec_type_ == GrB_DENSE )
+      return dense_.resize( nvals );
+    else return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
   Info Vector<T>::fill( const Index nvals )
   {
-    for( Index i=0; i<nvals; i++ )
-      h_val_[i] = i;
-
-    Info err = cpuToGpu();
-    return err;
-  }
-
-  template <typename T>
-  Info Vector<T>::clear()
-  {
-    if( h_val_ ) {
-      free( h_val_ );
-      h_val_ = NULL;
-    }
-
-    if( d_val_ ) {
-      CUDA( cudaFree(d_val_) );
-      d_val_ = NULL;
-    }
-    ncapacity_ = 0;
-
-    return GrB_SUCCESS;
+    if( vec_type_ == GrB_SPARSE )
+      return sparse_.fill(nvals );
+    else if( vec_type_ == GrB_DENSE )
+      return dense_.fill( nvals );
+    else return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
   Info Vector<T>::print( bool forceUpdate )
   {
-    CUDA( cudaDeviceSynchronize() );
-    Info err = gpuToCpu( forceUpdate );
-    printArray( "val", h_val_, std::min(nvals_,40) );
-    return GrB_SUCCESS;
-  }
-
-  // Copies graph to GPU
-  template <typename T>
-  Info Vector<T>::cpuToGpu()
-  {
-    CUDA( cudaMemcpy( d_val_, h_val_, nvals_*sizeof(T),
-        cudaMemcpyHostToDevice ) );
-    return GrB_SUCCESS;
-  }
-
-  // Copies graph to CPU
-  template <typename T>
-  Info Vector<T>::gpuToCpu( bool forceUpdate )
-  {
-    if( need_update_ || forceUpdate )
-    {
-      CUDA( cudaMemcpy( h_val_, d_val_, nvals_*sizeof(T),
-          cudaMemcpyDeviceToHost ) );
-      CUDA( cudaDeviceSynchronize() );
-    }
-    need_update_ = false;
-    return GrB_SUCCESS;
+    if( vec_type_ == GrB_SPARSE )
+      return sparse_.print( forceUpdate );
+    else if( vec_type_ == GrB_DENSE )
+      return dense_.print( forceUpdate );
+    else return GrB_UNINITIALIZED_OBJECT;
   }
 
   // Count number of unique numbers
   template <typename T>
   Info Vector<T>::countUnique( Index& count )
   {
-    Info err = gpuToCpu();
-    std::unordered_set<Index> unique;
-    for( Index block=0; block<nvals_; block++ )
-    {
-      if( unique.find( h_val_[block] )==unique.end() )
-      {
-        unique.insert( h_val_[block] );
-        //std::cout << "Inserting " << array[block] << std::endl;
-      }
-    }
-    count = unique.size();
-
-    return err;
-  }
-
-  template <typename T>
-  const T& Vector<T>::operator[]( const Index ind )
-  {
-    gpuToCpu();
-    if( ind>=nvals_ ) std::cout << "Error: index out of bounds!\n";
-
-    return h_val_[ind];
-  }
-
-  template <typename T>
-  inline Info Vector<T>::getNvals( Index& nvals ) const
-  {
-    nvals = nvals_;
     return GrB_SUCCESS;
   }
 

@@ -1,5 +1,4 @@
 #define GRB_USE_APSPIE
-#define private public
 
 #include <vector>
 #include <iostream>
@@ -17,25 +16,33 @@
 void testDup( const std::vector<int>& rhs )
 {
   graphblas::Vector<int> vec1;
-  vec1.build( rhs, rhs.size() );
-  BOOST_ASSERT_LIST( vec1.h_val_, rhs, rhs.size() );
+  graphblas::Index size = rhs.size();
+  std::vector<int> lhs;
+  vec1.build( &rhs, rhs.size() );
+  vec1.extractTuples( &lhs, &size );
+  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 
   graphblas::Vector<int> vec2;
-  vec2.dup( vec1 );
+  vec2.dup( &vec1 );
 
-  std::vector<int> lhs;
-  vec2.extract( lhs );
+  size = rhs.size();
+  vec2.extractTuples( &lhs, &size );
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 }
 
 void testResize( const std::vector<int>& rhs, const int nvals )
 {
   graphblas::Vector<int> vec1;
-  vec1.build( rhs, rhs.size() );
-  BOOST_ASSERT_LIST( vec1.h_val_, rhs, rhs.size() );
+  graphblas::Index size = rhs.size();
+  std::vector<int> lhs;
+  vec1.build( &rhs, rhs.size() );
+  vec1.extractTuples( &lhs, &size );
+  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 
   vec1.resize( nvals );
-  BOOST_ASSERT_LIST( vec1.h_val_, rhs, rhs.size() );
+  size = rhs.size();
+  vec1.extractTuples( &lhs, &size );
+  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 }
 
 struct TestVector
