@@ -57,21 +57,18 @@ namespace backend
     Info extractTuples(  std::vector<T>* values,
                          Index*          n );
 
-    // private method for allocation
-    Info allocate( const Index nvals );  
-    Info resize( const Index nvals );
-    Info fill( const Index vals );
-    Info clear();
+    // handy methods
+    void operator=( Vector* rhs );
+    const T& operator[]( Index ind );
+    Info resize( Index nvals );
+    Info fill( Index vals );
     Info print( bool forceUpdate = false );
+    Info countUnique( Index& count );
+ 
+    private:
+    Info allocate( Index nvals );  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
-    Info countUnique( Index& count );
-    const T& operator[]( const Index ind );
-
-    // Accessors
-    Info getNvals( Index& nvals ) const;
- 
-    // Accessors
 
     private:
     Index nvals_;      // 3 ways to set: (1) dup (2) build (3) nnew (4) resize
@@ -85,19 +82,26 @@ namespace backend
   };
 
   template <typename T>
-  Info DenseVector<T>::dup( const DenseVector& rhs )
+  Info DenseVector<T>::nnew( Index nvals )
+  {
+    nvals_ = nvals;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseVector<T>::dup( const DenseVector* rhs )
   {
     Info err;
-    nvals_ = rhs.nvals_;
+    nvals_ = rhs->nvals_;
 
     if( d_val_==NULL && h_val_==NULL )
-      err = allocate( rhs.nvals_ );
+      err = allocate( rhs->nvals_ );
     if( err != GrB_SUCCESS ) return err;
 
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
 
-    CUDA( cudaMemcpy( d_val_, rhs.d_val_, nvals_*sizeof(T),
+    CUDA( cudaMemcpy( d_val_, rhs->d_val_, nvals_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
 
     need_update_ = true;
@@ -105,8 +109,46 @@ namespace backend
   }
 
   template <typename T>
-  Info DenseVector<T>::build( const std::vector<T>& values,
-                              const Index           nvals )
+  Info DenseVector<T>::clear()
+  {
+    if( h_val_ ) {
+      free( h_val_ );
+      h_val_ = NULL;
+    }
+
+    if( d_val_ ) {
+      CUDA( cudaFree(d_val_) );
+      d_val_ = NULL;
+    }
+    ncapacity_ = 0;
+
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseVector<T>::size( Index* nsize_ ) const
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseVector<T>::nvals( Index* nvals_ ) const
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseVector<T>::build( const std::vector<Index>* indices,
+                              const std::vector<T>*     values,
+                              Index                     nvals,
+                              const BinaryOp*           dup )
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseVector<T>::build( const std::vector<T>* values,
+                              Index                 nvals )
   {
     Info err;
 
@@ -118,7 +160,7 @@ namespace backend
     if( err != GrB_SUCCESS ) return err;
 
     for( Index i=0; i<nvals; i++ )
-      h_val_[i] = values[i];
+      h_val_[i] = (*values)[i];
 
     err = cpuToGpu();
 
@@ -126,22 +168,25 @@ namespace backend
   }
 
   template <typename T>
-  Info DenseVector<T>::extract( std::vector<T>& values )
+  Info DenseVector<T>::extractTuples( std::vector<T>* values,
+                                      Index*          n )
   {
     Info err = gpuToCpu();
     values.clear();
 
-    for( Index i=0; i<nvals_; i++ )
-      values.push_back( h_val_[i]);
+    if( n==NULL ) return GrB_NULL_POINTER;
+    if( *n>nvals_ )
+    {
+      err = GrB_UNINITIALIZED_OBJECT;
+      *n = nvals_;
+    }
+    if( *n<nvals_ ) 
+      err = GrB_INSUFFICIENT_SPACE;
 
+    for( Index i=0; i<*n; i++ )
+      values->push_back( h_val_[i]);
+    
     return err;
-  }
-
-  template <typename T>
-  Info DenseVector<T>::nnew( const Index nvals )
-  {
-    nvals_ = nvals;
-    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -205,23 +250,6 @@ namespace backend
 
     Info err = cpuToGpu();
     return err;
-  }
-
-  template <typename T>
-  Info DenseVector<T>::clear()
-  {
-    if( h_val_ ) {
-      free( h_val_ );
-      h_val_ = NULL;
-    }
-
-    if( d_val_ ) {
-      CUDA( cudaFree(d_val_) );
-      d_val_ = NULL;
-    }
-    ncapacity_ = 0;
-
-    return GrB_SUCCESS;
   }
 
   template <typename T>
