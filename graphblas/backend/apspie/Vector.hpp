@@ -132,7 +132,7 @@ namespace backend
   }
 
   template <typename T>
-	Info Vector<T>::setElement( T val,
+	Info Vector<T>::setElement( T     val,
 	           									Index index )
   {
     if( vec_type_ == GrB_SPARSE ) return sparse_.setElement( val, index );
