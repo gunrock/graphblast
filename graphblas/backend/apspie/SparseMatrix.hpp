@@ -32,15 +32,17 @@ namespace backend
     public:
     SparseMatrix()
         : nrows_(0), ncols_(0), nvals_(0), ncapacity_(0), nempty_(0), 
-          h_csrColInd_(NULL), h_csrRowPtr_(NULL), h_csrVal_(NULL),
-          d_csrColInd_(NULL), d_csrRowPtr_(NULL), d_csrVal_(NULL),
-          buffer_(NULL),      need_update_(0) {}
+          h_csrRowPtr_(NULL), h_csrColInd_(NULL), h_csrVal_(NULL),
+          d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
+          need_update_(0) {}
 
     SparseMatrix( Index nrows, Index ncols )
         : nrows_(nrows), ncols_(ncols), nvals_(0), ncapacity_(0), nempty_(0),
-          h_csrColInd_(NULL), h_csrRowPtr_(NULL), h_csrVal_(NULL),
-          d_csrColInd_(NULL), d_csrRowPtr_(NULL), d_csrVal_(NULL),
-          buffer_(NULL),      need_update_(0) {}
+          h_csrRowPtr_(NULL), h_csrColInd_(NULL), h_csrVal_(NULL),
+          d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
+          need_update_(0) {}
+
+    ~SparseMatrix();
 
     // C API Methods
     Info nnew(  Index nrows, Index ncols );
@@ -103,18 +105,18 @@ namespace backend
     Index nempty_;
 
     // CSR format
-    Index* h_csrColInd_;
     Index* h_csrRowPtr_;
+    Index* h_csrColInd_;
     T*     h_csrVal_;
 
     // GPU CSR
-    Index* d_csrColInd_;
     Index* d_csrRowPtr_;
+    Index* d_csrColInd_;
     T*     d_csrVal_;
 
     // GPU variables
-    void*  buffer_;
-    size_t buffer_size_;
+    //void*  buffer_;
+    //size_t buffer_size_;
     bool   need_update_;
     // CSC format
     // TODO: add CSC support. 
@@ -123,13 +125,24 @@ namespace backend
     Index* h_cscColPtr;
     T*     h_cscVal;*/
 
-    template <typename a, typename b>
+    /*template <typename a, typename b>
     friend Info cubReduce( Vector<b>&             B,
                            const SparseMatrix<a>& A,
                            void*                  d_buffer,
-                           size_t                 buffer_size );
+                           size_t                 buffer_size );*/
 
   };
+
+  template <typename T>
+  SparseMatrix<T>::~SparseMatrix()
+  {
+    if( h_csrRowPtr_!=NULL ) free(h_csrRowPtr_);
+    if( h_csrColInd_!=NULL ) free(h_csrColInd_);
+    if( h_csrVal_   !=NULL ) free(h_csrVal_   );
+    if( d_csrRowPtr_!=NULL ) CUDA( cudaFree(d_csrRowPtr_) );
+    if( d_csrColInd_!=NULL ) CUDA( cudaFree(d_csrColInd_) );
+    if( d_csrVal_   !=NULL ) CUDA( cudaFree(d_csrVal_   ) );
+  }
 
   template <typename T>
   Info SparseMatrix<T>::nnew( Index nrows, Index ncols )
@@ -289,23 +302,23 @@ namespace backend
   }
 
   template <typename T>
-  Info Sparsematrix<T>::build( const std::vector<T>* values,
+  Info SparseMatrix<T>::build( const std::vector<T>* values,
                                Index                 nvals )
   {
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info Matrix<T>::setElement( Index row_index,
-                              Index col_index )
+  Info SparseMatrix<T>::setElement( Index row_index,
+                                    Index col_index )
   {
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info Matrix<T>::extractElement( T*    val,
-                                  Index row_index,
-                                  Index col_index )
+  Info SparseMatrix<T>::extractElement( T*    val,
+                                        Index row_index,
+                                        Index col_index )
   {
     return GrB_SUCCESS;
   }
@@ -331,14 +344,16 @@ namespace backend
       err = GrB_INSUFFICIENT_SPACE;
 
     Index count = 0;
-    for( Index row=0; row<nrows_; row++ ) {
-      for( Index ind=h_csrRowPtr_[row]; ind<h_csrRowPtr_[row+1]; ind++ ) {
+    for( Index row=0; row<nrows_; row++ )
+    {
+      for( Index ind=h_csrRowPtr_[row]; ind<h_csrRowPtr_[row+1]; ind++ )
+      {
         if( h_csrVal_[ind]!=0 && count<*n )
         {
           count++;
-          row_indices.push_back(row);
-          col_indices.push_back(h_csrColInd_[ind]);
-          values.push_back(     h_csrVal_[ind]);
+          row_indices->push_back(row);
+          col_indices->push_back(h_csrColInd_[ind]);
+          values->push_back(     h_csrVal_[ind]);
         }
       }
     }

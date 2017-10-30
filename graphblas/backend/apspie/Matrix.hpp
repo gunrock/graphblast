@@ -34,9 +34,9 @@ namespace backend
     Info nnew(  Index nrows, Index ncols );
     Info dup(   const Matrix* rhs );
     Info clear();
-    Info nrows( Index* nrows_t );
-    Info ncols( Index* ncols_t );
-    Info nvals( Index* nvals_t );
+    Info nrows( Index* nrows_t ) const;
+    Info ncols( Index* ncols_t ) const;
+    Info nvals( Index* nvals_t ) const;
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
@@ -102,7 +102,7 @@ namespace backend
   template <typename T>
   Info Matrix<T>::dup( const Matrix* rhs )
   {
-    mat_type_ = rhs->mat_type_;
+    Info err = setStorage( rhs->mat_type_ );
 
     //std::cout << "Matrix type: " << (int) mat_type_ << "\n";
 
@@ -170,7 +170,7 @@ namespace backend
   Info Matrix<T>::setElement( Index row_index,
                               Index col_index )
   {
-    if( mat_type == GrB_SPARSE ) 
+    if( mat_type_ == GrB_SPARSE ) 
       return sparse_.setElement( row_index, col_index );
     else if( mat_type_ == GrB_DENSE )
       return dense_.setElement( row_index, col_index );

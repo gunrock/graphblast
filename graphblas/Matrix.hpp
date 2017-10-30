@@ -30,9 +30,9 @@ namespace graphblas
     Info nnew(  Index nrows, Index ncols );
     Info dup(   const Matrix* rhs );
     Info clear();
-    Info nrows( Index* nrows_ );
-    Info ncols( Index* ncols_ );
-    Info nvals( Index* nvals_ );
+    Info nrows( Index* nrows_ ) const;
+    Info ncols( Index* ncols_ ) const;
+    Info nvals( Index* nvals_ ) const;
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
@@ -105,7 +105,7 @@ namespace graphblas
   }
 
   template <typename T>
-  Info Matrix<T>::dup( Index* rhs )
+  Info Matrix<T>::dup( const Matrix* rhs )
   {
     matrix_.dup( rhs->matrix_ );
   }
@@ -197,7 +197,7 @@ namespace graphblas
   template <typename T>
   Info Matrix<T>::print( bool force_update )
   {
-    return matrix_.print( bool force_update );
+    return matrix_.print( force_update );
   }
 
   template <typename T>
@@ -237,7 +237,8 @@ namespace graphblas
     return matrix_.getStorage( mat_type );
   }
 
-  template <typename T, typename U>
+  template <typename T>
+  template <typename U>
   Info Matrix<T>::fill( Index axis, 
                         Index nvals, 
                         U     start )
@@ -245,7 +246,8 @@ namespace graphblas
     return matrix_.fill( axis, nvals, start );
   }
 
-	template <typename T, typename U>
+	template <typename T>
+  template <typename U>
 	Info Matrix<T>::fillAscending( Index axis, 
                                  Index nvals, 
                                  U     start )

@@ -324,7 +324,8 @@ namespace backend
         //std::cout << "Inserting " << array[block] << std::endl;
       }
     }
-    count = unique.size();
+    if( count==NULL ) return GrB_NULL_POINTER;
+    *count = unique.size();
 
     return err;
   }
