@@ -1,27 +1,61 @@
 #ifndef GRB_TYPES_HPP
 
 #define GRB_TYPES_HPP
+#define GrB_NULL NULL
 
 #include <cstddef>
 #include <cstdint>
 
+#include <boost/none.hpp>
+
 namespace graphblas
 {
-  typedef int Index;
-  typedef int Info;
+  typedef int           Index;
+  typedef int           BinaryOp;
+  typedef float         T;
 
-  class Descriptor{};
-  class BinaryOp{};
   class Semiring{};
 
-  static const uint8_t GrB_SUCCESS             = 0;
-  static const uint8_t GrB_OUT_OF_MEMORY       = 1;
-  static const uint8_t GrB_INDEX_OUT_OF_BOUNDS = 2;
-  static const uint8_t GrB_PANIC               = 3;
-  static const uint8_t GrB_UNINITIALIZED_OBJECT= 4;
-  static const uint8_t GrB_DIMENSION_MISMATCH  = 5;
+  enum Storage {GrB_UNKNOWN,
+                GrB_SPARSE,
+                GrB_DENSE};
 
-  enum Storage {Unknown,Sparse,Dense};
+  enum Major {GrB_ROWMAJOR,
+              GrB_COLMAJOR};
+
+  enum Info {GrB_SUCCESS,
+             GrB_UNINITIALIZED_OBJECT, // API errors
+             GrB_NULL_POINTER,
+             GrB_INVALID_VALUE,
+             GrB_INVALID_INDEX,
+             GrB_DOMAIN_MISMATCH,
+             GrB_DIMENSION_MISMATCH,
+             GrB_OUTPUT_NOT_EMPTY,
+             GrB_NO_VALUE,
+             GrB_OUT_OF_MEMORY,        // Execution errors
+             GrB_INSUFFICIENT_SPACE,
+             GrB_INVALID_OBJECT,
+             GrB_INDEX_OUT_OF_BOUNDS,
+             GrB_PANIC};
+
+  enum Desc_field {GrB_MODE, 
+                   GrB_TA, 
+                   GrB_TB, 
+                   GrB_NT};
+
+  enum Desc_value {GrB_CUSPARSE,
+                   GrB_CUSPARSE2,
+                   GrB_FIXEDROW,
+                   GrB_FIXEDCOL,
+                   GrB_MERGEPATH,
+                   GrB_8   =  8,
+                   GrB_16  = 16,
+                   GrB_32  = 32,
+                   GrB_64  = 64,
+                   GrB_128 =128,
+                   GrB_256 =256,
+                   GrB_512 =512,
+                   GrB_1024=1024};
 }
 
 #endif  // GRB_TYPES_HPP

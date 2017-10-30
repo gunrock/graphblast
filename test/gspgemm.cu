@@ -1,27 +1,14 @@
-#define GRB_USE_SEQUENTIAL
-//#define GRB_USE_APSPIE
-//#define private public
-
 #include <iostream>
 #include <algorithm>
 #include <string>
 
 #include <cstdio>
 #include <cstdlib>
-#ifdef GRB_USE_SEQUENTIAL
-  #define GpuTimer CpuTimer
-#else
-  #ifdef GRB_USE_APSPIE
-  #include <cuda_profiler_api.h>
-  #endif
-#endif
-
-#include "graphblas/mmio.hpp"
-#include "graphblas/util.hpp"
-#include "graphblas/graphblas.hpp"
 
 #include <boost/program_options.hpp>
-#include <test/test.hpp>
+
+#include "graphblas/graphblas.hpp"
+#include "test/test.hpp"
 
 int main( int argc, char** argv )
 {
@@ -34,7 +21,7 @@ int main( int argc, char** argv )
   namespace po = boost::program_options;
   po::variables_map vm;
   parseArgs( argc, argv, vm );
-  int TA, TB, NT, NUM_ITER;
+  int TA, TB, NT, NUM_ITER, DEVICE;
   bool ROW_MAJOR, DEBUG, SPLIT;
   if( vm.count("ta") )
     TA       = vm["ta"].as<int>(); // default values of TA, TB, NT will be used
@@ -48,6 +35,7 @@ int main( int argc, char** argv )
     SPLIT    = vm["split"].as<bool>();
   if( vm.count("iter") )
     NUM_ITER = vm["iter"].as<int>();
+  }
   // ROW_MAJOR == 1: means row major
   // ROW_MAJOR == 0: means col major
   // TA == 0 && TB == 0 && NT == 0: means cusparse
@@ -56,6 +44,8 @@ int main( int argc, char** argv )
     ROW_MAJOR = (major=="row");
     if( major=="cusparse" ) {
       TA = 0; TB = 0; NT = 0;
+    } else if( major=="cusparse2" ) {
+      TA = 0; TB = 0; NT = 1;
     }
   }
 
@@ -73,7 +63,7 @@ int main( int argc, char** argv )
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
-    readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
+    readTsv( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
     nvals, DEBUG );
   }
 
@@ -93,26 +83,24 @@ int main( int argc, char** argv )
   b.nvals( nvals );
 
   graphblas::Matrix<float> c(nrows, ncols);
-  graphblas::Semiring op;
 
   // Warmup
-  GpuTimer warmup;
+  CpuTimer warmup;
   warmup.Start();
-  graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
+  graphblas::mxm<float, float, float>( c, a, b );
   warmup.Stop();
  
-  GpuTimer gpu_mxm;
+  CpuTimer cpu_mxm;
   //cudaProfilerStart();
-  gpu_mxm.Start();
+  cpu_mxm.Start();
   for( int i=0; i<NUM_ITER; i++ ) {
     if( SPLIT )
-      graphblas::mxmCompute<float, float, float>( c, op, a, b, TA, TB, NT, 
-          ROW_MAJOR );
+      graphblas::mxmCompute<float, float, float>( c, a, b );
     else
-    graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
+    graphblas::mxm<float, float, float>( c, a, b );
   }
   //cudaProfilerStop();
-  gpu_mxm.Stop();
+  cpu_mxm.Stop();
 
   float flop = 0;
   if( DEBUG ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<

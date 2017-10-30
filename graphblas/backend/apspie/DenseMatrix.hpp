@@ -5,14 +5,9 @@
 #include <iostream>
 #include <typeinfo>
 
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include "graphblas/types.hpp"
 
 #include "graphblas/backend/apspie/Matrix.hpp"
-//#include "graphblas/backend/apspie/SparseMatrix.hpp"
-#include "graphblas/backend/apspie/apspie.hpp"
-#include "graphblas/backend/apspie/util.hpp"
-#include "graphblas/types.hpp"
 
 namespace graphblas
 {
@@ -26,38 +21,61 @@ namespace backend
   {
     public:
     DenseMatrix() 
-        : nrows_(0), ncols_(0), nvals_(0), h_denseVal(NULL), d_denseVal(NULL){}
-    DenseMatrix( const Index nrows, const Index ncols ) 
+        : nrows_(0), ncols_(0), nvals_(0), 
+          h_denseVal_(NULL), d_denseVal_(NULL), need_update_(0) {}
+    DenseMatrix( Index nrows, Index ncols ) 
         : nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), 
-        h_denseVal(NULL), d_denseVal(NULL) {}
+          h_denseVal_(NULL), d_denseVal_(NULL), need_update_(0) {}
 
-    // Assignment Constructor
-    // // TODO: Replaces dup in C++
-    void operator=( const DenseMatrix& rhs ) {}
-
-    // Destructor
-    // TODO
-    ~DenseMatrix() {};
+    ~DenseMatrix();
 
     // C API Methods
-    //
-    // Mutators
-    // assume values are in column major format
-    Info build( const std::vector<T>& values );
-    // private method for setting nrows and ncols
-    Info nnew( const Index nrows, const Index ncols );
-    // private method for allocation
-    Info allocate();  
+    Info nnew(  Index nrows, Index ncols );
+    Info dup(   const DenseMatrix* rhs );
     Info clear();
+    Info nrows( Index* nrows_t ) const;
+    Info ncols( Index* ncols_t ) const;
+    Info nvals( Index* nvals_t ) const;
+    Info build( const std::vector<Index>* row_indices,
+                const std::vector<Index>* col_indices,
+                const std::vector<T>*     values,
+                Index                     nvals,
+                const BinaryOp*           dup );
+    Info build( const std::vector<T>* values, 
+                Index                 nvals );
+    Info setElement(     Index row_index,
+                         Index col_index );
+    Info extractElement( T*    val,
+                         Index row_index,
+                         Index col_index );
+    Info extractTuples(  std::vector<Index>* row_indices,
+                         std::vector<Index>* col_indices,
+                         std::vector<T>*     values,
+                         Index*              n );
+    Info extractTuples( std::vector<T>* values,
+                        Index*          n );
 
-    // Accessors
-    Info extractTuples( std::vector<T>& values ) const;
-    Info print() const; // Const, because host memory unmodified
-    // private method for pretty printing
+    // Handy methods
+    const T operator[]( Index ind );
+    Info print(    bool  force_update);
+    Info setNrows( Index nrows );
+    Info setNcols( Index ncols );
+    Info resize(   Index nrows,
+                   Index ncols );
+    template <typename U>
+    Info fill( Index axis,
+               Index nvals,
+               U     start );
+    template <typename U>
+    Info fillAscending( Index axis,
+                        Index nvals,
+                        U     start );
+
+    private:
+    Info allocate();  
     Info printDense() const;
-    Info nrows( Index& nrows ) const;
-    Info ncols( Index& ncols ) const;
-    Info nvals( Index& nvals ) const;
+    Info cpuToGpu();
+    Info gpuToCpu( bool force_update=false );
 
     private:
     Index nrows_;
@@ -65,22 +83,19 @@ namespace backend
     Index nvals_;
 
     // Dense format
-    T* h_denseVal;
-    T* d_denseVal;
+    T*    h_denseVal_;
+    T*    d_denseVal_;
 
-    // Keep track of whether host values are up-to-date with device values 
-    bool need_update;
+    bool  need_update_;
 
-    template <typename c, typename a, typename b>
+    /*template <typename c, typename a, typename b>
     friend Info spmm( DenseMatrix<c>&        C,
-                      const Semiring&        op,
                       const SparseMatrix<a>& A,
                       const DenseMatrix<b>&  B );
 
     // For testing
     template <typename c, typename a, typename b>
     friend Info spmm( DenseMatrix<c>&        C,
-                      const Semiring&        op,
                       const SparseMatrix<a>& A,
                       const DenseMatrix<b>&  B,
                       const int TA,
@@ -90,32 +105,12 @@ namespace backend
     
     template <typename c, typename a, typename b>
     friend Info cusparse_spmm( DenseMatrix<c>&        C,
-                               const Semiring&        op,
                                const SparseMatrix<a>& A,
-                               const DenseMatrix<b>&  B );
+                               const DenseMatrix<b>&  B );*/
   };
 
   template <typename T>
-  Info DenseMatrix<T>::build( const std::vector<T>& values )
-  {
-    need_update = false;
-
-    allocate();
-
-    // Host copy
-    for( graphblas::Index i=0; i<nvals_; i++ )
-        h_denseVal[i] = values[i];
-
-    // Device memcpy
-    CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T),
-        cudaMemcpyHostToDevice));
-
-    //printArrayDevice( "B matrix GPU", d_denseVal );
-    return GrB_SUCCESS;
-  }
-
-  template <typename T>
-  Info DenseMatrix<T>::nnew( const Index nrows, const Index ncols )
+  Info DenseMatrix<T>::nnew( Index nrows, Index ncols )
   {
     nrows_ = nrows;
     ncols_ = ncols;
@@ -124,72 +119,219 @@ namespace backend
   }
 
   template <typename T>
-  Info DenseMatrix<T>::allocate()
+  Info DenseMatrix<T>::dup( const DenseMatrix* rhs )
   {
-    // Host alloc
-    h_denseVal = (T*)malloc(nvals_*sizeof(T));
-    for( Index i=0; i<nvals_; i++ )
-      h_denseVal[i] = (T) 0;
+    if( nrows_ != rhs->nrows_ ) return GrB_DIMENSION_MISMATCH;
+    if( ncols_ != rhs->ncols_ ) return GrB_DIMENSION_MISMATCH;
+    nvals_ = rhs->nvals_;
 
-    // Device alloc
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_denseVal, nvals_*sizeof(T)));
-    CUDA_SAFE_CALL(cudaMemcpy(d_denseVal, h_denseVal, nvals_*sizeof(T), 
-        cudaMemcpyHostToDevice));
+    Info err = allocate();
+    if( err != GrB_SUCCESS ) return err;
 
-    return GrB_SUCCESS;
+    //std::cout << "copying " << nrows_+1 << " rows\n";
+    //std::cout << "copying " << nvals_+1 << " rows\n";
+
+    CUDA( cudaMemcpy( d_denseVal_, rhs->d_denseVal_, nvals_*sizeof(T),
+        cudaMemcpyDeviceToDevice ) );
+    CUDA( cudaDeviceSynchronize() );
+
+    need_update_ = true;
+    return err;
   }
 
   template <typename T>
   Info DenseMatrix<T>::clear()
   {
-    if( h_denseVal ) free( h_denseVal );
-    if( d_denseVal ) CUDA_SAFE_CALL(cudaFree( d_denseVal ));
+    if( h_denseVal_ ) free(h_denseVal_);
+    if( d_denseVal_ ) CUDA( cudaFree(d_denseVal_) );
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info DenseMatrix<T>::extractTuples( std::vector<T>& values ) const
+  Info DenseMatrix<T>::nrows( Index* nrows_t ) const
   {
-    values.clear();
+    *nrows_t = nrows_;
+    return GrB_SUCCESS;
+  }
 
-    if( need_update )
-      CUDA_SAFE_CALL(cudaMemcpy(h_denseVal, d_denseVal, 
-          nvals_*sizeof(T), cudaMemcpyDeviceToHost));
-    
-    for( Index i=0; i<nvals_; i++ ) {
-      values.push_back( h_denseVal[i] );
+  template <typename T>
+  Info DenseMatrix<T>::ncols( Index* ncols_t ) const
+  {
+    *ncols_t = ncols_;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::nvals( Index* nvals_t ) const
+  {
+    *nvals_t = nvals_;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::build( const std::vector<Index>* row_indices,
+                              const std::vector<Index>* col_indices,
+                              const std::vector<T>*     values,
+                              Index                     nvals,
+                              const BinaryOp*           dup )
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::build( const std::vector<T>* values, 
+                              Index nvals )
+  {
+    if( nvals > nvals_ ) return GrB_DIMENSION_MISMATCH;
+
+    Info err = allocate();
+    if( err != GrB_SUCCESS ) return err;
+
+    // Host copy
+    for( graphblas::Index i=0; i<nvals_; i++ )
+      h_denseVal_[i] = (*values)[i];
+
+    err = cpuToGpu();
+
+    return err;
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::setElement( Index row_index,
+                                   Index col_index )
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::extractElement( T*    val,
+                                       Index row_index,
+                                       Index col_index )
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::extractTuples( std::vector<Index>* row_indices,
+                                      std::vector<Index>* col_indices,
+                                      std::vector<T>*     values,
+                                      Index*              n )
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::extractTuples( std::vector<T>* values, Index* n )
+  {
+    Info err = gpuToCpu();
+    values->clear();
+    if( *n>nvals_ )
+    {
+      err = GrB_UNINITIALIZED_OBJECT;
+      *n  = nvals_;
     }
+    else if( *n<nvals_ )
+      err = GrB_INSUFFICIENT_SPACE;
+
+    for( Index i=0; i<*n; i++ ) {
+      values->push_back( h_denseVal_[i] );
+    }
+    return err;
+  }
+
+  template <typename T>
+  const T DenseMatrix<T>::operator[]( Index ind )
+  {
+    return T(0);
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::print( bool force_update )
+  {
+    Info err = gpuToCpu( force_update );
+    printArray( "denseVal", h_denseVal_, std::min(nvals_,40) );
+    printDense();
+    return err;
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::setNrows( Index nrows )
+  {
+    nrows_ = nrows;
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info DenseMatrix<T>::print() const
+  Info DenseMatrix<T>::setNcols( Index ncols )
   {
-    if( need_update )
-      CUDA_SAFE_CALL(cudaMemcpy(h_denseVal, d_denseVal, 
-          nvals_*sizeof(T), cudaMemcpyDeviceToHost));
+    ncols_ = ncols;
+    return GrB_SUCCESS;
+  }
 
-    printArray( "denseVal", h_denseVal );
-    printDense();
+  template <typename T>
+  Info DenseMatrix<T>::resize( Index nrows, Index ncols )
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  template <typename U>
+  Info DenseMatrix<T>::fill( Index axis,
+                             Index nvals,
+                             U     start )
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  template <typename U>
+  Info DenseMatrix<T>::fillAscending( Index axis,
+                                      Index nvals,
+                                      U     start )
+  {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseMatrix<T>::allocate()
+  {
+    // Host alloc
+    if( nvals_!=0 && h_denseVal_ == NULL )
+      h_denseVal_ = (T*)malloc(nvals_*sizeof(T));
+
+    for( Index i=0; i<nvals_; i++ )
+      h_denseVal_[i] = (T) 0;
+
+    if( nvals_!=0 && d_denseVal_ == NULL )
+      CUDA( cudaMalloc( &d_denseVal_, nvals_*sizeof(T) ) );
+
+    if( h_denseVal_==NULL || d_denseVal_==NULL ) return GrB_OUT_OF_MEMORY;
+
     return GrB_SUCCESS;
   }
 
   template <typename T>
   Info DenseMatrix<T>::printDense() const
   {
-    int length=std::min(20,nrows_);
-    for( int row=0; row<length; row++ ) {
-      for( int col=0; col<length; col++ ) {
-        // Print row major order matrix in row major order
-        //#ifdef ROW_MAJOR
-        if( h_denseVal[row*ncols_+col]!=0.0 ) std::cout << "x ";
-        else std::cout << "0 ";
-        //#endif
+    Index row_length=std::min(20,nrows_);
+    Index col_length=std::min(20,ncols_);
+
+    for( Index row=0; row<row_length; row++ )
+    {
+      for( Index col=0; col<col_length; col++ )
+      {
+        // Print row major order matrix in row major order by default
+        //if( major_type_ == GrB_ROWMAJOR )
+        //{
+          if( h_denseVal_[row*ncols_+col]!=0.0 ) std::cout << "x ";
+          else std::cout << "0 ";
         // Print column major order matrix in row major order (Transposition)
-        //#ifdef COL_MAJOR
-        //if( h_denseVal[col*nrows_+row]!=0.0 ) std::cout << "x ";
-        //else std::cout << "0 ";
-        //#endif
+        /*}
+        else if (major_type_ == GrB_COLMAJOR )
+        {
+          if( h_denseVal_[col*nrows_+row]!=0.0 ) std::cout << "x ";
+          else std::cout << "0 ";
+        }*/
       }
       std::cout << std::endl;
     }
@@ -197,25 +339,23 @@ namespace backend
   }
 
   template <typename T>
-  Info DenseMatrix<T>::nrows( Index& nrows ) const
+  Info DenseMatrix<T>::cpuToGpu()
   {
-    nrows = nrows_;
+    CUDA( cudaMemcpy( d_denseVal_, h_denseVal_, nvals_*sizeof(T),
+        cudaMemcpyHostToDevice ) );
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info DenseMatrix<T>::ncols( Index& ncols ) const
+  Info DenseMatrix<T>::gpuToCpu( bool force_update )
   {
-    ncols = ncols_;
+    if( need_update_ || force_update )
+      CUDA( cudaMemcpy( h_denseVal_, d_denseVal_, nvals_*sizeof(T),
+          cudaMemcpyDeviceToHost ) );
+    need_update_ = false;
     return GrB_SUCCESS;
   }
 
-  template <typename T>
-  Info DenseMatrix<T>::nvals( Index& nvals ) const
-  {
-    nvals = nvals_;
-    return GrB_SUCCESS;
-  }
 } // backend
 } // graphblas
 

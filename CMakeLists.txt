@@ -1,5 +1,4 @@
 # CMakeLists.txt for unittest
-#PROJECT( graphblas C CXX )
  
 # required cmakeversion                                                                                                                                                                                   
 cmake_minimum_required(VERSION 2.8)
@@ -15,33 +14,30 @@ find_package(Boost COMPONENTS program_options REQUIRED)
 set( PROJ_NAME      "/test" )
 set( PROJ_PATH      ${CMAKE_SOURCE_DIR})
 set( PROJ_OUT_PATH  ${CMAKE_BINARY_DIR})
-#set( PROJ_SOURCES   ".cpp" )
 set( PROJ_HEADERS   "" )
 set( PROJ_LIBRARIES "" )
-set( PROJ_INCLUDES  "../" )
-#set( mgpu_SRC_DIR "../../ext/moderngpu/src")
-#set( mgpu_SRC_FILES ${mgpu_SRC_DIR}/mgpucontext.cu ${mgpu_SRC_DIR}/mgpuutil.cpp)
+set( PROJ_INCLUDES  "./" "ext/moderngpu/include" "ext/cub")
+set( mgpu_SRC_FILES "ext/moderngpu/src/mgpucontext.cu" "ext/moderngpu/src/mgpuutil.cpp")
+set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 
 #set( CUDA_CURAND_LIBRARY "$ENV{CUDA_HOME}/lib64/libcurand.so" )
 #set( CUDA_CUBLAS_LIBRARY "$ENV{CUDA_HOME}/lib64/libcublas.so" )
 set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
 
-#FILE( GLOB_RECURSE PROJ_SOURCES ../graphblas/*.cu ../graphblas/*.cpp )
-#FILE( GLOB_RECURSE PROJ_LIBRARIES ../../ext/cublas1.1/*.cu )
-FILE( GLOB_RECURSE PROJ_HEADERS ../graphblas/*.hpp ../graphblas/*.cuh)
+#FILE( GLOB_RECURSE PROJ_SOURCES graphblas/*.cu ../graphblas/*.cpp )
+#FILE( GLOB_RECURSE PROJ_LIBRARIES ext/cublas1.1/*.cu )
+FILE( GLOB_RECURSE PROJ_HEADERS graphblas/*.hpp)
 
 # nvcc flags
-set(CUDA_NVCC_FLAGS -arch=sm_35;-lineinfo;-O3;-use_fast_math;-lineinfo;-std=c++11;-Xptxas=-v)
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_35 -lineinfo -O3 -use_fast_math -Xptxas=-v")
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-Xptxas=-v;-dlcm=ca;-maxrregcount=64)
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_21)
 
 # needed for cudamalloc
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "-fpermissive -m64" )
+set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++11" )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 #set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/lib/libiomp5 -liomp5" )
-#set(CMAKE_EXE_LINKER_FLAGS "-lboost_unit_test_framework -Wl,--start-group $ENV{MKLROOT}/lib/intel64/libmkl_intel_lp64.a $ENV{MKLROOT}/lib/intel64/libmkl_gnu_thread.a $ENV{MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lgomp -lpthread -lm -ldl")
 #set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --verbose")
 
 # ptx generation
@@ -59,17 +55,23 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 #set_target_properties( benchmark_spgemm${PROJ_NAME} PROPERTIES LINKER_LANGUAGE CXX )
 
 # standard compilation
-include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} $ENV{MKLROOT} ${OpenMP_INCLUDE_PATH} )
+message( ${Boost_INCLUDE_DIRS} )
+message( ${Boost_LIBRARY_DIRS} )
+include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} )
 cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
-#cuda_add_executable( matrix${PROJ_NAME} "matrix/main.cu" )#${mgpu_SRC_FILES}
-#cuda_add_executable( mmio${PROJ_NAME} "mmio/main.cu" )#${mgpu_SRC_FILES}
-cuda_add_executable( spmm${PROJ_NAME} "spmm/main.cu" )#${mgpu_SRC_FILES}
-#cuda_add_executable( spgemm${PROJ_NAME} "spgemm/main.cu" )#${mgpu_SRC_FILES}
-cuda_add_executable( benchmark_spmm${PROJ_NAME} "benchmark_spmm/main.cu" )#${mgpu_SRC_FILES}
-#cuda_add_executable( benchmark_spgemm${PROJ_NAME} "benchmark_spgemm/main.cu" )#${mgpu_SRC_FILES}
-#target_link_libraries( matrix${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-#target_link_libraries( mmio${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-target_link_libraries( spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-#target_link_libraries( spgemm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} ${MKL_LIBRARIES} )
-target_link_libraries( benchmark_spmm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-#target_link_libraries( benchmark_spgemm${PROJ_NAME} grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#cuda_add_executable( gmatrix "test/gmatrix.cu" )
+#cuda_add_executable( gutil   "test/gutil.cu" )
+cuda_add_executable( gvector "test/gvector.cu" )
+cuda_add_executable( gmmio   "test/gmmio.cu" )
+#cuda_add_executable( gspmm   "test/gspmm.cu" ${mgpu_SRC_FILES} )
+#cuda_add_executable( gspgemm "test/gspgemm.cu" )
+#cuda_add_executable( gbspmm "test/gbspmm.cu" ${mgpu_SRC_FILES} )
+#cuda_add_executable( gbspgemm "test/gbspgemm.cu" )
+#target_link_libraries( gmatrix grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( gutil   grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+target_link_libraries( gvector grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+target_link_libraries( gmmio   grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( gspmm   grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( gspgemm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( gbspmm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+#target_link_libraries( gbspgemm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES})

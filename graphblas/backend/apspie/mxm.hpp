@@ -2,140 +2,101 @@
 #define GRB_BACKEND_APSPIE_MXM_HPP
 
 #include <iostream>
+#include <vector>
 
-#include <cuda.h>
+#include "graphblas/types.hpp"
 
 #include "graphblas/backend/apspie/Matrix.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
-#include "graphblas/backend/apspie/spmm.hpp"
 #include "graphblas/backend/apspie/spgemm.hpp"
-#include "graphblas/types.hpp"
 
 namespace graphblas
 {
 namespace backend
 {
-  template <typename c, typename m, typename a, typename b>
-  Info mxm( Matrix<c>&        C,
-            const Matrix<m>&  mask,
-            const BinaryOp&   accum,
-            const Semiring&   op,
-            const Matrix<a>&  A,
-            const Matrix<b>&  B,
-            const Descriptor& desc ); 
+  template <typename T>
+  class Matrix;
+
+  template <typename c, typename a, typename b>
+  Info mxmTriple( SparseMatrix<c>&       C,
+                  const SparseMatrix<c>& D,
+                  const SparseMatrix<a>& A_t,
+                  const SparseMatrix<b>& B,
+                  const SparseMatrix<a>& A );
 
   template <typename c, typename a, typename b>
   Info mxm( Matrix<c>&       C,
-            const Semiring&  op,
-            const Matrix<a>& A,
-            const Matrix<b>& B );
-
-  // For testing
-  template <typename c, typename a, typename b>
-  Info mxm( Matrix<c>&       C,
-            const Semiring&  op,
-            const Matrix<a>& A,
+            Matrix<c>&       D,
+            const Matrix<a>& A_t,
             const Matrix<b>& B,
-            const int TA,
-            const int TB,
-            const int NT,
-            const bool ROW_MAJOR )
+            const Matrix<a>& A )
   {
-    Storage A_storage, B_storage, C_storage;
-    A.getStorage( A_storage );
+    Storage B_storage, A_storage, At_storage;
     B.getStorage( B_storage );
-    C.getStorage( C_storage );
+    A.getStorage( A_storage );
+    A_t.getStorage( At_storage );
 
-    // Decision tree:
-    // a) Sp x Sp: SpGEMM (cusparse only)
-    // b) Sp x De:   SpMM (DONE) 
-    // c) De x Sp:   SpMM (TODO)
-    // c) De x De:   GEMM (TODO)
-    // TODO:
-    // -currently have static Sp x Sp = Sp
-    // -would like to have heuristic that decides when Sp x Sp = De
     Info err;
-    if( A_storage == Sparse && B_storage == Sparse) {
-      if( C_storage == Unknown )
-        err = C.setStorage( Sparse );
-      if( TA==0 && TB==0 && NT==1 )
-        err = cusparse_spgemm2( C.sparse, op, A.sparse, B.sparse );
-      else
-        err = cusparse_spgemm( C.sparse, op, A.sparse, B.sparse );
-    } else if( A_storage == Sparse && B_storage == Dense ) {
-      if( C_storage == Unknown )
-        err = C.setStorage( Dense );
-      if( TA==0 && TB==0 && NT==0 )
-        err = cusparse_spmm( C.dense, op, A.sparse, B.dense );
-      else
-        err = spmm( C.dense, op, A.sparse, B.dense, TA, TB, NT, ROW_MAJOR );
+    if( B_storage == GrB_SPARSE && A_storage == GrB_SPARSE && 
+        At_storage == GrB_SPARSE )
+    {
+      err = mxmTriple( C.sparse_, D.sparse_, 
+                       A_t.sparse_, B.sparse_, A.sparse_ );
     }
     return err;
   }
 
-  // For testing
   template <typename c, typename a, typename b>
-  Info mxmAnalyze( Matrix<c>&       C,
-                   const Semiring&  op,
-                   const Matrix<a>& A,
-                   const Matrix<b>& B,
-                   const int TA,
-                   const int TB,
-                   const int NT,
-                   const bool ROW_MAJOR )
+  Info mxm( Matrix<c>&       C,
+            const Matrix<a>& A,
+            const Matrix<b>& B )
   {
-    Storage A_storage, B_storage, C_storage;
+    Storage B_storage, A_storage;
     A.getStorage( A_storage );
     B.getStorage( B_storage );
-    C.getStorage( C_storage );
 
-    // Decision tree:
-    // a) Sp x Sp: SpGEMM (cusparse only)
-    // b) Sp x De:   SpMM (TODO) 
-    // c) De x Sp:   SpMM (TODO)
-    // c) De x De:   GEMM (TODO)
     Info err;
-    if( A_storage == Sparse && B_storage == Sparse) {
-      if( C_storage == Unknown )
-        err = C.setStorage( Sparse );
-      err = cusparse_spgemm_analyze( C.sparse, op, A.sparse, B.sparse );
+    if( B_storage == GrB_SPARSE && A_storage == GrB_SPARSE )
+    {
+      err = mxm( C.sparse_, A.sparse_, B.sparse_ );
     }
     return err;
   }
-
-  // For testing
+  
+  // wrapper for switching between my spgemm and cusparse
   template <typename c, typename a, typename b>
-  Info mxmCompute( Matrix<c>&       C,
-                   const Semiring&  op,
-                   const Matrix<a>& A,
-                   const Matrix<b>& B,
-                   const int TA,
-                   const int TB,
-                   const int NT,
-                   const bool ROW_MAJOR )
+  Info mxmTriple( SparseMatrix<c>&       C,
+                  SparseMatrix<c>&       D,
+                  const SparseMatrix<a>& A_t,
+                  const SparseMatrix<b>& B,
+                  const SparseMatrix<a>& A )
   {
-    Storage A_storage, B_storage, C_storage;
-    A.getStorage( A_storage );
-    B.getStorage( B_storage );
-    C.getStorage( C_storage );
-
-    // Decision tree:
-    // a) Sp x Sp: SpGEMM (cusparse only)
-    // b) Sp x De:   SpMM (TODO) 
-    // c) De x Sp:   SpMM (TODO)
-    // c) De x De:   GEMM (TODO)
     Info err;
-    if( A_storage == Sparse && B_storage == Sparse) {
-      if( C_storage == Unknown )
-        err = C.setStorage( Sparse );
-      if( TA==0 && TB==0 && NT==1 )
-        err = cusparse_spgemm2_compute( C.sparse, op, A.sparse, B.sparse );
-      else
-        err = cusparse_spgemm_compute( C.sparse, op, A.sparse, B.sparse );
-    }
+
+    err = cusparse_spgemm( D,   B, A );
+	  CUDA( cudaDeviceSynchronize() );
+    err = cusparse_spgemm( C, A_t, D );
+    //cusparse_spgemm2( D, A_t, B );
+    //cusparse_spgemm2( C, B, A );
+
     return err;
   }
+
+  // wrapper for switching between my spgemm and cusparse
+  template <typename c, typename a, typename b>
+  Info mxm( SparseMatrix<c>&       C,
+            const SparseMatrix<a>& A,
+            const SparseMatrix<b>& B )
+  {
+    Info err;
+
+    err = cusparse_spgemm( C, A, B );
+    //err = cusparse_spgemm2( C, A, B );
+
+    return err;
+  }
+
 }  // backend
 }  // graphblas
 

@@ -1,27 +1,14 @@
-//#define GRB_USE_SEQUENTIAL
-#define GRB_USE_APSPIE
-//#define private public
-
 #include <iostream>
 #include <algorithm>
 #include <string>
 
 #include <cstdio>
 #include <cstdlib>
-#ifdef GRB_USE_SEQUENTIAL
-  #define GpuTimer CpuTimer
-#else
-  #ifdef GRB_USE_APSPIE
-  #include <cuda_profiler_api.h>
-  #endif
-#endif
-
-#include "graphblas/mmio.hpp"
-#include "graphblas/util.hpp"
-#include "graphblas/graphblas.hpp"
 
 #include <boost/program_options.hpp>
-#include <test/test.hpp>
+
+#include "graphblas/graphblas.hpp"
+#include "test/test.hpp"
 
 int main( int argc, char** argv )
 {
@@ -48,11 +35,6 @@ int main( int argc, char** argv )
     SPLIT    = vm["split"].as<bool>();
   if( vm.count("iter") )
     NUM_ITER = vm["iter"].as<int>();
-  if( vm.count("device") ) {
-    DEVICE   = vm["device"].as<int>();
-    cudaDeviceProp prop;
-    CUDA_SAFE_CALL( cudaGetDeviceProperties( &prop, DEVICE ));
-    if( DEBUG ) std::cout << "Using device: " << DEVICE << ", " << prop.name << "\n";
   }
   // ROW_MAJOR == 1: means row major
   // ROW_MAJOR == 0: means col major
@@ -81,7 +63,7 @@ int main( int argc, char** argv )
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
-    readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
+    readTsv( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
     nvals, DEBUG );
   }
 
@@ -101,26 +83,24 @@ int main( int argc, char** argv )
   b.nvals( nvals );
 
   graphblas::Matrix<float> c(nrows, ncols);
-  graphblas::Semiring op;
 
   // Warmup
-  GpuTimer warmup;
+  CpuTimer warmup;
   warmup.Start();
-  graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
+  graphblas::mxm<float, float, float>( c, a, b );
   warmup.Stop();
  
-  GpuTimer gpu_mxm;
+  CpuTimer cpu_mxm;
   //cudaProfilerStart();
-  gpu_mxm.Start();
+  cpu_mxm.Start();
   for( int i=0; i<NUM_ITER; i++ ) {
     if( SPLIT )
-      graphblas::mxmCompute<float, float, float>( c, op, a, b, TA, TB, NT, 
-          ROW_MAJOR );
+      graphblas::mxmCompute<float, float, float>( c, a, b );
     else
-    graphblas::mxm<float, float, float>( c, op, a, b, TA, TB, NT, ROW_MAJOR );
+    graphblas::mxm<float, float, float>( c, a, b );
   }
   //cudaProfilerStop();
-  gpu_mxm.Stop();
+  cpu_mxm.Stop();
 
   float flop = 0;
   if( DEBUG ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<

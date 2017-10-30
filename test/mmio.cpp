@@ -27,10 +27,10 @@ BOOST_AUTO_TEST_CASE( mmio1 )
   graphblas::Index nvals;
 
   // Read in test_cc.mtx
-  char const *argv = "../dataset/small/test_cc.mtx";
+  char const *argv = "dataset/small/simulated_blockmodel_graph_50_nodes.mtx";
   readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
 
-  int rhs[12] = {0, 1, 2, 2, 2, 3, 3, 4, 4, 5, 5, 5};
+  int rhs[12] = {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2};
   //for( int i=0; i<12; i++ ) std::cout << row_indices[i] << "\n";
   BOOST_ASSERT_LIST( row_indices, rhs, 12 );
 }
@@ -46,10 +46,10 @@ BOOST_AUTO_TEST_CASE( mmio2 )
   graphblas::Index nvals;
 
   // Read in chesapeake.mtx
-  char const *argv = "../dataset/small/chesapeake.mtx";
+  char const *argv = "dataset/small/simulated_blockmodel_graph_50_nodes.mtx";
   readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
 
-  int rhs[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+  int rhs[12] = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1};
   //for( int i=0; i<12; i++ ) std::cout << row_indices[i] << "\n";
   BOOST_ASSERT_LIST( row_indices, rhs, 12 );
 }

@@ -6,9 +6,12 @@
 #include <cuda.h>
 #include <cusparse.h>
 
+#include <moderngpu.cuh>
+
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 #include "graphblas/types.hpp"
+#include "graphblas/util.hpp"
 
 //#define TA     32
 //#define TB     32
@@ -31,15 +34,14 @@ namespace backend
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
       const c* B_denseVal, c* C_denseVal );
 
-  template<typename c, typename a, typename b>
+  template<typename c, typename m, typename a, typename b>
   Info spmm( DenseMatrix<c>&        C,
+             const SparseMatrix<m>& mask,
+             const BinaryOp&        accum,
              const Semiring&        op,
              const SparseMatrix<a>& A,
              const DenseMatrix<b>&  B,
-             const int TA,
-             const int TB,
-             const int NT,
-             const bool ROW_MAJOR )
+             const Descriptor&      desc )
   {
     Index A_nrows, A_ncols, A_nvals;
     Index B_nrows, B_ncols;
@@ -66,82 +68,88 @@ namespace backend
     // Domain compatibility check
     // TODO: add domain compatibility check
 
+    // Read descriptor
+    Desc_value mode, ta, tb, nt;
+    desc.get( GrB_MODE, mode );
+    desc.get( GrB_TA  , ta );
+    desc.get( GrB_TB  , tb );
+    desc.get( GrB_NT  , nt );
+
     // Computation
-    const int T        = TA;
-    const int NTHREADS = NT;
+    const int T        = static_cast<int>(ta);
+    const int TB       = static_cast<int>(tb);
+    const int NTHREADS = static_cast<int>(nt);
     const int NBLOCKS  = (T*A_nrows+NTHREADS-1)/NTHREADS;
-    //CUDA_SAFE_CALL( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
-    if( ROW_MAJOR )
+    //CUDA( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
+    if( mode == GrB_FIXEDROW )
       switch( TB ) {
         /*case 1:
           spmm_row_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 2:
           spmm_row_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;*/
         case 4:
           spmm_row_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 8:
           spmm_row_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 16:
           spmm_row_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 32:
           spmm_row_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
-      }
-    else
-      switch( TB ) {
+      } else switch( TB ) {
         /*case 1:
           spmm_col_kernel<c,1><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 2:
           spmm_col_kernel<c,2><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;*/
         case 4:
           spmm_col_kernel<c,4><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 8:
           spmm_col_kernel<c,8><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 16:
           spmm_col_kernel<c,16><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
         case 32:
           spmm_col_kernel<c,32><<<NBLOCKS,NTHREADS>>>( A_nrows, 
-            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal,
+            B_ncols, A_ncols, A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
             B.d_denseVal, C.d_denseVal );
           break;
       }
 
     //spmm_col_kernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,
-    //  A.d_csrRowPtr, A.d_csrColInd, A.d_csrVal, B.d_denseVal, C.d_denseVal );
+    //  A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_, B.d_denseVal, C.d_denseVal );
 
-    C.need_update = true;
+    C.need_update_ = true;
     return GrB_SUCCESS;
   }
 
@@ -391,7 +399,7 @@ namespace backend
     float beta  = 0.0;
     status = cusparseScsrmm( handle,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
-        &alpha, descr, A.d_csrVal, A.d_csrRowPtr, A.d_csrColInd, B.d_denseVal,
+        &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, B.d_denseVal,
         A_ncols,      // ldb = max(1,k) since op(A) = A
         &beta, C.d_denseVal,
         A_nrows );    // ldc = max(1,m) since op(A) = A
@@ -422,9 +430,55 @@ namespace backend
             std::cout << "Error: Matrix type not supported.\n";
     }
 
-    C.need_update = true;  // Set flag that we need to copy data from GPU
+    C.need_update_ = true;  // Set flag that we need to copy data from GPU
     return GrB_SUCCESS;
   }
+
+  template<typename c, typename a, typename b>
+  Info mergepath_spmm( DenseMatrix<c>&        C,
+                       const Semiring&        op,
+                       const SparseMatrix<a>& A,
+                       const DenseMatrix<b>&  B )
+  {
+    Index A_nrows, A_ncols, A_nvals;
+    Index B_nrows, B_ncols;
+    Index C_nrows, C_ncols;
+
+    A.nrows( A_nrows );
+    A.ncols( A_ncols );
+    A.nvals( A_nvals );
+    B.nrows( B_nrows );
+    B.ncols( B_ncols );
+    C.nrows( C_nrows );
+    C.ncols( C_ncols );
+
+    // Dimension compatibility check
+    if( (A_ncols != B_nrows) || (C_ncols != B_ncols) || (C_nrows != A_nrows ) )
+    {
+      std::cout << "Dim mismatch" << std::endl;
+      std::cout << A_ncols << " " << B_nrows << std::endl;
+      std::cout << C_ncols << " " << B_ncols << std::endl;
+      std::cout << C_nrows << " " << A_nrows << std::endl;
+      return GrB_DIMENSION_MISMATCH;
+    }
+
+    // Domain compatibility check
+    // TODO: add domain compatibility check
+
+    // Computation
+    mgpu::ContextPtr context = mgpu::CreateCudaDevice(0);
+    CUDA( cudaDeviceSynchronize() );
+    std::cout << "Success creating mgpu context\n";
+    mgpu::SpmmCsrBinary( A.d_csrVal_, A.d_csrColInd_, A_nvals, A.d_csrRowPtr_, 
+        A_nrows, B.d_denseVal, true, C.d_denseVal, (c) 0, mgpu::multiplies<c>(),
+        mgpu::plus<c>(), B_nrows, *context );
+    std::cout << "Finished SpmmCsrBinary\n";
+    CUDA( cudaDeviceSynchronize() );
+
+    C.need_update_ = true;  // Set flag that we need to copy data from GPU
+    return GrB_SUCCESS;
+  }
+
 }  // backend
 }  // graphblas
 

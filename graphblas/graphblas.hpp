@@ -2,9 +2,11 @@
 #define GRB_GRAPHBLAS_HPP
 
 #include "graphblas/backend.hpp"
-#include "graphblas/types.hpp"
 #include "graphblas/mmio.hpp"
+#include "graphblas/types.hpp"
 #include "graphblas/util.hpp"
+#include "graphblas/Descriptor.hpp"
+#include "graphblas/Vector.hpp"
 #include "graphblas/Matrix.hpp"
 #include "graphblas/mxm.hpp"
 

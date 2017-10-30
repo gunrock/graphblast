@@ -1,5 +1,5 @@
-#ifndef GRB_BACKEND_APSPIE_APSPIE
-#define GRB_BACKEND_APSPIE_APSPIE
+#ifndef GRB_BACKEND_APSPIE_APSPIE_HPP
+#define GRB_BACKEND_APSPIE_APSPIE_HPP
 
 #define CUDA_SAFE_CALL_NO_SYNC(call) do {                               \
   cudaError err = call;                                                 \
@@ -9,7 +9,7 @@
     exit(EXIT_FAILURE);                                                 \
     } } while (0)
 
-#define CUDA_SAFE_CALL(call) do {                                       \
+#define CUDA(call) do {                                       \
   CUDA_SAFE_CALL_NO_SYNC(call);                                         \
   cudaError err = cudaThreadSynchronize();                              \
   if( cudaSuccess != err) {                                             \
@@ -18,4 +18,15 @@
      exit(EXIT_FAILURE);                                                \
   } } while (0)
 
-#endif  // GRB_BACKEND_APSPIE_APSPIE
+#include "graphblas/backend/apspie/Vector.hpp"
+#include "graphblas/backend/apspie/Matrix.hpp"
+#include "graphblas/backend/apspie/mxm.hpp"
+#include "graphblas/backend/apspie/transpose.hpp"
+#include "graphblas/backend/apspie/reduce.hpp"
+#include "graphblas/backend/apspie/util.hpp"
+#include "graphblas/backend/apspie/SparseVector.hpp"
+#include "graphblas/backend/apspie/DenseVector.hpp"
+#include "graphblas/backend/apspie/SparseMatrix.hpp"
+#include "graphblas/backend/apspie/DenseMatrix.hpp"
+
+#endif  // GRB_BACKEND_APSPIE_APSPIE_HPP

@@ -1,6 +1,6 @@
 
 
-ARCH="GEN_SM15"
+ARCH="GEN_SM35"
 
 echo "data, milliseconds, gflops"
 for i in ak2010 #mc2depi pwtk pdb1HYS consph hood webbase-1M #belgium_osm coAuthorsDBLP delaunay_n13 delaunay_n21 webbase-1M soc-LiveJournal1 kron_g500-logn21
@@ -29,7 +29,7 @@ fi
 for i in kron_g500-logn16 kron_g500-logn17 kron_g500-logn18 kron_g500-logn19 kron_g500-logn20 kron_g500-logn21
 do
 	if [ "$ARCH" = "GEN_SM25" ] ; then
-        ./test /data/gunrock_dataset/large/$i/$i.mtx -undirected
+        benchmark/test /data/gunrock_dataset/large/$i/$i.mtx -undirected
     fi
 done
 
@@ -43,7 +43,7 @@ done
 for i in ak2010 belgium_osm coAuthorsDBLP delaunay_n13 delaunay_n21 webbase-1M soc-LiveJournal1 kron_g500-logn21
 do
     if [ "$ARCH" = "GEN_SM35" ] ; then
-        ./test /data/gunrock_dataset/large/$i/$i.mtx
+        benchmark_spmm/test --mode=cusparse --nt=64 /data/gunrock_dataset/large/$i/$i.mtx
     else
         if [ "$ARCH" = "GEN_SM40" ] ; then
             #./test /data/gunrock_dataset/large/soc-LiveJournal1/soc-LiveJournal1.mtx
