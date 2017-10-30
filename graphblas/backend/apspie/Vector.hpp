@@ -28,6 +28,9 @@ namespace backend
         : nvals_(nvals), sparse_(nvals), dense_(nvals), 
           vec_type_(GrB_UNKNOWN) {}
 
+    // Default destructor is good enough for this layer
+    ~Vector() {}
+
     // C API Methods
     Info nnew(  Index nsize );
     Info dup(   const Vector* rhs );
@@ -51,12 +54,11 @@ namespace backend
                          Index*          n );
 
     // private method for allocation
-    void operator=( Vector* rhs );
     const T& operator[]( Index ind );
     Info resize( Index nvals );
     Info fill( Index vals );
     Info print( bool forceUpdate = false );
-    Info countUnique( Index& count );
+    Info countUnique( Index* count );
 
     private: 
     Index           nvals_;      // 3 ways to set: (1) dup  (2) build 
@@ -81,9 +83,9 @@ namespace backend
   {
     vec_type_ = rhs->vec_type_;
     if( vec_type_ == GrB_SPARSE )
-      return sparse_.dup( rhs->sparse_ );
+      return sparse_.dup( &rhs->sparse_ );
     else if( vec_type_ == GrB_SPARSE )
-      return dense_.dup( rhs->dense_ );
+      return dense_.dup( &rhs->dense_ );
     return GrB_PANIC;
   }
 
@@ -91,7 +93,7 @@ namespace backend
 	Info Vector<T>::clear()
   {
     Info err;
-    mat_type_ = GrB_UNKNOWN;
+    vec_type_ = GrB_UNKNOWN;
     err = sparse_.clear();
     err = dense_.clear();
     return err;
@@ -164,8 +166,8 @@ namespace backend
   }
 
   template <typename T>
-	Info Vector<T>::extractTuples(  std::vector<T>* values,
-											            Index*          n )
+	Info Vector<T>::extractTuples( std::vector<T>* values,
+											           Index*          n )
   {
     if( vec_type_ == GrB_SPARSE )
       return sparse_.extractTuples( values, n );
@@ -174,18 +176,7 @@ namespace backend
     else return GrB_UNINITIALIZED_OBJECT;
   }
 
-  // private method for allocation
-  template <typename T>
-  void Vector<T>::operator=( Vector* rhs )
-  {
-    vec_type_ = rhs->vec_type_;
-    if( vec_type_ == GrB_SPARSE )
-      sparse_ = rhs->sparse_;
-    else if( vec_type_ == GrB_DENSE )
-      dense_ = rhs->dense_;
-    else return GrB_UNINITIALIZED_OBJECT;
-  }
-
+  // Handy methods:
   template <typename T>
   const T& Vector<T>::operator[]( Index ind )
   {
@@ -229,7 +220,7 @@ namespace backend
 
   // Count number of unique numbers
   template <typename T>
-  Info Vector<T>::countUnique( Index& count )
+  Info Vector<T>::countUnique( Index* count )
   {
     return GrB_SUCCESS;
   }

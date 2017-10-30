@@ -35,9 +35,12 @@ namespace backend
       allocate(nvals_);
     }
 
+    // Need to write Default Destructor
+    ~DenseVector();
+
     // C API Methods
     Info nnew(  Index nsize );
-    Info dup(   const DenseVector& rhs );
+    Info dup(   const DenseVector* rhs );
     Info clear();
     Info size(  Index* nsize_ ) const;
     Info nvals( Index* nvals_ ) const;
@@ -58,12 +61,11 @@ namespace backend
                          Index*          n );
 
     // handy methods
-    void operator=( Vector* rhs );
     const T& operator[]( Index ind );
     Info resize( Index nvals );
     Info fill( Index vals );
     Info print( bool forceUpdate = false );
-    Info countUnique( Index& count );
+    Info countUnique( Index* count );
  
     private:
     Info allocate( Index nvals );  
@@ -80,6 +82,13 @@ namespace backend
     bool  need_update_; // set to true by changing DenseVector
                        // set to false by gpuToCpu()
   };
+
+  template <typename T>
+  DenseVector<T>::~DenseVector()
+  {
+    if( h_val_!=NULL ) free(h_val_);
+    if( d_val_!=NULL ) CUDA( cudaFree(d_val_) );
+  }
 
   template <typename T>
   Info DenseVector<T>::nnew( Index nsize )
@@ -196,7 +205,7 @@ namespace backend
                                       Index*          n )
   {
     Info err = gpuToCpu();
-    values.clear();
+    values->clear();
 
     if( n==NULL ) return GrB_NULL_POINTER;
     if( *n>nvals_ )
@@ -211,24 +220,6 @@ namespace backend
       values->push_back( h_val_[i]);
     
     return err;
-  }
-
-  template <typename T>
-  void DenseVector<T>::operator=( DenseVector* rhs )
-  {
-    nvals_ = rhs->nvals_;
-
-    if( d_val_==NULL && h_val_==NULL )
-      allocate( rhs->nvals_ );
-    if( err != GrB_SUCCESS ) return err;
-
-    //std::cout << "copying " << nrows_+1 << " rows\n";
-    //std::cout << "copying " << nvals_+1 << " rows\n";
-
-    CUDA( cudaMemcpy( d_val_, rhs->d_val_, nvals_*sizeof(T),
-        cudaMemcpyDeviceToDevice ) );
-
-    need_update_ = true;
   }
 
   template <typename T>
@@ -288,7 +279,7 @@ namespace backend
 
   // Count number of unique numbers
   template <typename T>
-  Info DenseVector<T>::countUnique( Index& count )
+  Info DenseVector<T>::countUnique( Index* count )
   {
     Info err = gpuToCpu();
     std::unordered_set<Index> unique;

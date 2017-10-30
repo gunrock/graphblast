@@ -25,7 +25,7 @@ namespace backend
   class SparseVector
   {
     public:
-    SparseVector() : nsize_(0), nvals_(nvals), ncapacity_(0), h_ind_(NULL), 
+    SparseVector() : nsize_(0), nvals_(0), ncapacity_(0), h_ind_(NULL), 
           h_val_(NULL), d_ind_(NULL), d_val_(NULL), need_update_(0) {}
 
     SparseVector( Index nvals )
@@ -35,9 +35,12 @@ namespace backend
       allocate(nvals);
     }
 
+    // Need to write Default Destructor
+    ~SparseVector();
+
     // C API Methods
     Info nnew(  Index nvals );
-    Info dup(   const SparseVector& rhs );
+    Info dup(   const SparseVector* rhs );
     Info clear();
     Info size(  Index* nsize_t  ) const;
     Info nvals( Index* nvals_t ) const;
@@ -58,12 +61,11 @@ namespace backend
                          Index*          n );
 
     // handy methods
-    void operator=( Vector* rhs );
     const T& operator[]( Index ind );
     Info resize( Index nvals );
     Info fill( Index vals );
     Info print( bool forceUpdate = false );
-    Info countUnique( Index& count );
+    Info countUnique( Index* count );
  
     private:
     Info allocate( Index nvals );  
@@ -83,6 +85,15 @@ namespace backend
     bool  need_update_; // set to true by changing SparseVector
                        // set to false by gpuToCpu()
   };
+
+  template <typename T>
+  SparseVector<T>::~SparseVector()
+  {
+    if( h_ind_!=NULL ) free(h_ind_);
+    if( h_val_!=NULL ) free(h_val_);
+    if( d_ind_!=NULL ) CUDA( cudaFree(d_ind_) );
+    if( d_ind_!=NULL ) CUDA( cudaFree(d_val_) );
+  }
 
   template <typename T>
   Info SparseVector<T>::nnew( Index nvals )
@@ -197,7 +208,8 @@ namespace backend
                                        Index*              n )
   {
     Info err = gpuToCpu();
-    values.clear();
+    indices->clear();
+    values->clear();
 
     if( n==NULL ) return GrB_NULL_POINTER;
     if( *n>nvals_ )
@@ -222,26 +234,6 @@ namespace backend
                                        Index*          n )
   {
     return GrB_SUCCESS;
-  }
-
-  template <typename T>
-  void SparseVector<T>::operator=( SparseVector* rhs )
-  {
-    nvals_ = rhs->nvals_;
-
-    if( d_ind_==NULL && h_ind_==NULL && d_val_==NULL && h_val_==NULL )
-      allocate( rhs->nvals_ );
-    if( err != GrB_SUCCESS ) return err;
-
-    //std::cout << "copying " << nrows_+1 << " rows\n";
-    //std::cout << "copying " << nvals_+1 << " rows\n";
-
-    CUDA( cudaMemcpy( d_ind_, rhs->d_ind_, nvals_*sizeof(Index),
-        cudaMemcpyDeviceToDevice ) );
-    CUDA( cudaMemcpy( d_val_, rhs->d_val_, nvals_*sizeof(T),
-        cudaMemcpyDeviceToDevice ) );
-
-    need_update_ = true;
   }
 
   // If ind is found, then return the value at that ind
@@ -318,7 +310,7 @@ namespace backend
 
   // Count number of unique numbers
   template <typename T>
-  Info SparseVector<T>::countUnique( Index& count )
+  Info SparseVector<T>::countUnique( Index* count )
   {
     Info err = gpuToCpu();
     std::unordered_set<Index> unique;

@@ -21,25 +21,29 @@ namespace backend
     // Alternative to new in C++
     Matrix() : nrows_(0), ncols_(0), sparse_(0,0), dense_(0,0),
                mat_type_(GrB_SPARSE) {}
-    Matrix( const Index nrows, const Index ncols )
+    Matrix( Index nrows, Index ncols )
         : nrows_(nrows), ncols_(ncols), sparse_(nrows,ncols), 
           dense_(nrows,ncols), mat_type_(GrB_SPARSE) {}
 
-    // Destructor
-    // TODO
-    ~Matrix() {};
+    // Default Destructor is good enough for this layer
+    ~Matrix() {}
 
     // C API Methods
 
     // Mutators
-    Info nnew( const Index nrows, const Index ncols );
-    Info dup( const Matrix& rhs );
+    Info nnew(  Index nrows, Index ncols );
+    Info dup(   const Matrix* rhs );
+    Info clear();
+    Info nrows( Index* nrows_ );
+    Info ncols( Index* ncols_ );
+    Info nvals( Index* nvals_ );
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
                 const BinaryOp            dup ); 
-    Info build( const std::vector<T>* values, Index nvals );
+    Info build( const std::vector<T>* values, 
+                Index nvals );
     Info buildFromVec( const Vector<T>& a );
     // Private method for setting storage type of matrix
     Info setStorage( const Storage mat_type );

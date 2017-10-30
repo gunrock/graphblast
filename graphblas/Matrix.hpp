@@ -18,21 +18,21 @@ namespace graphblas
   {
     public:
     // Default Constructor, Standard Constructor (Replaces new in C++)
-    //   -it's imperative to call constructor using matrix_ or the constructed object
-    //     won't be tied to this outermost layer
+    //   -it's imperative to call constructor using matrix_ or the constructed 
+    //     object won't be tied to this outermost layer
     Matrix() : matrix_() {}
-    Matrix( const Index nrows, const Index ncols ) : matrix_( nrows, ncols ) {}
+    Matrix( Index nrows, Index ncols ) : matrix_( nrows, ncols ) {}
 
-    // Assignment Constructor (Replaces dup in C++)
-    void operator=( Matrix& rhs );
-
-    // Destructor
-    ~Matrix() {};
+    // Default Destructor is good enough for this layer
+    ~Matrix() {}
 
     // C API Methods
-    //
-    // Mutators
-    // TODO: mask version
+    Info nnew(  Index nrows, Index ncols );
+    Info dup(   const Matrix* rhs );
+    Info clear();
+    Info nrows( Index* nrows_ );
+    Info ncols( Index* ncols_ );
+    Info nvals( Index* nvals_ );
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
@@ -40,23 +40,23 @@ namespace graphblas
                 const BinaryOp            dup );
     Info build( const std::vector<T>*     values,
                 Index                     nvals );
-    // This should be a private method used to set storage type {Sparse, Dense}
-    //Info set_storage( const Storage mat_type ); 
-    Info clear();
-    Info print();
+    Info setElement(     Index row_index,
+                         Index col_index );
+    Info extractElement( T*    val,
+                         Index row_index,
+                         Index col_index );
+    Info extractTuples(  std::vector<Index>* row_indices,
+                         std::vector<Index>* col_indices,
+                         std::vector<T>*     values,
+                         Index*              n );
+    Info extractTuples(  std::vector<T>* values, 
+                         Index* n );
 
-    // Accessors
-    Info extractTuples( std::vector<Index>* row_indices,
-                        std::vector<Index>* col_indices,
-                        std::vector<T>*     values,
-                        Index*              n );
-    // Dense variant of extractTuples not in GraphBLAS spec
-    Info extractTuples( std::vector<T>* values, Index* n );
-    Info nrows( Index* nrows ) const;
-    Info ncols( Index* ncols ) const;
-    Info nvals( Index* nvals ) const;
-    // This should be a private method
-    //Info get_storage( Storage& mat_type ) const;
+    // Handy methods
+    void operator=(   const Matrix* rhs );
+    Info print();
+    Info set_storage( Storage  mat_type ); 
+    Info get_storage( Storage* mat_type ) const;
 
     private:
     // Data members that are same for all backends
@@ -83,42 +83,16 @@ namespace graphblas
   };
 
   template <typename T>
-  Info Matrix<T>::build( const std::vector<Index>* row_indices,
-                         const std::vector<Index>* col_indices,
-                         const std::vector<T>*     values,
-                         Index                     nvals,
-                         const BinaryOp            dup )
+  Info Matrix<T>::nnew( Index nrows, Index ncols )
   {
-    return matrix_.build( row_indices, col_indices, values, nvals, dup );
+    matrix_.nnew( nrows, ncols );
   }
 
   template <typename T>
-  Info Matrix<T>::build( const std::vector<T>* values, Index nvals )
+  Info Matrix<T>::dup( Index* rhs )
   {
-    return matrix_.build( values, nvals );
+    matrix_.dup( rhs->matrix_ );
   }
-
-  template <typename T>
-  Info Matrix<T>::extractTuples( std::vector<Index>* row_indices,
-                                 std::vector<Index>* col_indices,
-                                 std::vector<T>*     values,
-                                 Index*              n )
-  {
-    return matrix_.extractTuples( row_indices, col_indices, values, n );
-  }
-  
-  template <typename T>
-  Info Matrix<T>::extractTuples( std::vector<T>* values, Index* n )
-  {
-    return matrix_.extractTuples( values, n );
-  }
-
-  // Mutators
-  /*template <typename T>
-  Info Matrix<T>::set_storage( const Storage mat_type )
-  {
-    return matrix_.set_storage( mat_type );
-  }*/
 
   template <typename T>
   Info Matrix<T>::clear()
@@ -126,13 +100,6 @@ namespace graphblas
     return matrix_.clear();
   }
 
-  template <typename T>
-  Info Matrix<T>::print()
-  {
-    return matrix_.print();
-  }
-
-  // Accessors
   template <typename T>
   Info Matrix<T>::nrows( Index* nrows ) const
   {
@@ -151,12 +118,77 @@ namespace graphblas
     return matrix_.nvals( nvals );
   }
 
-  // Private interface
-  /*template <typename T>
-  Info Matrix<T>::get_storage( Storage& mat_type ) const
+  template <typename T>
+  Info Matrix<T>::build( const std::vector<Index>* row_indices,
+                         const std::vector<Index>* col_indices,
+                         const std::vector<T>*     values,
+                         Index                     nvals,
+                         const BinaryOp            dup )
+  {
+    return matrix_.build( row_indices, col_indices, values, nvals, dup );
+  }
+
+  template <typename T>
+  Info Matrix<T>::build( const std::vector<T>* values, Index nvals )
+  {
+    return matrix_.build( values, nvals );
+  }
+
+  template <typename T>
+  Info Matrix<T>::setElement( Index row_index,
+                              Index col_index )
+  {
+    return matrix_.setElement( row_index, col_index );
+  }
+
+  template <typename T>
+  Info Matrix<T>::extractElement( T*    val,
+                                  Index row_index,
+                                  Index col_index )
+  {
+    return matrix_.extractElement( val, row_index, col_index );
+  }
+
+  template <typename T>
+  Info Matrix<T>::extractTuples( std::vector<Index>* row_indices,
+                                 std::vector<Index>* col_indices,
+                                 std::vector<T>*     values,
+                                 Index*              n )
+  {
+    return matrix_.extractTuples( row_indices, col_indices, values, n );
+  }
+  
+  template <typename T>
+  Info Matrix<T>::extractTuples( std::vector<T>* values, 
+                                 Index*          n )
+  {
+    return matrix_.extractTuples( values, n );
+  }
+
+  // Handy methods
+  template <typename T>
+  void Matrix<T>::operator=( const Matrix* rhs )
+  {
+    matrix_.dup( rhs->matrix_ );
+  }
+
+  template <typename T>
+  Info Matrix<T>::print()
+  {
+    return matrix_.print();
+  }
+
+  template <typename T>
+  Info Matrix<T>::set_storage( Storage mat_type )
+  {
+    return matrix_.set_storage( mat_type );
+  }
+
+  template <typename T>
+  Info Matrix<T>::get_storage( Storage* mat_type ) const
   {
     return matrix_.get_storage( mat_type );
-  }*/
+  }
 
 }  // graphblas
 

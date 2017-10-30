@@ -1,7 +1,7 @@
 #ifndef GRB_TYPES_HPP
 
 #define GRB_TYPES_HPP
-#define GrB_NULL GrB_BOOST::none
+#define GrB_NULL NULL
 
 #include <cstddef>
 #include <cstdint>
@@ -15,9 +15,6 @@ namespace graphblas
   typedef float         T;
 
   class Semiring{};
-  //template<typename T> class Matrix;
-
-  namespace GrB_BOOST = boost;
 
   enum Storage {GrB_UNKNOWN,
                 GrB_SPARSE,
@@ -27,11 +24,19 @@ namespace graphblas
               GrB_COLMAJOR};
 
   enum Info {GrB_SUCCESS,
-             GrB_OUT_OF_MEMORY,
+             GrB_UNINITIALIZED_OBJECT, // API errors
+             GrB_NULL_POINTER,
+             GrB_INVALID_VALUE,
+             GrB_INVALID_INDEX,
+             GrB_DOMAIN_MISMATCH,
+             GrB_DIMENSION_MISMATCH,
+             GrB_OUTPUT_NOT_EMPTY,
+             GrB_NO_VALUE,
+             GrB_OUT_OF_MEMORY,        // Execution errors
+             GrB_INSUFFICIENT_SPACE,
+             GrB_INVALID_OBJECT,
              GrB_INDEX_OUT_OF_BOUNDS,
-             GrB_PANIC,
-             GrB_UNINITIALIZED_OBJECT,  
-             GrB_DIMENSION_MISMATCH};
+             GrB_PANIC};
 
   enum Desc_field {GrB_MODE, 
                    GrB_TA, 

@@ -20,6 +20,9 @@ namespace graphblas
     Vector() : vector_() {}
     Vector( Index nsize ) : vector_( nsize ) {}
 
+    // Default Destructor is good enough for this layer
+    ~Vector() {}
+
     // C API Methods
     // Note: extractTuples no longer an accessor for GPU version
     Info nnew(  Index nsize );
@@ -49,7 +52,7 @@ namespace graphblas
     Info resize(         Index nvals );
     Info fill(           Index vals );
     Info print(          bool forceUpdate = false );
-    Info countUnique(    Index& count );
+    Info countUnique(    Index* count );
 
     private:
     backend::Vector<T> vector_;
@@ -73,7 +76,7 @@ namespace graphblas
   template <typename T>
   Info Vector<T>::dup( const Vector* rhs )
   {
-    return vector_.dup( rhs->vector_ );
+    return vector_.dup( &rhs->vector_ );
   }
 
   template <typename T>
@@ -140,7 +143,7 @@ namespace graphblas
   template <typename T>
   void Vector<T>::operator=( Vector* rhs )
   {
-    vector_ = rhs->vector_;
+    vector_.dup( &rhs->vector_ );
   }
 
   template <typename T>
@@ -170,7 +173,7 @@ namespace graphblas
 
   // Count number of unique numbers
   template <typename T>
-  Info Vector<T>::countUnique( Index& count )
+  Info Vector<T>::countUnique( Index* count )
   {
     return vector_.countUnique( count );
   }
