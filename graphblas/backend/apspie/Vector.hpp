@@ -59,6 +59,8 @@ namespace backend
     Info fill( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
+    Info setStorage( Storage  vec_type );
+    Info getStorage( Storage* vec_type ) const;
 
     private: 
     Index           nvals_;      // 3 ways to set: (1) dup  (2) build 
@@ -222,6 +224,29 @@ namespace backend
   template <typename T>
   Info Vector<T>::countUnique( Index* count )
   {
+    return GrB_SUCCESS;
+  }
+
+  // Private method that sets mat_type, clears and allocates
+  template <typename T>
+  Info Vector<T>::setStorage( Storage vec_type )
+  {
+    Info err;
+    vec_type_ = vec_type;
+    if( vec_type_ == GrB_SPARSE ) {
+      err = sparse_.clear();
+      err = sparse_.allocate();
+    } else if( vec_type_ == GrB_DENSE ) {
+      err = dense_.clear();
+      err = dense_.allocate();
+    }
+    return err;
+  }
+
+  template <typename T>
+  inline Info Vector<T>::getStorage( Storage* vec_type ) const
+  {
+    *vec_type = vec_type_;
     return GrB_SUCCESS;
   }
 

@@ -137,7 +137,6 @@ namespace backend
   template <typename T>
   Info DenseVector<T>::size( Index* nsize_t ) const
   {
-    if( nsize_t==NULL ) return GrB_NULL_POINTER;
     *nsize_t = nvals_;
     return GrB_SUCCESS;
   }
@@ -145,7 +144,6 @@ namespace backend
   template <typename T>
   Info DenseVector<T>::nvals( Index* nvals_t ) const
   {
-    if( nvals_t==NULL ) return GrB_NULL_POINTER;
     *nvals_t = nvals_;
     return GrB_SUCCESS;
   }
@@ -209,7 +207,6 @@ namespace backend
     Info err = gpuToCpu();
     values->clear();
 
-    if( n==NULL ) return GrB_NULL_POINTER;
     if( *n>nvals_ )
     {
       err = GrB_UNINITIALIZED_OBJECT;
@@ -293,7 +290,6 @@ namespace backend
         //std::cout << "Inserting " << array[block] << std::endl;
       }
     }
-    if( count==NULL ) return GrB_NULL_POINTER;
     *count = unique.size();
 
     return err;

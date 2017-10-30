@@ -55,7 +55,7 @@ namespace backend
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp            dup );
+                const BinaryOp*           dup );
     Info build( const std::vector<T>* values,
                 Index nvals );
     Info setElement(     Index row_index,
@@ -72,7 +72,7 @@ namespace backend
 
     // Handy methods
     const T operator[]( Index ind );
-    Info print( bool forceUpdate=false ); 
+    Info print( bool force_update=false ); 
     Info check();
     Info setNrows( Index nrows );
     Info setNcols( Index ncols );
@@ -92,7 +92,7 @@ namespace backend
                       //                     (4) fill,(5) fillAscending
     Info printCSR( const char* str ); // private method for pretty printing
     Info cpuToGpu();
-    Info gpuToCpu( bool forceUpdate=false );
+    Info gpuToCpu( bool force_update=false );
 
     private:
     const T kcap_ratio_ = 1.3;
@@ -215,7 +215,6 @@ namespace backend
   template <typename T>
   inline Info SparseMatrix<T>::nrows( Index* nrows_t ) const
   {
-    if( nrows_t==NULL ) return GrB_NULL_POINTER;
     *nrows_t = nrows_;
     return GrB_SUCCESS;
   }
@@ -223,7 +222,6 @@ namespace backend
   template <typename T>
   inline Info SparseMatrix<T>::ncols( Index* ncols_t ) const
   {
-    if( ncols_t==NULL ) return GrB_NULL_POINTER;
     *ncols_t = ncols_;
     return GrB_SUCCESS;
   }
@@ -231,7 +229,6 @@ namespace backend
   template <typename T>
   inline Info SparseMatrix<T>::nvals( Index* nvals_t ) const
   {
-    if( nvals_t==NULL ) return GrB_NULL_POINTER;
     *nvals_t = nvals_;
     return GrB_SUCCESS;
   }
@@ -241,7 +238,7 @@ namespace backend
                                const std::vector<Index>* col_indices,
                                const std::vector<T>*     values,
                                Index                     nvals,
-                               const BinaryOp            dup )
+                               const BinaryOp*           dup )
   {
     nvals_ = nvals;
     Info err = allocate();
@@ -334,7 +331,6 @@ namespace backend
     col_indices->clear();
     values->clear();
 
-    if( n==NULL ) return GrB_NULL_POINTER;
     if( *n>nvals_ )
     {
       err = GrB_UNINITIALIZED_OBJECT;
@@ -377,9 +373,9 @@ namespace backend
   }
 
   template <typename T>
-  Info SparseMatrix<T>::print( bool forceUpdate )
+  Info SparseMatrix<T>::print( bool force_update )
   {
-    Info err = gpuToCpu( forceUpdate );
+    Info err = gpuToCpu( force_update );
     printArray( "csrColInd", h_csrColInd_, std::min(nvals_,40) );
     printArray( "csrRowPtr", h_csrRowPtr_, std::min(nrows_+1,40) );
     printArray( "csrVal",    h_csrVal_,    std::min(nvals_,40) );
@@ -599,9 +595,9 @@ namespace backend
 
   // Copies graph to CPU
   template <typename T>
-  Info SparseMatrix<T>::gpuToCpu( bool forceUpdate )
+  Info SparseMatrix<T>::gpuToCpu( bool force_update )
   {
-    if( need_update_ || forceUpdate )
+    if( need_update_ || force_update )
     {
       CUDA( cudaMemcpy( h_csrRowPtr_, d_csrRowPtr_, (nrows_+1)*sizeof(Index),
           cudaMemcpyDeviceToHost ) );

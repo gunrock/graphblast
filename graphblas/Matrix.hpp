@@ -37,7 +37,7 @@ namespace graphblas
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp            dup );
+                const BinaryOp*           dup );
     Info build( const std::vector<T>*     values,
                 Index                     nvals );
     Info setElement(     Index row_index,
@@ -107,7 +107,8 @@ namespace graphblas
   template <typename T>
   Info Matrix<T>::dup( const Matrix* rhs )
   {
-    matrix_.dup( rhs->matrix_ );
+    if( rhs==NULL ) return GrB_NULL_POINTER;
+    return matrix_.dup( rhs->matrix_ );
   }
 
   template <typename T>
@@ -119,18 +120,21 @@ namespace graphblas
   template <typename T>
   Info Matrix<T>::nrows( Index* nrows ) const
   {
+    if( nrows==NULL ) return GrB_NULL_POINTER;
     return matrix_.nrows( nrows );
   }
 
   template <typename T>
   Info Matrix<T>::ncols( Index* ncols ) const
   {
+    if( ncols==NULL ) return GrB_NULL_POINTER;
     return matrix_.ncols( ncols );
   }
 
   template <typename T>
   Info Matrix<T>::nvals( Index* nvals ) const
   {
+    if( nvals==NULL ) return GrB_NULL_POINTER;
     return matrix_.nvals( nvals );
   }
 
@@ -139,8 +143,10 @@ namespace graphblas
                          const std::vector<Index>* col_indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp            dup )
+                         const BinaryOp*           dup )
   {
+    if( row_indices==NULL || col_indices==NULL || values==NULL || dup==NULL )
+      return GrB_NULL_POINTER;
     return matrix_.build( row_indices, col_indices, values, nvals, dup );
   }
 
@@ -162,6 +168,7 @@ namespace graphblas
                                   Index row_index,
                                   Index col_index )
   {
+    if( val==NULL ) return GrB_NULL_POINTER;
     return matrix_.extractElement( val, row_index, col_index );
   }
 
@@ -171,6 +178,8 @@ namespace graphblas
                                  std::vector<T>*     values,
                                  Index*              n )
   {
+    if( row_indices==NULL || col_indices==NULL || values==NULL || n==NULL )
+      return GrB_NULL_POINTER;
     return matrix_.extractTuples( row_indices, col_indices, values, n );
   }
   
@@ -178,6 +187,7 @@ namespace graphblas
   Info Matrix<T>::extractTuples( std::vector<T>* values, 
                                  Index*          n )
   {
+    if( values==NULL ) return GrB_NULL_POINTER;
     return matrix_.extractTuples( values, n );
   }
 
@@ -185,6 +195,7 @@ namespace graphblas
   template <typename T>
   void Matrix<T>::operator=( const Matrix* rhs )
   {
+    if( rhs==NULL ) return;
     matrix_.dup( rhs->matrix_ );
   }
 
@@ -234,6 +245,7 @@ namespace graphblas
   template <typename T>
   Info Matrix<T>::getStorage( Storage* mat_type ) const
   {
+    if( mat_type==NULL ) return GrB_NULL_POINTER;
     return matrix_.getStorage( mat_type );
   }
 

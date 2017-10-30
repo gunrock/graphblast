@@ -53,6 +53,8 @@ namespace graphblas
     Info fill(           Index vals );
     Info print(          bool force_update = false );
     Info countUnique(    Index* count );
+    Info setStorage( Storage  vec_type );
+    Info getStorage( Storage* vec_type ) const;
 
     private:
     backend::Vector<T> vector_;
@@ -88,12 +90,14 @@ namespace graphblas
   template <typename T>
   Info Vector<T>::size( Index* nsize_ ) const
   {
+    if( nsize_==NULL ) return GrB_NULL_POINTER;
     return vector_.size( nsize_ );
   }
 
   template <typename T>
   Info Vector<T>::nvals( Index* nvals_ ) const
   {
+    if( nvals_==NULL ) return GrB_NULL_POINTER;
     return vector_.nvals( nvals_ );
   }
 
@@ -103,6 +107,8 @@ namespace graphblas
                          Index                     nvals,
                          const BinaryOp*           dup )
   {
+    if( indices==NULL || values==NULL || dup==NULL )
+      return GrB_NULL_POINTER;
     return vector_.build( indices, values, nvals, dup );
   }
 
@@ -110,6 +116,7 @@ namespace graphblas
   Info Vector<T>::build( const std::vector<T>* values,
                          Index                 nvals )
   {
+    if( values==NULL ) return GrB_NULL_POINTER;
     return vector_.build( values, nvals );
   }
 
@@ -122,6 +129,7 @@ namespace graphblas
   template <typename T>
   Info Vector<T>::extractElement( T* val, Index index )
   {
+    if( val==NULL ) return GrB_NULL_POINTER;
     return vector_.extractElement( val, index );
   }
 
@@ -130,6 +138,7 @@ namespace graphblas
                                  std::vector<T>*     values,
                                  Index*              n )
   {
+    if( indices==NULL || values==NULL || n==NULL ) return GrB_NULL_POINTER;
     return vector_.extractTuples( indices, values, n );
   }
 
@@ -137,12 +146,14 @@ namespace graphblas
   Info Vector<T>::extractTuples( std::vector<T>* values, 
                                  Index*          n )
   {
+    if( values==NULL || n==NULL ) return GrB_NULL_POINTER;
     return vector_.extractTuples( values, n );
   }
 
   template <typename T>
   void Vector<T>::operator=( Vector* rhs )
   {
+    if( rhs==NULL ) return;
     vector_.dup( &rhs->vector_ );
   }
 
@@ -175,7 +186,21 @@ namespace graphblas
   template <typename T>
   Info Vector<T>::countUnique( Index* count )
   {
+    if( count==NULL ) return GrB_NULL_POINTER;
     return vector_.countUnique( count );
+  }
+
+  template <typename T>
+  Info Vector<T>::setStorage( Storage vec_type )
+  {
+    return vector_.setStorage( vec_type );
+  }
+  
+  template <typename T>
+  Info Vector<T>::getStorage( Storage* vec_type ) const
+  {
+    if( vec_type==NULL ) return GrB_NULL_POINTER;
+    return vector_.getStorage( vec_type );
   }
 
 }  // graphblas

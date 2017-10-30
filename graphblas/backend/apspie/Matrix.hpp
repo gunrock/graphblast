@@ -41,7 +41,7 @@ namespace backend
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp            dup ); 
+                const BinaryOp*           dup ); 
     Info build( const std::vector<T>* values, 
                 Index                 nvals );
     Info setElement(     Index row_index,
@@ -153,7 +153,7 @@ namespace backend
                          const std::vector<Index>* col_indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp            dup )
+                         const BinaryOp*           dup )
   {
     mat_type_ = GrB_SPARSE;
     return sparse_.build( row_indices, col_indices, values, nvals, dup );
@@ -220,9 +220,9 @@ namespace backend
   }
 
   template <typename T>
-  Info Matrix<T>::print( bool forceUpdate )
+  Info Matrix<T>::print( bool force_update )
   {
-    if( mat_type_ == GrB_SPARSE ) return sparse_.print( forceUpdate );
+    if( mat_type_ == GrB_SPARSE ) return sparse_.print( force_update );
     else if( mat_type_ == GrB_DENSE ) return dense_.print();
     return GrB_UNINITIALIZED_OBJECT;
   }
@@ -280,7 +280,6 @@ namespace backend
   template <typename T>
   inline Info Matrix<T>::getStorage( Storage* mat_type ) const
   {
-    if( mat_type==NULL ) return GrB_NULL_POINTER;
     *mat_type = mat_type_;
     return GrB_SUCCESS;
   }
