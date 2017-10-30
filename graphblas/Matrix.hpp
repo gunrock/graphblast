@@ -53,10 +53,25 @@ namespace graphblas
                          Index* n );
 
     // Handy methods
-    void operator=(   const Matrix* rhs );
+    void operator=( const Matrix* rhs );
+    const T operator[]( const Index ind );
     Info print();
+    Info check();
+    Info set_nrows( Index nrows );
+    Info set_ncols( Index ncols );
+    Info resize( Index nrows, 
+                 Index ncols );
     Info set_storage( Storage  mat_type ); 
     Info get_storage( Storage* mat_type ) const;
+
+    template <typename U>
+    Info fill( Index axis, 
+               Index nvals, 
+               U     start );
+    template <typename U>
+    Info fill_ascending( Index axis, 
+                         Index nvals, 
+                         U     start );
 
     private:
     // Data members that are same for all backends
@@ -85,6 +100,7 @@ namespace graphblas
   template <typename T>
   Info Matrix<T>::nnew( Index nrows, Index ncols )
   {
+    if( nrows==0 || ncols==0 ) return GrB_INVALID_VALUE;
     matrix_.nnew( nrows, ncols );
   }
 
@@ -179,6 +195,31 @@ namespace graphblas
   }
 
   template <typename T>
+  Info Matrix<T>::check()
+  {
+    return matrix_.check();
+  }
+
+  template <typename T>
+  Info Matrix<T>::set_nrows( Index nrows )
+  {
+    return matrix_.set_nrows( nrows );
+  }
+
+  template <typename T>
+  Info Matrix<T>::set_ncols( Index ncols )
+  {
+    return matrix_.set_ncols( ncols );
+  }
+
+  template <typename T>
+  Info Matrix<T>::resize( Index nrows, 
+                          Index ncols )
+  {
+    return matrix_.resize( nrows, ncols );
+  }
+
+  template <typename T>
   Info Matrix<T>::set_storage( Storage mat_type )
   {
     return matrix_.set_storage( mat_type );
@@ -188,6 +229,22 @@ namespace graphblas
   Info Matrix<T>::get_storage( Storage* mat_type ) const
   {
     return matrix_.get_storage( mat_type );
+  }
+
+  template <typename T, typename U>
+  Info Matrix<T>::fill( Index axis, 
+                        Index nvals, 
+                        U     start )
+  {
+    return matrix_.fill( axis, nvals, start );
+  }
+
+	template <typename T, typename U>
+	Info Matrix<T>::fill_ascending( Index axis, 
+                                  Index nvals, 
+                                  U     start )
+  {
+    return matrix_.fill_ascending( axis, nvals, start );
   }
 
 }  // graphblas

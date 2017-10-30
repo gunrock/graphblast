@@ -34,9 +34,9 @@ namespace backend
     Info nnew(  Index nrows, Index ncols );
     Info dup(   const Matrix* rhs );
     Info clear();
-    Info nrows( Index* nrows_ );
-    Info ncols( Index* ncols_ );
-    Info nvals( Index* nvals_ );
+    Info nrows( Index* nrows_t );
+    Info ncols( Index* ncols_t );
+    Info nvals( Index* nvals_t );
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
@@ -44,38 +44,27 @@ namespace backend
                 const BinaryOp            dup ); 
     Info build( const std::vector<T>* values, 
                 Index nvals );
-    Info buildFromVec( const Vector<T>& a );
-    // Private method for setting storage type of matrix
-    Info setStorage( const Storage mat_type );
-    Info clear(); 
-    Info print( bool forceUpdate = false );
-    Info setNrows( const Index nrows );
-    Info setNcols( const Index ncols );
-    Info resize( const Index nrows, const Index ncols );
-    template <typename U>
-    Info fill( const Index axis, const Index nvals, const U start );
-    template <typename U>
-    Info fillAscending( const Index axis, const Index nvals, const U start );
-    const T operator[]( const Index ind );
-    Info check();
 
-    // Accessors
-    Info extractTuples( std::vector<Index>& row_indices,
-                        std::vector<Index>& col_indices,
-                        std::vector<T>&     values );
-    Info extractTuples( std::vector<T>& values );
-    Info getNrows( Index& nrows ) const;
-    Info getNcols( Index& ncols ) const;
-    Info getNvals( Index& nvals ) const; 
-    Info getStorage( Storage& mat_type ) const;
-    Info getRowPtr( Index& row_ptr, const Index row ) const;
-    Info getColInd( Index& col_ind, const Index row_ptr ) const;
-    Info getColInd( Index& col_ind, const Index offset, 
-        const Index row ) const;
-    Info getVal( T& col_val, const Index row_ptr ) const; 
-    Info getVal( T& col_val, const Index offset, const Index row ) const;
-    Info find( T& found, const Index target, const Index row ) const;
-    Info checkRowReduce( const T sum, const Index row ) const;
+    // Handy methods
+    void operator=( const Matrix* rhs );
+    const T operator[]( const Index ind );
+    Info print();
+    Info check();
+    Info set_nrows( Index nrows );
+    Info set_ncols( Index ncols );
+    Info resize( Index nrows,
+                 Index ncols );
+    Info set_storage( Storage  mat_type );
+    Info get_storage( Storage* mat_type ) const;
+
+    template <typename U>
+    Info fill( Index axis,
+               Index nvals,
+               U     start );
+    template <typename U>
+    Info fill_ascending( Index axis,
+                         Index nvals,
+                         U     start );
 
     private:
     Index nrows_;
@@ -90,7 +79,7 @@ namespace backend
   };
 
   template <typename T>
-  Info Matrix<T>::nnew( const Index nrows, const Index ncols )
+  Info Matrix<T>::nnew( Index nrows, Index ncols )
   {
     Info err;
 
@@ -101,20 +90,54 @@ namespace backend
   }
 
   template <typename T>
-  Info Matrix<T>::dup( const Matrix& rhs )
+  Info Matrix<T>::dup( const Matrix* rhs )
   {
-    mat_type_ = rhs.mat_type_;
+    mat_type_ = rhs->mat_type_;
 
     //std::cout << "Matrix type: " << (int) mat_type_ << "\n";
 
     if( mat_type_ == GrB_SPARSE )
-      return sparse_.dup( rhs.sparse_ );
+      return sparse_.dup( rhs->sparse_ );
     else if( mat_type_ == GrB_SPARSE )
-      return dense_.dup( rhs.dense_ );
+      return dense_.dup( rhs->dense_ );
     return GrB_PANIC;
   }
 
-  // Not const to allow sorting
+  template <typename T>
+  Info Matrix<T>::clear() 
+  {
+    Info err;
+    mat_type_ = GrB_SPARSE;
+    err = sparse_.clear();
+    err = dense_.clear();
+    return err;
+  }
+
+  template <typename T>
+  inline Info Matrix<T>::nrows( Index* nrows_t ) const 
+  {
+    if( mat_type_ == GrB_SPARSE ) return sparse_.nrows( nrows_t );
+    else if( mat_type_ == GrB_DENSE ) return dense_.nrows( nrows_t );
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  template <typename T>
+  inline Info Matrix<T>::ncols( Index* ncols_t ) const
+  {
+    if( mat_type_ == GrB_SPARSE ) return sparse_.ncols( ncols_t );
+    else if( mat_type_ == GrB_DENSE ) return dense_.ncols( ncols_t );
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  template <typename T>
+  inline Info Matrix<T>::nvals( Index* nvals_t ) const 
+  {
+    if( mat_type_ == GrB_SPARSE ) return sparse_.nvals( nvals_t );
+    else if( mat_type_ == GrB_DENSE ) return dense_.nvals( nvals_t );
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  // Option: Not const to allow sorting
   template <typename T>
   Info Matrix<T>::build( const std::vector<Index>* row_indices,
                          const std::vector<Index>* col_indices,
@@ -134,21 +157,45 @@ namespace backend
   }
 
   template <typename T>
-  Info Matrix<T>::extractTuples( std::vector<Index>& row_indices,
-                                 std::vector<Index>& col_indices,
-                                 std::vector<T>&     values )
+  Info Matrix<T>::setElement( Index row_index,
+                              Index col_index )
+  {
+    if( mat_type == GrB_SPARSE ) 
+      return sparse_.setElement( row_index, col_index );
+    else if( mat_type_ == GrB_DENSE )
+      return dense_.setElement( row_index, col_index );
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  template <typename T>
+  Info Matrix<T>::extractElement( T*    val,
+                                  Index row_index,
+                                  Index col_index )
   {
     if( mat_type_ == GrB_SPARSE ) 
-      return sparse_.extractTuples( row_indices, col_indices, values );
+      return sparse_.extractElement( val, row_index, col_index );
+    else if( mat_type_ == GrB_DENSE ) 
+      return dense_.extractElement( val, row_index, col_index );
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  template <typename T>
+  Info Matrix<T>::extractTuples( std::vector<Index>* row_indices,
+                                 std::vector<Index>* col_indices,
+                                 std::vector<T>*     values,
+                                 Index*              n )
+  {
+    if( mat_type_ == GrB_SPARSE ) 
+      return sparse_.extractTuples( row_indices, col_indices, values, n );
     else
       return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
-  Info Matrix<T>::extractTuples( std::vector<T>& values )
+  Info Matrix<T>::extractTuples( std::vector<T>* values, Index* n )
   {
     if( mat_type_ == GrB_DENSE ) 
-      return dense_.extractTuples( values );
+      return dense_.extractTuples( values, n );
     else
       return GrB_UNINITIALIZED_OBJECT;
   }
@@ -170,21 +217,11 @@ namespace backend
   }
 
   template <typename T>
-  Info Matrix<T>::clear() 
-  {
-    Info err;
-    mat_type_ = GrB_SPARSE;
-    err = sparse_.clear();
-    err = dense_.clear();
-    return err;
-  }
-
-  template <typename T>
   Info Matrix<T>::print( bool forceUpdate )
   {
     if( mat_type_ == GrB_SPARSE ) return sparse_.print( forceUpdate );
     else if( mat_type_ == GrB_DENSE ) return dense_.print();
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
@@ -209,7 +246,7 @@ namespace backend
   Info Matrix<T>::resize( const Index nrows, const Index ncols )
   {
     if( mat_type_ == GrB_SPARSE ) return sparse_.resize( nrows, ncols );
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
@@ -217,7 +254,7 @@ namespace backend
   Info Matrix<T>::fill( const Index axis, const Index nvals, const U start )
   {
     if( mat_type_ == GrB_SPARSE ) return sparse_.fill( axis, nvals, start );
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
@@ -227,7 +264,7 @@ namespace backend
   {
     if( mat_type_ == GrB_SPARSE )
       return sparse_.fillAscending( axis, nvals, start );
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
@@ -246,30 +283,6 @@ namespace backend
     if( mat_type_ == GrB_SPARSE )
       return sparse_.check();
     return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  template <typename T>
-  inline Info Matrix<T>::getNrows( Index& nrows ) const 
-  {
-    if( mat_type_ == GrB_SPARSE ) return sparse_.getNrows( nrows );
-    else if( mat_type_ == GrB_DENSE ) return dense_.getNrows( nrows );
-    else return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  template <typename T>
-  inline Info Matrix<T>::getNcols( Index& ncols ) const
-  {
-    if( mat_type_ == GrB_SPARSE ) return sparse_.getNcols( ncols );
-    else if( mat_type_ == GrB_DENSE ) return dense_.getNcols( ncols );
-    else return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  template <typename T>
-  inline Info Matrix<T>::getNvals( Index& nvals ) const 
-  {
-    if( mat_type_ == GrB_SPARSE ) return sparse_.getNvals( nvals );
-    else if( mat_type_ == GrB_DENSE ) return dense_.getNvals( nvals );
-    else return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
