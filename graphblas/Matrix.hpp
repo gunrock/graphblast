@@ -54,7 +54,7 @@ namespace graphblas
 
     // Handy methods
     void operator=( const Matrix* rhs );
-    const T operator[]( const Index ind );
+    const T operator[]( Index ind );
     Info print( bool force_update = false );
     Info check();
     Info setNrows( Index nrows );

@@ -137,14 +137,16 @@ namespace backend
   template <typename T>
   Info DenseVector<T>::size( Index* nsize_t ) const
   {
-    if( nsize_t!=NULL ) *nsize_t = nvals_;
+    if( nsize_t==NULL ) return GrB_NULL_POINTER;
+    *nsize_t = nvals_;
     return GrB_SUCCESS;
   }
 
   template <typename T>
   Info DenseVector<T>::nvals( Index* nvals_t ) const
   {
-    if( nvals_t!=NULL ) *nvals_t = nvals_;
+    if( nvals_t==NULL ) return GrB_NULL_POINTER;
+    *nvals_t = nvals_;
     return GrB_SUCCESS;
   }
 

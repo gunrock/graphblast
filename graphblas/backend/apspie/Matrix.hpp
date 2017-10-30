@@ -43,11 +43,21 @@ namespace backend
                 Index                     nvals,
                 const BinaryOp            dup ); 
     Info build( const std::vector<T>* values, 
-                Index nvals );
+                Index                 nvals );
+    Info setElement(     Index row_index,
+                         Index col_index );
+    Info extractElement( T*    val,
+                         Index row_index,
+                         Index col_index );
+    Info extractTuples(  std::vector<Index>* row_indices,
+                         std::vector<Index>* col_indices,
+                         std::vector<T>*     values,
+                         Index*              n );
+    Info extractTuples(  std::vector<T>* values,
+                         Index* n );
 
     // Handy methods
-    void operator=( const Matrix* rhs );
-    const T operator[]( const Index ind );
+    const T operator[]( Index ind );
     Info print( bool force_update );
     Info check();
     Info setNrows( Index nrows );
@@ -245,7 +255,7 @@ namespace backend
   }
 
   template <typename T>
-  Info Matrix<T>::resize( const Index nrows, const Index ncols )
+  Info Matrix<T>::resize( Index nrows, Index ncols )
   {
     if( mat_type_ == GrB_SPARSE ) return sparse_.resize( nrows, ncols );
     return GrB_UNINITIALIZED_OBJECT;
@@ -270,13 +280,14 @@ namespace backend
   template <typename T>
   inline Info Matrix<T>::getStorage( Storage* mat_type ) const
   {
-    mat_type = mat_type_;
+    if( mat_type==NULL ) return GrB_NULL_POINTER;
+    *mat_type = mat_type_;
     return GrB_SUCCESS;
   }
 
   template <typename T>
   template <typename U>
-  Info Matrix<T>::fill( const Index axis, const Index nvals, const U start )
+  Info Matrix<T>::fill( Index axis, Index nvals, U start )
   {
     if( mat_type_ == GrB_SPARSE ) return sparse_.fill( axis, nvals, start );
     return GrB_UNINITIALIZED_OBJECT;
@@ -284,9 +295,9 @@ namespace backend
 
   template <typename T>
   template <typename U>
-  Info Matrix<T>::fillAscending( const Index axis, 
-                                 const Index nvals, 
-                                 const U start )
+  Info Matrix<T>::fillAscending( Index axis, 
+                                 Index nvals, 
+                                 U     start )
   {
     if( mat_type_ == GrB_SPARSE )
       return sparse_.fillAscending( axis, nvals, start );

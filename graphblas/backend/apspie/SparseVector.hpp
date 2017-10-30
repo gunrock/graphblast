@@ -144,14 +144,16 @@ namespace backend
   template <typename T>
   Info SparseVector<T>::size( Index* nsize_t ) const
   {
-    if( nsize_t!=NULL ) *nsize_t = nsize_;
+    if( nsize_t==NULL ) return GrB_NULL_POINTER;
+    *nsize_t = nsize_;
     return GrB_SUCCESS;
   }
 
   template <typename T>
   Info SparseVector<T>::nvals( Index* nvals_t ) const
   {
-    if( nvals_t!=NULL ) *nvals_t = nvals_;
+    if( nvals_t==NULL ) return GrB_NULL_POINTER;
+    *nvals_t = nvals_;
     return GrB_SUCCESS;
   }
 
@@ -215,9 +217,9 @@ namespace backend
     if( *n>nvals_ )
     {
       err = GrB_UNINITIALIZED_OBJECT;
-      *n = nvals_;
+      *n  = nvals_;
     }
-    if( *n<nvals_ ) 
+    else if( *n<nvals_ ) 
       err = GrB_INSUFFICIENT_SPACE;
 
     for( Index i=0; i<*n; i++ )
