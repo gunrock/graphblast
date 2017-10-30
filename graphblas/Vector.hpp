@@ -51,7 +51,7 @@ namespace graphblas
     const T& operator[]( Index ind );
     Info resize(         Index nvals );
     Info fill(           Index vals );
-    Info print(          bool forceUpdate = false );
+    Info print(          bool force_update = false );
     Info countUnique(    Index* count );
 
     private:
@@ -166,9 +166,9 @@ namespace graphblas
   }
 
   template <typename T>
-  Info Vector<T>::print( bool forceUpdate )
+  Info Vector<T>::print( bool force_update )
   {
-    return vector_.print( forceUpdate );
+    return vector_.print( force_update );
   }
 
   // Count number of unique numbers

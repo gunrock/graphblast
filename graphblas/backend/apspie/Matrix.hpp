@@ -48,23 +48,23 @@ namespace backend
     // Handy methods
     void operator=( const Matrix* rhs );
     const T operator[]( const Index ind );
-    Info print();
+    Info print( bool force_update );
     Info check();
-    Info set_nrows( Index nrows );
-    Info set_ncols( Index ncols );
-    Info resize( Index nrows,
-                 Index ncols );
-    Info set_storage( Storage  mat_type );
-    Info get_storage( Storage* mat_type ) const;
+    Info setNrows( Index nrows );
+    Info setNcols( Index ncols );
+    Info resize(   Index nrows,
+                   Index ncols );
+    Info setStorage( Storage  mat_type );
+    Info getStorage( Storage* mat_type ) const;
 
     template <typename U>
     Info fill( Index axis,
                Index nvals,
                U     start );
     template <typename U>
-    Info fill_ascending( Index axis,
-                         Index nvals,
-                         U     start );
+    Info fillAscending( Index axis,
+                        Index nvals,
+                        U     start );
 
     private:
     Index nrows_;
@@ -200,20 +200,13 @@ namespace backend
       return GrB_UNINITIALIZED_OBJECT;
   }
 
-  // Private method that sets mat_type, clears and allocates
   template <typename T>
-  Info Matrix<T>::setStorage( const Storage mat_type )
+  const T Matrix<T>::operator[]( Index ind )
   {
-    Info err;
-    mat_type_ = mat_type;
-    if( mat_type_ == GrB_SPARSE ) {
-      err = sparse_.clear();
-      err = sparse_.allocate();
-    } else if( mat_type_ == GrB_DENSE ) {
-      err = dense_.clear();
-      err = dense_.allocate();
-    }
-    return err;
+    if( mat_type_ == GrB_SPARSE )
+      return sparse_[ind];
+    else std::cout << "Error: operator[] not defined for dense matrices!\n";
+    return 0.;
   }
 
   template <typename T>
@@ -224,8 +217,17 @@ namespace backend
     return GrB_UNINITIALIZED_OBJECT;
   }
 
+  // Error checking function
   template <typename T>
-  Info Matrix<T>::setNrows( const Index nrows )
+  Info Matrix<T>::check()
+  {
+    if( mat_type_ == GrB_SPARSE )
+      return sparse_.check();
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  template <typename T>
+  Info Matrix<T>::setNrows( Index nrows )
   {
     Info err;
     err = sparse_.setNrows( nrows );
@@ -234,7 +236,7 @@ namespace backend
   }
 
   template <typename T>
-  Info Matrix<T>::setNcols( const Index ncols )
+  Info Matrix<T>::setNcols( Index ncols )
   {
     Info err;
     err = sparse_.setNcols( ncols );
@@ -249,6 +251,29 @@ namespace backend
     return GrB_UNINITIALIZED_OBJECT;
   }
 
+  // Private method that sets mat_type, clears and allocates
+  template <typename T>
+  Info Matrix<T>::setStorage( Storage mat_type )
+  {
+    Info err;
+    mat_type_ = mat_type;
+    if( mat_type_ == GrB_SPARSE ) {
+      err = sparse_.clear();
+      err = sparse_.allocate();
+    } else if( mat_type_ == GrB_DENSE ) {
+      err = dense_.clear();
+      err = dense_.allocate();
+    }
+    return err;
+  }
+
+  template <typename T>
+  inline Info Matrix<T>::getStorage( Storage* mat_type ) const
+  {
+    mat_type = mat_type_;
+    return GrB_SUCCESS;
+  }
+
   template <typename T>
   template <typename U>
   Info Matrix<T>::fill( const Index axis, const Index nvals, const U start )
@@ -259,7 +284,8 @@ namespace backend
 
   template <typename T>
   template <typename U>
-  Info Matrix<T>::fillAscending( const Index axis, const Index nvals, 
+  Info Matrix<T>::fillAscending( const Index axis, 
+                                 const Index nvals, 
                                  const U start )
   {
     if( mat_type_ == GrB_SPARSE )
@@ -267,93 +293,6 @@ namespace backend
     return GrB_UNINITIALIZED_OBJECT;
   }
 
-  template <typename T>
-  const T Matrix<T>::operator[]( const Index ind )
-  {
-    if( mat_type_ == GrB_SPARSE )
-      return sparse_[ind];
-    else std::cout << "Error: operator[] not defined for dense matrices!\n";
-    return 0.;
-  }
-
-  // Error checking function
-  template <typename T>
-  Info Matrix<T>::check()
-  {
-    if( mat_type_ == GrB_SPARSE )
-      return sparse_.check();
-    return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  template <typename T>
-  inline Info Matrix<T>::getStorage( Storage& mat_type ) const
-  {
-    mat_type = mat_type_;
-    return GrB_SUCCESS;
-  }
-
-  template <typename T>
-  inline Info Matrix<T>::getRowPtr( Index& row_ptr, const Index row ) const
-  {
-    if( mat_type_ == GrB_SPARSE )
-      return sparse_.getRowPtr( row_ptr, row );
-    return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  // Variant where row_ptr output is already known
-  template <typename T>
-  inline Info Matrix<T>::getColInd( Index& col_ind, const Index row_ptr ) const
-  {
-    if( mat_type_ == GrB_SPARSE ) 
-      return sparse_.getColInd( col_ind, row_ptr );
-    return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  // Variant where only row_ind and offset are known
-  template <typename T>
-  inline Info Matrix<T>::getColInd( Index& col_ind, const Index offset, 
-      const Index row ) const
-  {
-    if( mat_type_ == GrB_SPARSE ) 
-      return sparse_.getColInd( col_ind, offset, row );
-    return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  // Variant where row_ptr output is already known
-  template <typename T>
-  inline Info Matrix<T>::getVal( T& col_val, const Index row_ptr ) const
-  {
-    if( mat_type_ == GrB_SPARSE ) 
-      return sparse_.getVal( col_val, row_ptr );
-    return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  // Variant where only row_ind and offset are known
-  template <typename T>
-  inline Info Matrix<T>::getVal( T& col_val, const Index offset, 
-      const Index row ) const
-  {
-    if( mat_type_ == GrB_SPARSE ) 
-      return sparse_.getVal( col_val, offset, row );
-    return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  template <typename T>
-  Info Matrix<T>::find( T& found, const Index target, const Index row )
-      const
-  {
-    if( mat_type_ == GrB_SPARSE )
-      return sparse_.find( found, target, row );
-    return GrB_UNINITIALIZED_OBJECT;
-  }
-
-  template <typename T>
-  Info Matrix<T>::checkRowReduce( const T sum, const Index row ) const
-  {
-    if( mat_type_ == GrB_SPARSE )
-      return sparse_.checkRowReduce( sum, row );
-    return GrB_UNINITIALIZED_OBJECT;
-  }
 }  // backend
 }  // graphblas
 
