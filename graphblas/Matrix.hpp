@@ -37,7 +37,7 @@ namespace graphblas
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp*           dup );
+                const BinaryOp<T,T,T>*    dup );
     Info build( const std::vector<T>*     values,
                 Index                     nvals );
     Info setElement(     Index row_index,
@@ -143,7 +143,7 @@ namespace graphblas
                          const std::vector<Index>* col_indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp*           dup )
+                         const BinaryOp<T,T,T>*    dup )
   {
     if( row_indices==NULL || col_indices==NULL || values==NULL || dup==NULL )
       return GrB_NULL_POINTER;

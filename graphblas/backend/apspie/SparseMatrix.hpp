@@ -14,7 +14,6 @@
 #include "graphblas/util.hpp"
 
 #include "graphblas/backend/apspie/apspie.hpp"
-#include "graphblas/backend/apspie/Matrix.hpp"
 
 namespace graphblas
 {
@@ -25,6 +24,9 @@ namespace backend
 
   template <typename T>
   class Vector;
+
+  template <typename T, typename T1, typename T2>
+  class BinaryOp;
 
   template <typename T>
   class SparseMatrix
@@ -55,7 +57,7 @@ namespace backend
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp*           dup );
+                const BinaryOp<T>*        dup );
     Info build( const std::vector<T>* values,
                 Index nvals );
     Info setElement(     Index row_index,
@@ -238,7 +240,7 @@ namespace backend
                                const std::vector<Index>* col_indices,
                                const std::vector<T>*     values,
                                Index                     nvals,
-                               const BinaryOp*           dup )
+                               const BinaryOp<T>*        dup )
   {
     nvals_ = nvals;
     Info err = allocate();

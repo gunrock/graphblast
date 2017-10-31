@@ -18,6 +18,7 @@
      exit(EXIT_FAILURE);                                                \
   } } while (0)
 
+#include "graphblas/backend/apspie/BinaryOp.hpp"
 #include "graphblas/backend/apspie/Vector.hpp"
 #include "graphblas/backend/apspie/Matrix.hpp"
 #include "graphblas/backend/apspie/mxm.hpp"

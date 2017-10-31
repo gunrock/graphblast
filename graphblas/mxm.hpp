@@ -10,7 +10,7 @@
 
 namespace graphblas
 {
-  template <typename c, typename m, typename a, typename b>
+  /*template <typename c, typename m, typename a, typename b>
   Info mxm( Matrix<c>&                         C,
             const boost::optional<Matrix<m>&>  mask = boost::none,
             const boost::optional<BinaryOp&>   accum= boost::none,
@@ -25,7 +25,7 @@ namespace graphblas
     else
       return backend::mxm( C.matrix, boost::none, accum, op, A.matrix, B.matrix,
           desc );
-  }
+  }*/
 
   /*// For testing
   template <typename c, typename a, typename b>

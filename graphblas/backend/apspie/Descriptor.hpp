@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "graphblas/backend/apspie/apspie.hpp"
+
 namespace graphblas
 {
 namespace backend
@@ -10,40 +12,40 @@ namespace backend
   class Descriptor
   {
     public:
-    // Default Constructor, Standard Constructor (Replaces new in C++)
-    //   -it's imperative to call constructor using matrix or the constructed object
-    //     won't be tied to this outermost layer
-    Descriptor() : desc{ GrB_FIXEDROW, GrB_32, GrB_32, GrB_128 } {}
+    Descriptor() : desc{ GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, 
+                         GrB_FIXEDROW, GrB_32, GrB_32, GrB_128 },
+                   h_buffer_(NULL), h_size_(0), d_buffer_(NULL), d_size_(0) {}
 
-    // Assignment Constructor
-    // TODO:
-    void operator=( Descriptor& rhs );
-
-    // Destructor
-    ~Descriptor() {};
+    // Default Destructor
+    ~Descriptor();
 
     // C API Methods
-    //
-    // Mutators
-    Info set( const Desc_field field, Desc_value value );
-
-    // Accessors
-    Info get( const Desc_field field, Desc_value& value ) const;
+    Info set( Desc_field field, Desc_value  value );
+    Info get( Desc_field field, Desc_value* value ) const;
 
     private:
-    // Data members that are same for all backends
-    Desc_value desc[4];
+    Desc_value desc[8];
+    void*      h_buffer_;
+    size_t     h_size_;
+    void*      d_buffer_;
+    size_t     d_size_;
   };
 
-  Info Descriptor::set( const Desc_field field, Desc_value value )
+  Descriptor::~Descriptor()
+  {
+    if( h_buffer_!=NULL ) free(h_buffer_);
+    if( d_buffer_!=NULL ) CUDA( cudaFree(d_buffer_) );
+  }
+
+  Info Descriptor::set( Desc_field field, Desc_value value )
   {
     desc[field] = value;
     return GrB_SUCCESS;
   }
 
-  Info Descriptor::get( const Desc_field field, Desc_value& value ) const
+  Info Descriptor::get( Desc_field field, Desc_value* value ) const
   {
-    value = desc[field];
+    *value = desc[field];
     return GrB_SUCCESS;
   }
 

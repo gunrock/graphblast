@@ -33,7 +33,7 @@ namespace graphblas
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp*           dup );
+                const BinaryOp<T,T,T>*    dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
     Info setElement(     T val, 
@@ -59,14 +59,14 @@ namespace graphblas
     private:
     backend::Vector<T> vector_;
 
-    template <typename m, typename U, typename a, typename BinaryOp, 
+    /*template <typename m, typename U, typename a, typename BinaryOp, 
               typename Semiring>
     friend Info vxm( const Vector<m>*  mask,
                      const BinaryOp*   accum,
                      const Semiring*   op,
                      const Vector<U>*  u,
                      const Matrix<a>*  A,
-                     const Descriptor* desc );
+                     const Descriptor* desc );*/
   };
 
   template <typename T>
@@ -105,7 +105,7 @@ namespace graphblas
   Info Vector<T>::build( const std::vector<Index>* indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp*           dup )
+                         const BinaryOp<T,T,T>*    dup )
   {
     if( indices==NULL || values==NULL || dup==NULL )
       return GrB_NULL_POINTER;
