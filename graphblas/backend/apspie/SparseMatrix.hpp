@@ -57,7 +57,7 @@ namespace backend
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T>*        dup );
+                const BinaryOp<T,T,T>*    dup );
     Info build( const std::vector<T>* values,
                 Index nvals );
     Info setElement(     Index row_index,
@@ -240,7 +240,7 @@ namespace backend
                                const std::vector<Index>* col_indices,
                                const std::vector<T>*     values,
                                Index                     nvals,
-                               const BinaryOp<T>*        dup )
+                               const BinaryOp<T,T,T>*    dup )
   {
     nvals_ = nvals;
     Info err = allocate();

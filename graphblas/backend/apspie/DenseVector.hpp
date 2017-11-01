@@ -49,7 +49,7 @@ namespace backend
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T>*        dup );
+                const BinaryOp<T,T,T>*    dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
     Info setElement(     T val,
@@ -154,7 +154,7 @@ namespace backend
   Info DenseVector<T>::build( const std::vector<Index>* indices,
                               const std::vector<T>*     values,
                               Index                     nvals,
-                              const BinaryOp<T>*        dup )
+                              const BinaryOp<T,T,T>*    dup )
   {
     return GrB_SUCCESS;
   }

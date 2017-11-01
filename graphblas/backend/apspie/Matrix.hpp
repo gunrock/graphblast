@@ -5,14 +5,21 @@
 #include <iostream>
 #include <map>
 
-#include "graphblas/backend/apspie/Vector.hpp"
-#include "graphblas/backend/apspie/SparseMatrix.hpp"
-#include "graphblas/backend/apspie/DenseMatrix.hpp"
+#include "graphblas/backend/apspie/apspie.hpp"
 
 namespace graphblas
 {
 namespace backend
 {
+  template <typename T>
+  class SparseMatrix;
+
+  template <typename T>
+  class DenseMatrix;
+
+  template <typename T, typename T1, typename T2>
+  class BinaryOp;
+
   template <typename T>
   class Matrix
   {
@@ -41,7 +48,7 @@ namespace backend
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp*           dup ); 
+                const BinaryOp<T,T,T>*    dup ); 
     Info build( const std::vector<T>* values, 
                 Index                 nvals );
     Info setElement(     Index row_index,
@@ -153,7 +160,7 @@ namespace backend
                          const std::vector<Index>* col_indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp*           dup )
+                         const BinaryOp<T,T,T>*    dup )
   {
     mat_type_ = GrB_SPARSE;
     return sparse_.build( row_indices, col_indices, values, nvals, dup );

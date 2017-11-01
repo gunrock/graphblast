@@ -17,7 +17,7 @@ namespace backend
     template <typename Op>
     BinaryOp( Op* op )
     {
-      if( op==NULL ) return GrB_NULL_POINTER;
+      if( op==NULL ) return;
       op_ = *op;
     }
 
