@@ -22,11 +22,16 @@ namespace backend
     }
 
     // Default Destructor
-    ~BinaryOp();
+    ~BinaryOp() {}
 
     // C API Methods
     template <typename Op>
     Info nnew( Op* op );
+
+    T_out operator()( T_in1 lhs, T_in2 rhs ) const
+    {
+      return op_(lhs,rhs);
+    }
 
     private:
     std::function<T_out(T_in1,T_in2)> op_;
