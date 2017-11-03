@@ -15,10 +15,9 @@ namespace backend
     public:
     BinaryOp() {}
     template <typename Op>
-    BinaryOp( Op* op )
+    BinaryOp( Op op )
     {
-      if( op==NULL ) return;
-      op_ = *op;
+      op_ = op;
     }
 
     // Default Destructor
@@ -26,7 +25,7 @@ namespace backend
 
     // C API Methods
     template <typename Op>
-    Info nnew( Op* op );
+    Info nnew( Op op );
 
     T_out operator()( T_in1 lhs, T_in2 rhs ) const
     {
@@ -39,10 +38,9 @@ namespace backend
 
   template <typename T_out, typename T_in1, typename T_in2>
   template <typename Op>
-  Info BinaryOp<T_out,T_in1,T_in2>::nnew( Op* op )
+  Info BinaryOp<T_out,T_in1,T_in2>::nnew( Op op )
   {
-    if( op==NULL ) return GrB_NULL_POINTER;
-    op_ = *op;
+    op_ = op;
     return GrB_SUCCESS;
   }
 
