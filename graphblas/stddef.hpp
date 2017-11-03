@@ -8,7 +8,7 @@ namespace graphblas
 {
 
   BinaryOp* GrB_PLUS_FP32 = new BinaryOp<float>( std::plus() );
-  BinaryOp* GrB_
+  BinaryOp* GrB_TIMES_T   = new BinaryOp<float>( std::multiplies() );
   enum Operator {GrB_IDENTITY,           // for UnaryOp
                  GrB_AINV,
                  GrB_MINV,
