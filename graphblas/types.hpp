@@ -62,27 +62,6 @@ namespace graphblas
                    GrB_512       = 512,
                    GrB_1024      =1024};
 
-  enum Operator {GrB_IDENTITY,           // for UnaryOp
-                 GrB_AINV,
-                 GrB_MINV,
-                 GrB_LNOT,
-                 GrB_LOR,                // for BinaryOp
-                 GrB_LAND,
-                 GrB_LXOR,
-                 GrB_EQ,
-                 GrB_NE,
-                 GrB_GT,
-                 GrB_LT,
-                 GrB_GE,
-                 GrB_LE,
-                 GrB_FIRST,
-                 GrB_SECOND,
-                 GrB_MIN,
-                 GrB_MAX,
-                 GrB_PLUS,
-                 GrB_MINUS,
-                 GrB_TIMES,
-                 GrB_DIV};
 }
 
 #endif  // GRB_TYPES_HPP
