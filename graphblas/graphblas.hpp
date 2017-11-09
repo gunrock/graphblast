@@ -5,6 +5,7 @@
 #include "graphblas/mmio.hpp"
 #include "graphblas/types.hpp"
 #include "graphblas/util.hpp"
+#include "graphblas/UnaryOp.hpp"
 #include "graphblas/BinaryOp.hpp"
 //#include "graphblas/stddef.hpp"
 #include "graphblas/Monoid.hpp"
