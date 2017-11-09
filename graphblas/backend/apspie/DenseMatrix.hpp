@@ -16,7 +16,7 @@ namespace backend
   template <typename T>
   class SparseMatrix;
 
-  template <typename T, typename T1, typename T2>
+  template <typename T1, typename T2, typename T3>
   class BinaryOp;
 
   template <typename T>

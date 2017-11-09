@@ -20,7 +20,7 @@ namespace backend
   template <typename T>
   class DenseVector;
 
-  template <typename T, typename T1, typename T2>
+  template <typename T1, typename T2, typename T3>
   class BinaryOp;
 
   template <typename T>

@@ -19,15 +19,27 @@ namespace graphblas
     // Default Constructor, Standard Constructor (Replaces new in C++)
     //   -it's imperative to call constructor using descriptor or else the 
     //     constructed object won't be tied to this outermost layer
-    Monoid() : monoid_(NULL, 0) {}
-    Monoid( BinaryOp* binary_op, T identity ) : monoid_(binary_op, identity) {}
+    Monoid() : monoid_(std::plus<T>(), 0) {}
+    template <typename Op>
+    Monoid( Op binary_op, T identity_t ) : monoid_(binary_op, identity_t) {}
 
     // Default Destructor is good enough for this layer
     ~Monoid() {}
 
     // C API Methods
-    Info nnew( BinaryOp* binary_op,
-               T         identity );
+    template <typename Op>
+    Info nnew( Op binary_op,
+               T  identity_t );
+
+    T identity() const
+    {
+      return monoid_.identity();
+    }
+
+    T operator()( T lhs, T rhs ) const
+    {
+      return monoid_.operator()(lhs,rhs);
+    }
 
     private:
     // Data members that are same for all backends
@@ -36,10 +48,10 @@ namespace graphblas
   };
 
   template <typename T>
-  Info Monoid::nnew( BinaryOp* binary_op, T identity )
+  template <typename Op>
+  Info Monoid<T>::nnew( Op binary_op, T identity_t )
   {
-    if( binary_op==NULL ) return GrB_NULL_POINTER;
-    return monoid_.nnew( binary_op, identity );
+    return monoid_.nnew( binary_op, identity_t );
   }
 
 }  // graphblas

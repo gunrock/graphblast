@@ -9,7 +9,7 @@ namespace graphblas
 {
 namespace backend
 {
-  template<typename T_out, typename T_in1=T_out, typename T_in2=T_out>
+  template<typename T_in1=bool, typename T_in2=T_in1, typename T_out=T_in1>
   class BinaryOp
   {
     public:
@@ -27,7 +27,7 @@ namespace backend
     template <typename Op>
     Info nnew( Op op );
 
-    T_out operator()( T_in1 lhs, T_in2 rhs ) const
+    __host__ __device__ inline T_out operator()( T_in1 lhs, T_in2 rhs ) const
     {
       return op_(lhs,rhs);
     }
@@ -36,9 +36,9 @@ namespace backend
     std::function<T_out(T_in1,T_in2)> op_;
   };
 
-  template <typename T_out, typename T_in1, typename T_in2>
+  template <typename T_in1, typename T_in2, typename T_out>
   template <typename Op>
-  Info BinaryOp<T_out,T_in1,T_in2>::nnew( Op op )
+  Info BinaryOp<T_in1,T_in2,T_out>::nnew( Op op )
   {
     op_ = op;
     return GrB_SUCCESS;

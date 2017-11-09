@@ -37,9 +37,11 @@ void testDup( const std::vector<int>& rhs )
   //a = GrB_PLUS(3.f,2.f);
   //std::cout << a << std::endl;
 
-  typedef graphblas::BinaryOp<float,float,float>( std::minus<float>() )::operator() GrB_PLUS_OP;
-  a = GrB_PLUS_OP(3.f,2.f);
-  std::cout << a << std::endl;
+  //typedef graphblas::BinaryOp<float,float,float>( std::minus<float>() )::operator() GrB_PLUS_OP;
+  //a = GrB_PLUS_OP(3.f,2.f);
+  //std::cout << a << std::endl;
+
+  typedef graphblas::BinaryOp<float,float,float> GrB_PLUS;
 
   graphblas::Vector<int> vec2;
   vec2.dup( &vec1 );

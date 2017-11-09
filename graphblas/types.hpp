@@ -11,8 +11,6 @@ namespace graphblas
   typedef int           Index;
   typedef float         T;
 
-  class Semiring{};
-
   enum Storage {GrB_UNKNOWN,
                 GrB_SPARSE,
                 GrB_DENSE};

@@ -13,7 +13,7 @@
 
 namespace graphblas
 {
-  template<typename T_out=bool, typename T_in1=T_out, typename T_in2=T_out>
+  template<typename T_in1=bool, typename T_in2=T_in1, typename T_out=T_in1>
   class BinaryOp
   {
     public:
@@ -38,13 +38,13 @@ namespace graphblas
 
     private:
     // Data members that are same for all backends
-    backend::BinaryOp<T_out, T_in1, T_in2> binary_op_;
+    backend::BinaryOp<T_in1, T_in2, T_out> binary_op_;
 
   };
 
-  template <typename T_out, typename T_in1, typename T_in2>
+  template <typename T_in1, typename T_in2, typename T_out>
   template <typename Op>
-  Info BinaryOp<T_out,T_in1,T_in2>::nnew( Op op )
+  Info BinaryOp<T_in1,T_in2,T_out>::nnew( Op op )
   {
     return binary_op_.nnew( op );
   }

@@ -96,6 +96,13 @@ namespace graphblas
  typedef BinaryOp<float   ,float   ,float   >(S_NAME<float   >())D_NAME_FP32;  \
  typedef BinaryOp<double  ,double  ,double  >(S_NAME<double  >())D_NAME_FP64;
 
+#define GEN_BINARYOP_ONE( S_NAME, D_NAME )
+  template <typename T>                    \
+  struct D_NAME                            \
+  {                                        \
+    T operator() (T lhs, T rhs)
+    {
+
 namespace graphblas
 {
   GEN_BINARYOP_ONE( first,   GrB_FIRST  );
