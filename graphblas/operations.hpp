@@ -13,11 +13,53 @@ namespace graphblas
             const Matrix<m>*        mask,
             const BinaryOpT<c,c,c>* accum,
             const SemiringT<a,b,c>* op,
-            const Matrix<a>         A,
-            const Matrix<b>         B,
+            const Matrix<a>*        A,
+            const Matrix<b>*        B,
             const Descriptor*       desc )
   {
+    if( C==NULL || op==NULL || A==NULL || B==NULL )
+      return GrB_UNINITIALIZED_OBJECT;
 
+    int variant = 0;
+    variant |= (mask==NULL)  ? 0 : 4;
+    variant |= (accum==NULL) ? 0 : 2;
+    variant |= (desc==NULL)  ? 0 : 1;
+
+    switch( variant )
+    {
+      case 0:
+        return backend::mxm<variant>( C.matrix_, NULL, NULL, op.op_, A.matrix_, 
+            B.matrix_, NULL );
+        break;
+      case 1:
+        return backend::mxm<variant>( C.matrix_, NULL, NULL, op.op_, A.matrix_,
+            B.matrix_, desc.descriptor_ );
+        break;
+      case 2:
+        return backend::mxm<variant>( C.matrix_, NULL, accum.op_, op.op_, 
+            A.matrix_, B.matrix_, NULL );
+        break;
+      case 3:
+        return backend::mxm<variant>( C.matrix_, NULL, accum.op_, op.op_, 
+            A.matrix_, B.matrix_, desc.descriptor_ );
+        break;
+      case 4:
+        return backend::mxm<variant>( C.matrix_, mask.matrix_, NULL, op.op_, 
+            A.matrix_, B.matrix_, NULL );
+        break;
+      case 5:
+        return backend::mxm<variant>( C.matrix_, mask.matrix_, NULL, op.op_, 
+            A.matrix_, B.matrix_, desc.descriptor_ );
+        break;
+      case 6:
+        return backend::mxm<variant>( C.matrix_, mask.matrix_, accum.op_, 
+            op.op_, A.matrix_, B.matrix_, NULL );
+        break;
+      case 7:
+        return backend::mxm<variant>( C.matrix_, mask.matrix_, accum.op_, 
+            op.op_, A.matrix_, B.matrix_, desc.descriptor_ );
+        break;
+    }
   }
 
   template <typename W, typename U, typename a, typename M, 
