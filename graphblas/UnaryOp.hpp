@@ -20,9 +20,9 @@ namespace graphblas
     // Default Constructor, Standard Constructor (Replaces new in C++)
     //   -it's imperative to call constructor using descriptor or else the 
     //     constructed object won't be tied to this outermost layer
-    UnaryOp() : unary_op_() {}
+    UnaryOp() : op_() {}
     template <typename Op>
-    UnaryOp( Op op ) : unary_op_(op) {}
+    UnaryOp( Op op ) : op_(op) {}
 
     // Default Destructor is good enough for this layer
     ~UnaryOp() {}
@@ -33,12 +33,12 @@ namespace graphblas
 
     T_out operator()( T_in rhs ) const
     {
-      return unary_op_.operator()(rhs);
+      return op_.operator()(rhs);
     }
 
     private:
     // Data members that are same for all backends
-    backend::UnaryOp<T_in, T_out> unary_op_;
+    backend::UnaryOp<T_in, T_out> op_;
 
   };
 
@@ -46,7 +46,7 @@ namespace graphblas
   template <typename Op>
   Info UnaryOp<T_in,T_out>::nnew( Op op )
   {
-    return unary_op_.nnew( op );
+    return op_.nnew( op );
   }
 
 }  // graphblas

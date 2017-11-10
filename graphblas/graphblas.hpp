@@ -13,7 +13,7 @@
 #include "graphblas/Descriptor.hpp"
 #include "graphblas/Vector.hpp"
 #include "graphblas/Matrix.hpp"
-#include "graphblas/mxm.hpp"
+#include "graphblas/operations.hpp"
 
 #define __GRB_BACKEND_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/__GRB_BACKEND_ROOT.hpp>
 #include __GRB_BACKEND_HEADER

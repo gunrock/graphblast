@@ -2,8 +2,8 @@
 #define GRB_OPERATIONS_HPP
 
 #define __GRB_BACKEND_OPERATIONS_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/operations.hpp>
-#include __GRB_BACKEND_MXM_HEADER
-#undef __GRB_BACKEND_MXM_HEADER
+#include __GRB_BACKEND_OPERATIONS_HEADER
+#undef __GRB_BACKEND_OPERATIONS_HEADER
 
 namespace graphblas
 {
@@ -19,6 +19,7 @@ namespace graphblas
   {
     if( C==NULL || op==NULL || A==NULL || B==NULL )
       return GrB_UNINITIALIZED_OBJECT;
+    checkDim
 
     int variant = 0;
     variant |= (mask==NULL)  ? 0 : 4;

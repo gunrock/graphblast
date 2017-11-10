@@ -20,9 +20,9 @@ namespace graphblas
     // Default Constructor, Standard Constructor (Replaces new in C++)
     //   -it's imperative to call constructor using descriptor or else the 
     //     constructed object won't be tied to this outermost layer
-    Semiring() : semiring_() {}
+    Semiring() : op_() {}
     template <typename MulOp, typename AddOp>
-    Semiring( MulOp mul, AddOp add ) : semiring_(mul, add) {}
+    Semiring( MulOp mul, AddOp add ) : op_(mul, add) {}
 
     // Default Destructor is good enough for this layer
     ~Semiring() {}
@@ -33,22 +33,22 @@ namespace graphblas
 
     T_out identity() const
     {
-      return semiring_.identity();
+      return op_.identity();
     }
 
     T_out add( T_out lhs, T_out rhs ) const
     {
-      return semiring_.add(lhs,rhs);
+      return op_.add(lhs,rhs);
     }
 
     T_out mul( T_in1 lhs, T_in2 rhs ) const
     {
-      return semiring_.mul(lhs,rhs);
+      return op_.mul(lhs,rhs);
     }
 
     private:
     // Data members that are same for all backends
-    backend::Semiring<T_in1, T_in2, T_out> semiring_;
+    backend::Semiring<T_in1, T_in2, T_out> op_;
 
   };
 
@@ -56,7 +56,7 @@ namespace graphblas
   template <typename MulOp, typename AddOp>
   Info Semiring<T_in1,T_in2,T_out>::nnew( MulOp mul, AddOp add )
   {
-    return semiring_.nnew( mul, add );
+    return op_.nnew( mul, add );
   }
 
 }  // graphblas
