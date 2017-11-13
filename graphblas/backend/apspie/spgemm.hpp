@@ -15,6 +15,20 @@ namespace graphblas
 namespace backend
 {
 
+  template <int variant, typename c, typename a, typename b, typename m,
+            typename BinaryOpT,      typename SemiringT>
+  Info spgemm( SparseMatrix<c>*       C, 
+               const SparseMatrix<m>* mask,
+               const BinaryOpT*       accum, 
+               const SemiringT*       op, 
+               const SparseMatrix<a>* A,
+               const SparseMatrix<b>* B,
+               const Descriptor*      desc )
+  {
+    std::cout << "Error: Feature not implemented yet!\n";
+    return GrB_SUCCESS;
+  }
+
   template<typename c, typename a, typename b>
   Info cusparse_spgemm( SparseMatrix<c>&       C,
                         const SparseMatrix<a>& A,

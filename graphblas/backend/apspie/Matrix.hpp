@@ -73,6 +73,8 @@ namespace backend
                    Index ncols );
     Info setStorage( Storage  mat_type );
     Info getStorage( Storage* mat_type ) const;
+    template <typename MatrixT>
+    MatrixT* getMatrix() const;
 
     template <typename U>
     Info fill( Index axis,
@@ -289,6 +291,15 @@ namespace backend
   {
     *mat_type = mat_type_;
     return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  template <typename MatrixT>
+  MatrixT* Matrix<T>::getMatrix() const
+  {
+    if( mat_type_ == GrB_SPARSE )     return &sparse_;
+    else if( mat_type_ == GrB_DENSE ) return &dense_;
+    return NULL;
   }
 
   template <typename T>

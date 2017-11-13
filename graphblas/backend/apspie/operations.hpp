@@ -1,13 +1,15 @@
-#ifndef GRB_OPERATIONS_HPP
-#define GRB_OPERATIONS_HPP
+#ifndef GRB_BACKEND_APSPIE_OPERATIONS_HPP
+#define GRB_BACKEND_APSPIE_OPERATIONS_HPP
 
-#define __GRB_BACKEND_OPERATIONS_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/operations.hpp>
-#include __GRB_BACKEND_OPERATIONS_HEADER
-#undef __GRB_BACKEND_OPERATIONS_HEADER
+#include "graphblas/backend/apspie/spgemm.hpp"
+#include "graphblas/backend/apspie/gemm.hpp"
+#include "graphblas/backend/apspie/spmm.hpp"
 
 namespace graphblas
 {
-  template <typename c, typename a, typename b, typename m, 
+namespace backend
+{
+  template <int variant, typename c, typename a, typename b, typename m,
             typename BinaryOpT,     typename SemiringT>
   Info mxm( Matrix<c>*              C,
             const Matrix<m>*  mask,
@@ -17,49 +19,38 @@ namespace graphblas
             const Matrix<b>*  B,
             const Descriptor* desc )
   {
-    if( C==NULL || op==NULL || A==NULL || B==NULL )
-      return GrB_UNINITIALIZED_OBJECT;
-    checkDim
+    Storage A_mat_type;
+    Storage B_mat_type;
+    A->getStorage( &A_mat_type );
+    B->getStorage( &B_mat_type );
 
-    int variant = 0;
-    variant |= (mask==NULL)  ? 0 : 4;
-    variant |= (accum==NULL) ? 0 : 2;
-    variant |= (desc==NULL)  ? 0 : 1;
+    Matrix<m>* maskMatrix = (mask==NULL) ? NULL : mask->getMatrix();
 
-    switch( variant )
+    if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_SPARSE )
     {
-      case 0:
-        return backend::mxm<variant>( C.matrix_, NULL, NULL, op.op_, A.matrix_, 
-            B.matrix_, NULL );
-        break;
-      case 1:
-        return backend::mxm<variant>( C.matrix_, NULL, NULL, op.op_, A.matrix_,
-            B.matrix_, desc.descriptor_ );
-        break;
-      case 2:
-        return backend::mxm<variant>( C.matrix_, NULL, accum.op_, op.op_, 
-            A.matrix_, B.matrix_, NULL );
-        break;
-      case 3:
-        return backend::mxm<variant>( C.matrix_, NULL, accum.op_, op.op_, 
-            A.matrix_, B.matrix_, desc.descriptor_ );
-        break;
-      case 4:
-        return backend::mxm<variant>( C.matrix_, mask.matrix_, NULL, op.op_, 
-            A.matrix_, B.matrix_, NULL );
-        break;
-      case 5:
-        return backend::mxm<variant>( C.matrix_, mask.matrix_, NULL, op.op_, 
-            A.matrix_, B.matrix_, desc.descriptor_ );
-        break;
-      case 6:
-        return backend::mxm<variant>( C.matrix_, mask.matrix_, accum.op_, 
-            op.op_, A.matrix_, B.matrix_, NULL );
-        break;
-      case 7:
-        return backend::mxm<variant>( C.matrix_, mask.matrix_, accum.op_, 
-            op.op_, A.matrix_, B.matrix_, desc.descriptor_ );
-        break;
+      C->setStorage( GrB_SPARSE );
+      spgemm<variant>( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(), 
+          B->getMatrix(), desc );
+    }
+    else
+    {
+      C->setStorage( GrB_DENSE );
+      if( A_mat_type==GrB_DENSE && B_mat_type==GrB_DENSE )
+      {
+        std::cout << "Error: Feature not implemented yet!\n";
+        gemm<variant>( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(),
+            B->getMatrix(), desc );
+      }
+      else if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
+      {
+        spmm<variant>( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(),
+            B->getMatrix(), desc );
+      }
+      else
+      {
+        spmm<variant>( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(),
+            B->getMatrix(), desc );
+      }
     }
   }
 
@@ -336,6 +327,7 @@ namespace graphblas
 
   }
 
+}  // backend
 }  // graphblas
 
-#endif  // GRB_OPERATIONS_HPP
+#endif  // GRB_BACKEND_APSPIE_OPERATIONS_HPP
