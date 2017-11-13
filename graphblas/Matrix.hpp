@@ -13,6 +13,9 @@
 
 namespace graphblas
 {
+  template <typename T1, typename T2, typename T3>
+  class BinaryOp;
+
   template <typename T>
   class Matrix
   {

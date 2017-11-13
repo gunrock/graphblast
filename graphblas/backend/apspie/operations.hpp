@@ -10,7 +10,7 @@ namespace graphblas
 namespace backend
 {
   template <int variant, typename c, typename a, typename b, typename m,
-            typename BinaryOpT,     typename SemiringT>
+            typename BinaryOpT,      typename SemiringT>
   Info mxm( Matrix<c>*              C,
             const Matrix<m>*  mask,
             const BinaryOpT*  accum,
@@ -21,37 +21,37 @@ namespace backend
   {
     Storage A_mat_type;
     Storage B_mat_type;
-    A->getStorage( &A_mat_type );
-    B->getStorage( &B_mat_type );
+    CHECK( A->getStorage( &A_mat_type ) );
+    CHECK( B->getStorage( &B_mat_type ) );
 
-    Matrix<m>* maskMatrix = (mask==NULL) ? NULL : mask->getMatrix();
+    Matrix<m>* maskMatrix = (mask==NULL) ? NULL : CHECK( mask->getMatrix() );
 
     if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_SPARSE )
     {
-      C->setStorage( GrB_SPARSE );
-      spgemm<variant>( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(), 
-          B->getMatrix(), desc );
+      CHECK( C->setStorage( GrB_SPARSE ) );
+      CHECK( spgemm<variant>( C->getMatrix(), maskMatrix, accum, op,
+          A->getMatrix(), B->getMatrix(), desc ) );
     }
     else
     {
-      C->setStorage( GrB_DENSE );
+      CHECK( C->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_DENSE && B_mat_type==GrB_DENSE )
       {
-        std::cout << "Error: Feature not implemented yet!\n";
-        gemm<variant>( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(),
-            B->getMatrix(), desc );
+        CHECK( gemm<variant>( C->getMatrix(), maskMatrix, accum, op, 
+            A->getMatrix(), B->getMatrix(), desc ) );
       }
       else if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
       {
-        spmm<variant>( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(),
-            B->getMatrix(), desc );
+        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
+            A->getMatrix(), B->getMatrix(), desc ) );
       }
       else
       {
-        spmm<variant>( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(),
-            B->getMatrix(), desc );
+        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
+            A->getMatrix(), B->getMatrix(), desc ) );
       }
     }
+    return GrB_SUCCESS;
   }
 
   template <typename W, typename U, typename a, typename M, 

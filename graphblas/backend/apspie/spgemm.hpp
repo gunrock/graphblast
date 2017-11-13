@@ -8,12 +8,15 @@
 #include <cusparse.h>
 
 #include "graphblas/backend/apspie/apspie.hpp"
+#include "graphblas/backend/apspie/Descriptor.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 
 namespace graphblas
 {
 namespace backend
 {
+
+  class Descriptor;
 
   template <int variant, typename c, typename a, typename b, typename m,
             typename BinaryOpT,      typename SemiringT>

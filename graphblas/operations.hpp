@@ -9,7 +9,7 @@ namespace graphblas
 {
   template <typename c, typename a, typename b, typename m, 
             typename BinaryOpT,     typename SemiringT>
-  Info mxm( Matrix<c>*              C,
+  Info mxm( Matrix<c>*        C,
             const Matrix<m>*  mask,
             const BinaryOpT*  accum,
             const SemiringT*  op,
@@ -17,9 +17,16 @@ namespace graphblas
             const Matrix<b>*  B,
             const Descriptor* desc )
   {
+    // Null pointer check
     if( C==NULL || op==NULL || A==NULL || B==NULL )
       return GrB_UNINITIALIZED_OBJECT;
-    checkDim
+
+    // Dimension check
+    CHECK( checkDimRowCol( B, A,    "B.nrows != A.ncols"    ) );
+    CHECK( checkDimRowRow( A, C,    "A.nrows != C.nrows"    ) );
+    CHECK( checkDimColCol( B, C,    "B.ncols != C.ncols"    ) );
+    CHECK( checkDimRowRow( C, mask, "C.nrows != mask.nrows" ) );
+    CHECK( checkDimColCol( C, mask, "C.ncols != mask.ncols" ) );
 
     int variant = 0;
     variant |= (mask==NULL)  ? 0 : 4;
@@ -31,35 +38,27 @@ namespace graphblas
       case 0:
         return backend::mxm<variant>( C.matrix_, NULL, NULL, op.op_, A.matrix_, 
             B.matrix_, NULL );
-        break;
       case 1:
         return backend::mxm<variant>( C.matrix_, NULL, NULL, op.op_, A.matrix_,
             B.matrix_, desc.descriptor_ );
-        break;
       case 2:
         return backend::mxm<variant>( C.matrix_, NULL, accum.op_, op.op_, 
             A.matrix_, B.matrix_, NULL );
-        break;
       case 3:
         return backend::mxm<variant>( C.matrix_, NULL, accum.op_, op.op_, 
             A.matrix_, B.matrix_, desc.descriptor_ );
-        break;
       case 4:
         return backend::mxm<variant>( C.matrix_, mask.matrix_, NULL, op.op_, 
             A.matrix_, B.matrix_, NULL );
-        break;
       case 5:
         return backend::mxm<variant>( C.matrix_, mask.matrix_, NULL, op.op_, 
             A.matrix_, B.matrix_, desc.descriptor_ );
-        break;
       case 6:
         return backend::mxm<variant>( C.matrix_, mask.matrix_, accum.op_, 
             op.op_, A.matrix_, B.matrix_, NULL );
-        break;
       case 7:
         return backend::mxm<variant>( C.matrix_, mask.matrix_, accum.op_, 
             op.op_, A.matrix_, B.matrix_, desc.descriptor_ );
-        break;
     }
   }
 
