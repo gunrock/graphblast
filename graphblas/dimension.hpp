@@ -4,6 +4,7 @@
 #include <string>
 
 #include "graphblas/Matrix.hpp"
+#include "graphblas/Vector.hpp"
 
 namespace graphblas
 {
@@ -46,6 +47,51 @@ namespace graphblas
     CHECK( A->ncols( &A_ncols ) );
     CHECK( B->ncols( &B_ncols ) );
     if( A_ncols!=B_ncols )
+    {
+      std::cout << str << std::endl;
+      return GrB_DIMENSION_MISMATCH;
+    }
+    return GrB_SUCCESS;
+  }
+
+  template <typename a, typename U>
+  Info checkDimRowSize( Matrix<a>* A, Vector<U>* u, const std::string& str )
+  {
+    if( A==NULL || u==NULL ) return GrB_SUCCESS;
+    Index A_nrows, u_size;
+    CHECK( A->nrows( &A_nrows ) );
+    CHECK( u->size( &u_size ) );
+    if( A_nrows!=u_size )
+    {
+      std::cout << str << std::endl;
+      return GrB_DIMENSION_MISMATCH;
+    }
+    return GrB_SUCCESS;
+  }
+
+  template <typename a, typename U>
+  Info checkDimColSize( Matrix<a>* A, Vector<U>* u, const std::string& str )
+  {
+    if( A==NULL || u==NULL ) return GrB_SUCCESS;
+    Index A_ncols, u_size;
+    CHECK( A->ncols( &A_ncols ) );
+    CHECK( u->size( &u_size ) );
+    if( A_ncols!=u_size )
+    {
+      std::cout << str << std::endl;
+      return GrB_DIMENSION_MISMATCH;
+    }
+    return GrB_SUCCESS;
+  }
+
+  template <typename U, typename W>
+  Info checkDimSizeSize( Vector<U>* u, Vector<W>* w, const std::string& str )
+  {
+    if( u==NULL || w==NULL ) return GrB_SUCCESS;
+    Index u_size, w_size;
+    CHECK( u->size( &u_size ) );
+    CHECK( w->size( &w_size ) );
+    if( u_size!=w_size )
     {
       std::cout << str << std::endl;
       return GrB_DIMENSION_MISMATCH;

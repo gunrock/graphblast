@@ -80,23 +80,15 @@ namespace graphblas
     // Data members that are same for all backends
     backend::Matrix<T> matrix_;
 
-    /*template <typename c, typename m, typename a, typename b>
-    friend Info mxm( Matrix<c>&        C,
-                     const Matrix<m>&  mask,
-                     const BinaryOp&   accum,
-                     const Semiring&   op,
-                     const Matrix<a>&  A,
-                     const Matrix<b>&  B,
-                     const Descriptor& desc );
-
-    template <typename c, typename a, typename b>
-    friend Info mxm( Matrix<c>&        C,
-                     const int         mask,
-                     const int         accum,
-                     const Semiring&   op,
-                     const Matrix<a>&  A,
-                     const Matrix<b>&  B,
-                     const Descriptor& desc );*/
+		template <typename c, typename a, typename b, typename m,
+							typename BinaryOpT,     typename SemiringT>
+		friend Info mxm( Matrix<c>*        C,
+										 const Matrix<m>*  mask,
+										 const BinaryOpT*  accum,
+										 const SemiringT*  op,
+										 const Matrix<a>*  A,
+										 const Matrix<b>*  B,
+										 const Descriptor* desc );
 
   };
 

@@ -24,7 +24,7 @@ namespace backend
     CHECK( A->getStorage( &A_mat_type ) );
     CHECK( B->getStorage( &B_mat_type ) );
 
-    Matrix<m>* maskMatrix = (mask==NULL) ? NULL : CHECK( mask->getMatrix() );
+    Matrix<m>* maskMatrix = (mask==NULL) ? NULL : mask->getMatrix();
 
     if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_SPARSE )
     {

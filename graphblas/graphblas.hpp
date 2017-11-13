@@ -2,12 +2,11 @@
 #define GRB_GRAPHBLAS_HPP
 
 #define CHECK(x) do {                  \
-  graphblas::Info err = (x);           \
+  graphblas::Info err = x;             \
   if (err != graphblas::GrB_SUCCESS) { \
     fprintf(stderr, "Runtime error: %s returned %d at %s:%d", #x, err, __FILE__, __LINE__);                            \
     return err;                        \
-  }                                    \
-} while (0)
+  } } while (0)
 
 #include "graphblas/backend.hpp"
 #include "graphblas/mmio.hpp"

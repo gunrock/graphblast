@@ -5,6 +5,10 @@
 #include __GRB_BACKEND_OPERATIONS_HEADER
 #undef __GRB_BACKEND_OPERATIONS_HEADER
 
+#include "graphblas/dimension.hpp"
+#include "graphblas/Matrix.hpp"
+#include "graphblas/Descriptor.hpp"
+
 namespace graphblas
 {
   template <typename c, typename a, typename b, typename m, 
@@ -28,37 +32,38 @@ namespace graphblas
     CHECK( checkDimRowRow( C, mask, "C.nrows != mask.nrows" ) );
     CHECK( checkDimColCol( C, mask, "C.ncols != mask.ncols" ) );
 
-    int variant = 0;
-    variant |= (mask==NULL)  ? 0 : 4;
-    variant |= (accum==NULL) ? 0 : 2;
-    variant |= (desc==NULL)  ? 0 : 1;
+    int variant_t = 0;
+    variant_t |= (mask==NULL)  ? 0 : 4;
+    variant_t |= (accum==NULL) ? 0 : 2;
+    variant_t |= (desc==NULL)  ? 0 : 1;
+    const int variant = static_cast<int>(variant_t);
 
     switch( variant )
     {
       case 0:
-        return backend::mxm<variant>( C.matrix_, NULL, NULL, op.op_, A.matrix_, 
-            B.matrix_, NULL );
+        return backend::mxm<0>( C->matrix_, NULL, NULL, op->op_, A->matrix_, 
+            B->matrix_, NULL );
       case 1:
-        return backend::mxm<variant>( C.matrix_, NULL, NULL, op.op_, A.matrix_,
-            B.matrix_, desc.descriptor_ );
+        return backend::mxm<1>( C->matrix_, NULL, NULL, op->op_, A->matrix_, 
+            B->matrix_, desc->descriptor_ );
       case 2:
-        return backend::mxm<variant>( C.matrix_, NULL, accum.op_, op.op_, 
-            A.matrix_, B.matrix_, NULL );
+        return backend::mxm<2>( C->matrix_, NULL, accum->op_, op->op_, 
+            A->matrix_, B->matrix_, NULL );
       case 3:
-        return backend::mxm<variant>( C.matrix_, NULL, accum.op_, op.op_, 
-            A.matrix_, B.matrix_, desc.descriptor_ );
+        return backend::mxm<3>( C->matrix_, NULL, accum->op_, op->op_, 
+            A->matrix_, B->matrix_, desc->descriptor_ );
       case 4:
-        return backend::mxm<variant>( C.matrix_, mask.matrix_, NULL, op.op_, 
-            A.matrix_, B.matrix_, NULL );
+        return backend::mxm<4>( C->matrix_, mask->matrix_, NULL, op->op_, 
+            A->matrix_, B->matrix_, NULL );
       case 5:
-        return backend::mxm<variant>( C.matrix_, mask.matrix_, NULL, op.op_, 
-            A.matrix_, B.matrix_, desc.descriptor_ );
+        return backend::mxm<5>( C->matrix_, mask->matrix_, NULL, op->op_, 
+            A->matrix_, B->matrix_, desc->descriptor_ );
       case 6:
-        return backend::mxm<variant>( C.matrix_, mask.matrix_, accum.op_, 
-            op.op_, A.matrix_, B.matrix_, NULL );
+        return backend::mxm<6>( C->matrix_, mask->matrix_, accum->op_, 
+            op->op_, A->matrix_, B->matrix_, NULL );
       case 7:
-        return backend::mxm<variant>( C.matrix_, mask.matrix_, accum.op_, 
-            op.op_, A.matrix_, B.matrix_, desc.descriptor_ );
+        return backend::mxm<7>( C->matrix_, mask->matrix_, accum->op_, op->op_, 
+            A->matrix_, B->matrix_, desc->descriptor_ );
     }
   }
 
@@ -72,7 +77,48 @@ namespace graphblas
             const Matrix<a>*  A,
             const Descriptor* desc )
   {
+    // Null pointer check
+    if( w==NULL || op==NULL || u==NULL || A==NULL )
+      return GrB_UNINITIALIZED_OBJECT;
 
+    // Dimension check
+    CHECK( checkDimRowSize(  A, u,    "A.nrows != u.size"    ) );
+    CHECK( checkDimColSize(  A, w,    "A.ncols != w.size"    ) );
+    CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
+
+    int variant_t = 0;
+    variant_t |= (mask==NULL)  ? 0 : 4;
+    variant_t |= (accum==NULL) ? 0 : 2;
+    variant_t |= (desc==NULL)  ? 0 : 1;
+    const int variant = static_cast<int>(variant_t);
+
+    switch( variant )
+    {
+      case 0:
+        return backend::vxm<0>( w->vector_, NULL, NULL, op->op_, u->vector_, 
+            A->matrix_, NULL );
+      case 1:
+        return backend::vxm<1>( w->vector_, NULL, NULL, op->op_, u->vector_, 
+            A->matrix_, desc->descriptor_ );
+      case 2:
+        return backend::vxm<2>( w->vector_, NULL, accum->op_, op->op_, 
+            u->vector_, A->matrix_, NULL );
+      case 3:
+        return backend::vxm<3>( w->vector_, NULL, accum->op_, op->op_, 
+            u->vector_, A->matrix_, desc->descriptor_ );
+      case 4:
+        return backend::vxm<4>( w->vector_, mask->matrix_, NULL, op->op_, 
+            u->vector_, A->matrix_, NULL );
+      case 5:
+        return backend::vxm<5>( w->vector_, mask->matrix_, NULL, op->op_, 
+            u->vector_, A->matrix_, desc->descriptor_ );
+      case 6:
+        return backend::vxm<6>( w->vector_, mask->matrix_, accum->op_, op->op_,
+            u->vector_, A->matrix_, NULL );
+      case 7:
+        return backend::vxm<7>( w->vector_, mask->matrix_, accum->op_, op->op_, 
+            u->vector, A->matrix_, desc->descriptor_ );
+    }
   }
 
   template <typename W, typename a, typename U, typename M, 
@@ -85,7 +131,48 @@ namespace graphblas
             const Vector<U>*  u,
             const Descriptor* desc )
   {
+    // Null pointer check
+    if( w==NULL || op==NULL || u==NULL || A==NULL )
+      return GrB_UNINITIALIZED_OBJECT;
 
+    // Dimension check
+    CHECK( checkDimColSize(  A, u,    "A.ncols != u.size"    ) );
+    CHECK( checkDimRowSize(  A, w,    "A.nrows != w.size"    ) );
+    CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
+
+    int variant_t = 0;
+    variant_t |= (mask==NULL)  ? 0 : 4;
+    variant_t |= (accum==NULL) ? 0 : 2;
+    variant_t |= (desc==NULL)  ? 0 : 1;
+    const int variant = static_cast<int>(variant_t);
+
+    switch( variant )
+    {
+      case 0:
+        return backend::mxv<0>( w->vector_, NULL, NULL, op->op_, A->matrix_,
+            u->vector_, NULL );
+      case 1:
+        return backend::mxv<1>( w->vector_, NULL, NULL, op->op_, A->matrix_,
+            u->vector_, desc->descriptor_ );
+      case 2:
+        return backend::mxv<2>( w->vector_, NULL, accum->op_, op->op_, 
+            A->matrix_, u->vector_, NULL );
+      case 3:
+        return backend::mxv<3>( w->vector_, NULL, accum->op_, op->op_, 
+            A->matrix_, u->vector_, desc->descriptor_ );
+      case 4:
+        return backend::mxv<4>( w->vector_, mask->matrix_, NULL, op->op_, 
+            A->matrix_, u->vector_, NULL );
+      case 5:
+        return backend::mxv<5>( w->vector_, mask->matrix_, NULL, op->op_, 
+            A->matrix_, u->vector_, desc->descriptor_ );
+      case 6:
+        return backend::mxv<6>( w->vector_, mask->matrix_, accum->op_, op->op_,
+            A->matrix_, u->vector_, NULL );
+      case 7:
+        return backend::mxv<7>( w->vector_, mask->matrix_, accum->op_, op->op_, 
+            A->matrix_, u->vector_, desc->descriptor_ );
+    }
   }
 
   template <typename W, typename U, typename V, typename M,
