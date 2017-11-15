@@ -64,7 +64,39 @@ namespace backend
             const Matrix<a>*  A,
             const Descriptor* desc )
   {
+    Storage u_vec_type;
+    Storage w_vec_type;
+    CHECK( A->getStorage( &A_vec_type ) );
+    CHECK( B->getStorage( &B_vec_type ) );
 
+    Matrix<m>* maskMatrix = (mask==NULL) ? NULL : mask->getMatrix();
+
+    if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_SPARSE )
+    {
+      CHECK( C->setStorage( GrB_SPARSE ) );
+      CHECK( spgemm<variant>( C->getMatrix(), maskMatrix, accum, op,
+          A->getMatrix(), B->getMatrix(), desc ) );
+    }
+    else
+    {
+      CHECK( C->setStorage( GrB_DENSE ) );
+      if( A_mat_type==GrB_DENSE && B_mat_type==GrB_DENSE )
+      {
+        CHECK( gemm<variant>( C->getMatrix(), maskMatrix, accum, op, 
+            A->getMatrix(), B->getMatrix(), desc ) );
+      }
+      else if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
+      {
+        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
+            A->getMatrix(), B->getMatrix(), desc ) );
+      }
+      else
+      {
+        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
+            A->getMatrix(), B->getMatrix(), desc ) );
+      }
+    }
+    return GrB_SUCCESS;
   }
 
   template <typename W, typename a, typename U, typename M, 
