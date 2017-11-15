@@ -68,6 +68,8 @@ namespace backend
     Info countUnique( Index* count );
     Info setStorage( Storage  vec_type );
     Info getStorage( Storage* vec_type ) const;
+    template <typename VectorT>
+    VectorT* getVector() const;
 
     private: 
     Index           nvals_;      // 3 ways to set: (1) dup  (2) build 
@@ -255,6 +257,14 @@ namespace backend
   {
     *vec_type = vec_type_;
     return GrB_SUCCESS;
+  }
+
+  template <typename VectorT>
+  VectorT* getVector() const
+  {
+    if( vec_type_ == GrB_SPARSE )     return &sparse_;
+    else if( vec_type_ == GrB_DENSE ) return &dense_;
+    return NULL;
   }
 
 }  // backend

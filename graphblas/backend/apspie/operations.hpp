@@ -2,8 +2,11 @@
 #define GRB_BACKEND_APSPIE_OPERATIONS_HPP
 
 #include "graphblas/backend/apspie/spgemm.hpp"
-#include "graphblas/backend/apspie/gemm.hpp"
 #include "graphblas/backend/apspie/spmm.hpp"
+#include "graphblas/backend/apspie/gemm.hpp"
+#include "graphblas/backend/apspie/spmspv.hpp"
+#include "graphblas/backend/apspie/spmv.hpp"
+#include "graphblas/backend/apspie/gemv.hpp"
 
 namespace graphblas
 {
@@ -35,19 +38,19 @@ namespace backend
     else
     {
       CHECK( C->setStorage( GrB_DENSE ) );
-      if( A_mat_type==GrB_DENSE && B_mat_type==GrB_DENSE )
+      if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
       {
-        CHECK( gemm<variant>( C->getMatrix(), maskMatrix, accum, op, 
+        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
             A->getMatrix(), B->getMatrix(), desc ) );
       }
-      else if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
+      else if( A_mat_type==GrB_DENSE && B_mat_type==GrB_SPARSE )
       {
         CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
             A->getMatrix(), B->getMatrix(), desc ) );
       }
       else
       {
-        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
+        CHECK( gemm<variant>( C->getMatrix(), maskMatrix, accum, op, 
             A->getMatrix(), B->getMatrix(), desc ) );
       }
     }
@@ -64,36 +67,46 @@ namespace backend
             const Matrix<a>*  A,
             const Descriptor* desc )
   {
+    // Get storage
     Storage u_vec_type;
-    Storage w_vec_type;
-    CHECK( A->getStorage( &A_vec_type ) );
-    CHECK( B->getStorage( &B_vec_type ) );
+    Storage A_mat_type;
+    CHECK( u->getStorage( &u_vec_type ) );
+    CHECK( A->getStorage( &A_mat_type ) );
 
-    Matrix<m>* maskMatrix = (mask==NULL) ? NULL : mask->getMatrix();
+    // Get ratio of filled elements
+    Index u_nvals;
+    Index u_nsize;
+    CHECK( u->nvals( &u_nvals ) );
+    CHECK( u->size(  &u_nsize ) );
 
-    if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_SPARSE )
+    Vector<m>* maskVector = (mask==NULL) ? NULL : mask->getVector();
+
+    if( A_mat_type==GrB_SPARSE && 
+      ( u_vec_type==GrB_SPARSE && u_nvals/u_nsize<GrB_THRESHOLD ) )
     {
-      CHECK( C->setStorage( GrB_SPARSE ) );
-      CHECK( spgemm<variant>( C->getMatrix(), maskMatrix, accum, op,
-          A->getMatrix(), B->getMatrix(), desc ) );
+      CHECK( w->setStorage( GrB_SPARSE ) );
+      CHECK( spmspv<variant>( w->getVector(), maskMatrix, accum, op,
+          A->getMatrix(), u->getVector(), desc ) );
     }
     else
     {
-      CHECK( C->setStorage( GrB_DENSE ) );
-      if( A_mat_type==GrB_DENSE && B_mat_type==GrB_DENSE )
+      CHECK( w->setStorage( GrB_DENSE ) );
+      if( A_mat_type==GrB_DENSE )
       {
-        CHECK( gemm<variant>( C->getMatrix(), maskMatrix, accum, op, 
-            A->getMatrix(), B->getMatrix(), desc ) );
-      }
-      else if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
-      {
-        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
-            A->getMatrix(), B->getMatrix(), desc ) );
+        CHECK( spmv<variant>( w->getVector(), maskMatrix, accum, op, 
+            A->getMatrix(), u->getVector(), desc ) );
       }
       else
       {
-        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
-            A->getMatrix(), B->getMatrix(), desc ) );
+        Descriptor desc_t;
+        desc_t.set( GrB_INP1, GrB_TRAN );
+        if( desc==NULL ) 
+          desc = desc_t;
+        else 
+          CHECK( desc.toggle( GrB_INP1 ) );
+
+        CHECK( gemv<variant>( w->getVector(), maskMatrix, accum, op, 
+          A->getMatrix(), u->getVector(), desc ) );
       }
     }
     return GrB_SUCCESS;
@@ -109,7 +122,42 @@ namespace backend
             const Vector<U>*  u,
             const Descriptor* desc )
   {
+    // Get storage
+    Storage u_vec_type;
+    Storage A_mat_type;
+    CHECK( u->getStorage( &u_vec_type ) );
+    CHECK( A->getStorage( &A_mat_type ) );
 
+    // Get ratio of filled elements
+    Index u_nvals;
+    Index u_nsize;
+    CHECK( u->nvals( &u_nvals ) );
+    CHECK( u->size(  &u_nsize ) );
+
+    Vector<m>* maskVector = (mask==NULL) ? NULL : mask->getVector();
+
+    if( A_mat_type==GrB_SPARSE && 
+      ( u_vec_type==GrB_SPARSE && u_nvals/u_nsize<GrB_THRESHOLD ) )
+    {
+      CHECK( w->setStorage( GrB_SPARSE ) );
+      CHECK( spmspv<variant>( w->getVector(), maskMatrix, accum, op,
+          A->getMatrix(), u->getVector(), desc ) );
+    }
+    else
+    {
+      CHECK( w->setStorage( GrB_DENSE ) );
+      if( A_mat_type==GrB_DENSE )
+      {
+        CHECK( spmv<variant>( w->getVector(), maskMatrix, accum, op, 
+            A->getMatrix(), u->getVector(), desc ) );
+      }
+      else
+      {
+        CHECK( gemv<variant>( w->getVector(), maskMatrix, accum, op, 
+          A->getMatrix(), u->getVector(), desc ) );
+      }
+    }
+    return GrB_SUCCESS;
   }
 
   template <typename W, typename U, typename V, typename M,

@@ -23,6 +23,9 @@ namespace backend
     Info set( Desc_field field, Desc_value  value );
     Info get( Desc_field field, Desc_value* value ) const;
 
+    // Private methods
+    Info Descriptor::toggleTranspose( Desc_field field );
+
     private:
     Desc_value desc[8];
     void*      h_buffer_;
@@ -46,6 +49,14 @@ namespace backend
   Info Descriptor::get( Desc_field field, Desc_value* value ) const
   {
     *value = desc[field];
+    return GrB_SUCCESS;
+  }
+
+  // Toggles transpose vs. non-transpose
+  Info Descriptor::toggleTranspose( Desc_field field )
+  {
+    if( desc[field]!=GrB_DEFAULT ) desc[field] = GrB_DEFAULT;
+    else desc[field] = GrB_TRAN;
     return GrB_SUCCESS;
   }
 
