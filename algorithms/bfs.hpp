@@ -1,3 +1,5 @@
+#ifndef GRB_BFS_HPP
+#define GRB_BFS_HPP
 
 namespace graphblas
 {
@@ -8,3 +10,7 @@ namespace graphblas
 
     Vector v(n);
   }
+
+}  // graphblas
+
+#endif  // GRB_BFS_HPP

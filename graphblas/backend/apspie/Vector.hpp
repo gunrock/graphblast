@@ -70,6 +70,9 @@ namespace backend
     Info getStorage( Storage* vec_type ) const;
     template <typename VectorT>
     VectorT* getVector() const;
+    Info convert();
+    Info sparse2dense();
+    Info dense2sparse();
 
     private: 
     Index           nvals_;      // 3 ways to set: (1) dup  (2) build 
@@ -259,12 +262,57 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  template <typename T>
   template <typename VectorT>
-  VectorT* getVector() const
+  VectorT* Vector<T>::getVector() const
   {
     if( vec_type_ == GrB_SPARSE )     return &sparse_;
     else if( vec_type_ == GrB_DENSE ) return &dense_;
     return NULL;
+  }
+
+  // Check if necessary to convert sparse-to-dense or dense-to-sparse
+	// a) if more elements than GrB_THRESHOLD, convert SpVec->DeVec
+	// b) if less elements than GrB_THRESHOLD, convert DeVec->SpVec
+  template <typename T>
+  Info Vector<T>::convert()
+  {
+    Index nvals_t;
+    Index nsize_t;
+    CHECK( nvals( &nvals_t ) );
+    CHECK( size(  &nsize_t ) );
+    nvals_ = nvals_t;
+
+    if( vec_type_ == GrB_SPARSE && nvals_t/nsize_t > GrB_THRESHOLD )
+      CHECK( sparse2dense() );
+    else if( vec_type_ == GrB_DENSE && nvals_t/nsize_t <= GrB_THRESHOLD )
+      CHECK( dense2sparse() );
+    else if( vec_type_ == GrB_UNKNOWN ) return GrB_UNINITIALIZED_OBJECT;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info Vector<T>::sparse2dense()
+  {
+    if( vec_type_==GrB_DENSE ) return GrB_INVALID_OBJECT;
+
+    // 1. Initialize memory
+    // 2. Call scatter
+
+    CHECK( setStorage( GrB_DENSE ) );
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info Vector<T>::dense2sparse()
+  {
+    if( vec_type_==GrB_SPARSE ) return GrB_INVALID_OBJECT;
+
+    // 1. Initialize memory
+    // 2. Run kernel
+
+    CHECK( setStorage(GrB_DENSE) );
+    return GrB_SUCCESS;
   }
 
 }  // backend

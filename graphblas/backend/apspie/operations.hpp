@@ -73,22 +73,25 @@ namespace backend
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
 
-    // Get ratio of filled elements
-    Index u_nvals;
-    Index u_nsize;
-    CHECK( u->nvals( &u_nvals ) );
-    CHECK( u->size(  &u_nsize ) );
-
     Vector<m>* maskVector = (mask==NULL) ? NULL : mask->getVector();
 
+    // Conversions:
+    // a) if more elements than GrB_THRESHOLD, convert SpVec->DeVec
+    // b) if less elements than GrB_THRESHOLD, convert DeVec->SpVec
+    CHECK( u->convert() );
+
+    // Transpose:
+		Descriptor desc_t;
+		desc_t.set( GrB_INP1, GrB_TRAN );
+		if( desc==NULL ) 
+			desc = desc_t;
+		else 
+			CHECK( desc.toggle( GrB_INP1 ) );
     // 3 cases:
-    // 1) SpMSpV: SpMat x SpVec (fewer elements than GrB_THRESHOLD)
-    // 2a)SpMV:   SpMat x DeVec
-    //  b)SpMV:   SpMat x SpVec (more elements than GrB_THRESHOLD)
-    //    -convert SpVec->DeVec
+    // 1) SpMSpV: SpMat x SpVe
+    // 2) SpMV:   SpMat x DeVec
     // 3) GeMV:   DeMat x DeVec
-    if( A_mat_type==GrB_SPARSE && 
-      ( u_vec_type==GrB_SPARSE && u_nvals/u_nsize<GrB_THRESHOLD ) )
+    if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
     {
       CHECK( w->setStorage( GrB_SPARSE ) );
       CHECK( spmspv<variant>( w->getVector(), maskMatrix, accum, op,
@@ -99,20 +102,11 @@ namespace backend
       CHECK( w->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_SPARSE )
       {
-        if( u_vec_type==GrB_SPARSE )
-          CHECK( u->sparse2dense() );
         CHECK( spmv<variant>( w->getVector(), maskMatrix, accum, op, 
             A->getMatrix(), u->getVector(), desc ) );
       }
       else
       {
-        Descriptor desc_t;
-        desc_t.set( GrB_INP1, GrB_TRAN );
-        if( desc==NULL ) 
-          desc = desc_t;
-        else 
-          CHECK( desc.toggle( GrB_INP1 ) );
-
         CHECK( gemv<variant>( w->getVector(), maskMatrix, accum, op, 
           A->getMatrix(), u->getVector(), desc ) );
       }
@@ -120,6 +114,10 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  // Only difference between vxm and mxv is an additional check for gemv
+  // to transpose A 
+  // -this is because w=uA is same as w=A^Tu
+  // -i.e. GraphBLAS treats 1xn Vector the same as nx1 Vector
   template <typename W, typename a, typename U, typename M, 
             typename BinaryOpT,     typename SemiringT>
   Info mxv( Vector<W>*        w,
@@ -136,16 +134,18 @@ namespace backend
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
 
-    // Get ratio of filled elements
-    Index u_nvals;
-    Index u_nsize;
-    CHECK( u->nvals( &u_nvals ) );
-    CHECK( u->size(  &u_nsize ) );
-
     Vector<m>* maskVector = (mask==NULL) ? NULL : mask->getVector();
 
-    if( A_mat_type==GrB_SPARSE && 
-      ( u_vec_type==GrB_SPARSE && u_nvals/u_nsize<GrB_THRESHOLD ) )
+    // Conversions:
+    // a) if more elements than GrB_THRESHOLD, convert SpVec->DeVec
+    // b) if less elements than GrB_THRESHOLD, convert DeVec->SpVec
+    CHECK( u->convert() );
+
+    // 3 cases:
+    // 1) SpMSpV: SpMat x SpVe
+    // 2) SpMV:   SpMat x DeVec
+    // 3) GeMV:   DeMat x DeVec
+    if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
     {
       CHECK( w->setStorage( GrB_SPARSE ) );
       CHECK( spmspv<variant>( w->getVector(), maskMatrix, accum, op,
@@ -154,14 +154,14 @@ namespace backend
     else
     {
       CHECK( w->setStorage( GrB_DENSE ) );
-      if( A_mat_type==GrB_DENSE )
+      if( A_mat_type==GrB_SPARSE )
       {
-        CHECK( spmv<variant>( w->getVector(), maskMatrix, accum, op, 
+        CHECK( spmv<variant>( w->getVector(), maskMatrix, accum, op,
             A->getMatrix(), u->getVector(), desc ) );
       }
       else
       {
-        CHECK( gemv<variant>( w->getVector(), maskMatrix, accum, op, 
+        CHECK( gemv<variant>( w->getVector(), maskMatrix, accum, op,
           A->getMatrix(), u->getVector(), desc ) );
       }
     }
