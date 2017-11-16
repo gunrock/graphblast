@@ -81,6 +81,12 @@ namespace backend
 
     Vector<m>* maskVector = (mask==NULL) ? NULL : mask->getVector();
 
+    // 3 cases:
+    // 1) SpMSpV: SpMat x SpVec (fewer elements than GrB_THRESHOLD)
+    // 2a)SpMV:   SpMat x DeVec
+    //  b)SpMV:   SpMat x SpVec (more elements than GrB_THRESHOLD)
+    //    -convert SpVec->DeVec
+    // 3) GeMV:   DeMat x DeVec
     if( A_mat_type==GrB_SPARSE && 
       ( u_vec_type==GrB_SPARSE && u_nvals/u_nsize<GrB_THRESHOLD ) )
     {
@@ -91,8 +97,10 @@ namespace backend
     else
     {
       CHECK( w->setStorage( GrB_DENSE ) );
-      if( A_mat_type==GrB_DENSE )
+      if( A_mat_type==GrB_SPARSE )
       {
+        if( u_vec_type==GrB_SPARSE )
+          CHECK( u->sparse2dense() );
         CHECK( spmv<variant>( w->getVector(), maskMatrix, accum, op, 
             A->getMatrix(), u->getVector(), desc ) );
       }

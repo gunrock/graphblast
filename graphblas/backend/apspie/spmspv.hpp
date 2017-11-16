@@ -1,5 +1,5 @@
-#ifndef GRB_BACKEND_APSPIE_SPMV_HPP
-#define GRB_BACKEND_APSPIE_SPMV_HPP
+#ifndef GRB_BACKEND_APSPIE_SPMSPV_HPP
+#define GRB_BACKEND_APSPIE_SPMSPV_HPP
 
 #include <iostream>
 
@@ -19,27 +19,26 @@ namespace backend
 
   template <int variant, typename W, typename a, typename U, typename M,
             typename BinaryOpT,      typename SemiringT>
-  Info spmv( DenseVector<W>*        w,
-             const DenseVector<M>*  mask,
-             const BinaryOpT*       accum,
-             const SemiringT*       op,
-             const SparseMatrix<a>* A,
-             const DenseVector<U>*  u,
-             const Descriptor*      desc )
+  Info spmspvv( SparseVector<W>*       w,
+                const DenseVector<M>*  mask,
+                const BinaryOpT*       accum,
+                const SemiringT*       op,
+                const SparseMatrix<a>* A,
+                const SparseVector<U>* u,
+                const Descriptor*      desc )
   {
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 
-  // Only supports GrB_DEFAULT, not GrB_SCMP
   template <int variant, typename W, typename a, typename U, typename M,
             typename BinaryOpT,      typename SemiringT>
-  Info spmv( DenseVector<W>*        w,
+  Info spmv( SparseVector<W>*       w,
              const SparseVector<M>* mask,
              const BinaryOpT*       accum,
              const SemiringT*       op,
              const SparseMatrix<a>* A,
-             const DenseVector<U>*  u,
+             const SparseVector<U>* u,
              const Descriptor*      desc )
   {
     std::cout << "Error: Feature not implemented yet!\n";
