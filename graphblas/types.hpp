@@ -41,7 +41,9 @@ namespace graphblas
                    GrB_MODE, 
                    GrB_TA, 
                    GrB_TB, 
-                   GrB_NT};
+                   GrB_NT,
+                   GrB_MXVMODE,
+                   GrB_TOL};
 
   enum Desc_value {GrB_SCMP,             // for GrB_MASK
                    GrB_TRAN,             // for GrB_INP0, GrB_INP1
@@ -52,8 +54,10 @@ namespace graphblas
                    GrB_FIXEDROW,
                    GrB_FIXEDCOL,
                    GrB_MERGEPATH =   9,
+                   GrB_PUSHONLY  =  10,  // for GrB_MXVMODE
+                   GrB_PULLONLY  =  11,  // for GrB_MXVMODE
                    GrB_8         =   8,  // for GrB_TA, GrB_TB, GrB_NT
-                   GrB_16        =  16,
+                   GrB_16        =  16,  // for GrB_TOL
                    GrB_32        =  32,
                    GrB_64        =  64,
                    GrB_128       = 128,

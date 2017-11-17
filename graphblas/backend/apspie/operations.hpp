@@ -76,17 +76,20 @@ namespace backend
     Vector<m>* maskVector = (mask==NULL) ? NULL : mask->getVector();
 
     // Conversions:
-    // a) if more elements than GrB_THRESHOLD, convert SpVec->DeVec
-    // b) if less elements than GrB_THRESHOLD, convert DeVec->SpVec
-    CHECK( u->convert() );
+    Desc_value vxm_mode;
+    Desc_value tol;
+    CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
+    CHECK( desc->get( GrB_TOL,     &tol      ) );
+    if( vxm_mode==GrB_DEFAULT )
+      CHECK( u->convert( op->identity(), (int)tol ) );
+    else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
+      CHECK( u->dense2sparse( op->identity(), (int)tol ) );
+    else if( vxm_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
+      CHECK( u->sparse2dense( op->identity() ) );
 
     // Transpose:
-		Descriptor desc_t;
-		desc_t.set( GrB_INP1, GrB_TRAN );
-		if( desc==NULL ) 
-			desc = desc_t;
-		else 
-			CHECK( desc.toggle( GrB_INP1 ) );
+	  CHECK( desc.toggle( GrB_INP1 ) );
+
     // 3 cases:
     // 1) SpMSpV: SpMat x SpVe
     // 2) SpMV:   SpMat x DeVec
@@ -137,9 +140,16 @@ namespace backend
     Vector<m>* maskVector = (mask==NULL) ? NULL : mask->getVector();
 
     // Conversions:
-    // a) if more elements than GrB_THRESHOLD, convert SpVec->DeVec
-    // b) if less elements than GrB_THRESHOLD, convert DeVec->SpVec
-    CHECK( u->convert() );
+    Desc_value mxv_mode;
+    Desc_value tol;
+    CHECK( desc->get( GrB_MXVMODE, &mxv_mode ) );
+    CHECK( desc->get( GrB_TOL,     &tol      ) );
+    if( mxv_mode==GrB_DEFAULT )
+      CHECK( u->convert( op->identity(), (int)tol ) );
+    else if( mxv_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
+      CHECK( u->dense2sparse( op->identity(), (int)tol ) );
+    else if( mxv_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
+      CHECK( u->sparse2dense( op->identity() ) );
 
     // 3 cases:
     // 1) SpMSpV: SpMat x SpVe

@@ -70,9 +70,9 @@ namespace backend
     Info getStorage( Storage* vec_type ) const;
     template <typename VectorT>
     VectorT* getVector() const;
-    Info convert();
-    Info sparse2dense();
-    Info dense2sparse();
+    Info convert( T identity, int tol );
+    Info sparse2dense( T identity );
+    Info dense2sparse( T identity, int tol );
 
     private: 
     Index           nvals_;      // 3 ways to set: (1) dup  (2) build 
@@ -275,7 +275,7 @@ namespace backend
 	// a) if more elements than GrB_THRESHOLD, convert SpVec->DeVec
 	// b) if less elements than GrB_THRESHOLD, convert DeVec->SpVec
   template <typename T>
-  Info Vector<T>::convert()
+  Info Vector<T>::convert( T identity, int tol )
   {
     Index nvals_t;
     Index nsize_t;
@@ -284,15 +284,15 @@ namespace backend
     nvals_ = nvals_t;
 
     if( vec_type_ == GrB_SPARSE && nvals_t/nsize_t > GrB_THRESHOLD )
-      CHECK( sparse2dense() );
+      CHECK( sparse2dense( identity ) );
     else if( vec_type_ == GrB_DENSE && nvals_t/nsize_t <= GrB_THRESHOLD )
-      CHECK( dense2sparse() );
+      CHECK( dense2sparse( identity, tol ) );
     else if( vec_type_ == GrB_UNKNOWN ) return GrB_UNINITIALIZED_OBJECT;
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info Vector<T>::sparse2dense()
+  Info Vector<T>::sparse2dense( T identity )
   {
     if( vec_type_==GrB_DENSE ) return GrB_INVALID_OBJECT;
 
@@ -304,7 +304,7 @@ namespace backend
   }
 
   template <typename T>
-  Info Vector<T>::dense2sparse()
+  Info Vector<T>::dense2sparse( T identity, int tol )
   {
     if( vec_type_==GrB_SPARSE ) return GrB_INVALID_OBJECT;
 

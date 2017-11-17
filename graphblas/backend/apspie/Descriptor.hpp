@@ -13,7 +13,8 @@ namespace backend
   {
     public:
     Descriptor() : desc{ GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, 
-                         GrB_FIXEDROW, GrB_32, GrB_32, GrB_128 },
+                         GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_DEFAULT,
+                         GrB_16 },
                    h_buffer_(NULL), h_size_(0), d_buffer_(NULL), d_size_(0) {}
 
     // Default Destructor
