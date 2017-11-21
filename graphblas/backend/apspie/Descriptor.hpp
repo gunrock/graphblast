@@ -25,7 +25,10 @@ namespace backend
     Info get( Desc_field field, Desc_value* value ) const;
 
     // Private methods
-    Info Descriptor::toggleTranspose( Desc_field field );
+    Info toggleTranspose( Desc_field field );
+
+    private:
+    Info resize( size_t target );
 
     private:
     Desc_value desc_[GrB_NDESCFIELD];
@@ -58,6 +61,16 @@ namespace backend
   {
     if( desc_[field]!=GrB_DEFAULT ) desc_[field] = GrB_DEFAULT;
     else desc_[field] = GrB_TRAN;
+    return GrB_SUCCESS;
+  }
+
+  Info Descriptor::resize( size_t target )
+  {
+    if( target>d_size_ )
+    {
+      CUDA( cudaFree( d_buffer_ ) );
+      cudaMalloc( &d_buffer_, target );
+    }
     return GrB_SUCCESS;
   }
 
