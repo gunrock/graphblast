@@ -215,11 +215,9 @@ namespace backend
   template <typename T>
   Info Vector<T>::fill( const Index nvals )
   {
-    if( vec_type_ == GrB_SPARSE )
-      return sparse_.fill(nvals );
-    else if( vec_type_ == GrB_DENSE )
-      return dense_.fill( nvals );
-    else return GrB_UNINITIALIZED_OBJECT;
+    if( vec_type_ != GrB_DENSE )
+      setStorage( GrB_DENSE );
+    return dense_.fill( nvals );
   }
 
   template <typename T>

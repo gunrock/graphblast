@@ -115,6 +115,10 @@ namespace backend
             u->getVector(), desc ) );
       }
     }
+
+    // Undo change to desc by toggling again
+	  CHECK( desc->toggleTranspose( GrB_INP1 ) );
+
     return GrB_SUCCESS;
   }
 

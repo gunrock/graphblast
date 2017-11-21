@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include <moderngpu.cuh>
+
 #include "graphblas/backend/apspie/util.hpp"
 
 namespace graphblas
@@ -15,7 +17,8 @@ namespace backend
     Descriptor() : desc_{ GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, 
                           GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_DEFAULT,
                           GrB_16 },
-                   h_buffer_(NULL), h_size_(0), d_buffer_(NULL), d_size_(0) {}
+                   h_buffer_(NULL), h_size_(0), d_buffer_(NULL), d_size_(0),
+                   d_context_(mgpu::CreateCudaDevice(0)) {}
 
     // Default Destructor
     ~Descriptor();
@@ -36,6 +39,9 @@ namespace backend
     size_t     h_size_;
     void*      d_buffer_;
     size_t     d_size_;
+
+    // MGPU context
+    mgpu::ContextPtr d_context_;
   };
 
   Descriptor::~Descriptor()
