@@ -26,11 +26,15 @@ namespace graphblas
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
+    // Case 1: A *B
     CHECK( checkDimRowCol( B, A,    "B.nrows != A.ncols"    ) );
     CHECK( checkDimRowRow( A, C,    "A.nrows != C.nrows"    ) );
     CHECK( checkDimColCol( B, C,    "B.ncols != C.ncols"    ) );
     CHECK( checkDimRowRow( C, mask, "C.nrows != mask.nrows" ) );
     CHECK( checkDimColCol( C, mask, "C.ncols != mask.ncols" ) );
+    // Case 2: AT*B
+    // Case 3: A *BT
+    // Case 4: AT*BT
 
     int variant_t = 0;
     variant_t |= (mask==NULL)  ? 0 : 4;
@@ -82,9 +86,12 @@ namespace graphblas
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
+    // Case 1: u*A
     CHECK( checkDimRowSize(  A, u,    "A.nrows != u.size"    ) );
     CHECK( checkDimColSize(  A, w,    "A.ncols != w.size"    ) );
     CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
+
+    // Case 2: u*AT
 
     int variant_t = 0;
     variant_t |= (mask==NULL)  ? 0 : 4;
@@ -136,9 +143,12 @@ namespace graphblas
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
+    // Case 1: A *u
     CHECK( checkDimColSize(  A, u,    "A.ncols != u.size"    ) );
     CHECK( checkDimRowSize(  A, w,    "A.nrows != w.size"    ) );
     CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
+
+    // Case 2: AT*u
 
     int variant_t = 0;
     variant_t |= (mask==NULL)  ? 0 : 4;
@@ -378,7 +388,25 @@ namespace graphblas
                Index                     nindices,
                const Descriptor*         desc )
   {
+    // Null pointer check
+    if( w==NULL )
+      return GrB_UNINITIALIZED_OBJECT;
 
+    // Dimension check
+    // -only have one case (no transpose option)
+    CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
+
+    int variant_t = 0;
+    variant_t |= (indices==NULL) ? 0 : 8;
+    variant_t |= (mask==NULL)    ? 0 : 4;
+    variant_t |= (accum==NULL)   ? 0 : 2;
+    variant_t |= (desc==NULL)    ? 0 : 1;
+    const int variant = static_cast<int>(variant_t);
+
+    switch( variant )
+    {
+      case 0:
+        return backend::assign<0>( w->vector_, GrB_NULL, GrB_NULL, val, 
   }
 
   template <typename c, typename T, typename m,
