@@ -1,8 +1,8 @@
 #ifndef GRB_TYPES_HPP
 #define GRB_TYPES_HPP
 
-#define GrB_NULL      NULL
-#define GrB_THRESHOLD 0.5
+#define GrB_NULL       NULL
+#define GrB_THRESHOLD  0.5
 
 #include <cstddef>
 #include <cstdint>
@@ -43,7 +43,8 @@ namespace graphblas
                    GrB_TB, 
                    GrB_NT,
                    GrB_MXVMODE,
-                   GrB_TOL};
+                   GrB_TOL,
+                   GrB_NDESCFIELD};
 
   enum Desc_value {GrB_SCMP,             // for GrB_MASK
                    GrB_TRAN,             // for GrB_INP0, GrB_INP1

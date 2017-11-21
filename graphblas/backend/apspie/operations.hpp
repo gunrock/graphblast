@@ -7,20 +7,21 @@
 #include "graphblas/backend/apspie/spmspv.hpp"
 #include "graphblas/backend/apspie/spmv.hpp"
 #include "graphblas/backend/apspie/gemv.hpp"
+#include "graphblas/backend/apspie/Descriptor.hpp"
 
 namespace graphblas
 {
 namespace backend
 {
-  template <int variant, typename c, typename a, typename b, typename m,
+  template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,      typename SemiringT>
-  Info mxm( Matrix<c>*              C,
-            const Matrix<m>*  mask,
-            const BinaryOpT*  accum,
-            const SemiringT*  op,
-            const Matrix<a>*  A,
-            const Matrix<b>*  B,
-            const Descriptor* desc )
+  Info mxm( Matrix<c>*       C,
+            const Matrix<m>* mask,
+            const BinaryOpT* accum,
+            const SemiringT* op,
+            const Matrix<a>* A,
+            const Matrix<b>* B,
+            Descriptor*      desc )
   {
     Storage A_mat_type;
     Storage B_mat_type;
@@ -32,26 +33,26 @@ namespace backend
     if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_SPARSE )
     {
       CHECK( C->setStorage( GrB_SPARSE ) );
-      CHECK( spgemm<variant>( C->getMatrix(), maskMatrix, accum, op,
-          A->getMatrix(), B->getMatrix(), desc ) );
+      CHECK( spgemm( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(), 
+          B->getMatrix(), desc ) );
     }
     else
     {
       CHECK( C->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
       {
-        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
-            A->getMatrix(), B->getMatrix(), desc ) );
+        CHECK( spmm( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(), 
+            B->getMatrix(), desc ) );
       }
       else if( A_mat_type==GrB_DENSE && B_mat_type==GrB_SPARSE )
       {
-        CHECK( spmm<variant>( C->getMatrix(), maskMatrix, accum, op, 
-            A->getMatrix(), B->getMatrix(), desc ) );
+        CHECK( spmm( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(), 
+            B->getMatrix(), desc ) );
       }
       else
       {
-        CHECK( gemm<variant>( C->getMatrix(), maskMatrix, accum, op, 
-            A->getMatrix(), B->getMatrix(), desc ) );
+        CHECK( gemm( C->getMatrix(), maskMatrix, accum, op, A->getMatrix(), 
+            B->getMatrix(), desc ) );
       }
     }
     return GrB_SUCCESS;
@@ -59,13 +60,13 @@ namespace backend
 
   template <typename W, typename U, typename a, typename M, 
             typename BinaryOpT,     typename SemiringT>
-  Info vxm( Vector<W>*        w,
-            const Vector<M>*  mask,
-            const BinaryOpT*  accum,
-            const SemiringT*  op,
-            const Vector<U>*  u,
-            const Matrix<a>*  A,
-            const Descriptor* desc )
+  Info vxm( Vector<W>*       w,
+            const Vector<M>* mask,
+            const BinaryOpT* accum,
+            const SemiringT* op,
+            const Vector<U>* u,
+            const Matrix<a>* A,
+            Descriptor*      desc )
   {
     // Get storage
     Storage u_vec_type;
@@ -73,7 +74,7 @@ namespace backend
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
 
-    Vector<m>* maskVector = (mask==NULL) ? NULL : mask->getVector();
+    Vector<M>* maskVector = (mask==NULL) ? NULL : mask->getVector();
 
     // Conversions:
     Desc_value vxm_mode;
@@ -88,7 +89,7 @@ namespace backend
       CHECK( u->sparse2dense( op->identity() ) );
 
     // Transpose:
-	  CHECK( desc.toggle( GrB_INP1 ) );
+	  CHECK( desc->toggleTranspose( GrB_INP1 ) );
 
     // 3 cases:
     // 1) SpMSpV: SpMat x SpVe
@@ -97,21 +98,21 @@ namespace backend
     if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
     {
       CHECK( w->setStorage( GrB_SPARSE ) );
-      CHECK( spmspv<variant>( w->getVector(), maskMatrix, accum, op,
-          A->getMatrix(), u->getVector(), desc ) );
+      CHECK( spmspv( w->getVector(), maskVector, accum, op, A->getMatrix(), 
+          u->getVector(), desc ) );
     }
     else
     {
       CHECK( w->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_SPARSE )
       {
-        CHECK( spmv<variant>( w->getVector(), maskMatrix, accum, op, 
-            A->getMatrix(), u->getVector(), desc ) );
+        CHECK( spmv( w->getVector(), maskVector, accum, op, A->getMatrix(), 
+            u->getVector(), desc ) );
       }
       else
       {
-        CHECK( gemv<variant>( w->getVector(), maskMatrix, accum, op, 
-          A->getMatrix(), u->getVector(), desc ) );
+        CHECK( gemv( w->getVector(), maskVector, accum, op, A->getMatrix(), 
+            u->getVector(), desc ) );
       }
     }
     return GrB_SUCCESS;
@@ -123,13 +124,13 @@ namespace backend
   // -i.e. GraphBLAS treats 1xn Vector the same as nx1 Vector
   template <typename W, typename a, typename U, typename M, 
             typename BinaryOpT,     typename SemiringT>
-  Info mxv( Vector<W>*        w,
-            const Vector<M>*  mask,
-            const BinaryOpT*  accum,
-            const SemiringT*  op,
-            const Matrix<a>*  A,
-            const Vector<U>*  u,
-            const Descriptor* desc )
+  Info mxv( Vector<W>*       w,
+            const Vector<M>* mask,
+            const BinaryOpT* accum,
+            const SemiringT* op,
+            const Matrix<a>* A,
+            const Vector<U>* u,
+            Descriptor*      desc )
   {
     // Get storage
     Storage u_vec_type;
@@ -137,7 +138,7 @@ namespace backend
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
 
-    Vector<m>* maskVector = (mask==NULL) ? NULL : mask->getVector();
+    Vector<M>* maskVector = (mask==NULL) ? NULL : mask->getVector();
 
     // Conversions:
     Desc_value mxv_mode;
@@ -158,21 +159,21 @@ namespace backend
     if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
     {
       CHECK( w->setStorage( GrB_SPARSE ) );
-      CHECK( spmspv<variant>( w->getVector(), maskMatrix, accum, op,
-          A->getMatrix(), u->getVector(), desc ) );
+      CHECK( spmspv( w->getVector(), maskVector, accum, op, A->getMatrix(), 
+          u->getVector(), desc ) );
     }
     else
     {
       CHECK( w->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_SPARSE )
       {
-        CHECK( spmv<variant>( w->getVector(), maskMatrix, accum, op,
-            A->getMatrix(), u->getVector(), desc ) );
+        CHECK( spmv( w->getVector(), maskVector, accum, op, A->getMatrix(), 
+            u->getVector(), desc ) );
       }
       else
       {
-        CHECK( gemv<variant>( w->getVector(), maskMatrix, accum, op,
-          A->getMatrix(), u->getVector(), desc ) );
+        CHECK( gemv( w->getVector(), maskVector, accum, op, A->getMatrix(), 
+            u->getVector(), desc ) );
       }
     }
     return GrB_SUCCESS;
@@ -180,52 +181,52 @@ namespace backend
 
   template <typename W, typename U, typename V, typename M,
             typename BinaryOpT,     typename SemiringT>
-  Info eWiseMult( Vector<W>*              w,
-                  const Vector<M>*  mask,
-                  const BinaryOpT*  accum,
-                  const SemiringT*  op,
-                  const Vector<U>*  u,
-                  const Vector<V>*  v,
-                  const Descriptor* desc )
+  Info eWiseMult( Vector<W>*       w,
+                  const Vector<M>* mask,
+                  const BinaryOpT* accum,
+                  const SemiringT* op,
+                  const Vector<U>* u,
+                  const Vector<V>* v,
+                  Descriptor*      desc )
   {
     // Use either op->operator() or op->mul() as the case may be
   }
 
   template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,     typename SemiringT>
-  Info eWiseMult( Matrix<c>*              C,
-                  const Matrix<m>*  mask,
-                  const BinaryOpT*  accum,
-                  const SemiringT*  op,
-                  const Matrix<a>*  A,
-                  const Matrix<b>*  B,
-                  const Descriptor* desc )
+  Info eWiseMult( Matrix<c>*       C,
+                  const Matrix<m>* mask,
+                  const BinaryOpT* accum,
+                  const SemiringT* op,
+                  const Matrix<a>* A,
+                  const Matrix<b>* B,
+                  Descriptor*      desc )
   {
     // Use either op->operator() or op->mul() as the case may be
   }
 
   template <typename W, typename U, typename V, typename M,
             typename BinaryOpT,     typename SemiringT>
-  Info eWiseAdd( Vector<W>*        w,
-                 const Vector<M>*  mask,
-                 const BinaryOpT*  accum,
-                 const SemiringT*  op,
-                 const Vector<U>*  u,
-                 const Vector<V>*  v,
-                 const Descriptor* desc )
+  Info eWiseAdd( Vector<W>*       w,
+                 const Vector<M>* mask,
+                 const BinaryOpT* accum,
+                 const SemiringT* op,
+                 const Vector<U>* u,
+                 const Vector<V>* v,
+                 Descriptor*      desc )
   {
     // Use either op->operator() or op->add() as the case may be
   }
 
   template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,     typename SemiringT>
-  Info eWiseAdd( Matrix<c>*        C,
-                 const Matrix<m>*  mask,
-                 const BinaryOpT*  accum,
-                 const SemiringT*  op,
-                 const Matrix<a>*  A,
-                 const Matrix<b>*  B,
-                 const Descriptor* desc )
+  Info eWiseAdd( Matrix<c>*       C,
+                 const Matrix<m>* mask,
+                 const BinaryOpT* accum,
+                 const SemiringT* op,
+                 const Matrix<a>* A,
+                 const Matrix<b>* B,
+                 Descriptor*      desc )
   {
     // Use either op->operator() or op->add() as the case may be
   }
@@ -238,7 +239,7 @@ namespace backend
                 const Vector<U>*          u,
                 const std::vector<Index>* indices,
                 Index                     nindices,
-                const Descriptor*         desc )
+                Descriptor*               desc )
   {
 
   }
@@ -253,7 +254,7 @@ namespace backend
                 Index                     nrows,
                 const std::vector<Index>* col_indices,
                 Index                     ncols,
-                const Descriptor*         desc )
+                Descriptor*               desc )
   {
 
   }
@@ -267,7 +268,7 @@ namespace backend
                 const std::vector<Index>* row_indices,
                 Index                     nrows,
                 Index                     col_index,
-                const Descriptor*         desc )
+                Descriptor*               desc )
   {
 
   }
@@ -280,7 +281,7 @@ namespace backend
                const Vector<U>*          u,
                const std::vector<Index>* indices,
                Index                     nindices,
-               const Descriptor*         desc )
+               Descriptor*               desc )
   {
 
   }
@@ -295,7 +296,7 @@ namespace backend
                Index                     nrows,
                const std::vector<Index>* col_indices,
                Index                     ncols,
-               const Descriptor*         desc )
+               Descriptor*               desc )
   {
 
   }
@@ -309,7 +310,7 @@ namespace backend
                const std::vector<Index>* row_indices,
                Index                     nrows,
                Index                     col_index,
-               const Descriptor*         desc )
+               Descriptor*               desc )
   {
 
   }
@@ -323,7 +324,7 @@ namespace backend
                Index                     row_index,
                const std::vector<Index>* col_indices,
                Index                     ncols,
-               const Descriptor*         desc )
+               Descriptor*               desc )
   {
 
   }
@@ -336,7 +337,7 @@ namespace backend
                T                         val,
                const std::vector<Index>* indices,
                Index                     nindices,
-               const Descriptor*         desc )
+               Descriptor*               desc )
   {
 
   }
@@ -351,43 +352,43 @@ namespace backend
                Index                     nrows,
                const std::vector<Index>* col_indices,
                Index                     ncols,
-               const Descriptor*         desc )
+               Descriptor*               desc )
   {
 
   }
 
   template <typename W, typename U, typename M,
             typename BinaryOpT,     typename UnaryOpT>
-  Info apply( Vector<W>*        w,
-              const Vector<M>*  mask,
-              const BinaryOpT*  accum,
-              const UnaryOpT*   op,
-              const Vector<U>*  u,
-              const Descriptor* desc )
+  Info apply( Vector<W>*       w,
+              const Vector<M>* mask,
+              const BinaryOpT* accum,
+              const UnaryOpT*  op,
+              const Vector<U>* u,
+              Descriptor*      desc )
   {
 
   }
 
   template <typename c, typename a, typename m,
             typename BinaryOpT,     typename UnaryOpT>
-  Info apply( Matrix<c>*        C,
-              const Matrix<m>*  mask,
-              const BinaryOpT*  accum,
-              const UnaryOpT*   op,
-              const Matrix<a>*  A,
-              const Descriptor* desc )
+  Info apply( Matrix<c>*       C,
+              const Matrix<m>* mask,
+              const BinaryOpT* accum,
+              const UnaryOpT*  op,
+              const Matrix<a>* A,
+              Descriptor*      desc )
   {
 
   }
 
   template <typename W, typename a, typename M,
             typename BinaryOpT,     typename MonoidT>
-  Info reduce( Vector<W>*        w,
-               const Vector<M>*  mask,
-               const BinaryOpT*  accum,
-               const MonoidT*    op,
-               const Matrix<a>   A,
-               const Descriptor* desc )
+  Info reduce( Vector<W>*       w,
+               const Vector<M>* mask,
+               const BinaryOpT* accum,
+               const MonoidT*   op,
+               const Matrix<a>  A,
+               Descriptor*      desc )
   {
     // Use op->operator()
   }
@@ -398,7 +399,7 @@ namespace backend
                const BinaryOpT*  accum,
                const MonoidT*    op,
                const Vector<U>*  u,
-               const Descriptor* desc )
+               Descriptor*       desc )
   {
 
   }
@@ -409,7 +410,7 @@ namespace backend
                const BinaryOpT*  accum,
                const MonoidT*    op,
                const Matrix<a>*  A,
-               const Descriptor* desc )
+               Descriptor*       desc )
   {
 
   }
@@ -420,7 +421,7 @@ namespace backend
                   const Matrix<m>*  mask,
                   const BinaryOpT*  accum,
                   const Matrix<a>*  A,
-                  const Descriptor* desc )
+                  Descriptor*       desc )
   {
 
   }

@@ -16,7 +16,7 @@ namespace graphblas
 namespace backend
 {
 
-  template <int variant, typename W, typename a, typename U, typename M,
+  template <typename W, typename a, typename U, typename M,
             typename BinaryOpT,      typename SemiringT>
   Info gemv( DenseVector<W>*        w,
              const SparseVector<M>* mask,
@@ -24,14 +24,14 @@ namespace backend
              const SemiringT*       op,
              const DenseMatrix<a>*  A,
              const DenseVector<U>*  u,
-             const Descriptor*      desc )
+             Descriptor*            desc )
   {
     // Set transpose flag to true for A
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 
-  template <int variant, typename W, typename a, typename U, typename M,
+  template <typename W, typename a, typename U, typename M,
             typename BinaryOpT,      typename SemiringT>
   Info gemv( DenseVector<W>*        w,
              const SparseVector<M>* mask,
@@ -39,7 +39,7 @@ namespace backend
              const SemiringT*       op,
              const DenseMatrix<a>*  A,
              const SparseVector<U>* u,
-             const Descriptor*      desc )
+             Descriptor*            desc )
   {
     // Set transpose flag to true for A
     std::cout << "Error: Feature not implemented yet!\n";

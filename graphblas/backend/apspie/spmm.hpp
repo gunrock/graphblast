@@ -17,7 +17,7 @@ namespace graphblas
 namespace backend
 {
 
-  template <int variant, typename c, typename a, typename b, typename m,
+  template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,      typename SemiringT>
   Info spmm( DenseMatrix<c>*        C,
              const SparseMatrix<m>* mask,
@@ -25,13 +25,13 @@ namespace backend
              const SemiringT*       op,
              const SparseMatrix<a>* A,
              const DenseMatrix<b>*  B,
-             const Descriptor*      desc )
+             Descriptor*            desc )
   {
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 
-  template <int variant, typename c, typename a, typename b, typename m,
+  template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,      typename SemiringT>
   Info spmm( DenseMatrix<c>*        C,
              const SparseMatrix<m>* mask,
@@ -39,7 +39,7 @@ namespace backend
              const SemiringT*       op,
              const DenseMatrix<a>*  A,
              const SparseMatrix<b>* B,
-             const Descriptor*      desc )
+             Descriptor*            desc )
   {
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
