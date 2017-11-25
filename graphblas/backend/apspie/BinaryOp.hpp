@@ -15,10 +15,7 @@ namespace backend
     public:
     BinaryOp() {}
     template <typename Op>
-    BinaryOp( Op op )
-    {
-      op_ = op;
-    }
+    BinaryOp( Op op ) : op_(op) {}
 
     // Default Destructor
     ~BinaryOp() {}

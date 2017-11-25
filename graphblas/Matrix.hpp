@@ -140,9 +140,10 @@ namespace graphblas
                          Index                     nvals,
                          const BinaryOp<T,T,T>*    dup )
   {
-    if( row_indices==NULL || col_indices==NULL || values==NULL || dup==NULL )
+    if( row_indices==NULL || col_indices==NULL || values==NULL )
       return GrB_NULL_POINTER;
-    return matrix_.build( row_indices, col_indices, values, nvals, dup );
+    const backend::BinaryOp<T,T,T>* dup_t = (dup==NULL) ? NULL : &dup->op_;
+    return matrix_.build( row_indices, col_indices, values, nvals, dup_t );
   }
 
   template <typename T>

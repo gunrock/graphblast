@@ -30,7 +30,7 @@ namespace backend
         : nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), 
           h_denseVal_(NULL), d_denseVal_(NULL), need_update_(0) {}
 
-    ~DenseMatrix();
+    ~DenseMatrix() {}
 
     // C API Methods
     Info nnew(  Index nrows, Index ncols );

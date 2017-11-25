@@ -16,6 +16,13 @@
 #include "graphblas/mmio.hpp"
 #include "graphblas/types.hpp"
 
+#define CHECK(x) do {                  \
+  graphblas::Info err = x;             \
+  if (err != graphblas::GrB_SUCCESS) { \
+    fprintf(stderr, "Runtime error: %s returned %d at %s:%d", #x, err, __FILE__, __LINE__);                            \
+    return err;                        \
+  } } while (0)
+
 // Utility functions
 
 namespace po = boost::program_options;

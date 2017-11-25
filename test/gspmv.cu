@@ -1,4 +1,5 @@
 #define GRB_USE_APSPIE
+#define private public
 
 #include <iostream>
 #include <algorithm>
@@ -14,8 +15,19 @@
 
 namespace graphblas
 {
-
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct plus
+  {
+    T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs+rhs; }
+  };
+
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  struct multiplies
+  {
+    T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs*rhs; }
+  };
 
 }
 
@@ -58,10 +70,20 @@ int main( int argc, char** argv )
   graphblas::Descriptor desc;
 
   // Semiring
-  graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32(  graphblas::plus() );
-  graphblas::BinaryOp<float,float,float> GrB_TIMES_FP32( graphblas::multiplies() );
-  graphblas::Monoid  <float>             GrB_FP32Add(    GrB_PLUS_FP32, 0.f );
-  graphblas::Semiring<float,float,float> GrB_FP32AddMul( GrB_FP32Add, GrB_TIMES_FP32 );
+  graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
+  GrB_PLUS_FP32.nnew( graphblas::plus<float>() );
+  graphblas::BinaryOp<float,float,float> GrB_TIMES_FP32( 
+      graphblas::multiplies<float>() );
+  /*graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
+  GrB_PLUS_FP32.nnew( std::plus<float>() );
+  graphblas::BinaryOp<float,float,float> GrB_TIMES_FP32( 
+      std::multiplies<float>() );*/
+  float A = GrB_PLUS_FP32(3.f,2.f);
+  //float B = GrB_TIMES_FP32(3.f,2.f);
+  std::cout << A << std::endl;
+  //std::cout << B << std::endl;
+  //graphblas::Monoid  <float>             GrB_FP32Add(    GrB_PLUS_FP32, 0.f );
+  //graphblas::Semiring<float,float,float> GrB_FP32AddMul( GrB_FP32Add, GrB_TIMES_FP32 );
 
   /*graphblas::BinaryOp GrB_LOR(  graphblas::logical_or() );
   graphblas::BinaryOp GrB_LAND( graphblas::logical_and() );
@@ -69,9 +91,9 @@ int main( int argc, char** argv )
   graphblas::Semiring GrB_Boolean( GrB_Lor, GrB_LAND );*/
 
   // Warmup
-  CpuTimer warmup;
+  /*CpuTimer warmup;
   warmup.Start();
-  graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, GrB_FP32AddMul, 
+  graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, &GrB_FP32AddMul, 
       &x, &a, &desc );
   warmup.Stop();
  
@@ -81,8 +103,8 @@ int main( int argc, char** argv )
   int NUM_ITER = 10;
   for( int i=0; i<NUM_ITER; i++ )
   {
-    graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, GrB_FP32AddMul,
-        &x, &a, &desc );
+    graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, 
+        &GrB_FP32AddMul, &x, &a, &desc );
   }
   //cudaProfilerStop();
   cpu_vxm.Stop();
@@ -90,8 +112,8 @@ int main( int argc, char** argv )
   float flop = 0;
   if( DEBUG ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
-  float elapsed_vxm = gpu_vxm.ElapsedMillis();
-  std::cout << "spgemm, " << elapsed_vxm/NUM_ITER << "\n"; 
+  float elapsed_vxm = cpu_vxm.ElapsedMillis();
+  std::cout << "spgemm, " << elapsed_vxm/NUM_ITER << "\n";*/ 
 
   if( DEBUG ) y.print();
   /*c.extractTuples( out_denseVal );

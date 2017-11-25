@@ -20,16 +20,15 @@ namespace graphblas
     //   -it's imperative to call constructor using descriptor or else the 
     //     constructed object won't be tied to this outermost layer
     Monoid() : op_(std::plus<T>(), 0) {}
-    template <typename Op>
-    Monoid( Op binary_op, T identity_t ) : op_(binary_op, identity_t) {}
+    Monoid( BinaryOp<T,T,T> binary_op, T identity_t ) 
+        : op_(binary_op.op_, identity_t) {}
 
     // Default Destructor is good enough for this layer
     ~Monoid() {}
 
     // C API Methods
-    template <typename Op>
-    Info nnew( Op binary_op,
-               T  identity_t );
+    Info nnew( BinaryOp<T,T,T> binary_op,
+               T                identity_t );
 
     T identity() const
     {
@@ -48,10 +47,9 @@ namespace graphblas
   };
 
   template <typename T>
-  template <typename Op>
-  Info Monoid<T>::nnew( Op binary_op, T identity_t )
+  Info Monoid<T>::nnew( BinaryOp<T,T,T> binary_op, T identity_t )
   {
-    return op_.nnew( binary_op, identity_t );
+    return op_.nnew( binary_op.op_, identity_t );
   }
 
 }  // graphblas

@@ -32,7 +32,6 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  // Only supports GrB_DEFAULT, not GrB_SCMP
   template <typename W, typename a, typename U, typename M,
             typename BinaryOpT,      typename SemiringT>
   Info spmv( DenseVector<W>*        w,
@@ -43,7 +42,12 @@ namespace backend
              const DenseVector<U>*  u,
              Descriptor*            desc )
   {
-    if( mask==NULL )
+    bool useMask = (mask==NULL ) ? false : true;
+    bool useAccum= (accum==NULL) ? false : true;
+    //bool useScmp = (
+    //bool useRepl = (
+    //bool useTran = (desc->
+    if( useMask )
     {
       mgpu::SpmvCsrBinary( A->d_csrVal_, A->d_csrColInd_, A->nvals_, 
           A->d_csrRowPtr_, A->nrows_, u->d_val_, true, w->d_val_, op->identity_,

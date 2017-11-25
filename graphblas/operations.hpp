@@ -48,8 +48,8 @@ namespace graphblas
             typename BinaryOpT,     typename SemiringT>
   Info vxm( Vector<W>*       w,
             const Vector<M>* mask,
-            const BinaryOpT* accum,
-            const SemiringT* op,
+            const BinaryOp<W>* accum,
+            const Semiring<a,a,a>* op,
             const Vector<U>* u,
             const Matrix<a>* A,
             Descriptor*      desc )

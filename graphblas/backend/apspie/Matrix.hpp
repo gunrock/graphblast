@@ -232,7 +232,7 @@ namespace backend
   Info Matrix<T>::print( bool force_update )
   {
     if( mat_type_ == GrB_SPARSE ) return sparse_.print( force_update );
-    else if( mat_type_ == GrB_DENSE ) return dense_.print();
+    else if( mat_type_ == GrB_DENSE ) return dense_.print( force_update );
     return GrB_UNINITIALIZED_OBJECT;
   }
 

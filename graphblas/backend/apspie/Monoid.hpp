@@ -14,8 +14,7 @@ namespace backend
   {
     public:
     Monoid() {}
-    template <typename Op>
-    Monoid( Op binary_op, T identity_t ) : identity_(identity_t)
+    Monoid( BinaryOp<T,T,T>& binary_op, T identity_t ) : identity_(identity_t)
     {
       op_ = binary_op;
     }
@@ -24,8 +23,7 @@ namespace backend
     ~Monoid();
 
     // C API Methods
-    template <typename Op>
-    Info nnew( Op binary_op, T identity_t );
+    Info nnew( BinaryOp<T,T,T>& binary_op, T identity_t );
 
     T identity() const
     {
@@ -43,8 +41,7 @@ namespace backend
   };
 
   template <typename T>
-  template <typename Op>
-  Info Monoid<T>::nnew( Op binary_op, T identity_t )
+  Info Monoid<T>::nnew( BinaryOp<T,T,T>& binary_op, T identity_t )
   {
     op_       = binary_op;
     identity_ = identity_t;
