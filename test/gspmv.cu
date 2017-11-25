@@ -72,17 +72,18 @@ int main( int argc, char** argv )
   // Semiring
   graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
   GrB_PLUS_FP32.nnew( graphblas::plus<float>() );
-  graphblas::BinaryOp<float,float,float> GrB_TIMES_FP32( 
-      graphblas::multiplies<float>() );
+  graphblas::BinaryOp<float,float,float> GrB_TIMES_FP32;
+  GrB_TIMES_FP32.nnew( graphblas::multiplies<float>() );
   /*graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
   GrB_PLUS_FP32.nnew( std::plus<float>() );
   graphblas::BinaryOp<float,float,float> GrB_TIMES_FP32( 
       std::multiplies<float>() );*/
   float A = GrB_PLUS_FP32(3.f,2.f);
-  //float B = GrB_TIMES_FP32(3.f,2.f);
+  float B = GrB_TIMES_FP32(3.f,2.f);
   std::cout << A << std::endl;
-  //std::cout << B << std::endl;
-  //graphblas::Monoid  <float>             GrB_FP32Add(    GrB_PLUS_FP32, 0.f );
+  std::cout << B << std::endl;
+  graphblas::Monoid  <float> GrB_FP32Add;
+  GrB_FP32Add.nnew( GrB_PLUS_FP32, 0.f );
   //graphblas::Semiring<float,float,float> GrB_FP32AddMul( GrB_FP32Add, GrB_TIMES_FP32 );
 
   /*graphblas::BinaryOp GrB_LOR(  graphblas::logical_or() );
