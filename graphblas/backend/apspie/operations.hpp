@@ -85,7 +85,20 @@ namespace backend
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
 
-    auto maskVector = (mask==NULL) ? NULL : mask->getVector();
+    Storage mask_vec_type;
+    SparseVector<U>* mask_sparse = NULL;
+    DenseVector<U>*  mask_dense  = NULL;
+    if( mask!=NULL )
+    {
+      CHECK( mask->getStorage( &mask_vec_type ) );
+      if( mask_vec_type==GrB_SPARSE )
+        mask_sparse = const_cast<SparseVector<U>*>(&mask->sparse_);
+      else
+        mask_dense  = const_cast<DenseVector<U>*>(&mask->dense_);
+    }
+
+    auto maskVector = (mask_sparse!=NULL) ? mask_sparse : NULL;
+    maskVector = (mask_dense!=NULL) ? (SparseVector<U>*) mask_dense : NULL;
 
     // Conversions:
     Desc_value vxm_mode;
@@ -109,21 +122,21 @@ namespace backend
     if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
     {
       CHECK( w->setStorage( GrB_SPARSE ) );
-      CHECK( spmspv( w->getVector(), maskVector, accum, op, A->getMatrix(), 
-          u->getVector(), desc ) );
+      CHECK( spmspv( &w->sparse_, maskVector, accum, op, &A->sparse_, 
+          &u->sparse_, desc ) );
     }
     else
     {
       CHECK( w->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_SPARSE )
       {
-        CHECK( spmv( w->getVector(), maskVector, accum, op, A->getMatrix(), 
-            u->getVector(), desc ) );
+        CHECK( spmv( &w->dense_, maskVector, accum, op, &A->sparse_, 
+            &u->dense_, desc ) );
       }
       else
       {
-        CHECK( gemv( w->getVector(), maskVector, accum, op, A->getMatrix(), 
-            u->getVector(), desc ) );
+        CHECK( gemv( &w->dense_, maskVector, accum, op, &A->dense_, 
+            &u->dense_, desc ) );
       }
     }
 
