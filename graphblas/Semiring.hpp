@@ -21,15 +21,14 @@ namespace graphblas
     //   -it's imperative to call constructor using descriptor or else the 
     //     constructed object won't be tied to this outermost layer
     Semiring() : op_() {}
-    template <typename MulOp, typename AddOp>
-    Semiring( MulOp mul, AddOp add ) : op_(mul, add) {}
+    Semiring( Monoid<T_out> add, BinaryOp<T_in1,T_in2,T_out> mul )
+        : op_(add.op_, mul.op_) {}
 
     // Default Destructor is good enough for this layer
     ~Semiring() {}
 
     // C API Methods
-    template <typename MulOp, typename AddOp>
-    Info nnew( MulOp mul, AddOp add );
+    Info nnew( Monoid<T_out> add, BinaryOp<T_in1,T_in2,T_out> mul );
 
     T_out identity() const
     {
@@ -53,10 +52,10 @@ namespace graphblas
   };
 
   template <typename T_in1, typename T_in2, typename T_out>
-  template <typename MulOp, typename AddOp>
-  Info Semiring<T_in1,T_in2,T_out>::nnew( MulOp mul, AddOp add )
+  Info Semiring<T_in1,T_in2,T_out>::nnew( Monoid<T_out>               add,
+                                          BinaryOp<T_in1,T_in2,T_out> mul )
   {
-    return op_.nnew( mul, add );
+    return op_.nnew( add.op_, mul.op_ );
   }
 
 }  // graphblas

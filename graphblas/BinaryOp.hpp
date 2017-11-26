@@ -20,7 +20,7 @@ namespace graphblas
     // Default Constructor, Standard Constructor (Replaces new in C++)
     //   -it's imperative to call constructor using descriptor or else the 
     //     constructed object won't be tied to this outermost layer
-    BinaryOp() : op_(std::plus<T_in1>()) {}
+    BinaryOp() : op_() {}
     template <typename Op>
     BinaryOp( Op op ) : op_(op) {}
 

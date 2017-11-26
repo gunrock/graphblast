@@ -13,24 +13,6 @@
 #include "graphblas/graphblas.hpp"
 #include "test/test.hpp"
 
-namespace graphblas
-{
-  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
-  struct plus
-  {
-    T_out operator()(T_in1 lhs, T_in2 rhs) 
-    { return lhs+rhs; }
-  };
-
-  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
-  struct multiplies
-  {
-    T_out operator()(T_in1 lhs, T_in2 rhs) 
-    { return lhs*rhs; }
-  };
-
-}
-
 int main( int argc, char** argv )
 {
   std::vector<graphblas::Index> row_indices;
@@ -84,7 +66,8 @@ int main( int argc, char** argv )
   std::cout << B << std::endl;
   graphblas::Monoid  <float> GrB_FP32Add;
   GrB_FP32Add.nnew( GrB_PLUS_FP32, 0.f );
-  //graphblas::Semiring<float,float,float> GrB_FP32AddMul( GrB_FP32Add, GrB_TIMES_FP32 );
+  graphblas::Semiring<float,float,float> GrB_FP32AddMul;
+  GrB_FP32AddMul.nnew( GrB_FP32Add, GrB_TIMES_FP32 );
 
   /*graphblas::BinaryOp GrB_LOR(  graphblas::logical_or() );
   graphblas::BinaryOp GrB_LAND( graphblas::logical_and() );
@@ -92,7 +75,7 @@ int main( int argc, char** argv )
   graphblas::Semiring GrB_Boolean( GrB_Lor, GrB_LAND );*/
 
   // Warmup
-  /*CpuTimer warmup;
+  CpuTimer warmup;
   warmup.Start();
   graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, &GrB_FP32AddMul, 
       &x, &a, &desc );
@@ -114,15 +97,17 @@ int main( int argc, char** argv )
   if( DEBUG ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
   float elapsed_vxm = cpu_vxm.ElapsedMillis();
-  std::cout << "spgemm, " << elapsed_vxm/NUM_ITER << "\n";*/ 
+  std::cout << "vxm, " << elapsed_vxm/NUM_ITER << "\n";
 
   if( DEBUG ) y.print();
   /*c.extractTuples( out_denseVal );
-  for( int i=0; i<nvals; i++ ) {
+  for( int i=0; i<nvals; i++ )
+  {
     graphblas::Index row = row_indices[i];
     graphblas::Index col = col_indices[i];
     float            val = values[i];
-    if( col<max_ncols ) {
+    if( col<max_ncols )
+    {
       // Row major order
       if( ROW_MAJOR )
       //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;

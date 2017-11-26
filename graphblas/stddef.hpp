@@ -6,19 +6,19 @@
 
 namespace graphblas
 {
-  template <typename T_out=bool, typename T_in1=bool, typename T_in2=bool>
+  template <typename T_in1=bool, typename T_in2=bool, typename T_out=bool>
   struct logical_or
   {
     inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs || rhs; }
   };
 
-  template <typename T_out=bool, typename T_in1=bool, typename T_in2=bool>
+  template <typename T_in1=bool, typename T_in2=bool, typename T_out=bool>
   struct logical_and
   {
     inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs && rhs; }
   };
 
-  template <typename T_out=bool, typename T_in1=bool, typename T_in2=bool>
+  template <typename T_in1=bool, typename T_in2=bool, typename T_out=bool>
   struct logical_xor
   {
     inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs ^ rhs; }
@@ -30,38 +30,50 @@ namespace graphblas
     inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs == rhs; }
   };
 
-  template <typename T_out, typename T_in1, typename T_in2>
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct not_equal_to
   {
     inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs != rhs; }
   };
 
-  template <typename T_out, typename T_in1, typename T_in2>
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct greater
   {
     inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs > rhs; }
   };
 
-  template <typename T_out, typename T_in1, typename T_in2>
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct less
   {
     inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs < rhs; }
   };
 
-  template <typename T_out, typename T_in1, typename T_in2>
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct greater_equal
   {
     inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs >= rhs; }
   };
 
-  template <typename T_out, typename T_in1, typename T_in2>
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct less_equal
   {
     inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs <= rhs; }
   };
+
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  struct plus
+  {
+    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs+rhs; }
+  };
+
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  struct multiplies
+  {
+    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs*rhs; }
+  };
 }
 
-#define GEN_BINARYOP_BOOL( S_NAME, D_NAME )                                    \
+/*#define GEN_BINARYOP_BOOL( S_NAME, D_NAME )                                    \
   typedef BinaryOp<bool,bool    ,bool    >( S_NAME<bool    >() ) D_NAME_BOOL;  \
   typedef BinaryOp<bool,int8_t  ,int8_t  >( S_NAME<int8_t  >() ) D_NAME_INT8;  \
   typedef BinaryOp<bool,uint8_t ,uint8_t >( S_NAME<uint8_t >() ) D_NAME_UINT8; \
@@ -138,6 +150,6 @@ namespace graphblas
                  GrB_MINUS,
                  GrB_TIMES,
                  GrB_DIV};
-}
+}*/
 
 #endif  // GRB_STDDEF_HPP

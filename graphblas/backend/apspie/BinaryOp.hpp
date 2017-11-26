@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "graphblas/stddef.hpp"
 #include "graphblas/backend/apspie/apspie.hpp"
 
 namespace graphblas
@@ -13,7 +14,7 @@ namespace backend
   class BinaryOp
   {
     public:
-    BinaryOp() {}
+    BinaryOp() : op_(graphblas::plus<T>()) {}
     template <typename Op>
     BinaryOp( Op op ) : op_(op) {}
 
@@ -24,7 +25,7 @@ namespace backend
     template <typename Op>
     Info nnew( Op op );
 
-    __host__ __device__ inline T_out operator()( T_in1 lhs, T_in2 rhs ) const
+    inline __host__ __device__ T_out operator()( T_in1 lhs, T_in2 rhs ) const
     {
       return op_(lhs,rhs);
     }

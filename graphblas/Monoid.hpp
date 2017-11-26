@@ -19,7 +19,7 @@ namespace graphblas
     // Default Constructor, Standard Constructor (Replaces new in C++)
     //   -it's imperative to call constructor using descriptor or else the 
     //     constructed object won't be tied to this outermost layer
-    Monoid() : op_(std::plus<T>(), 0) {}
+    Monoid() : op_() {}
     Monoid( BinaryOp<T,T,T> binary_op, T identity_t ) 
         : op_(binary_op.op_, identity_t) {}
 

@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "graphblas/stddef.hpp"
 #include "graphblas/backend/apspie/apspie.hpp"
 
 namespace graphblas
@@ -13,32 +14,28 @@ namespace backend
   class Semiring
   {
     public:
-    Semiring() {}
-    template <typename MulOp, typename AddOp>
-    Semiring( MulOp mul_t, AddOp add_t ) : identity_(add_t.identity())
-    {
-      mul_ = mul_t;
-      add_ = add_t;
-    }
+    Semiring() : add_(std::plus<T>()), mul_(std::multiplies<T>()), 
+                 identity_(0) {}
+    Semiring( Monoid<T_out> add_t, BinaryOp<T_in1,T_in2,T_out> mul_t )
+               : add_(add_t), mul_(mul_t), identity_(add_t.identity()) {}
 
     // Default Destructor
-    ~Semiring();
+    ~Semiring() {}
 
     // C API Methods
-    template <typename MulOp, typename AddOp>
-    Info nnew( MulOp mul_t, AddOp add_t );
+    Info nnew( Monoid<T_out> add_t, BinaryOp<T_in1,T_in2,T_out> mul_t );
 
-    T_out identity() const
+    inline __host__ __device__ T_out identity() const
     {
       return identity_;
     }
 
-    T_out add( T_out lhs, T_out rhs ) const
+    inline __host__ __device__ T_out add( T_out lhs, T_out rhs ) const
     {
       return add_(lhs,rhs);
     }
 
-    T_out mul( T_in1 lhs, T_in2 rhs ) const
+    inline __host__ __device__ T_out mul( T_in1 lhs, T_in2 rhs ) const
     {
       return mul_(lhs,rhs);
     }
@@ -50,11 +47,11 @@ namespace backend
   };
 
   template <typename T_in1, typename T_in2, typename T_out>
-  template <typename MulOp, typename AddOp>
-  Info Semiring<T_in1,T_in2,T_out>::nnew( MulOp mul_t, AddOp add_t )
+  Info Semiring<T_in1,T_in2,T_out>::nnew( Monoid<T_out>               add_t,
+                                          BinaryOp<T_in1,T_in2,T_out> mul_t ) 
   {
-    mul_ = mul_t;
     add_ = add_t;
+    mul_ = mul_t;
     identity_ = add_t.identity();
     return GrB_SUCCESS;
   }
