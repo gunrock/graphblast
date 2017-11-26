@@ -13,8 +13,20 @@ namespace graphblas
 {
 namespace backend
 {
+  template <typename T>
+  class Vector;
+
+  template <typename T>
+  class Matrix;
+
+  template <typename T1, typename T2, typename T3>
+  class BinaryOp;
+  
+  template <typename T1, typename T2, typename T3>
+  class Semiring;
+
   template <typename c, typename a, typename b, typename m,
-            typename BinaryOpT,      typename SemiringT>
+            typename BinaryOpT,     typename SemiringT>
   Info mxm( Matrix<c>*       C,
             const Matrix<m>* mask,
             const BinaryOpT* accum,
@@ -58,15 +70,14 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  template <typename W, typename U, typename a, typename M, 
-            typename BinaryOpT,     typename SemiringT>
-  Info vxm( Vector<W>*       w,
-            const Vector<M>* mask,
-            const BinaryOpT* accum,
-            const SemiringT* op,
-            const Vector<U>* u,
-            const Matrix<a>* A,
-            Descriptor*      desc )
+  template <typename W, typename U, typename a>
+  Info vxm( Vector<W>*             w,
+            const Vector<U>*       mask,
+            const BinaryOp<a,a,a>* accum,
+            const Semiring<a,a,a>* op,
+            const Vector<U>*       u,
+            const Matrix<a>*       A,
+            Descriptor*            desc )
   {
     // Get storage
     Storage u_vec_type;
@@ -74,7 +85,7 @@ namespace backend
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
 
-    Vector<M>* maskVector = (mask==NULL) ? NULL : mask->getVector();
+    auto maskVector = (mask==NULL) ? NULL : mask->getVector();
 
     // Conversions:
     Desc_value vxm_mode;

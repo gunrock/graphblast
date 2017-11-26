@@ -44,14 +44,14 @@ namespace graphblas
         &B->matrix_, desc_t );
   }
 
-  template <typename W, typename U, typename a, typename M=U, typename acc=W>
-  Info vxm( Vector<W>*       w,
-            const Vector<M>* mask,
-            const BinaryOp<acc>* accum,
+  template <typename W, typename U, typename a>
+  Info vxm( Vector<W>*             w,
+            const Vector<U>*       mask,
+            const BinaryOp<a,a,a>* accum,
             const Semiring<a,a,a>* op,
-            const Vector<U>* u,
-            const Matrix<a>* A,
-            Descriptor*      desc )
+            const Vector<U>*       u,
+            const Matrix<a>*       A,
+            Descriptor*            desc )
   {
     // Null pointer check
     if( w==NULL || op==NULL || u==NULL || A==NULL || desc==NULL )
@@ -61,16 +61,20 @@ namespace graphblas
     // Case 1: u*A
     CHECK( checkDimRowSize(  A, u,    "A.nrows != u.size"    ) );
     CHECK( checkDimColSize(  A, w,    "A.ncols != w.size"    ) );
+    if( mask!=NULL )
     CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
 
     // Case 2: u*AT
 
-    backend::Vector<M>*  mask_t = (mask==NULL ) ? NULL : &mask->vector_;
-    auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
-    backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+    const backend::Vector<U>*        mask_t = (mask==NULL ) ? NULL 
+        : &mask->vector_;
+    const backend::BinaryOp<a,a,a>* accum_t = (accum==NULL) ? NULL 
+        : &accum->op_;
+    backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
+        : &desc->descriptor_;
 
-    return backend::vxm( &w->vector_, mask_t, accum_t, &op->op_, &u->vector_, 
-        &A->matrix_, desc_t );
+    return backend::vxm<W,U,a>( &w->vector_, mask_t, accum_t, &op->op_, 
+        &u->vector_, &A->matrix_, desc_t );
   }
 
   template <typename W, typename a, typename U, typename M, 

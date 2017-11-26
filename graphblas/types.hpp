@@ -2,6 +2,8 @@
 #define GRB_TYPES_HPP
 
 #define GrB_NULL       NULL
+//#define GrB_NULL       nullptr
+//#define GrB_NULL       static_cast<int*>(NULL)
 #define GrB_THRESHOLD  0.5
 
 #include <cstddef>

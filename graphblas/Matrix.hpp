@@ -36,11 +36,13 @@ namespace graphblas
     Info nrows( Index* nrows_ ) const;
     Info ncols( Index* ncols_ ) const;
     Info nvals( Index* nvals_ ) const;
+    //template <typename BinaryOpT>
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
                 const BinaryOp<T,T,T>*    dup );
+    //            const BinaryOpT*          dup );
     Info build( const std::vector<T>*     values,
                 Index                     nvals );
     Info setElement(     Index row_index,
@@ -134,6 +136,7 @@ namespace graphblas
   }
 
   template <typename T>
+  //template <typename BinaryOpT>
   Info Matrix<T>::build( const std::vector<Index>* row_indices,
                          const std::vector<Index>* col_indices,
                          const std::vector<T>*     values,
@@ -143,6 +146,7 @@ namespace graphblas
     if( row_indices==NULL || col_indices==NULL || values==NULL )
       return GrB_NULL_POINTER;
     const backend::BinaryOp<T,T,T>* dup_t = (dup==NULL) ? NULL : &dup->op_;
+    //    : &((BinaryOp<T,T,T>*)dup)->op_;
     return matrix_.build( row_indices, col_indices, values, nvals, dup_t );
   }
 

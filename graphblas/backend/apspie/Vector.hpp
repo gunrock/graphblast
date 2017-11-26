@@ -68,8 +68,8 @@ namespace backend
     Info countUnique( Index* count );
     Info setStorage( Storage  vec_type );
     Info getStorage( Storage* vec_type ) const;
-    template <typename VectorT>
-    VectorT* getVector() const;
+    auto getVector() const -> decltype(vec_type_==GrB_SPARSE ?
+        &sparse_ : &dense_);
     Info convert( T identity, int tol );
     Info sparse2dense( T identity );
     Info dense2sparse( T identity, int tol );
@@ -261,8 +261,8 @@ namespace backend
   }
 
   template <typename T>
-  template <typename VectorT>
-  VectorT* Vector<T>::getVector() const
+  auto Vector<T>::getVector() const -> decltype(vec_type_==GrB_SPARSE ?
+      sparse_ : dense_);
   {
     if( vec_type_ == GrB_SPARSE )     return &sparse_;
     else if( vec_type_ == GrB_DENSE ) return &dense_;
