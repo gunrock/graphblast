@@ -10,7 +10,9 @@ namespace graphblas
 {
 
   template <typename a, typename b>
-  Info checkDimRowCol( Matrix<a>* A, Matrix<b>* B, const std::string& str )
+  Info checkDimRowCol( const Matrix<a>* A, 
+                       const Matrix<b>* B, 
+                       const std::string& str )
   {
     if( A==NULL || B==NULL ) return GrB_SUCCESS;
     Index A_nrows, B_ncols;
@@ -25,7 +27,9 @@ namespace graphblas
   }
 
   template <typename a, typename b>
-  Info checkDimRowRow( Matrix<a>* A, Matrix<b>* B, const std::string& str )
+  Info checkDimRowRow( const Matrix<a>* A, 
+                       const Matrix<b>* B, 
+                       const std::string& str )
   {
     if( A==NULL || B==NULL ) return GrB_SUCCESS;
     Index A_nrows, B_nrows;
@@ -40,7 +44,9 @@ namespace graphblas
   }
 
   template <typename a, typename b>
-  Info checkDimColCol( Matrix<a>* A, Matrix<b>* B, const std::string& str )
+  Info checkDimColCol( const Matrix<a>* A, 
+                       const Matrix<b>* B, 
+                       const std::string& str )
   {
     if( A==NULL || B==NULL ) return GrB_SUCCESS;
     Index A_ncols, B_ncols;
@@ -55,7 +61,9 @@ namespace graphblas
   }
 
   template <typename a, typename U>
-  Info checkDimRowSize( Matrix<a>* A, Vector<U>* u, const std::string& str )
+  Info checkDimRowSize( const Matrix<a>* A, 
+                        const Vector<U>* u, 
+                        const std::string& str )
   {
     if( A==NULL || u==NULL ) return GrB_SUCCESS;
     Index A_nrows, u_size;
@@ -70,7 +78,9 @@ namespace graphblas
   }
 
   template <typename a, typename U>
-  Info checkDimColSize( Matrix<a>* A, Vector<U>* u, const std::string& str )
+  Info checkDimColSize( const Matrix<a>* A, 
+                        const Vector<U>* u, 
+                        const std::string& str )
   {
     if( A==NULL || u==NULL ) return GrB_SUCCESS;
     Index A_ncols, u_size;
@@ -85,7 +95,9 @@ namespace graphblas
   }
 
   template <typename U, typename W>
-  Info checkDimSizeSize( Vector<U>* u, Vector<W>* w, const std::string& str )
+  Info checkDimSizeSize( const Vector<U>* u, 
+                         const Vector<W>* w, 
+                         const std::string& str )
   {
     if( u==NULL || w==NULL ) return GrB_SUCCESS;
     Index u_size, w_size;

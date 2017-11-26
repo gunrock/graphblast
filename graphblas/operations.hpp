@@ -44,10 +44,10 @@ namespace graphblas
         &B->matrix_, desc_t );
   }
 
-  template <typename W, typename U, typename a, typename M>
+  template <typename W, typename U, typename a, typename M=U, typename acc=W>
   Info vxm( Vector<W>*       w,
             const Vector<M>* mask,
-            const BinaryOp<W>* accum,
+            const BinaryOp<acc>* accum,
             const Semiring<a,a,a>* op,
             const Vector<U>* u,
             const Matrix<a>* A,
