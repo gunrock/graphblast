@@ -49,9 +49,9 @@ namespace backend
     //bool useTran = (desc->
     if( useMask )
     {
-      mgpu::SpmvCsrBinary( A->d_csrVal_, A->d_csrColInd_, A->nvals_, 
-          A->d_csrRowPtr_, A->nrows_, u->d_val_, true, w->d_val_, op->identity_,
-          op->mul(), op->add(), desc->d_context_ );
+      mgpu::GrbSpmvCsrBinary( A->d_csrVal_, A->d_csrColInd_, A->nvals_, 
+          A->d_csrRowPtr_, A->nrows_, u->d_val_, true, w->d_val_, 
+          op->identity(), op->mul_, op->add_, *(desc->d_context_) );
 
       /*size_t temp_storage_bytes = 0;
 			cub::DeviceSpmv::CsrMV(desc->d_buffer_, temp_storage_bytes, A->d_csrVal_,

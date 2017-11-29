@@ -41,9 +41,9 @@ namespace backend
     }
 
     private:
-    std::function<T_out(T_out,T_out)> add_;
-    std::function<T_out(T_in1,T_in2)> mul_;
-    T_out                             identity_;
+    nvstd::function<T_out(T_out,T_out)> add_;
+    nvstd::function<T_out(T_in1,T_in2)> mul_;
+    T_out                               identity_;
   };
 
   template <typename T_in1, typename T_in2, typename T_out>

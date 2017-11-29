@@ -27,21 +27,22 @@ namespace backend
   class SparseVector
   {
     public:
-    SparseVector() : nsize_(0), nvals_(0), ncapacity_(0), h_ind_(NULL), 
-          h_val_(NULL), d_ind_(NULL), d_val_(NULL), need_update_(0) {}
+    SparseVector()
+        : nsize_(0), nvals_(0), h_ind_(NULL), h_val_(NULL), 
+          d_ind_(NULL), d_val_(NULL), need_update_(0) {}
 
-    SparseVector( Index nvals )
-        : nsize_(0), nvals_(nvals), ncapacity_(0), h_ind_(NULL), h_val_(NULL), 
+    SparseVector( Index nsize )
+        : nsize_(nsize), nvals_(0), h_ind_(NULL), h_val_(NULL), 
           d_ind_(NULL), d_val_(NULL), need_update_(0)
     {
-      allocate(nvals);
+      allocate(nsize);
     }
 
     // Need to write Default Destructor
     ~SparseVector();
 
     // C API Methods
-    Info nnew(  Index nvals );
+    Info nnew(  Index nsize );
     Info dup(   const SparseVector* rhs );
     Info clear();
     Info size(  Index* nsize_t  ) const;
@@ -64,21 +65,20 @@ namespace backend
 
     // handy methods
     const T& operator[]( Index ind );
-    Info resize( Index nvals );
+    Info resize( Index nsize );
     Info fill( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
  
     private:
-    Info allocate( Index nvals );  
+    Info allocate( Index nsize );  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
 
     private:
-    Index  nsize_;      // 3 ways to set: (1) dup (2) build (3) nnew (4) resize
-                        //                (5) allocate
-    Index  nvals_;
-    Index  ncapacity_;
+    Index  nsize_; // 5 ways to set: (1) Vector (2) nnew (3) dup (4) resize
+                   //                (5) allocate
+    Index  nvals_; // 4 ways to set: (1) Vector (2) dup (3) build (4) resize
     Index* h_ind_;
     T*     h_val_;
     Index* d_ind_;
@@ -98,9 +98,9 @@ namespace backend
   }
 
   template <typename T>
-  Info SparseVector<T>::nnew( Index nvals )
+  Info SparseVector<T>::nnew( Index nsize )
   {
-    nvals_ = nvals;
+    nsize_ = nsize;
     return GrB_SUCCESS;
   }
 
@@ -109,17 +109,18 @@ namespace backend
   {
     Info err;
     nvals_ = rhs->nvals_;
+    nsize_ = rhs->nsize_;
 
     if( d_ind_==NULL && h_ind_==NULL && d_val_==NULL && h_val_==NULL )
-      err = allocate( rhs->nvals_ );
+      err = allocate( nsize_ );
     if( err != GrB_SUCCESS ) return err;
 
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
 
-    CUDA( cudaMemcpy( d_ind_, rhs->d_ind_, nvals_*sizeof(Index),
+    CUDA( cudaMemcpy( d_ind_, rhs->d_ind_, nsize_*sizeof(Index),
         cudaMemcpyDeviceToDevice ) );
-    CUDA( cudaMemcpy( d_val_, rhs->d_val_, nvals_*sizeof(T),
+    CUDA( cudaMemcpy( d_val_, rhs->d_val_, nsize_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
 
     need_update_ = true;
@@ -129,16 +130,25 @@ namespace backend
   template <typename T>
   Info SparseVector<T>::clear()
   {
+    if( h_ind_ ) {
+      free( h_ind_ );
+      h_ind_ = NULL;
+    }
     if( h_val_ ) {
       free( h_val_ );
       h_val_ = NULL;
     }
 
+    if( d_ind_ ) {
+      CUDA( cudaFree(d_ind_) );
+      d_ind_ = NULL;
+    }
     if( d_val_ ) {
       CUDA( cudaFree(d_val_) );
       d_val_ = NULL;
     }
-    ncapacity_ = 0;
+    nsize_ = 0;
+    nvals_ = 0;
 
     return GrB_SUCCESS;
   }
@@ -163,14 +173,15 @@ namespace backend
                                Index                     nvals,
                                const BinaryOp<T,T,T>*    dup )
   {
-    Info err;
+    if( nsize_ < nvals )
+    {
+      std::cout << "Error: Feature not implemented yet!\n";
+      return GrB_PANIC;
+    }
+    if( nvals_>0 )
+      return GrB_OUTPUT_NOT_EMPTY;
 
-    if( d_ind_==NULL && h_ind_==NULL && d_val_==NULL && h_val_==NULL  )
-      err = allocate( nvals );
-    else while( ncapacity_ < nvals )
-      err = resize( nvals );
     nvals_ = nvals;
-    if( err != GrB_SUCCESS ) return err;
 
     for( Index i=0; i<nvals; i++ )
     {
@@ -178,9 +189,9 @@ namespace backend
       h_val_[i] = (*values) [i];
     }
 
-    err = cpuToGpu();
+    CHECK( cpuToGpu() );
 
-    return err;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -209,17 +220,17 @@ namespace backend
                                        std::vector<T>*     values,
                                        Index*              n )
   {
-    Info err = gpuToCpu();
+    CHECK( gpuToCpu() );
     indices->clear();
     values->clear();
 
     if( *n>nvals_ )
     {
-      err = GrB_UNINITIALIZED_OBJECT;
+      return GrB_UNINITIALIZED_OBJECT;
       *n  = nvals_;
     }
     else if( *n<nvals_ ) 
-      err = GrB_INSUFFICIENT_SPACE;
+      return GrB_INSUFFICIENT_SPACE;
 
     for( Index i=0; i<*n; i++ )
     {
@@ -227,12 +238,12 @@ namespace backend
       values->push_back( h_val_[i] );
     }
    
-    return err;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
   Info SparseVector<T>::extractTuples( std::vector<T>* values,
-                                       Index*          n )
+                                       Index*          nvals )
   {
     return GrB_SUCCESS;
   }
@@ -242,8 +253,8 @@ namespace backend
   template <typename T>
   const T& SparseVector<T>::operator[]( Index ind )
   {
-    gpuToCpu();
-    if( ind>=nvals_ ) std::cout << "Error: index out of bounds!\n";
+    CHECK( gpuToCpu() );
+    if( ind>=nvals_ ) std::cout << "Error: Index out of bounds!\n";
 
     for( Index i=0; i<nvals_; i++ )
       if( h_ind_[i]==ind )
@@ -251,9 +262,9 @@ namespace backend
     return T(0);
   }
 
-  // Copies the val to arrays kresize_ratio x bigger than capacity
+  // Clears and reallocates from nsize_ x 1 to nsize x 1
   template <typename T>
-  Info SparseVector<T>::resize( Index nvals )
+  Info SparseVector<T>::resize( Index nsize )
   {
     Index* h_temp_ind = h_ind_;
     T*     h_temp_val = h_val_;
@@ -261,25 +272,25 @@ namespace backend
     T*     d_temp_val = d_val_;
 
     // Compute how much to copy
-    Index to_copy = min(nvals, nvals_);    
+    Index to_copy = min(nsize, nvals_);
 
-    ncapacity_ = nvals;
-    h_ind_ = (Index*) malloc( ncapacity_*sizeof(Index) );
-    h_val_ = (T*)     malloc( ncapacity_*sizeof(T) );
+    nsize_ = nsize;
+    h_ind_ = (Index*) malloc( nsize_*sizeof(Index) );
+    h_val_ = (T*)     malloc( nsize_*sizeof(T) );
     if( h_temp_ind!=NULL )
       memcpy( h_ind_, h_temp_ind, to_copy*sizeof(Index) );
     if( h_temp_val!=NULL )
       memcpy( h_val_, h_temp_val, to_copy*sizeof(T) );
 
-    CUDA( cudaMalloc( &d_ind_, ncapacity_*sizeof(Index)) );
-    CUDA( cudaMalloc( &d_val_, ncapacity_*sizeof(T)) );
+    CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
+    CUDA( cudaMalloc( &d_val_, nsize_*sizeof(T)) );
     if( d_temp_ind!=NULL )
       CUDA( cudaMemcpy( d_ind_, d_temp_ind, to_copy*sizeof(Index), 
           cudaMemcpyDeviceToDevice) );
     if( d_temp_val!=NULL )
       CUDA( cudaMemcpy( d_val_, d_temp_val, to_copy*sizeof(T), 
           cudaMemcpyDeviceToDevice) );
-    nvals_ = nvals;
+    nvals_ = to_copy;
 
     free( h_temp_ind );
     free( h_temp_val );
@@ -295,15 +306,15 @@ namespace backend
     for( Index i=0; i<nvals; i++ )
       h_val_[i] = i;
 
-    Info err = cpuToGpu();
-    return err;
+    CHECK( cpuToGpu() );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
   Info SparseVector<T>::print( bool forceUpdate )
   {
     CUDA( cudaDeviceSynchronize() );
-    Info err = gpuToCpu( forceUpdate );
+    CHECK( gpuToCpu(forceUpdate) );
     printArray( "ind", h_ind_, std::min(nvals_,40) );
     printArray( "val", h_val_, std::min(nvals_,40) );
     return GrB_SUCCESS;
@@ -313,7 +324,7 @@ namespace backend
   template <typename T>
   Info SparseVector<T>::countUnique( Index* count )
   {
-    Info err = gpuToCpu();
+    CHECK( gpuToCpu() );
     std::unordered_set<Index> unique;
     for( Index block=0; block<nvals_; block++ )
     {
@@ -325,30 +336,30 @@ namespace backend
     }
     *count = unique.size();
 
-    return err;
+    return GrB_SUCCESS;
   }
 
   // Private methods:
   template <typename T>
-  Info SparseVector<T>::allocate( Index nvals )
+  Info SparseVector<T>::allocate( Index nsize )
   {
     // Allocate just enough (different from CPU impl since kcap_ratio=1.)
-    ncapacity_ = nvals;
+    nsize_ = nsize;
 
     // Host malloc
-    if( nvals!=0 && h_ind_==NULL && h_val_==NULL )
+    if( nsize!=0 && h_ind_==NULL && h_val_==NULL )
     {
-      h_ind_ = (Index*) malloc(ncapacity_*sizeof(Index));
-      h_val_ = (T*)     malloc(ncapacity_*sizeof(T));
+      h_ind_ = (Index*) malloc(nsize_*sizeof(Index));
+      h_val_ = (T*)     malloc(nsize_*sizeof(T));
     }
     else
       return GrB_UNINITIALIZED_OBJECT;
 
     // GPU malloc
-    if( nvals!=0 && d_ind_==NULL && d_val_==NULL )
+    if( nsize!=0 && d_ind_==NULL && d_val_==NULL )
     {
-      CUDA( cudaMalloc( &d_ind_, ncapacity_*sizeof(Index)) );
-      CUDA( cudaMalloc( &d_val_, ncapacity_*sizeof(T)) );
+      CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
+      CUDA( cudaMalloc( &d_val_, nsize_*sizeof(T)) );
     }
     else
       return GrB_UNINITIALIZED_OBJECT;

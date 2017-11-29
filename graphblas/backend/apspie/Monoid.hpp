@@ -35,8 +35,8 @@ namespace backend
     }
 
     private:
-    std::function<T(T,T)> op_;
-    T                     identity_;
+    nvstd::function<T(T,T)> op_;
+    T                       identity_;
   };
 
   template <typename T>

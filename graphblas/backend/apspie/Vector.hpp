@@ -30,20 +30,21 @@ namespace backend
   class Vector
   {
     public:
-    Vector() : nvals_(0), sparse_(0), dense_(0), vec_type_(GrB_UNKNOWN) {}
-    Vector( Index nvals )
-        : nvals_(nvals), sparse_(nvals), dense_(nvals), 
+    Vector() 
+        : nsize_(0), nvals_(0), sparse_(0), dense_(0), vec_type_(GrB_UNKNOWN) {}
+    Vector( Index nsize )
+        : nsize_(nsize), nvals_(0), sparse_(nsize), dense_(nsize), 
           vec_type_(GrB_UNKNOWN) {}
 
     // Default destructor is good enough for this layer
     ~Vector() {}
 
     // C API Methods
-    Info nnew(  Index nsize );
+    Info nnew(  Index nsize_t );
     Info dup(   const Vector* rhs );
     Info clear();
-    Info size(  Index* nsize_ ) const;
-    Info nvals( Index* nvals_ ) const;
+    Info size(  Index* nsize_t );
+    Info nvals( Index* nvals_t );
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
@@ -73,21 +74,20 @@ namespace backend
     Info dense2sparse( T identity, int tol );
 
     private: 
-    Index           nvals_;      // 3 ways to set: (1) dup  (2) build 
-                                 //                (3) resize
-                                 // Note: not set by nnew()
+    Index           nsize_;
+    Index           nvals_;
     SparseVector<T> sparse_;
     DenseVector<T>  dense_;
     Storage         vec_type_;
   };
 
+  // nsize_ is not modified, because it only gets modified in size()
   template <typename T>
-  Info Vector<T>::nnew( Index nsize )
+  Info Vector<T>::nnew( Index nsize_t )
   {
-    Info err;
-    err = sparse_.nnew( nsize );
-    err = dense_.nnew( nsize );
-    return err;
+    CHECK( sparse_.nnew(nsize_t) );
+    CHECK(  dense_.nnew(nsize_t) );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -98,33 +98,46 @@ namespace backend
       return sparse_.dup( &rhs->sparse_ );
     else if( vec_type_ == GrB_SPARSE )
       return dense_.dup( &rhs->dense_ );
-    return GrB_PANIC;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
 	Info Vector<T>::clear()
   {
-    Info err;
     vec_type_ = GrB_UNKNOWN;
-    err = sparse_.clear();
-    err = dense_.clear();
-    return err;
+    CHECK( sparse_.clear() );
+    CHECK(  dense_.clear() );
+    return GrB_SUCCESS;
   }
 
+  // Calls size_ from SparseVector or DenseVector
+  // Updates nsize_ with the latest value
   template <typename T>
-	Info Vector<T>::size( Index* nsize_ ) const
+	Info Vector<T>::size( Index* nsize_t )
   {
-    if( vec_type_ == GrB_SPARSE ) return sparse_.size( nsize_ );
-    else if( vec_type_ == GrB_DENSE ) return dense_.size( nsize_ );
+    Index nsize;
+    if(      vec_type_ == GrB_SPARSE ) CHECK( sparse_.size(&nsize) );
+    else if( vec_type_ == GrB_DENSE  ) CHECK(  dense_.size(&nsize) );
     else return GrB_UNINITIALIZED_OBJECT;
+
+    // Update nsize_ with latest value
+    nsize_   = nsize;
+    *nsize_t = nsize;
+    return GrB_SUCCESS;
   }
   
   template <typename T>
-	Info Vector<T>::nvals( Index* nvals_ ) const
+	Info Vector<T>::nvals( Index* nvals_t )
   {
-    if( vec_type_ == GrB_SPARSE ) return sparse_.nvals( nvals_ );
-    else if( vec_type_ == GrB_DENSE ) return dense_.nvals( nvals_ );
+    Index new_nvals;
+    if(      vec_type_ == GrB_SPARSE ) CHECK( sparse_.nvals(&new_nvals) );
+    else if( vec_type_ == GrB_DENSE  ) CHECK(  dense_.nvals(&new_nvals) );
     else return GrB_UNINITIALIZED_OBJECT;
+
+    // Update nvals_ with latest value;
+    nvals_   = new_nvals;
+    *nvals_t = new_nvals;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -149,8 +162,8 @@ namespace backend
 	Info Vector<T>::setElement( T     val,
 	           									Index index )
   {
-    if( vec_type_ == GrB_SPARSE ) return sparse_.setElement( val, index );
-    else if( vec_type_ == GrB_DENSE ) return dense_.setElement( val, index );
+    if(      vec_type_ == GrB_SPARSE ) return sparse_.setElement( val, index );
+    else if( vec_type_ == GrB_DENSE  ) return  dense_.setElement( val, index );
     else return GrB_UNINITIALIZED_OBJECT;
   }
 
@@ -214,7 +227,7 @@ namespace backend
   Info Vector<T>::fill( const Index nvals )
   {
     if( vec_type_ != GrB_DENSE )
-      setStorage( GrB_DENSE );
+      CHECK( setStorage( GrB_DENSE ) );
     return dense_.fill( nvals );
   }
 
@@ -239,16 +252,15 @@ namespace backend
   template <typename T>
   Info Vector<T>::setStorage( Storage vec_type )
   {
-    Info err;
     vec_type_ = vec_type;
-    if( vec_type_ == GrB_SPARSE ) {
-      err = sparse_.clear();
-      err = sparse_.allocate( nvals_ );
+    if(        vec_type_ == GrB_SPARSE ) {
+      CHECK( sparse_.clear()         );
+      CHECK( sparse_.allocate(nvals_));
     } else if( vec_type_ == GrB_DENSE ) {
-      err = dense_.clear();
-      err = dense_.allocate( nvals_ );
+      CHECK( dense_.clear()          );
+      CHECK( dense_.allocate(nvals_) );
     }
-    return err;
+    return GrB_SUCCESS;
   }
 
   template <typename T>

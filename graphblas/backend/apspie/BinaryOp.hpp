@@ -2,6 +2,7 @@
 #define GRB_BACKEND_APSPIE_BINARYOP_HPP
 
 #include <vector>
+#include <nvfunctional>
 
 #include "graphblas/stddef.hpp"
 #include "graphblas/backend/apspie/apspie.hpp"
@@ -31,7 +32,7 @@ namespace backend
     }
 
     private:
-    std::function<T_out(T_in1,T_in2)> op_;
+    nvstd::function<T_out(T_in1,T_in2)> op_;
   };
 
   template <typename T_in1, typename T_in2, typename T_out>

@@ -88,17 +88,18 @@ namespace graphblas
   }
 
   template <typename T>
-  Info Vector<T>::size( Index* nsize_ ) const
+  Info Vector<T>::size( Index* nsize_t ) const
   {
-    if( nsize_==NULL ) return GrB_NULL_POINTER;
-    return vector_.size( nsize_ );
+    if( nsize_t==NULL ) return GrB_NULL_POINTER;
+    backend::Vector<T>* vector_t = const_cast<backend::Vector<T>*>(&vector_);
+    return vector_t->size( nsize_t );
   }
 
   template <typename T>
-  Info Vector<T>::nvals( Index* nvals_ ) const
+  Info Vector<T>::nvals( Index* nvals_t ) const
   {
-    if( nvals_==NULL ) return GrB_NULL_POINTER;
-    return vector_.nvals( nvals_ );
+    if( nvals_t==NULL ) return GrB_NULL_POINTER;
+    return vector_.nvals( nvals_t );
   }
 
   template <typename T>

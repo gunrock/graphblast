@@ -61,14 +61,14 @@ namespace graphblas
   }
 
   template <typename a, typename U>
-  Info checkDimRowSize( const Matrix<a>* A, 
-                        const Vector<U>* u, 
+  Info checkDimRowSize( const Matrix<a>*   A, 
+                        const Vector<U>*   u, 
                         const std::string& str )
   {
     if( A==NULL || u==NULL ) return GrB_SUCCESS;
     Index A_nrows, u_size;
     CHECK( A->nrows( &A_nrows ) );
-    CHECK( u->size( &u_size ) );
+    CHECK(  u->size(  &u_size ) );
     if( A_nrows!=u_size )
     {
       std::cout << str << std::endl;
