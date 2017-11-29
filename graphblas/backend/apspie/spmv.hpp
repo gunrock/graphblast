@@ -47,7 +47,7 @@ namespace backend
     //bool useScmp = (
     //bool useRepl = (
     //bool useTran = (desc->
-    if( useMask )
+    if( !useMask )
     {
       mgpu::GrbSpmvCsrBinary( A->d_csrVal_, A->d_csrColInd_, A->nvals_, 
           A->d_csrRowPtr_, A->nrows_, u->d_val_, true, w->d_val_, 

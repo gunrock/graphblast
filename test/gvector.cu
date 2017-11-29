@@ -15,7 +15,7 @@
 // Tests 1: dup, 2: build, 3: extract, 4: gpuToCpu, 5: constructor
 void testDup( const std::vector<int>& rhs )
 {
-  graphblas::Vector<int> vec1;
+  graphblas::Vector<int> vec1(rhs.size());
   graphblas::Index size = rhs.size();
   std::vector<int> lhs;
   vec1.build( &rhs, rhs.size() );
@@ -32,7 +32,7 @@ void testDup( const std::vector<int>& rhs )
 
 void testResize( const std::vector<int>& rhs, const int nvals )
 {
-  graphblas::Vector<int> vec1;
+  graphblas::Vector<int> vec1(rhs.size());
   graphblas::Index size = rhs.size();
   std::vector<int> lhs;
   vec1.build( &rhs, rhs.size() );
