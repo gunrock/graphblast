@@ -27,12 +27,10 @@ namespace backend
   class DenseVector
   {
     public:
-    DenseVector() : nvals_(0), ncapacity_(0), h_val_(NULL), d_val_(NULL), 
-          need_update_(0) {}
+    DenseVector() : nvals_(0), h_val_(NULL), d_val_(NULL), need_update_(0) {}
 
-    DenseVector( Index nvals )
-        : nvals_(nvals), ncapacity_(0), h_val_(NULL), d_val_(NULL), 
-          need_update_(0)
+    DenseVector( Index nsize )
+        : nvals_(nsize), h_val_(NULL), d_val_(NULL), need_update_(0)
     {
       allocate(nvals_);
     }
@@ -65,7 +63,8 @@ namespace backend
     // handy methods
     const T& operator[]( Index ind );
     Info resize( Index nvals );
-    Info fill( Index vals );
+    Info fill( T val );
+    Info fillAscending( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
  
@@ -75,9 +74,9 @@ namespace backend
     Info gpuToCpu( bool forceUpdate = false );
 
     private:
-    Index nvals_;      // 3 ways to set: (1) dup (2) build (3) nnew (4) resize
-                       //                (5) allocate
-    Index ncapacity_;
+    // Note nsize_ is understood to be the same as nvals_, so it is omitted
+    Index nvals_; // 6 ways to set: (1) Vector (2) nnew (3) dup (4) build 
+                  //                (5) resize (6) allocate
     T*    h_val_;
     T*    d_val_;
 
@@ -96,18 +95,17 @@ namespace backend
   Info DenseVector<T>::nnew( Index nsize )
   {
     nvals_ = nsize;
+    CHECK( allocate(nsize) );
     return GrB_SUCCESS;
   }
 
   template <typename T>
   Info DenseVector<T>::dup( const DenseVector* rhs )
   {
-    Info err;
     nvals_ = rhs->nvals_;
 
-    if( d_val_==NULL && h_val_==NULL )
-      err = allocate( rhs->nvals_ );
-    if( err != GrB_SUCCESS ) return err;
+    if( d_val_==NULL || h_val_==NULL )
+      CHECK( allocate( rhs->nvals_ ) );
 
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
@@ -116,7 +114,7 @@ namespace backend
         cudaMemcpyDeviceToDevice ) );
 
     need_update_ = true;
-    return err; 
+    return GrB_SUCCESS; 
   }
 
   template <typename T>
@@ -131,7 +129,7 @@ namespace backend
       CUDA( cudaFree(d_val_) );
       d_val_ = NULL;
     }
-    ncapacity_ = 0;
+    nvals_ = 0;
 
     return GrB_SUCCESS;
   }
@@ -163,21 +161,17 @@ namespace backend
   Info DenseVector<T>::build( const std::vector<T>* values,
                               Index                 nvals )
   {
-    Info err;
-
-    if( d_val_==NULL && h_val_==NULL  )
-      err = allocate( nvals );
-    else while( ncapacity_ < nvals )
-      err = resize( nvals );
-    nvals_ = nvals;
-    if( err != GrB_SUCCESS ) return err;
+    if( nvals > nvals_ )
+      return GrB_INDEX_OUT_OF_BOUNDS;
+    if( d_val_==NULL || h_val_==NULL  )
+      return GrB_UNINITIALIZED_OBJECT;
 
     for( Index i=0; i<nvals; i++ )
       h_val_[i] = (*values)[i];
 
-    err = cpuToGpu();
+    CHECK( cpuToGpu() );
 
-    return err;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -206,52 +200,49 @@ namespace backend
   Info DenseVector<T>::extractTuples( std::vector<T>* values,
                                       Index*          n )
   {
-    Info err = gpuToCpu();
+    CHECK( gpuToCpu() );
     values->clear();
 
     if( *n>nvals_ )
-    {
-      err = GrB_UNINITIALIZED_OBJECT;
-      *n = nvals_;
-    }
+      return GrB_UNINITIALIZED_OBJECT;
     if( *n<nvals_ ) 
-      err = GrB_INSUFFICIENT_SPACE;
+      return GrB_INSUFFICIENT_SPACE;
 
     for( Index i=0; i<*n; i++ )
       values->push_back( h_val_[i]);
     
-    return err;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
   const T& DenseVector<T>::operator[]( Index ind )
   {
     gpuToCpu();
-    if( ind>=nvals_ ) std::cout << "Error: index out of bounds!\n";
+    if( ind>=nvals_ ) std::cout << "Error: Index out of bounds!\n";
 
     return h_val_[ind];
   }
 
   // Copies the val to arrays kresize_ratio x bigger than capacity
   template <typename T>
-  Info DenseVector<T>::resize( Index nvals )
+  Info DenseVector<T>::resize( Index nsize )
   {
     T* h_tempVal = h_val_;
     T* d_tempVal = d_val_;
 
     // Compute how much to copy
-    Index to_copy = min(nvals, nvals_);    
+    Index to_copy = min(nsize, nvals_);    
 
-    ncapacity_ = nvals;
-    h_val_ = (T*) malloc( ncapacity_*sizeof(T) );
+    nvals_ = nsize;
+    h_val_ = (T*) malloc( nvals_*sizeof(T) );
     if( h_tempVal!=NULL )
       memcpy( h_val_, h_tempVal, to_copy*sizeof(T) );
 
-    CUDA( cudaMalloc( &d_val_, ncapacity_*sizeof(T)) );
+    CUDA( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
     if( d_tempVal!=NULL )
       CUDA( cudaMemcpy( d_val_, d_tempVal, to_copy*sizeof(T), 
           cudaMemcpyDeviceToDevice) );
-    nvals_ = nvals;
+    nvals_ = nsize;
 
     free( h_tempVal );
     CUDA( cudaFree(d_tempVal) );
@@ -260,20 +251,30 @@ namespace backend
   }
 
   template <typename T>
-  Info DenseVector<T>::fill( Index nvals )
+  Info DenseVector<T>::fill( T val )
+  {
+    for( Index i=0; i<nvals_; i++ )
+      h_val_[i] = val;
+
+    CHECK( cpuToGpu() );
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseVector<T>::fillAscending( Index nvals )
   {
     for( Index i=0; i<nvals; i++ )
       h_val_[i] = i;
 
-    Info err = cpuToGpu();
-    return err;
+    CHECK( cpuToGpu() );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
   Info DenseVector<T>::print( bool forceUpdate )
   {
     CUDA( cudaDeviceSynchronize() );
-    Info err = gpuToCpu( forceUpdate );
+    CHECK( gpuToCpu(forceUpdate) );
     printArray( "val", h_val_, std::min(nvals_,40) );
     return GrB_SUCCESS;
   }
@@ -282,7 +283,7 @@ namespace backend
   template <typename T>
   Info DenseVector<T>::countUnique( Index* count )
   {
-    Info err = gpuToCpu();
+    CHECK( gpuToCpu() );
     std::unordered_set<Index> unique;
     for( Index block=0; block<nvals_; block++ )
     {
@@ -294,7 +295,7 @@ namespace backend
     }
     *count = unique.size();
 
-    return err;
+    return GrB_SUCCESS;
   }
 
   // Private methods:
@@ -302,24 +303,31 @@ namespace backend
   Info DenseVector<T>::allocate( Index nvals )
   {
     // Allocate just enough (different from CPU impl since kcap_ratio=1.)
-    //ncapacity_ = nvals_;
-    ncapacity_ = nvals;
+    nvals_ = nvals;
 
     // Host malloc
-    if( nvals!=0 && h_val_ == NULL )
-      h_val_ = (T*) malloc(ncapacity_*sizeof(T));
+    if( nvals>0 && h_val_ == NULL )
+      h_val_ = (T*) malloc(nvals_*sizeof(T));
     else
+    {
+      std::cout << "Error: Host allocation unsuccessful\n";
       return GrB_UNINITIALIZED_OBJECT;
+    }
 
     // GPU malloc
-    if( nvals!=0 && d_val_ == NULL )
-      CUDA( cudaMalloc( &d_val_, ncapacity_*sizeof(T)) );
+    if( nvals>0 && d_val_ == NULL )
+      CUDA( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
     else
+    {
+      std::cout << "Error: Device allocation unsuccessful\n";
       return GrB_UNINITIALIZED_OBJECT;
-
+    }
 
     if( h_val_==NULL || d_val_==NULL )
+    {
+      std::cout << "Error: Out of memory\n";
       return GrB_OUT_OF_MEMORY;
+    }
 
     return GrB_SUCCESS;
   }

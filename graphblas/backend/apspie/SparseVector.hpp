@@ -173,13 +173,15 @@ namespace backend
                                Index                     nvals,
                                const BinaryOp<T,T,T>*    dup )
   {
-    if( nsize_ < nvals )
+    if( nvals > nsize_ )
     {
       std::cout << "Error: Feature not implemented yet!\n";
       return GrB_PANIC;
     }
     if( nvals_>0 )
       return GrB_OUTPUT_NOT_EMPTY;
+    if( h_ind_==NULL || h_val_==NULL || d_ind_==NULL || d_val_==NULL )
+      return GrB_UNINITIALIZED_OBJECT;
 
     nvals_ = nvals;
 
@@ -225,10 +227,7 @@ namespace backend
     values->clear();
 
     if( *n>nvals_ )
-    {
       return GrB_UNINITIALIZED_OBJECT;
-      *n  = nvals_;
-    }
     else if( *n<nvals_ ) 
       return GrB_INSUFFICIENT_SPACE;
 
@@ -253,7 +252,7 @@ namespace backend
   template <typename T>
   const T& SparseVector<T>::operator[]( Index ind )
   {
-    CHECK( gpuToCpu() );
+    gpuToCpu();
     if( ind>=nvals_ ) std::cout << "Error: Index out of bounds!\n";
 
     for( Index i=0; i<nvals_; i++ )

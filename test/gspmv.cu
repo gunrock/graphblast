@@ -44,9 +44,11 @@ int main( int argc, char** argv )
   graphblas::Vector<float> x(nrows);
   x.fill( 1.f );
   x.size( &nrows );
+  if( DEBUG ) x.print();
 
   // Vector y
   graphblas::Vector<float> y(nrows);
+  if( DEBUG ) y.print();
 
   // Descriptor
   graphblas::Descriptor desc;

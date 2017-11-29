@@ -50,7 +50,8 @@ namespace graphblas
     void operator=(      Vector* rhs );
     const T& operator[]( Index ind );
     Info resize(         Index nvals );
-    Info fill(           Index vals );
+    Info fill(           T val );
+    Info fillAscending(  Index nvals );
     Info print(          bool force_update = false );
     Info countUnique(    Index* count );
     Info setStorage( Storage  vec_type );
@@ -172,9 +173,15 @@ namespace graphblas
   }
 
   template <typename T>
-  Info Vector<T>::fill( Index nvals )
+  Info Vector<T>::fill( T val )
   {
-    return vector_.fill( nvals );
+    return vector_.fill( val );
+  }
+
+  template <typename T>
+  Info Vector<T>::fillAscending( Index nvals )
+  {
+    return vector_.fillAscending( nvals );
   }
 
   template <typename T>

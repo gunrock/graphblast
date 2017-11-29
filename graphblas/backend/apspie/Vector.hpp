@@ -64,7 +64,8 @@ namespace backend
     // private method for allocation
     const T& operator[]( Index ind );
     Info resize( Index nvals );
-    Info fill( Index vals );
+    Info fill( T val );
+    Info fillAscending( Index nvals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
     Info setStorage( Storage  vec_type );
@@ -118,7 +119,7 @@ namespace backend
     Index nsize;
     if(      vec_type_ == GrB_SPARSE ) CHECK( sparse_.size(&nsize) );
     else if( vec_type_ == GrB_DENSE  ) CHECK(  dense_.size(&nsize) );
-    else return GrB_UNINITIALIZED_OBJECT;
+    else nsize = nsize_;
 
     // Update nsize_ with latest value
     nsize_   = nsize;
@@ -132,7 +133,7 @@ namespace backend
     Index new_nvals;
     if(      vec_type_ == GrB_SPARSE ) CHECK( sparse_.nvals(&new_nvals) );
     else if( vec_type_ == GrB_DENSE  ) CHECK(  dense_.nvals(&new_nvals) );
-    else return GrB_UNINITIALIZED_OBJECT;
+    else new_nvals = nvals_;
 
     // Update nvals_ with latest value;
     nvals_   = new_nvals;
@@ -223,12 +224,22 @@ namespace backend
     else return GrB_UNINITIALIZED_OBJECT;
   }
 
+  // Fill constant value
   template <typename T>
-  Info Vector<T>::fill( const Index nvals )
+  Info Vector<T>::fill( T val )
+  {
+    if( vec_type_!=GrB_DENSE )
+      CHECK( setStorage(GrB_DENSE) );
+    return dense_.fill( val );
+  }
+
+  // Fill ascending
+  template <typename T>
+  Info Vector<T>::fillAscending( Index nvals )
   {
     if( vec_type_ != GrB_DENSE )
       CHECK( setStorage( GrB_DENSE ) );
-    return dense_.fill( nvals );
+    return dense_.fillAscending( nvals );
   }
 
   template <typename T>
@@ -255,10 +266,10 @@ namespace backend
     vec_type_ = vec_type;
     if(        vec_type_ == GrB_SPARSE ) {
       CHECK( sparse_.clear()         );
-      CHECK( sparse_.allocate(nvals_));
+      CHECK( sparse_.allocate(nsize_));
     } else if( vec_type_ == GrB_DENSE ) {
       CHECK( dense_.clear()          );
-      CHECK( dense_.allocate(nvals_) );
+      CHECK( dense_.allocate(nsize_) );
     }
     return GrB_SUCCESS;
   }
@@ -278,15 +289,25 @@ namespace backend
   {
     Index nvals_t;
     Index nsize_t;
-    CHECK( nvals( &nvals_t ) );
-    CHECK( size(  &nsize_t ) );
+    if( vec_type_ == GrB_SPARSE )
+    {
+      CHECK( sparse_.nvals(&nvals_t) );
+      CHECK(  sparse_.size(&nsize_t) );
+    }
+    else if( vec_type_ == GrB_DENSE )
+    {
+      CHECK( sparse_.nvals(&nvals_t) );
+      CHECK(  sparse_.size(&nsize_t) );
+    }
+    else return GrB_UNINITIALIZED_OBJECT;
+
     nvals_ = nvals_t;
+    nsize_ = nsize_t;
 
     if( vec_type_ == GrB_SPARSE && nvals_t/nsize_t > GrB_THRESHOLD )
       CHECK( sparse2dense( identity ) );
     else if( vec_type_ == GrB_DENSE && nvals_t/nsize_t <= GrB_THRESHOLD )
       CHECK( dense2sparse( identity, tol ) );
-    else if( vec_type_ == GrB_UNKNOWN ) return GrB_UNINITIALIZED_OBJECT;
     return GrB_SUCCESS;
   }
 
