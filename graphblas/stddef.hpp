@@ -63,13 +63,13 @@ namespace graphblas
   template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct plus
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs+rhs; }
+    inline __host__ __device__ T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs+rhs; }
   };
 
   template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct multiplies
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs*rhs; }
+    inline __host__ __device__ T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs*rhs; }
   };
 }
 
