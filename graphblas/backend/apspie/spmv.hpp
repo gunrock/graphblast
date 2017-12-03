@@ -12,6 +12,7 @@
 #include "graphblas/backend/apspie/Descriptor.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
+#include "graphblas/backend/apspie/kernels/spmv.hpp"
 
 namespace graphblas
 {
@@ -76,7 +77,9 @@ __device__ op_func_t p_mul_func = mul_func;
     //bool useTran = (desc->
     if( useMask )
     {
-      
+      spmvMaskedOrKernel<<<nb,nt>>>( w->d_val_, mask->d_val_, NULL,
+          op->mul_, op->add_, A->nrows_, A->ncols_, A->nvals_, 
+          A->d_csrRowPtr_, A->d_csrColInd_, A->d_csrVal_, u->d_val_ );
     }
     else if( !useMask )
     {
@@ -127,4 +130,4 @@ __device__ op_func_t p_mul_func = mul_func;
 }  // backend
 }  // graphblas
 
-#endif  // GRB_BACKEND_APSPIE_SPMM_HPP
+#endif  // GRB_BACKEND_APSPIE_SPMV_HPP

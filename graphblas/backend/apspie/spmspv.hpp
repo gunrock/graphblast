@@ -48,4 +48,4 @@ namespace backend
 }  // backend
 }  // graphblas
 
-#endif  // GRB_BACKEND_APSPIE_SPMM_HPP
+#endif  // GRB_BACKEND_APSPIE_SPMSPV_HPP
