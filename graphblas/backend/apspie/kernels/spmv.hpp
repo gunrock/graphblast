@@ -14,14 +14,16 @@ namespace graphblas
 namespace backend
 {
 
-  template <typename MulOp>
+  template <bool UseScmp, bool UseAccum, bool UseRepl,
+            typename W, typename a, typename U, typename M,
+            typename AccumOp, typename MulOp, typename AddOp>
   __global__ void spmvMaskedOrKernel( W*           w_val,
                                       const M*     mask_val,
                                       AccumOp      accum_op,
+                                      a            identity,
                                       MulOp        mul_op,
                                       AddOp        add_op,
                                       Index        A_nrows,
-                                      Index        A_ncols,
                                       Index        A_nvals,
                                       const Index* A_csrRowPtr,
                                       const Index* A_csrColInd,
@@ -32,11 +34,32 @@ namespace backend
 
     for( ; row<A_nrows; row+=gridDim.x*blockDim.x )
     {
-      U val = __ldg( u_val+row );
+      M val = __ldg( mask_val+row );
       if( val!=-1.f )
         continue;
 
-      
+      bool discoverable = false;
+      Index row_start   = __ldg( A_csrRowPtr+row   );
+      Index row_end     = __ldg( A_csrRowPtr+row+1 );
+
+      for( ; row_start < row_end; row_start++ )
+      {
+        Index col_ind = __ldg( A_csrColInd+row_start );
+        M     mask_val= __ldg( mask_val+col_ind );
+        if( UseScmp && mask_val!=-1.f )
+        {
+          discoverable = true;
+          break;
+        }
+        if( !UseScmp && mask_val==-1.f )
+        {
+          discoverable = true;
+          break;
+        }
+      }
+
+      if( discoverable )
+        w_val[row] = true;
     }
   }
 

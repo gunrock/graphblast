@@ -12,8 +12,8 @@ namespace graphblas
     graphblas::Vector<bool> q1(n);
     graphblas::Vector<bool> q2(n);
     std::vector<Index> indices(1,s);
-    std::vector<bool>  values(1,true);
-    CHECK( q1.build( &indices, &values, 1 ) );
+    std::vector<bool>  values( 1,true);
+    CHECK( q1.build(&indices, &values, 1) );
 
     graphblas::BinaryOp GrB_LOR(  graphblas::logical_or() );
     graphblas::BinaryOp GrB_LAND( graphblas::logical_and() );
@@ -27,9 +27,10 @@ namespace graphblas
     do
     {
       d++;
-      CHECK( assign( &v, &q1, GrB_NULL, d, GrB_ALL, n, &desc_nomask );
-      CHECK( vxm(    &q2, &v, GrB_NULL, GrB_Boolean, &q1, A, &desc_nomask );
-      CHECK( reduce( &succ, GrB_NULL, GrB_Lor, &q2, &desc_nomask );
+      CHECK( assign(&v, &q1, GrB_NULL, d, GrB_ALL, n, &desc_nomask) );
+      CHECK( vxm(   &q2, &v, GrB_NULL, GrB_Boolean, &q1, A, &desc_nomask) );
+      CHECK( swap(  &q2, &q1 ) );
+      CHECK( reduce(&succ, GrB_NULL, GrB_Lor, &q2, &desc_nomask) );
     } while( succ );
 
     return GrB_SUCCESS;

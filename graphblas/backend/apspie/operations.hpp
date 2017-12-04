@@ -101,8 +101,7 @@ namespace backend
     maskVector = (mask_dense!=NULL) ? (SparseVector<U>*) mask_dense : NULL;
 
     // Conversions:
-    Desc_value vxm_mode;
-    Desc_value tol;
+    Desc_value vxm_mode, tol;
     CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
     CHECK( desc->get( GrB_TOL,     &tol      ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
@@ -114,6 +113,9 @@ namespace backend
       CHECK( u_t->sparse2dense( op->identity() ) );
 
     // Transpose:
+    Desc_value inp0_mode;
+    CHECK( desc->get(GrB_INP0, &inp0_mode) );
+    if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
 	  CHECK( desc->toggleTranspose( GrB_INP1 ) );
 
     // 3 cases:
@@ -180,6 +182,11 @@ namespace backend
       CHECK( u->dense2sparse( op->identity(), (int)tol ) );
     else if( mxv_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
       CHECK( u->sparse2dense( op->identity() ) );
+
+    // Transpose:
+    Desc_value inp1_mode;
+    CHECK( desc->get(GrB_INP1, &inp1_mode) );
+    if( inp1_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
 
     // 3 cases:
     // 1) SpMSpV: SpMat x SpVe

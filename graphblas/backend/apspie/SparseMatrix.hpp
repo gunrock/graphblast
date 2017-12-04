@@ -35,13 +35,17 @@ namespace backend
     SparseMatrix()
         : nrows_(0), ncols_(0), nvals_(0), ncapacity_(0), nempty_(0), 
           h_csrRowPtr_(NULL), h_csrColInd_(NULL), h_csrVal_(NULL),
+          h_cscColPtr_(NULL), h_cscRowInd_(NULL), h_cscVal_(NULL),
           d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
+          d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
           need_update_(0) {}
 
     SparseMatrix( Index nrows, Index ncols )
         : nrows_(nrows), ncols_(ncols), nvals_(0), ncapacity_(0), nempty_(0),
           h_csrRowPtr_(NULL), h_csrColInd_(NULL), h_csrVal_(NULL),
+          h_cscColPtr_(NULL), h_cscRowInd_(NULL), h_cscVal_(NULL),
           d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
+          d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
           need_update_(0) {}
 
     ~SparseMatrix();
@@ -93,6 +97,7 @@ namespace backend
     Info allocate();  // 3 ways to allocate: (1) dup, (2) build, (3) spgemm
                       //                     (4) fill,(5) fillAscending
     Info printCSR( const char* str ); // private method for pretty printing
+    Info printCSC( const char* str ); 
     Info cpuToGpu();
     Info gpuToCpu( bool force_update=false );
 
@@ -106,15 +111,19 @@ namespace backend
     Index ncapacity_;
     Index nempty_;
 
-    // CSR format
-    Index* h_csrRowPtr_;
+    Index* h_csrRowPtr_; // CSR format
     Index* h_csrColInd_;
     T*     h_csrVal_;
+    Index* h_cscColPtr_; // CSC format
+    Index* h_cscRowInd_;
+    T*     h_cscVal_;
 
-    // GPU CSR
-    Index* d_csrRowPtr_;
+    Index* d_csrRowPtr_; // GPU CSR format
     Index* d_csrColInd_;
     T*     d_csrVal_;
+    Index* d_cscColPtr_; // GPU CSC format
+    Index* d_cscRowInd_;
+    T*     d_cscVal_;
 
     // GPU variables
     //void*  buffer_;
@@ -141,9 +150,15 @@ namespace backend
     if( h_csrRowPtr_!=NULL ) free(h_csrRowPtr_);
     if( h_csrColInd_!=NULL ) free(h_csrColInd_);
     if( h_csrVal_   !=NULL ) free(h_csrVal_   );
+    if( h_cscColPtr_!=NULL ) free(h_cscColPtr_);
+    if( h_cscRowInd_!=NULL ) free(h_cscRowInd_);
+    if( h_cscVal_   !=NULL ) free(h_cscVal_   );
     if( d_csrRowPtr_!=NULL ) CUDA( cudaFree(d_csrRowPtr_) );
     if( d_csrColInd_!=NULL ) CUDA( cudaFree(d_csrColInd_) );
     if( d_csrVal_   !=NULL ) CUDA( cudaFree(d_csrVal_   ) );
+    if( d_cscColPtr_!=NULL ) CUDA( cudaFree(d_cscColPtr_) );
+    if( d_cscRowInd_!=NULL ) CUDA( cudaFree(d_cscRowInd_) );
+    if( d_cscVal_   !=NULL ) CUDA( cudaFree(d_cscVal_   ) );
   }
 
   template <typename T>
@@ -169,11 +184,18 @@ namespace backend
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
 
-    CUDA( cudaMemcpy( d_csrRowPtr_, rhs->d_csrRowPtr_, (nrows_+1)*sizeof(Index),
-        cudaMemcpyDeviceToDevice ) );
+    CUDA( cudaMemcpy( d_csrRowPtr_, rhs->d_csrRowPtr_, (nrows_+1)*
+        sizeof(Index), cudaMemcpyDeviceToDevice ) );
     CUDA( cudaMemcpy( d_csrColInd_, rhs->d_csrColInd_, nvals_*sizeof(Index),
         cudaMemcpyDeviceToDevice ) );
     CUDA( cudaMemcpy( d_csrVal_,    rhs->d_csrVal_,    nvals_*sizeof(T),
+        cudaMemcpyDeviceToDevice ) );
+
+    CUDA( cudaMemcpy( d_cscColPtr_, rhs->d_cscColPtr_, (ncols_+1)*
+        sizeof(Index), cudaMemcpyDeviceToDevice ) );
+    CUDA( cudaMemcpy( d_cscRowInd_, rhs->d_cscRowInd_, nvals_*sizeof(Index),
+        cudaMemcpyDeviceToDevice ) );
+    CUDA( cudaMemcpy( d_cscVal_,    rhs->d_cscVal_,    nvals_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
     CUDA( cudaDeviceSynchronize() );
 
@@ -196,6 +218,18 @@ namespace backend
       free( h_csrVal_ );
       h_csrVal_ = NULL;
     }
+    if( h_cscColPtr_ ) {
+      free( h_cscColPtr_ );
+      h_cscColPtr_ = NULL;
+    }
+    if( h_cscRowInd_ ) {
+      free( h_cscRowInd_ );
+      h_cscRowInd_ = NULL;
+    }
+    if( h_cscVal_ ) {
+      free( h_cscVal_ );
+      h_cscVal_ = NULL;
+    }
 
     if( d_csrRowPtr_ ) {
       CUDA( cudaFree(d_csrRowPtr_) );
@@ -208,6 +242,18 @@ namespace backend
     if( d_csrVal_ ) {
       CUDA( cudaFree(d_csrVal_) );
       d_csrVal_ = NULL;
+    }
+    if( d_cscColPtr_ ) {
+      CUDA( cudaFree(d_cscColPtr_) );
+      d_cscColPtr_ = NULL;
+    }
+    if( d_cscRowInd_ ) {
+      CUDA( cudaFree(d_cscRowInd_) );
+      d_cscRowInd_ = NULL;
+    }
+    if( d_cscVal_ ) {
+      CUDA( cudaFree(d_cscVal_) );
+      d_cscVal_ = NULL;
     }
     ncapacity_ = 0;
 
@@ -247,53 +293,64 @@ namespace backend
     if( err != GrB_SUCCESS ) return err;
     Index temp, row, col, dest, cumsum=0;
 
-    // Convert to CSR if tranpose is false
-    //            CSC if tranpose is true
-    /*std::vector<Index> &row_indices = transpose ? col_indices_t : 
-      row_indices_t;
-    std::vector<Index> &col_indices = transpose ? row_indices_t :
-      col_indices_t;
+    // Convert to CSR if transpose is false (iter 1)
+    //            CSC if transpose is true  (iter 0)
+    for( int iter=0; iter<2; iter++ )
+    {
+      bool transpose = (iter==0) ? true : false;
 
-    customSort<T>( row_indices, col_indices, values );*/
-    
-    // Set all rowPtr to 0
-    for( Index i=0; i<=nrows_; i++ )
-      h_csrRowPtr_[i] = 0;
-    // Go through all elements to see how many fall in each row
-    for( Index i=0; i<nvals_; i++ ) {
-      row = (*row_indices)[i];
-      if( row>=nrows_ ) return GrB_INDEX_OUT_OF_BOUNDS;
-      h_csrRowPtr_[ row ]++;
-    }
-    // Cumulative sum to obtain rowPtr
-    for( Index i=0; i<nrows_; i++ ) {
-      temp = h_csrRowPtr_[i];
-      h_csrRowPtr_[i] = cumsum;
-      cumsum += temp;
-    }
-    h_csrRowPtr_[nrows_] = nvals;
+      std::vector<Index>* row_indices_t = transpose ? 
+        const_cast<std::vector<Index>*>(col_indices) : 
+        const_cast<std::vector<Index>*>(row_indices);
+      std::vector<Index>* col_indices_t = transpose ? 
+        const_cast<std::vector<Index>*>(row_indices) :
+        const_cast<std::vector<Index>*>(col_indices);
+      std::vector<T>*     values_t      = const_cast<std::vector<T>*>(values);
+      customSort<T>( *row_indices_t, *col_indices_t, *values_t );
 
-    // Store colInd and val
-    for( Index i=0; i<nvals_; i++ ) {
-      row = (*row_indices)[i];
-      dest= h_csrRowPtr_[row];
-      col = (*col_indices)[i];
-      if( col>=ncols_ ) return GrB_INDEX_OUT_OF_BOUNDS;
-      h_csrColInd_[dest] = col;
-      h_csrVal_[dest]    = (*values)[i];
-      h_csrRowPtr_[row]++;
-    }
-    cumsum = 0;
-    
-    // Undo damage done to rowPtr
-    for( Index i=0; i<nrows_; i++ ) {
-      temp = h_csrRowPtr_[i];
-      h_csrRowPtr_[i] = cumsum;
+      Index* csrRowPtr = (transpose) ? h_cscColPtr_ : h_csrRowPtr_;
+      Index* csrColInd = (transpose) ? h_cscRowInd_ : h_csrColInd_;
+      T* csrVal        = (transpose) ? h_cscVal_    : h_csrVal_;
+
+      // Set all rowPtr to 0
+      for( Index i=0; i<=nrows_; i++ )
+        csrRowPtr[i] = 0;
+      // Go through all elements to see how many fall in each row
+      for( Index i=0; i<nvals_; i++ ) {
+        row = (*row_indices_t)[i];
+        if( row>=nrows_ ) return GrB_INDEX_OUT_OF_BOUNDS;
+        csrRowPtr[ row ]++;
+      }
+      // Cumulative sum to obtain rowPtr
+      for( Index i=0; i<nrows_; i++ ) {
+        temp = csrRowPtr[i];
+        csrRowPtr[i] = cumsum;
+        cumsum += temp;
+      }
+      csrRowPtr[nrows_] = nvals;
+
+      // Store colInd and val
+      for( Index i=0; i<nvals_; i++ ) {
+        row = (*row_indices_t)[i];
+        dest= csrRowPtr[row];
+        col = (*col_indices_t)[i];
+        if( col>=ncols_ ) return GrB_INDEX_OUT_OF_BOUNDS;
+        csrColInd[dest] = col;
+        csrVal[   dest] = (*values_t)[i];
+        csrRowPtr[row]++;
+      }
+      cumsum = 0;
+      
+      // Undo damage done to rowPtr
+      for( Index i=0; i<nrows_; i++ ) {
+        temp = csrRowPtr[i];
+        csrRowPtr[i] = cumsum;
+        cumsum = temp;
+      }
+      temp = csrRowPtr[nrows_];
+      csrRowPtr[nrows_] = cumsum;
       cumsum = temp;
     }
-    temp = h_csrRowPtr_[nrows_];
-    h_csrRowPtr_[nrows_] = cumsum;
-    cumsum = temp;
 
     err = cpuToGpu();
 
@@ -382,6 +439,10 @@ namespace backend
     printArray( "csrRowPtr", h_csrRowPtr_, std::min(nrows_+1,40) );
     printArray( "csrVal",    h_csrVal_,    std::min(nvals_,40) );
     printCSR( "pretty print" );
+    printArray( "cscRowInd", h_cscRowInd_, std::min(nvals_,40) );
+    printArray( "cscColPtr", h_cscColPtr_, std::min(ncols_+1,40) );
+    printArray( "cscVal",    h_cscVal_,    std::min(nvals_,40) );
+    printCSC( "pretty print" );
     return err;
   }
 
@@ -507,51 +568,35 @@ namespace backend
     // Host malloc
     if( nrows_!=0 && h_csrRowPtr_ == NULL ) 
       h_csrRowPtr_ = (Index*)malloc((nrows_+1)*sizeof(Index));
-    else
-    {
-      //std::cout << "hrow: " << nrows_ << " " << (h_csrRowPtr_==NULL) << std::endl;
-      //return GrB_UNINITIALIZED_OBJECT;
-    }
     if( nvals_!=0 && h_csrColInd_ == NULL )
       h_csrColInd_ = (Index*)malloc(ncapacity_*sizeof(Index));
-    else
-    {
-      //std::cout << "hcol: " << nvals_ << " " << (h_csrColInd_==NULL) << std::endl;
-      //return GrB_UNINITIALIZED_OBJECT;
-    }
     if( nvals_!=0 && h_csrVal_ == NULL )
       h_csrVal_    = (T*)    malloc(ncapacity_*sizeof(T));
-    else
-    {
-      //std::cout << "hval: " << nvals_ << " " << (h_csrVal_==NULL) << std::endl;
-      //return GrB_UNINITIALIZED_OBJECT;
-    }
+    if( ncols_!=0 && h_cscColPtr_ == NULL ) 
+      h_cscColPtr_ = (Index*)malloc((ncols_+1)*sizeof(Index));
+    if( nvals_!=0 && h_cscRowInd_ == NULL )
+      h_cscRowInd_ = (Index*)malloc(ncapacity_*sizeof(Index));
+    if( nvals_!=0 && h_cscVal_ == NULL )
+      h_cscVal_    = (T*)    malloc(ncapacity_*sizeof(T));
 
     // GPU malloc
     if( nrows_!=0 && d_csrRowPtr_ == NULL )
       CUDA( cudaMalloc( &d_csrRowPtr_, (nrows_+1)*sizeof(Index)) );
-    else
-    {
-      //std::cout << "drow: " << nrows_ << " " << (d_csrRowPtr_==NULL) << std::endl;
-      //return GrB_UNINITIALIZED_OBJECT;
-    }
     if( nvals_!=0 && d_csrColInd_ == NULL )
       CUDA( cudaMalloc( &d_csrColInd_, ncapacity_*sizeof(Index)) );
-    else
-    {
-      //std::cout << "dcol: " << nvals_ << " " << (d_csrColInd_==NULL) << std::endl;
-      //return GrB_UNINITIALIZED_OBJECT;
-    }
     if( nvals_!=0 && d_csrVal_ == NULL )
       CUDA( cudaMalloc( &d_csrVal_, ncapacity_*sizeof(T)) );
-    else
-    {
-      //std::cout << "dval: " << nvals_ << " " << (d_csrVal_==NULL) << std::endl;
-      //return GrB_UNINITIALIZED_OBJECT;
-    }
+    if( nrows_!=0 && d_cscColPtr_ == NULL )
+      CUDA( cudaMalloc( &d_cscColPtr_, (ncols_+1)*sizeof(Index)) );
+    if( nvals_!=0 && d_cscRowInd_ == NULL )
+      CUDA( cudaMalloc( &d_cscRowInd_, ncapacity_*sizeof(Index)) );
+    if( nvals_!=0 && d_cscVal_ == NULL )
+      CUDA( cudaMalloc( &d_cscVal_, ncapacity_*sizeof(T)) );
 
     if( h_csrRowPtr_==NULL || h_csrColInd_==NULL || h_csrVal_==NULL ||
-        d_csrRowPtr_==NULL || d_csrColInd_==NULL || d_csrVal_==NULL ) 
+        h_cscColPtr_==NULL || h_cscRowInd_==NULL || h_cscVal_==NULL ||
+        d_csrRowPtr_==NULL || d_csrColInd_==NULL || d_csrVal_==NULL || 
+        d_cscColPtr_==NULL || d_cscRowInd_==NULL || d_cscVal_==NULL ) 
       return GrB_OUT_OF_MEMORY;
 
     return GrB_SUCCESS;
@@ -581,6 +626,30 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  template <typename T>
+  Info SparseMatrix<T>::printCSC( const char* str )
+  {
+    Index row_length = std::min(20, nrows_);
+    Index col_length = std::min(20, ncols_);
+    std::cout << str << ":\n";
+
+    for( Index row=0; row<col_length; row++ ) {
+      Index col_start = h_cscColPtr_[row];
+      Index col_end   = h_cscColPtr_[row+1];
+      for( Index col=0; col<row_length; col++ ) {
+        Index col_ind = h_cscRowInd_[col_start];
+        if( col_start<col_end && col_ind==col && h_cscVal_[col_start]>0 ) {
+          std::cout << "x ";
+          col_start++;
+        } else {
+          std::cout << "0 ";
+        }
+      }
+      std::cout << std::endl;
+    }
+    return GrB_SUCCESS;
+  }
+
   // Copies graph to GPU
   template <typename T>
   Info SparseMatrix<T>::cpuToGpu()
@@ -590,6 +659,12 @@ namespace backend
     CUDA( cudaMemcpy( d_csrColInd_, h_csrColInd_, nvals_*sizeof(Index),
         cudaMemcpyHostToDevice ) );
     CUDA( cudaMemcpy( d_csrVal_,    h_csrVal_,    nvals_*sizeof(T),
+        cudaMemcpyHostToDevice ) );
+    CUDA( cudaMemcpy( d_cscColPtr_, h_cscColPtr_, (ncols_+1)*sizeof(Index),
+        cudaMemcpyHostToDevice ) );
+    CUDA( cudaMemcpy( d_cscRowInd_, h_cscRowInd_, nvals_*sizeof(Index),
+        cudaMemcpyHostToDevice ) );
+    CUDA( cudaMemcpy( d_cscVal_,    h_cscVal_,    nvals_*sizeof(T),
         cudaMemcpyHostToDevice ) );
     CUDA( cudaDeviceSynchronize() );
     return GrB_SUCCESS;
@@ -606,6 +681,12 @@ namespace backend
       CUDA( cudaMemcpy( h_csrColInd_, d_csrColInd_, nvals_*sizeof(Index),
           cudaMemcpyDeviceToHost ) );
       CUDA( cudaMemcpy( h_csrVal_,    d_csrVal_,    nvals_*sizeof(T),
+          cudaMemcpyDeviceToHost ) );
+      CUDA( cudaMemcpy( h_cscColPtr_, d_cscColPtr_, (ncols_+1)*sizeof(Index),
+          cudaMemcpyDeviceToHost ) );
+      CUDA( cudaMemcpy( h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
+          cudaMemcpyDeviceToHost ) );
+      CUDA( cudaMemcpy( h_cscVal_,    d_cscVal_,    nvals_*sizeof(T),
           cudaMemcpyDeviceToHost ) );
       CUDA( cudaDeviceSynchronize() );
     }

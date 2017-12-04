@@ -97,8 +97,9 @@ namespace backend
     vec_type_ = rhs->vec_type_;
     if( vec_type_ == GrB_SPARSE )
       return sparse_.dup( &rhs->sparse_ );
-    else if( vec_type_ == GrB_SPARSE )
+    else if( vec_type_ == GrB_DENSE )
       return dense_.dup( &rhs->dense_ );
+    std::cout << "Error: Failed to call dup!\n";
     return GrB_UNINITIALIZED_OBJECT;
   }
 

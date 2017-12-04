@@ -18,15 +18,15 @@ void testDup( const std::vector<int>& rhs )
   graphblas::Vector<int> vec1(rhs.size());
   graphblas::Index size = rhs.size();
   std::vector<int> lhs;
-  vec1.build( &rhs, rhs.size() );
-  vec1.extractTuples( &lhs, &size );
+  CHECKVOID( vec1.build(&rhs, rhs.size()) );
+  CHECKVOID( vec1.extractTuples(&lhs, &size) );
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 
-  graphblas::Vector<int> vec2;
+  graphblas::Vector<int> vec2(rhs.size());
   vec2.dup( &vec1 );
 
   size = rhs.size();
-  vec2.extractTuples( &lhs, &size );
+  CHECKVOID( vec2.extractTuples(&lhs, &size) );
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 }
 

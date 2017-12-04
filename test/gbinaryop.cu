@@ -16,18 +16,18 @@
 // Tests 1: dup, 2: build, 3: extract, 4: gpuToCpu, 5: constructor
 void testDup( const std::vector<int>& rhs )
 {
-  graphblas::Vector<int> vec1;
+  graphblas::Vector<int> vec1(rhs.size());
   graphblas::Index size = rhs.size();
   std::vector<int> lhs;
-  vec1.build( &rhs, rhs.size() );
-  vec1.extractTuples( &lhs, &size );
+  CHECKVOID( vec1.build(&rhs, rhs.size()) );
+  CHECKVOID( vec1.extractTuples(&lhs, &size) );
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 
   graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
   float a = GrB_PLUS_FP32(3.f,2.f);
   std::cout << a << std::endl;
 
-  GrB_PLUS_FP32.nnew( std::multiplies<float>() );
+  CHECKVOID( GrB_PLUS_FP32.nnew(std::multiplies<float>()) );
   a = GrB_PLUS_FP32(3.f,2.f);
   std::cout << a << std::endl;
 
@@ -43,17 +43,17 @@ void testDup( const std::vector<int>& rhs )
 
   typedef graphblas::BinaryOp<float,float,float> GrB_PLUS;
 
-  graphblas::Vector<int> vec2;
-  vec2.dup( &vec1 );
+  graphblas::Vector<int> vec2(rhs.size());
+  CHECKVOID( vec2.dup(&vec1) );
 
   size = rhs.size();
-  vec2.extractTuples( &lhs, &size );
+  CHECKVOID( vec2.extractTuples(&lhs, &size) );
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 }
 
 void testResize( const std::vector<int>& rhs, const int nvals )
 {
-  graphblas::Vector<int> vec1;
+  graphblas::Vector<int> vec1(rhs.size());
   graphblas::Index size = rhs.size();
   std::vector<int> lhs;
   vec1.build( &rhs, rhs.size() );
