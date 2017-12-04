@@ -69,8 +69,6 @@ namespace backend
     Info fill( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
- 
-    private:
     Info allocate( Index nsize );  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
@@ -130,24 +128,6 @@ namespace backend
   template <typename T>
   Info SparseVector<T>::clear()
   {
-    if( h_ind_ ) {
-      free( h_ind_ );
-      h_ind_ = NULL;
-    }
-    if( h_val_ ) {
-      free( h_val_ );
-      h_val_ = NULL;
-    }
-
-    if( d_ind_ ) {
-      CUDA( cudaFree(d_ind_) );
-      d_ind_ = NULL;
-    }
-    if( d_val_ ) {
-      CUDA( cudaFree(d_val_) );
-      d_val_ = NULL;
-    }
-    nsize_ = 0;
     nvals_ = 0;
 
     return GrB_SUCCESS;
@@ -338,7 +318,6 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  // Private methods:
   template <typename T>
   Info SparseVector<T>::allocate( Index nsize )
   {

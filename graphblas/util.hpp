@@ -129,7 +129,7 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
   // Could add check for edges in diagonal of adjacency matrix
   for( graphblas::Index i=0; i<nvals; i++ ) {
     if( fscanf(f, "%d", &row_ind)==EOF ) {
-      std::cout << "Error: not enough rows in mtx file.\n";
+      std::cout << "Error: Not enough rows in mtx file!\n";
       return;
     } else {
       int u = fscanf(f, "%d", &col_ind);
@@ -186,7 +186,7 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
   // Could add check for edges in diagonal of adjacency matrix
   for( graphblas::Index i=0; i<nvals; i++ ) {
     if( fscanf(f, "%d", &row_ind)==EOF ) {
-      std::cout << "Error: not enough rows in mtx file.\n";
+      std::cout << "Error: Not enough rows in mtx file!\n";
       return;
     } else {
       int u = fscanf(f, "%d", &col_ind);

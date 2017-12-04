@@ -67,8 +67,6 @@ namespace backend
     Info fillAscending( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
- 
-    private:
     Info allocate( Index nvals );  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
@@ -120,17 +118,7 @@ namespace backend
   template <typename T>
   Info DenseVector<T>::clear()
   {
-    if( h_val_ ) {
-      free( h_val_ );
-      h_val_ = NULL;
-    }
-
-    if( d_val_ ) {
-      CUDA( cudaFree(d_val_) );
-      d_val_ = NULL;
-    }
-    nvals_ = 0;
-
+    CHECK( fill((T) 0) );
     return GrB_SUCCESS;
   }
 
@@ -154,6 +142,7 @@ namespace backend
                               Index                     nvals,
                               const BinaryOp<T,T,T>*    dup )
   {
+    std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 
@@ -178,6 +167,7 @@ namespace backend
   Info DenseVector<T>::setElement( T     val,
                                    Index index )
   {
+    std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 
@@ -185,6 +175,7 @@ namespace backend
   Info DenseVector<T>::extractElement( T*    val,
                                        Index index )
   {
+    std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 
@@ -193,6 +184,7 @@ namespace backend
                                       std::vector<T>*     values,
                                       Index*              n )
   {
+    std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 
@@ -204,9 +196,15 @@ namespace backend
     values->clear();
 
     if( *n>nvals_ )
+    {
+      std::cout << "Error: Too many tuples requested!\n";
       return GrB_UNINITIALIZED_OBJECT;
+    }
     if( *n<nvals_ ) 
-      return GrB_INSUFFICIENT_SPACE;
+    {
+      std::cout << "Error: Insufficient space!\n";
+      //return GrB_INSUFFICIENT_SPACE;
+    }
 
     for( Index i=0; i<*n; i++ )
       values->push_back( h_val_[i]);
@@ -298,7 +296,6 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  // Private methods:
   template <typename T>
   Info DenseVector<T>::allocate( Index nvals )
   {
@@ -310,7 +307,7 @@ namespace backend
       h_val_ = (T*) malloc(nvals_*sizeof(T));
     else
     {
-      std::cout << "Error: Host allocation unsuccessful\n";
+      std::cout << "Error: Host allocation unsuccessful!\n";
       return GrB_UNINITIALIZED_OBJECT;
     }
 
@@ -319,13 +316,13 @@ namespace backend
       CUDA( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
     else
     {
-      std::cout << "Error: Device allocation unsuccessful\n";
+      std::cout << "Error: Device allocation unsuccessful!\n";
       return GrB_UNINITIALIZED_OBJECT;
     }
 
     if( h_val_==NULL || d_val_==NULL )
     {
-      std::cout << "Error: Out of memory\n";
+      std::cout << "Error: Out of memory!\n";
       return GrB_OUT_OF_MEMORY;
     }
 

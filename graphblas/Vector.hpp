@@ -100,7 +100,8 @@ namespace graphblas
   Info Vector<T>::nvals( Index* nvals_t ) const
   {
     if( nvals_t==NULL ) return GrB_NULL_POINTER;
-    return vector_.nvals( nvals_t );
+    backend::Vector<T>* vector_t = const_cast<backend::Vector<T>*>(&vector_);
+    return vector_t->nvals( nvals_t );
   }
 
   template <typename T>

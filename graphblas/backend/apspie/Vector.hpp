@@ -107,6 +107,7 @@ namespace backend
 	Info Vector<T>::clear()
   {
     vec_type_ = GrB_UNKNOWN;
+    nvals_    = 0;
     CHECK( sparse_.clear() );
     CHECK(  dense_.clear() );
     return GrB_SUCCESS;
@@ -260,16 +261,16 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  // Private method that sets mat_type, clears and allocates
+  // Private method that sets mat_type, and tries to allocate
   template <typename T>
   Info Vector<T>::setStorage( Storage vec_type )
   {
     vec_type_ = vec_type;
     if(        vec_type_ == GrB_SPARSE ) {
-      CHECK( sparse_.clear()         );
+      //CHECK( sparse_.clear()         );
       CHECK( sparse_.allocate(nsize_));
     } else if( vec_type_ == GrB_DENSE ) {
-      CHECK( dense_.clear()          );
+      //CHECK( dense_.clear()          );
       CHECK( dense_.allocate(nsize_) );
     }
     return GrB_SUCCESS;
