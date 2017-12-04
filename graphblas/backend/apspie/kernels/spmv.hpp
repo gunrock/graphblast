@@ -45,13 +45,13 @@ namespace backend
       for( ; row_start < row_end; row_start++ )
       {
         Index col_ind = __ldg( A_csrColInd+row_start );
-        M     mask_val= __ldg( mask_val+col_ind );
-        if( UseScmp && mask_val!=-1.f )
+        val           = __ldg( mask_val+col_ind );
+        if( UseScmp && val!=-1.f )
         {
           discoverable = true;
           break;
         }
-        if( !UseScmp && mask_val==-1.f )
+        if( !UseScmp && val==-1.f )
         {
           discoverable = true;
           break;

@@ -114,7 +114,8 @@ __device__ op_func_t p_mul_func = mul_func;
       NB.y = 1;
       NB.z = 1;
       spmvMaskedOrKernel<true,false,false><<<NB,NT>>>( 
-          w->d_val_, mask->d_val_, NULL, 
+          w->d_val_, mask->d_val_, NULL, op->identity(),
+          //w->d_val_, mask->d_val_, NULL, A_nrows, A->nvals_, 
           op->mul_, op->add_, A_nrows, A->nvals_, 
           A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
     }
