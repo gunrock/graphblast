@@ -308,7 +308,7 @@ namespace backend
     else
     {
       std::cout << "Error: Host allocation unsuccessful!\n";
-      return GrB_UNINITIALIZED_OBJECT;
+      //return GrB_UNINITIALIZED_OBJECT;
     }
 
     // GPU malloc
@@ -317,7 +317,7 @@ namespace backend
     else
     {
       std::cout << "Error: Device allocation unsuccessful!\n";
-      return GrB_UNINITIALIZED_OBJECT;
+      //return GrB_UNINITIALIZED_OBJECT;
     }
 
     if( h_val_==NULL || d_val_==NULL )

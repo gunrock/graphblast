@@ -331,7 +331,10 @@ namespace backend
       h_val_ = (T*)     malloc(nsize_*sizeof(T));
     }
     else
-      return GrB_UNINITIALIZED_OBJECT;
+    {
+      std::cout << "Error: Host allocation unsuccessful!\n";
+      //return GrB_UNINITIALIZED_OBJECT;
+    }
 
     // GPU malloc
     if( nsize!=0 && d_ind_==NULL && d_val_==NULL )
@@ -340,8 +343,10 @@ namespace backend
       CUDA( cudaMalloc( &d_val_, nsize_*sizeof(T)) );
     }
     else
-      return GrB_UNINITIALIZED_OBJECT;
-
+    {
+      std::cout << "Error: Host allocation unsuccessful!\n";
+      //return GrB_UNINITIALIZED_OBJECT;
+    }
 
     if( h_ind_==NULL || h_val_==NULL || d_ind_==NULL || d_val_==NULL )
       return GrB_OUT_OF_MEMORY;

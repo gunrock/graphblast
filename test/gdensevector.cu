@@ -132,7 +132,7 @@ void testExtractTuples( const std::vector<int>& rhs )
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 }
 
-void testOperatorEquals( const std::vector<int>& rhs )
+void testOperatorGetElement( const std::vector<int>& rhs )
 {
 }
 
@@ -146,8 +146,15 @@ void testFill( int size )
   BOOST_ASSERT_LIST( lhs, rhs, size );
 }
 
-void testFillAscending( const std::vector<int>& rhs )
+void testFillAscending( int size )
 {
+  graphblas::Vector<int> vec1(size);
+  std::vector<int> lhs;
+  std::vector<int> rhs(size);
+  std::iota( std::begin(rhs), std::end(rhs), 0);
+  CHECKVOID( vec1.fillAscending(size) );
+  CHECKVOID( vec1.extractTuples(&lhs, &size) );
+  BOOST_ASSERT_LIST( lhs, rhs, size );
 }
 
 void testResize( const std::vector<int>& rhs, const int nvals )
@@ -183,8 +190,9 @@ BOOST_FIXTURE_TEST_CASE( vec1, TestVector )
   testSize(  vec );
   testNvals( vec );
   testBuild( vec );
-  testExtractTuples( vec );
-  testFill( 20 );
+  testExtractTuples(  vec );
+  testFill(           20 );
+  testFillAscending(  20 );
 }
 
 BOOST_FIXTURE_TEST_CASE( vec2, TestVector )
