@@ -94,7 +94,124 @@ void testDup( char const* mtx )
   BOOST_ASSERT_LIST( adj_val, blk_val, nvals );
 }
 
-// Tests dup(), build(), extractTuples(), clear(), cusparse_spgemm()
+// Test properties:
+// 1) mat_type_ is GrB_UNKNOWN
+// 2) nvals_ is 0
+// 3) nrows_ and ncols are the same
+void testClear( char const* mtx )
+{
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  std::vector<graphblas::Index> adj_row, adj_col, blk_row, blk_col;
+  std::vector<float> adj_val, blk_val;
+
+  // Read in sparse matrix
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+
+  // Matrix adj (adjacency matrix)
+  graphblas::Matrix<float> adj(nrows, ncols);
+  CHECKVOID( adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+
+  CHECKVOID( adj.extractTuples(&adj_row, &adj_col, &adj_val, &nvals) );
+  BOOST_ASSERT_LIST( adj_row, row_indices, nvals );
+  BOOST_ASSERT_LIST( adj_col, col_indices, nvals );
+  BOOST_ASSERT_LIST( adj_val, values,      nvals );
+
+  CHECKVOID( adj.clear() );
+
+  graphblas::Index nrows_t, ncols_t, nvals_t;
+  CHECKVOID( adj.nrows(&nrows_t) );
+  CHECKVOID( adj.ncols(&ncols_t) );
+  CHECKVOID( adj.nvals(&nvals_t) );
+  BOOST_ASSERT( nrows_t==nrows );
+  BOOST_ASSERT( ncols_t==ncols );
+  BOOST_ASSERT( nvals_t==0 );
+
+  graphblas::Storage storage;
+  CHECKVOID( adj.getStorage(&storage) );
+  BOOST_ASSERT( storage==graphblas::GrB_UNKNOWN );
+}
+
+void testNrows( char const* mtx )
+{
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  std::vector<graphblas::Index> adj_row, adj_col, blk_row, blk_col;
+  std::vector<float> adj_val, blk_val;
+
+  // Read in sparse matrix
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+
+  // Matrix adj (adjacency matrix)
+  graphblas::Matrix<float> adj(nrows, ncols);
+  CHECKVOID( adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+
+  CHECKVOID( adj.extractTuples(&adj_row, &adj_col, &adj_val, &nvals) );
+  BOOST_ASSERT_LIST( adj_row, row_indices, nvals );
+  BOOST_ASSERT_LIST( adj_col, col_indices, nvals );
+  BOOST_ASSERT_LIST( adj_val, values,      nvals );
+
+  graphblas::Index nrows_t;
+  CHECKVOID( adj.nrows(&nrows_t) );
+  BOOST_ASSERT( nrows==nrows_t );
+}
+
+void testNcols( char const* mtx )
+{
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  std::vector<graphblas::Index> adj_row, adj_col, blk_row, blk_col;
+  std::vector<float> adj_val, blk_val;
+
+  // Read in sparse matrix
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+
+  // Matrix adj (adjacency matrix)
+  graphblas::Matrix<float> adj(nrows, ncols);
+  CHECKVOID( adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+
+  CHECKVOID( adj.extractTuples(&adj_row, &adj_col, &adj_val, &nvals) );
+  BOOST_ASSERT_LIST( adj_row, row_indices, nvals );
+  BOOST_ASSERT_LIST( adj_col, col_indices, nvals );
+  BOOST_ASSERT_LIST( adj_val, values,      nvals );
+
+  graphblas::Index ncols_t;
+  CHECKVOID( adj.ncols(&ncols_t) );
+  BOOST_ASSERT( ncols==ncols_t );
+}
+
+void testNvals( char const* mtx )
+{
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  std::vector<graphblas::Index> adj_row, adj_col, blk_row, blk_col;
+  std::vector<float> adj_val, blk_val;
+
+  // Read in sparse matrix
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+
+  // Matrix adj (adjacency matrix)
+  graphblas::Matrix<float> adj(nrows, ncols);
+  CHECKVOID( adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+
+  CHECKVOID( adj.extractTuples(&adj_row, &adj_col, &adj_val, &nvals) );
+  BOOST_ASSERT_LIST( adj_row, row_indices, nvals );
+  BOOST_ASSERT_LIST( adj_col, col_indices, nvals );
+  BOOST_ASSERT_LIST( adj_val, values,      nvals );
+
+  graphblas::Index nvals_t;
+  CHECKVOID( adj.nvals(&nvals_t) );
+  BOOST_ASSERT( nvals==nvals_t );
+}
+
 /*void testCusparseSpgemm( char const* mtx, const int select )
 {
   std::vector<graphblas::Index> row_indices;
@@ -315,6 +432,10 @@ BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
   testMatrix( "dataset/small/test_cc.mtx" );
   testNnew(   "dataset/small/test_cc.mtx" );
   testDup(    "dataset/small/test_cc.mtx" );
+  testClear(  "dataset/small/test_cc.mtx" );
+  testNrows(  "dataset/small/test_cc.mtx" );
+  testNcols(  "dataset/small/test_cc.mtx" );
+  testNvals(  "dataset/small/test_cc.mtx" );
   /*testCusparseSpgemm( "dataset/small/test_cc.mtx" );
   testCusparseSpgemm( "dataset/small/test_cc.mtx", 2 );
   testFill( 10, 10 );
@@ -326,6 +447,10 @@ BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
   testMatrix( "dataset/small/test_bc.mtx" );
   testNnew(   "dataset/small/test_bc.mtx" );
   testDup(    "dataset/small/test_bc.mtx" );
+  testClear(  "dataset/small/test_bc.mtx" );
+  testNrows(  "dataset/small/test_bc.mtx" );
+  testNcols(  "dataset/small/test_bc.mtx" );
+  testNvals(  "dataset/small/test_bc.mtx" );
   /*testCusparseSpgemm( "dataset/small/test_bc.mtx" );
   testCusparseSpgemm( "dataset/small/test_bc.mtx", 2 );
   testFill( 40, 40 );
@@ -337,6 +462,10 @@ BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
   testMatrix( "dataset/small/chesapeake.mtx" );
   testNnew(   "dataset/small/chesapeake.mtx" );
   testDup(    "dataset/small/chesapeake.mtx" );
+  testClear(  "dataset/small/chesapeake.mtx" );
+  testNrows(  "dataset/small/chesapeake.mtx" );
+  testNcols(  "dataset/small/chesapeake.mtx" );
+  testNvals(  "dataset/small/chesapeake.mtx" );
   /*testCusparseSpgemm( "dataset/small/chesapeake.mtx" );
   testCusparseSpgemm( "dataset/small/chesapeake.mtx", 2 );
   testFill( 100, 100 );

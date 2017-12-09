@@ -122,7 +122,8 @@ namespace backend
   template <typename T>
   Info Matrix<T>::clear() 
   {
-    mat_type_ = GrB_SPARSE;
+    mat_type_ = GrB_UNKNOWN;
+    nvals_    = 0;
     CHECK( sparse_.clear() );
     CHECK(  dense_.clear() );
     return GrB_SUCCESS;
