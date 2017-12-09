@@ -88,7 +88,7 @@ __device__ op_func_t p_mul_func = mul_func;
     bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN) ?
         true : false;
 
-    // Transpose:
+    // Transpose (default is CSR):
     const Index* A_csrRowPtr = (use_tran) ? A->d_cscColPtr_ : A->d_csrRowPtr_;
     const Index* A_csrColInd = (use_tran) ? A->d_cscRowInd_ : A->d_csrColInd_;
     const T*     A_csrVal    = (use_tran) ? A->d_cscVal_    : A->d_csrVal_;
@@ -106,22 +106,36 @@ __device__ op_func_t p_mul_func = mul_func;
 
     if( use_mask )
     {
-      dim3 NT, NB;
-      NT.x = nt;
-      NT.y = 1;
-      NT.z = 1;
-      NB.x = (ta*A_nrows+nt-1)/nt;
-      NB.y = 1;
-      NB.z = 1;
-      spmvMaskedOrKernel<true,false,false><<<NB,NT>>>( 
-          w->d_val_, mask->d_val_, NULL, op->identity(),
-          //w->d_val_, mask->d_val_, NULL, A_nrows, A->nvals_, 
-          op->mul_, op->add_, A_nrows, A->nvals_, 
-          A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+      // TODO: add if condition here for if( add_ == GrB_LOR )
+      if( true )
+      {
+        dim3 NT, NB;
+        NT.x = nt;
+        NT.y = 1;
+        NT.z = 1;
+        NB.x = (ta*A_nrows+nt-1)/nt;
+        NB.y = 1;
+        NB.z = 1;
+        spmvMaskedOrKernel<true,false,false><<<NB,NT>>>( 
+            w->d_val_, mask->d_val_, NULL, op->identity(),
+            //w->d_val_, mask->d_val_, NULL, A_nrows, A->nvals_, 
+            op->mul_, op->add_, A_nrows, A->nvals_, 
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+      }
+      // TODO: add else condition here for generic mask semiring
+      else
+      {
+        mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, 
+        A_csrRowPtr, A_nrows, u->d_val_, true, w->d_val_, 
+        op->identity(), mgpu::multiplies<a>(), mgpu::plus<a>(), 
+        *(desc->d_context_) );
+      }
     }
     else if( !use_mask )
     {
-      a* d_val;
+
+      // Testing code - Stephen Jones
+      /*a* d_val;
       a  h_val = 1.f;
       CUDA( cudaMalloc( &d_val, sizeof(a) ) );
       CUDA( cudaMemcpy( d_val, &h_val, sizeof(a), cudaMemcpyHostToDevice ) );
@@ -139,19 +153,23 @@ __device__ op_func_t p_mul_func = mul_func;
       gpu_kernel<<<1,1>>>( d_mul_func, d_add_func, d_val );
       //kernel<<<1,1>>>( graphblas::multiplies<a>(), graphblas::plus<a>(), d_val );
       CUDA( cudaMemcpy( &h_val, d_val, sizeof(a), cudaMemcpyDeviceToHost ) );
-      std::cout << h_val << std::endl;
+      smespace backendtd::cout << h_val << std::endl;
       std::cout << &op << " " << &u << " " << &w << std::endl;
       std::cout << &(op->mul_) << " " << &(op->add_) << std::endl;
       std::cout << &(u->d_val_) << " " << &(w->d_val_) << std::endl;
-      std::cout << &h_add_func << " " << &p_add_func << std::endl;
-      /*mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, 
+      std::cout << &h_add_func << " " << &p_add_func << std::endl;*/
+
+      mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, 
           A_csrRowPtr, A_nrows, u->d_val_, true, w->d_val_, 
           op->identity(), mgpu::multiplies<a>(), mgpu::plus<a>(), 
-          *(desc->d_context_) );*/
+          *(desc->d_context_) );
+
+      // Does not work
       /*mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, 
           A_csrRowPtr, A_nrows, u->d_val_, true, w->d_val_, 
           op->identity(), op->mul_, op->add_, *(desc->d_context_) );*/
 
+      // TODO: add semiring inputs to CUB
       /*size_t temp_storage_bytes = 0;
 			cub::DeviceSpmv::CsrMV(desc->d_buffer_, temp_storage_bytes, A->d_csrVal_,
 					A->d_csrRowPtr_, A->d_csrColInd_, u->d_val_, w->d_val_,
