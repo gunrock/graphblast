@@ -62,12 +62,12 @@ namespace backend
 
     // handy methods
     const T& operator[]( Index ind );
-    Info resize( Index nvals );
+    Info resize( Index nsize );
     Info fill( T val );
     Info fillAscending( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
-    Info allocate( Index nvals=0 );  
+    Info allocate();  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
 
@@ -298,11 +298,8 @@ namespace backend
 
   // Allocate just enough (different from CPU impl since kcap_ratio=1.)
   template <typename T>
-  Info DenseVector<T>::allocate( Index nvals )
+  Info DenseVector<T>::allocate()
   {
-    if( nvals>0 )
-      nvals_ = nvals;
-
     // Host malloc
     if( nvals_>0 && h_val_ == NULL )
       h_val_ = (T*) malloc(nvals_*sizeof(T));

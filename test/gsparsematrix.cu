@@ -20,6 +20,50 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/program_options.hpp>
 
+void testMatrix( char const* mtx )
+{
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  std::vector<graphblas::Index> adj_row, adj_col, blk_row, blk_col;
+  std::vector<float> adj_val, blk_val;
+
+  // Read in sparse matrix
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+
+  // Matrix adj (adjacency matrix)
+  graphblas::Matrix<float> adj(nrows, ncols);
+  CHECKVOID( adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+
+  CHECKVOID( adj.extractTuples(&adj_row, &adj_col, &adj_val, &nvals) );
+  BOOST_ASSERT_LIST( adj_row, row_indices, nvals );
+  BOOST_ASSERT_LIST( adj_col, col_indices, nvals );
+  BOOST_ASSERT_LIST( adj_val, values, nvals );
+}
+
+void testNnew( char const* mtx )
+{
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  std::vector<graphblas::Index> adj_row, adj_col, blk_row, blk_col;
+  std::vector<float> adj_val, blk_val;
+
+  // Read in sparse matrix
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+
+  // Matrix adj (adjacency matrix)
+  graphblas::Matrix<float> adj;
+  CHECKVOID( adj.nnew(nrows, ncols) );
+  CHECKVOID( adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+
+  CHECKVOID( adj.extractTuples(&adj_row, &adj_col, &adj_val, &nvals) );
+  BOOST_ASSERT_LIST( adj_row, row_indices, nvals );
+  BOOST_ASSERT_LIST( adj_col, col_indices, nvals );
+  BOOST_ASSERT_LIST( adj_val, values, nvals );
+}
 
 // Tests dup(), build(), extractTuples(), clear()
 void testDup( char const* mtx )
@@ -48,7 +92,6 @@ void testDup( char const* mtx )
   BOOST_ASSERT_LIST( adj_row, blk_row, nvals );
   BOOST_ASSERT_LIST( adj_col, blk_col, nvals );
   BOOST_ASSERT_LIST( adj_val, blk_val, nvals );
-
 }
 
 // Tests dup(), build(), extractTuples(), clear(), cusparse_spgemm()
@@ -269,7 +312,9 @@ BOOST_AUTO_TEST_SUITE(dup_suite)
 
 BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
 {
-  testDup( "dataset/small/test_cc.mtx" );
+  testMatrix( "dataset/small/test_cc.mtx" );
+  testNnew(   "dataset/small/test_cc.mtx" );
+  testDup(    "dataset/small/test_cc.mtx" );
   /*testCusparseSpgemm( "dataset/small/test_cc.mtx" );
   testCusparseSpgemm( "dataset/small/test_cc.mtx", 2 );
   testFill( 10, 10 );
@@ -278,7 +323,9 @@ BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
 
 BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
 {
-  testDup( "dataset/small/test_bc.mtx" );
+  testMatrix( "dataset/small/test_bc.mtx" );
+  testNnew(   "dataset/small/test_bc.mtx" );
+  testDup(    "dataset/small/test_bc.mtx" );
   /*testCusparseSpgemm( "dataset/small/test_bc.mtx" );
   testCusparseSpgemm( "dataset/small/test_bc.mtx", 2 );
   testFill( 40, 40 );
@@ -287,7 +334,9 @@ BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
 
 BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
 {
-  testDup( "dataset/small/chesapeake.mtx" );
+  testMatrix( "dataset/small/chesapeake.mtx" );
+  testNnew(   "dataset/small/chesapeake.mtx" );
+  testDup(    "dataset/small/chesapeake.mtx" );
   /*testCusparseSpgemm( "dataset/small/chesapeake.mtx" );
   testCusparseSpgemm( "dataset/small/chesapeake.mtx", 2 );
   testFill( 100, 100 );

@@ -26,10 +26,10 @@ namespace backend
     public:
     // Default Constructor, Standard Constructor 
     // Alternative to new in C++
-    Matrix() : nrows_(0), ncols_(0), sparse_(0,0), dense_(0,0),
+    Matrix() : nrows_(0), ncols_(0), nvals_(0), sparse_(0,0), dense_(0,0),
                mat_type_(GrB_SPARSE) {}
     Matrix( Index nrows, Index ncols )
-        : nrows_(nrows), ncols_(ncols), sparse_(nrows,ncols), 
+        : nrows_(nrows), ncols_(ncols), nvals_(0), sparse_(nrows,ncols), 
           dense_(nrows,ncols), mat_type_(GrB_SPARSE) {}
 
     // Default Destructor is good enough for this layer
@@ -41,9 +41,9 @@ namespace backend
     Info nnew(  Index nrows, Index ncols );
     Info dup(   const Matrix* rhs );
     Info clear();
-    Info nrows( Index* nrows_t ) const;
-    Info ncols( Index* ncols_t ) const;
-    Info nvals( Index* nvals_t ) const;
+    Info nrows( Index* nrows_t );
+    Info ncols( Index* ncols_t );
+    Info nvals( Index* nvals_t );
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
@@ -88,6 +88,7 @@ namespace backend
     private:
     Index nrows_;
     Index ncols_;
+    Index nvals_;
 
     SparseMatrix<T> sparse_;
     DenseMatrix<T>  dense_;
@@ -97,63 +98,74 @@ namespace backend
 
   };
 
+  // Transfer nrows ncols to Sparse/DenseMatrix data member
   template <typename T>
   Info Matrix<T>::nnew( Index nrows, Index ncols )
   {
-    Info err;
-
-    // Transfer nrows ncols to Sparse/DenseMatrix data member
-    err = sparse_.nnew( nrows, ncols );
-    err = dense_.nnew( nrows, ncols );
-    return err;
+    CHECK( sparse_.nnew(nrows, ncols) );
+    CHECK(  dense_.nnew(nrows, ncols) );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
   Info Matrix<T>::dup( const Matrix* rhs )
   {
-    Info err = setStorage( rhs->mat_type_ );
-
-    //std::cout << "Matrix type: " << (int) mat_type_ << "\n";
-
+    mat_type_ = rhs->mat_type_;
     if( mat_type_ == GrB_SPARSE )
-      return sparse_.dup( &rhs->sparse_ );
+      return sparse_.dup(&rhs->sparse_);
     else if( mat_type_ == GrB_SPARSE )
-      return dense_.dup( &rhs->dense_ );
-    return GrB_PANIC;
+      return dense_.dup(&rhs->dense_);
+    std::cout << "Error: Failed to call dup!\n";
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
   Info Matrix<T>::clear() 
   {
-    Info err;
     mat_type_ = GrB_SPARSE;
-    err = sparse_.clear();
-    err = dense_.clear();
-    return err;
+    CHECK( sparse_.clear() );
+    CHECK(  dense_.clear() );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
-  inline Info Matrix<T>::nrows( Index* nrows_t ) const 
+  inline Info Matrix<T>::nrows( Index* nrows_t )
   {
-    if( mat_type_ == GrB_SPARSE ) return sparse_.nrows( nrows_t );
-    else if( mat_type_ == GrB_DENSE ) return dense_.nrows( nrows_t );
-    return GrB_UNINITIALIZED_OBJECT;
+    Index nrows;
+    if(      mat_type_ == GrB_SPARSE ) CHECK( sparse_.nrows(&nrows) );
+    else if( mat_type_ == GrB_DENSE  ) CHECK(  dense_.nrows(&nrows) );
+    else nrows = nrows_;
+
+    // Update nrows_ with latest value
+    nrows_   = nrows;
+    *nrows_t = nrows;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
-  inline Info Matrix<T>::ncols( Index* ncols_t ) const
+  inline Info Matrix<T>::ncols( Index* ncols_t )
   {
-    if( mat_type_ == GrB_SPARSE ) return sparse_.ncols( ncols_t );
-    else if( mat_type_ == GrB_DENSE ) return dense_.ncols( ncols_t );
-    return GrB_UNINITIALIZED_OBJECT;
+    Index ncols;
+    if(      mat_type_ == GrB_SPARSE ) CHECK( sparse_.ncols(&ncols) );
+    else if( mat_type_ == GrB_DENSE  ) CHECK(  dense_.ncols(&ncols) );
+
+    // Update ncols_ with latest value
+    ncols_   = ncols;
+    *ncols_t = ncols;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
-  inline Info Matrix<T>::nvals( Index* nvals_t ) const 
+  inline Info Matrix<T>::nvals( Index* nvals_t ) 
   {
-    if( mat_type_ == GrB_SPARSE ) return sparse_.nvals( nvals_t );
-    else if( mat_type_ == GrB_DENSE ) return dense_.nvals( nvals_t );
-    return GrB_UNINITIALIZED_OBJECT;
+    Index nvals;
+    if(      mat_type_ == GrB_SPARSE ) CHECK( sparse_.nvals(nvals_t) );
+    else if( mat_type_ == GrB_DENSE  ) CHECK(  dense_.nvals(nvals_t) );
+
+    // Update nvals_ with latest value
+    nvals_   = nvals;
+    *nvals_t = nvals;
+    return GrB_SUCCESS;
   }
 
   // Option: Not const to allow sorting
@@ -248,19 +260,17 @@ namespace backend
   template <typename T>
   Info Matrix<T>::setNrows( Index nrows )
   {
-    Info err;
-    err = sparse_.setNrows( nrows );
-    err = dense_.setNrows( nrows );
-    return err;
+    CHECK( sparse_.setNrows(nrows) );
+    CHECK(  dense_.setNrows(nrows) );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
   Info Matrix<T>::setNcols( Index ncols )
   {
-    Info err;
-    err = sparse_.setNcols( ncols );
-    err = dense_.setNcols( ncols );
-    return err;
+    CHECK( sparse_.setNcols(ncols) );
+    CHECK(  dense_.setNcols(ncols) );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -274,16 +284,15 @@ namespace backend
   template <typename T>
   Info Matrix<T>::setStorage( Storage mat_type )
   {
-    Info err;
     mat_type_ = mat_type;
     if( mat_type_ == GrB_SPARSE ) {
-      err = sparse_.clear();
-      err = sparse_.allocate();
+      //CHECK( sparse_.clear() );
+      CHECK( sparse_.allocate() );
     } else if( mat_type_ == GrB_DENSE ) {
-      err = dense_.clear();
-      err = dense_.allocate();
+      //CHECK( dense_.clear() );
+      CHECK( dense_.allocate() );
     }
-    return err;
+    return GrB_SUCCESS;
   }
 
   template <typename T>

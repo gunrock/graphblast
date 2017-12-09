@@ -98,7 +98,7 @@ namespace graphblas
   Info Matrix<T>::nnew( Index nrows, Index ncols )
   {
     if( nrows==0 || ncols==0 ) return GrB_INVALID_VALUE;
-    matrix_.nnew( nrows, ncols );
+    return matrix_.nnew( nrows, ncols );
   }
 
   template <typename T>
@@ -118,21 +118,24 @@ namespace graphblas
   Info Matrix<T>::nrows( Index* nrows ) const
   {
     if( nrows==NULL ) return GrB_NULL_POINTER;
-    return matrix_.nrows( nrows );
+    backend::Matrix<T>* matrix_t = const_cast<backend::Matrix<T>*>(&matrix_);
+    return matrix_t->nrows( nrows );
   }
 
   template <typename T>
   Info Matrix<T>::ncols( Index* ncols ) const
   {
     if( ncols==NULL ) return GrB_NULL_POINTER;
-    return matrix_.ncols( ncols );
+    backend::Matrix<T>* matrix_t = const_cast<backend::Matrix<T>*>(&matrix_);
+    return matrix_t->ncols( ncols );
   }
 
   template <typename T>
   Info Matrix<T>::nvals( Index* nvals ) const
   {
     if( nvals==NULL ) return GrB_NULL_POINTER;
-    return matrix_.nvals( nvals );
+    backend::Matrix<T>* matrix_t = const_cast<backend::Matrix<T>*>(&matrix_);
+    return matrix_t->nvals( nvals );
   }
 
   template <typename T>

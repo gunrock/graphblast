@@ -69,7 +69,7 @@ namespace backend
     Info fill( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
-    Info allocate( Index nsize=0 );  
+    Info allocate();  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
 
@@ -320,11 +320,8 @@ namespace backend
 
   // Allocate just enough (different from CPU impl since kcap_ratio=1.)
   template <typename T>
-  Info SparseVector<T>::allocate( Index nsize )
+  Info SparseVector<T>::allocate()
   {
-    if( nsize>0 )
-      nsize_ = nsize;
-
     // Host malloc
     if( nsize_!=0 && h_ind_==NULL && h_val_==NULL )
     {

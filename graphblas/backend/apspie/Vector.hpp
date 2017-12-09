@@ -268,10 +268,12 @@ namespace backend
     vec_type_ = vec_type;
     if(        vec_type_ == GrB_SPARSE ) {
       //CHECK( sparse_.clear()         );
-      CHECK( sparse_.allocate(nsize_));
+      CHECK( sparse_.resize(nsize_) );
+      CHECK( sparse_.allocate() );
     } else if( vec_type_ == GrB_DENSE ) {
       //CHECK( dense_.clear()          );
-      CHECK( dense_.allocate(nsize_) );
+      CHECK( dense_.resize(nsize_) );
+      CHECK( dense_.allocate() );
     }
     return GrB_SUCCESS;
   }

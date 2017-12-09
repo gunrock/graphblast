@@ -12,7 +12,6 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/program_options.hpp>
 
-// Tests 1: dup, 2: build, 3: extract, 4: gpuToCpu, 5: constructor
 void testVector( const std::vector<int>& rhs )
 {
   graphblas::Vector<int> vec1(rhs.size());

@@ -82,6 +82,7 @@ namespace backend
     Info check();
     Info setNrows( Index nrows );
     Info setNcols( Index ncols );
+    Info setNvals( Index nvals );
     Info resize(   Index nrows, 
                    Index ncols );
     template <typename U>
@@ -94,8 +95,7 @@ namespace backend
                         U     start );
 
     private:
-    Info allocate( Index nvals=0 );  
-                      // 3 ways to allocate: (1) dup, (2) build, (3) spgemm
+    Info allocate();  // 3 ways to allocate: (1) dup, (2) build, (3) spgemm
                       //                     (4) fill,(5) fillAscending
     Info printCSR( const char* str ); // private method for pretty printing
     Info printCSC( const char* str ); 
@@ -168,7 +168,9 @@ namespace backend
     nrows_ = nrows;
     ncols_ = ncols;
 
-    CHECK( allocate() );
+    // We do not need to allocate here as in DenseVector, 
+    // since nvals_ may not be known
+    //CHECK( allocate() );
     return GrB_SUCCESS;
   }
 
@@ -501,6 +503,13 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  template <typename T>
+  Info SparseMatrix<T>::setNvals( Index nvals )
+  {
+    nvals_ = nvals;
+    return GrB_SUCCESS;
+  }
+
   // Note: has different meaning from sequential resize
   //      -that one makes SparseMatrix bigger
   //      -this one accounts for smaller nrows
@@ -523,7 +532,8 @@ namespace backend
                               Index nvals,
                               U     start )
   {
-    CHECK( allocate(nvals) );
+    CHECK( setNvals(nvals) );
+    CHECK( allocate() );
 
     if( axis==0 )
       for( Index i=0; i<nvals; i++ )
@@ -545,7 +555,8 @@ namespace backend
                                        Index nvals,
                                        U     start )
   {
-    CHECK( allocate(nvals) );
+    CHECK( setNvals(nvals) );
+    CHECK( allocate() );
 
     if( axis==0 )
       for( Index i=0; i<nvals; i++ )
@@ -562,11 +573,8 @@ namespace backend
   }
 
   template <typename T>
-  Info SparseMatrix<T>::allocate( Index nvals )
+  Info SparseMatrix<T>::allocate()
   {
-    if( nvals>0 )
-      nvals_ = nvals;
-
     // Allocate
     ncapacity_ = kcap_ratio_*nvals_;
 
