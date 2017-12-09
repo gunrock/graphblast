@@ -116,9 +116,9 @@ namespace backend
     //std::cout << "Matrix type: " << (int) mat_type_ << "\n";
 
     if( mat_type_ == GrB_SPARSE )
-      return sparse_.dup( rhs->sparse_ );
+      return sparse_.dup( &rhs->sparse_ );
     else if( mat_type_ == GrB_SPARSE )
-      return dense_.dup( rhs->dense_ );
+      return dense_.dup( &rhs->dense_ );
     return GrB_PANIC;
   }
 

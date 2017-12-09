@@ -20,193 +20,39 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/program_options.hpp>
 
-void testDup( char const* tsv );
-void testCusparseSpgemm( char const* tsv, const int select=1);
-void testFill( const int nrows, const int ncols );
-void testTranspose( const int nrows, const int ncols );
-void testMxm( char const* tsv, 
-              const std::vector<graphblas::Index>& C_row_indices, 
-              const std::vector<graphblas::Index>& C_col_indices, 
-              const std::vector<float>& C_values,
-              const int nblocks,
-              const int select=1 );
-void testReduce( char const* tsv,
-                 const std::vector<float>& correct,
-                 const std::vector<float>& correct_t ); 
-
-struct TestMatrix
-{
-  TestMatrix() :
-    DEBUG(true) {}
-
-  bool DEBUG;
-};
-
-BOOST_AUTO_TEST_SUITE(dup_suite)
-
-BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
-{
-  testDup( "data/small/test_cc.tsv" );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
-{
-  testDup( "data/small/test_bc.tsv" );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
-{
-  testDup( "data/small/chesapeake.tsv" );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup4, TestMatrix )
-{
-  testCusparseSpgemm( "data/small/test_cc.tsv" );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup5, TestMatrix )
-{
-  testCusparseSpgemm( "data/small/test_bc.tsv" );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup6, TestMatrix )
-{
-  testCusparseSpgemm( "data/small/chesapeake.tsv" );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup7, TestMatrix )
-{
-  testCusparseSpgemm( "data/small/test_cc.tsv", 2 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup8, TestMatrix )
-{
-  testCusparseSpgemm( "data/small/test_bc.tsv", 2 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup9, TestMatrix )
-{
-  testCusparseSpgemm( "data/small/chesapeake.tsv", 2 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup10, TestMatrix )
-{
-  testFill( 10, 10 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup11, TestMatrix )
-{
-  testFill( 40, 40 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup12, TestMatrix )
-{
-  testFill( 100, 100 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup13, TestMatrix )
-{
-  testTranspose( 10, 10 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup14, TestMatrix )
-{
-  testTranspose( 40, 40 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup15, TestMatrix )
-{
-  testTranspose( 100, 100 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup16, TestMatrix )
-{
-  std::vector<int> row_indices(1, 1);
-  std::vector<int> col_indices(1, 1);
-  std::vector<float> values(   1, 20.);
-  testMxm( "data/small/test_cc.tsv", row_indices, col_indices, values, 5 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup17, TestMatrix )
-{
-  std::vector<int> row_indices(1, 1);
-  std::vector<int> col_indices(1, 1);
-  std::vector<float> values(   1, 15.);
-  testMxm( "data/small/test_bc.tsv", row_indices, col_indices, values, 5 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup18, TestMatrix )
-{
-  std::vector<int> row_indices(1, 1);
-  std::vector<int> col_indices(1, 1);
-  std::vector<float> values(   1, 170.);
-  testMxm( "data/small/chesapeake.tsv", row_indices, col_indices, values, 5 );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup19, TestMatrix )
-{
-  std::vector<float> correct{   1., 1., 3., 2., 2., 3., 3., 0., 1., 2., 2. };
-  std::vector<float> correct_t{ 3., 3., 3., 2., 3., 1., 0., 3., 2., 0., 0. };
-  testReduce( "data/small/test_cc.tsv", correct, correct_t );
-}
-
-BOOST_FIXTURE_TEST_CASE( dup20, TestMatrix )
-{
-  std::vector<float> correct{   1., 1., 3., 2., 2., 3., 3. };
-  std::vector<float> correct_t{ 3., 3., 3., 2., 3., 1., 0. };
-  testReduce( "data/small/test_bc.tsv", correct, correct_t );
-}
-
-BOOST_AUTO_TEST_SUITE_END()
 
 // Tests dup(), build(), extractTuples(), clear()
-void testDup( char const* tsv )
+void testDup( char const* mtx )
 {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
   graphblas::Index nrows, ncols, nvals;
-  graphblas::Info err;
   std::vector<graphblas::Index> adj_row, adj_col, blk_row, blk_col;
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-    nvals );
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
 
-  // Matrix adj (adjacency matrix) and adj_t (adjacency matrix transpose)
+  // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
-  adj.build( row_indices, col_indices, values, nvals );
-
-  graphblas::Matrix<float> adj_t(nrows, ncols);
-  adj_t.build( row_indices, col_indices, values, nvals, true );
+  CHECKVOID( adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
 
   // Matrix blk (interblock edge count matrix) and blk_t (interblock transpose)
   graphblas::Matrix<float> blk(nrows, ncols);
-  err = blk.dup( adj );
-  err = adj.extractTuples( adj_row, adj_col, adj_val );
-  err = blk.extractTuples( blk_row, blk_col, blk_val ); 
-  err = adj.clear();
+  CHECKVOID( blk.dup(&adj) );
+  CHECKVOID( adj.extractTuples(&adj_row, &adj_col, &adj_val, &nvals) );
+  CHECKVOID( blk.extractTuples(&blk_row, &blk_col, &blk_val, &nvals) ); 
+  CHECKVOID( adj.clear() );
 
   BOOST_ASSERT_LIST( adj_row, blk_row, nvals );
   BOOST_ASSERT_LIST( adj_col, blk_col, nvals );
   BOOST_ASSERT_LIST( adj_val, blk_val, nvals );
 
-  graphblas::Matrix<float> blk_t(nrows, ncols);
-  err = blk_t.dup( adj_t );
-  err = adj_t.extractTuples( adj_row, adj_col, adj_val );
-  err = blk_t.extractTuples( blk_row, blk_col, blk_val ); 
-  err = adj_t.clear();
-
-  BOOST_ASSERT_LIST( adj_row, blk_row, nvals );
-  BOOST_ASSERT_LIST( adj_col, blk_col, nvals );
-  BOOST_ASSERT_LIST( adj_val, blk_val, nvals );
-
-  BOOST_ASSERT( err==0 );
 }
 
 // Tests dup(), build(), extractTuples(), clear(), cusparse_spgemm()
-void testCusparseSpgemm( char const* tsv, const int select )
+/*void testCusparseSpgemm( char const* mtx, const int select )
 {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
@@ -218,8 +64,7 @@ void testCusparseSpgemm( char const* tsv, const int select )
   std::vector<float> C_values;
 
   // Read in sparse matrix
-  readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-    nvals );
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
 
   // Set identity matrix to be as big as sparse matrix
   std::vector<graphblas::Index> I_row_indices( nrows+1, 0 );
@@ -323,7 +168,7 @@ void testTranspose( const int nrows, const int ncols )
 }
 
 // Tests build(), extractTuples(), mxm(), transpose()
-void testMxm( char const* tsv, 
+void testMxm( char const* mtx, 
               const std::vector<graphblas::Index>& C_row_indices, 
               const std::vector<graphblas::Index>& C_col_indices, 
               const std::vector<float>& C_values,
@@ -337,8 +182,7 @@ void testMxm( char const* tsv,
   graphblas::Info err;
 
   // Read in sparse matrix
-  readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-    nvals );
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
 
   // Set partition matrix
   graphblas::Matrix<float> curr_partition;
@@ -381,7 +225,7 @@ void testMxm( char const* tsv,
   BOOST_ASSERT( err==0 );
 }
 
-void testReduce( char const* tsv,
+void testReduce( char const* mtx,
                  const std::vector<float>& correct, 
                  const std::vector<float>& correct_t ) 
 {
@@ -392,8 +236,7 @@ void testReduce( char const* tsv,
   graphblas::Info err;
 
   // Read in sparse matrix
-  readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-    nvals );
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
 
   graphblas::Matrix<float> adj(nrows, ncols);
   err = adj.build( row_indices, col_indices, values, nvals );
@@ -412,4 +255,81 @@ void testReduce( char const* tsv,
 
   err = vec_t.extract( values );
   BOOST_ASSERT_LIST( values, correct_t, nrows );
+}*/
+
+struct TestMatrix
+{
+  TestMatrix() :
+    DEBUG(true) {}
+
+  bool DEBUG;
+};
+
+BOOST_AUTO_TEST_SUITE(dup_suite)
+
+BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
+{
+  testDup( "dataset/small/test_cc.mtx" );
+  /*testCusparseSpgemm( "dataset/small/test_cc.mtx" );
+  testCusparseSpgemm( "dataset/small/test_cc.mtx", 2 );
+  testFill( 10, 10 );
+  testTranspose( 10, 10 );*/
 }
+
+BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
+{
+  testDup( "dataset/small/test_bc.mtx" );
+  /*testCusparseSpgemm( "dataset/small/test_bc.mtx" );
+  testCusparseSpgemm( "dataset/small/test_bc.mtx", 2 );
+  testFill( 40, 40 );
+  testTranspose( 40, 40 );*/
+}
+
+BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
+{
+  testDup( "dataset/small/chesapeake.mtx" );
+  /*testCusparseSpgemm( "dataset/small/chesapeake.mtx" );
+  testCusparseSpgemm( "dataset/small/chesapeake.mtx", 2 );
+  testFill( 100, 100 );
+  testTranspose( 100, 100 );*/
+}
+
+/*BOOST_FIXTURE_TEST_CASE( dup16, TestMatrix )
+{
+  std::vector<int> row_indices(1, 1);
+  std::vector<int> col_indices(1, 1);
+  std::vector<float> values(   1, 20.);
+  testMxm( "dataset/small/test_cc.mtx", row_indices, col_indices, values, 5 );
+}
+
+BOOST_FIXTURE_TEST_CASE( dup17, TestMatrix )
+{
+  std::vector<int> row_indices(1, 1);
+  std::vector<int> col_indices(1, 1);
+  std::vector<float> values(   1, 15.);
+  testMxm( "dataset/small/test_bc.mtx", row_indices, col_indices, values, 5 );
+}
+
+BOOST_FIXTURE_TEST_CASE( dup18, TestMatrix )
+{
+  std::vector<int> row_indices(1, 1);
+  std::vector<int> col_indices(1, 1);
+  std::vector<float> values(   1, 170.);
+  testMxm( "dataset/small/chesapeake.mtx", row_indices, col_indices, values, 5 );
+}
+
+BOOST_FIXTURE_TEST_CASE( dup19, TestMatrix )
+{
+  std::vector<float> correct{   1., 1., 3., 2., 2., 3., 3., 0., 1., 2., 2. };
+  std::vector<float> correct_t{ 3., 3., 3., 2., 3., 1., 0., 3., 2., 0., 0. };
+  testReduce( "dataset/small/test_cc.mtx", correct, correct_t );
+}
+
+BOOST_FIXTURE_TEST_CASE( dup20, TestMatrix )
+{
+  std::vector<float> correct{   1., 1., 3., 2., 2., 3., 3. };
+  std::vector<float> correct_t{ 3., 3., 3., 2., 3., 1., 0. };
+  testReduce( "dataset/small/test_bc.mtx", correct, correct_t );
+}*/
+
+BOOST_AUTO_TEST_SUITE_END()

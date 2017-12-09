@@ -304,7 +304,7 @@ int readMtx( const char *fname,
   FILE *f;
 
   if ((f = fopen(fname, "r")) == NULL) {
-    printf( "File %s not found", fname );
+    printf( "File %s not found\n", fname );
     exit(1);
   }
 

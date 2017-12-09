@@ -35,7 +35,7 @@ namespace backend
         : nsize_(nsize), nvals_(0), h_ind_(NULL), h_val_(NULL), 
           d_ind_(NULL), d_val_(NULL), need_update_(0)
     {
-      allocate(nsize);
+      allocate();
     }
 
     // Need to write Default Destructor
@@ -69,7 +69,7 @@ namespace backend
     Info fill( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
-    Info allocate( Index nsize );  
+    Info allocate( Index nsize=0 );  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
 
@@ -110,7 +110,7 @@ namespace backend
     nsize_ = rhs->nsize_;
 
     if( d_ind_==NULL && h_ind_==NULL && d_val_==NULL && h_val_==NULL )
-      err = allocate( nsize_ );
+      err = allocate();
     if( err != GrB_SUCCESS ) return err;
 
     //std::cout << "copying " << nrows_+1 << " rows\n";
@@ -318,14 +318,15 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  // Allocate just enough (different from CPU impl since kcap_ratio=1.)
   template <typename T>
   Info SparseVector<T>::allocate( Index nsize )
   {
-    // Allocate just enough (different from CPU impl since kcap_ratio=1.)
-    nsize_ = nsize;
+    if( nsize>0 )
+      nsize_ = nsize;
 
     // Host malloc
-    if( nsize!=0 && h_ind_==NULL && h_val_==NULL )
+    if( nsize_!=0 && h_ind_==NULL && h_val_==NULL )
     {
       h_ind_ = (Index*) malloc(nsize_*sizeof(Index));
       h_val_ = (T*)     malloc(nsize_*sizeof(T));
@@ -337,7 +338,7 @@ namespace backend
     }
 
     // GPU malloc
-    if( nsize!=0 && d_ind_==NULL && d_val_==NULL )
+    if( nsize_!=0 && d_ind_==NULL && d_val_==NULL )
     {
       CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
       CUDA( cudaMalloc( &d_val_, nsize_*sizeof(T)) );

@@ -32,7 +32,7 @@ namespace backend
     DenseVector( Index nsize )
         : nvals_(nsize), h_val_(NULL), d_val_(NULL), need_update_(0)
     {
-      allocate(nvals_);
+      allocate();
     }
 
     // Need to write Default Destructor
@@ -67,7 +67,7 @@ namespace backend
     Info fillAscending( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
-    Info allocate( Index nvals );  
+    Info allocate( Index nvals=0 );  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
 
@@ -93,7 +93,7 @@ namespace backend
   Info DenseVector<T>::nnew( Index nsize )
   {
     nvals_ = nsize;
-    CHECK( allocate(nsize) );
+    CHECK( allocate() );
     return GrB_SUCCESS;
   }
 
@@ -103,7 +103,7 @@ namespace backend
     nvals_ = rhs->nvals_;
 
     if( d_val_==NULL || h_val_==NULL )
-      CHECK( allocate( rhs->nvals_ ) );
+      CHECK( allocate() );
 
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
@@ -215,7 +215,7 @@ namespace backend
   template <typename T>
   const T& DenseVector<T>::operator[]( Index ind )
   {
-    gpuToCpu();
+    CHECKVOID( gpuToCpu() );
     if( ind>=nvals_ ) std::cout << "Error: Index out of bounds!\n";
 
     return h_val_[ind];
@@ -296,14 +296,15 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  // Allocate just enough (different from CPU impl since kcap_ratio=1.)
   template <typename T>
   Info DenseVector<T>::allocate( Index nvals )
   {
-    // Allocate just enough (different from CPU impl since kcap_ratio=1.)
-    nvals_ = nvals;
+    if( nvals>0 )
+      nvals_ = nvals;
 
     // Host malloc
-    if( nvals>0 && h_val_ == NULL )
+    if( nvals_>0 && h_val_ == NULL )
       h_val_ = (T*) malloc(nvals_*sizeof(T));
     else
     {
@@ -312,7 +313,7 @@ namespace backend
     }
 
     // GPU malloc
-    if( nvals>0 && d_val_ == NULL )
+    if( nvals_>0 && d_val_ == NULL )
       CUDA( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
     else
     {

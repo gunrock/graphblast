@@ -105,7 +105,7 @@ namespace graphblas
   Info Matrix<T>::dup( const Matrix* rhs )
   {
     if( rhs==NULL ) return GrB_NULL_POINTER;
-    return matrix_.dup( rhs->matrix_ );
+    return matrix_.dup( &rhs->matrix_ );
   }
 
   template <typename T>

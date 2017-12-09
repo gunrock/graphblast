@@ -94,7 +94,8 @@ namespace backend
                         U     start );
 
     private:
-    Info allocate();  // 3 ways to allocate: (1) dup, (2) build, (3) spgemm
+    Info allocate( Index nvals=0 );  
+                      // 3 ways to allocate: (1) dup, (2) build, (3) spgemm
                       //                     (4) fill,(5) fillAscending
     Info printCSR( const char* str ); // private method for pretty printing
     Info printCSC( const char* str ); 
@@ -102,8 +103,8 @@ namespace backend
     Info gpuToCpu( bool force_update=false );
 
     private:
-    const T kcap_ratio_ = 1.3;
-    const T kresize_ratio_ = 1.3;
+    const T kcap_ratio_ = 1.f;
+    const T kresize_ratio_ = 1.f;
 
     Index nrows_;
     Index ncols_;
@@ -167,8 +168,8 @@ namespace backend
     nrows_ = nrows;
     ncols_ = ncols;
 
-    //Info err = allocate();
-    return GrB_SUCCESS;//err;
+    CHECK( allocate() );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -178,8 +179,7 @@ namespace backend
     if( ncols_ != rhs->ncols_ ) return GrB_DIMENSION_MISMATCH;
     nvals_ = rhs->nvals_;
 
-    Info err = allocate();
-    if( err != GrB_SUCCESS ) return err;
+    CHECK( allocate() );
 
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
@@ -289,15 +289,14 @@ namespace backend
                                const BinaryOp<T,T,T>*    dup )
   {
     nvals_ = nvals;
-    Info err = allocate();
-    if( err != GrB_SUCCESS ) return err;
-    Index temp, row, col, dest, cumsum=0;
+    CHECK( allocate() );
 
     // Convert to CSR if transpose is false (iter 1)
     //            CSC if transpose is true  (iter 0)
     for( int iter=0; iter<2; iter++ )
     {
       bool transpose = (iter==0) ? true : false;
+      Index temp, row, col, dest, cumsum=0;
 
       std::vector<Index>* row_indices_t = transpose ? 
         const_cast<std::vector<Index>*>(col_indices) : 
@@ -310,31 +309,33 @@ namespace backend
 
       Index* csrRowPtr = (transpose) ? h_cscColPtr_ : h_csrRowPtr_;
       Index* csrColInd = (transpose) ? h_cscRowInd_ : h_csrColInd_;
-      T* csrVal        = (transpose) ? h_cscVal_    : h_csrVal_;
+      T*     csrVal    = (transpose) ? h_cscVal_    : h_csrVal_;
+      Index  nrows     = (transpose) ? ncols_       : nrows_;
+      Index  ncols     = (transpose) ? nrows_       : ncols_;
 
       // Set all rowPtr to 0
-      for( Index i=0; i<=nrows_; i++ )
+      for( Index i=0; i<=nrows; i++ )
         csrRowPtr[i] = 0;
       // Go through all elements to see how many fall in each row
       for( Index i=0; i<nvals_; i++ ) {
         row = (*row_indices_t)[i];
-        if( row>=nrows_ ) return GrB_INDEX_OUT_OF_BOUNDS;
+        if( row>=nrows ) return GrB_INDEX_OUT_OF_BOUNDS;
         csrRowPtr[ row ]++;
       }
       // Cumulative sum to obtain rowPtr
-      for( Index i=0; i<nrows_; i++ ) {
+      for( Index i=0; i<nrows; i++ ) {
         temp = csrRowPtr[i];
         csrRowPtr[i] = cumsum;
         cumsum += temp;
       }
-      csrRowPtr[nrows_] = nvals;
+      csrRowPtr[nrows] = nvals;
 
       // Store colInd and val
       for( Index i=0; i<nvals_; i++ ) {
         row = (*row_indices_t)[i];
         dest= csrRowPtr[row];
         col = (*col_indices_t)[i];
-        if( col>=ncols_ ) return GrB_INDEX_OUT_OF_BOUNDS;
+        if( col>=ncols ) return GrB_INDEX_OUT_OF_BOUNDS;
         csrColInd[dest] = col;
         csrVal[   dest] = (*values_t)[i];
         csrRowPtr[row]++;
@@ -342,19 +343,19 @@ namespace backend
       cumsum = 0;
       
       // Undo damage done to rowPtr
-      for( Index i=0; i<nrows_; i++ ) {
+      for( Index i=0; i<nrows; i++ ) {
         temp = csrRowPtr[i];
         csrRowPtr[i] = cumsum;
         cumsum = temp;
       }
-      temp = csrRowPtr[nrows_];
-      csrRowPtr[nrows_] = cumsum;
+      temp = csrRowPtr[nrows];
+      csrRowPtr[nrows] = cumsum;
       cumsum = temp;
     }
 
-    err = cpuToGpu();
+    CHECK( cpuToGpu() );
 
-    return err;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -385,18 +386,21 @@ namespace backend
                                        std::vector<T>*     values,
                                        Index*              n )
   {
-    Info err = gpuToCpu();
+    CHECK( gpuToCpu() );
     row_indices->clear();
     col_indices->clear();
     values->clear();
 
     if( *n>nvals_ )
     {
-      err = GrB_UNINITIALIZED_OBJECT;
-      *n  = nvals_;
+      std::cout << "Error: Too many tuples requested!\n";
+      return GrB_UNINITIALIZED_OBJECT;
     }
-    else if( *n<nvals_ )
-      err = GrB_INSUFFICIENT_SPACE;
+    if( *n<nvals_ )
+    {
+      std::cout << "Error: Insufficient space!\n";
+      //return GrB_INSUFFICIENT_SPACE;
+    }
 
     Index count = 0;
     for( Index row=0; row<nrows_; row++ )
@@ -413,7 +417,7 @@ namespace backend
       }
     }
 
-    return err;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -425,7 +429,7 @@ namespace backend
   template <typename T>
   const T SparseMatrix<T>::operator[]( Index ind )
   {
-    gpuToCpu(true);
+    CHECKVOID( gpuToCpu(true) );
     if( ind>=nvals_ ) std::cout << "Error: index out of bounds!\n";
 
     return h_csrColInd_[ind];
@@ -434,22 +438,22 @@ namespace backend
   template <typename T>
   Info SparseMatrix<T>::print( bool force_update )
   {
-    Info err = gpuToCpu( force_update );
+    CHECK( gpuToCpu(force_update) );
     printArray( "csrColInd", h_csrColInd_, std::min(nvals_,40) );
     printArray( "csrRowPtr", h_csrRowPtr_, std::min(nrows_+1,40) );
     printArray( "csrVal",    h_csrVal_,    std::min(nvals_,40) );
-    printCSR( "pretty print" );
+    CHECK( printCSR("pretty print") );
     printArray( "cscRowInd", h_cscRowInd_, std::min(nvals_,40) );
     printArray( "cscColPtr", h_cscColPtr_, std::min(ncols_+1,40) );
     printArray( "cscVal",    h_cscVal_,    std::min(nvals_,40) );
-    printCSC( "pretty print" );
-    return err;
+    CHECK( printCSC("pretty print") );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
   Info SparseMatrix<T>::check()
   {
-    Info err = gpuToCpu();
+    CHECK( gpuToCpu() );
     std::cout << "Begin check:\n";
     //printArray( "rowptr", h_csrRowPtr_ );
     //printArray( "colind", h_csrColInd_+23 );
@@ -480,7 +484,7 @@ namespace backend
       for( Index col=row_end; col<p_end; col++ )
         assert( h_csrColInd_[col]==-1 );
     }
-    return err;
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -519,8 +523,7 @@ namespace backend
                               Index nvals,
                               U     start )
   {
-    Info err;
-    err = allocate();
+    CHECK( allocate(nvals) );
 
     if( axis==0 )
       for( Index i=0; i<nvals; i++ )
@@ -532,8 +535,8 @@ namespace backend
       for( Index i=0; i<nvals; i++ )
         h_csrVal_[i] = (T) start;
 
-    err = cpuToGpu();
-    return err;
+    CHECK( cpuToGpu() );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
@@ -542,8 +545,7 @@ namespace backend
                                        Index nvals,
                                        U     start )
   {
-    Info err;
-    err = allocate();
+    CHECK( allocate(nvals) );
 
     if( axis==0 )
       for( Index i=0; i<nvals; i++ )
@@ -555,42 +557,45 @@ namespace backend
       for( Index i=0; i<nvals; i++ )
         h_csrVal_[i] = (T)i+start;
 
-    err = cpuToGpu();
-    return err;
+    CHECK( cpuToGpu() );
+    return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info SparseMatrix<T>::allocate()
+  Info SparseMatrix<T>::allocate( Index nvals )
   {
+    if( nvals>0 )
+      nvals_ = nvals;
+
     // Allocate
     ncapacity_ = kcap_ratio_*nvals_;
 
     // Host malloc
-    if( nrows_!=0 && h_csrRowPtr_ == NULL ) 
+    if( nrows_>0 && h_csrRowPtr_ == NULL ) 
       h_csrRowPtr_ = (Index*)malloc((nrows_+1)*sizeof(Index));
-    if( nvals_!=0 && h_csrColInd_ == NULL )
+    if( nvals_>0 && h_csrColInd_ == NULL )
       h_csrColInd_ = (Index*)malloc(ncapacity_*sizeof(Index));
-    if( nvals_!=0 && h_csrVal_ == NULL )
+    if( nvals_>0 && h_csrVal_ == NULL )
       h_csrVal_    = (T*)    malloc(ncapacity_*sizeof(T));
-    if( ncols_!=0 && h_cscColPtr_ == NULL ) 
+    if( ncols_>0 && h_cscColPtr_ == NULL ) 
       h_cscColPtr_ = (Index*)malloc((ncols_+1)*sizeof(Index));
-    if( nvals_!=0 && h_cscRowInd_ == NULL )
+    if( nvals_>0 && h_cscRowInd_ == NULL )
       h_cscRowInd_ = (Index*)malloc(ncapacity_*sizeof(Index));
-    if( nvals_!=0 && h_cscVal_ == NULL )
+    if( nvals_>0 && h_cscVal_ == NULL )
       h_cscVal_    = (T*)    malloc(ncapacity_*sizeof(T));
 
     // GPU malloc
-    if( nrows_!=0 && d_csrRowPtr_ == NULL )
+    if( nrows_>0 && d_csrRowPtr_ == NULL )
       CUDA( cudaMalloc( &d_csrRowPtr_, (nrows_+1)*sizeof(Index)) );
-    if( nvals_!=0 && d_csrColInd_ == NULL )
+    if( nvals_>0 && d_csrColInd_ == NULL )
       CUDA( cudaMalloc( &d_csrColInd_, ncapacity_*sizeof(Index)) );
-    if( nvals_!=0 && d_csrVal_ == NULL )
+    if( nvals_>0 && d_csrVal_ == NULL )
       CUDA( cudaMalloc( &d_csrVal_, ncapacity_*sizeof(T)) );
-    if( nrows_!=0 && d_cscColPtr_ == NULL )
+    if( nrows_>0 && d_cscColPtr_ == NULL )
       CUDA( cudaMalloc( &d_cscColPtr_, (ncols_+1)*sizeof(Index)) );
-    if( nvals_!=0 && d_cscRowInd_ == NULL )
+    if( nvals_>0 && d_cscRowInd_ == NULL )
       CUDA( cudaMalloc( &d_cscRowInd_, ncapacity_*sizeof(Index)) );
-    if( nvals_!=0 && d_cscVal_ == NULL )
+    if( nvals_>0 && d_cscVal_ == NULL )
       CUDA( cudaMalloc( &d_cscVal_, ncapacity_*sizeof(T)) );
 
     if( h_csrRowPtr_==NULL || h_csrColInd_==NULL || h_csrVal_==NULL ||
