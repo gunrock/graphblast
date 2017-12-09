@@ -208,56 +208,7 @@ namespace backend
   template <typename T>
   Info SparseMatrix<T>::clear()
   {
-    if( h_csrRowPtr_ ) {
-      free( h_csrRowPtr_ );
-      h_csrRowPtr_ = NULL;
-    }
-    if( h_csrColInd_ ) {
-      free( h_csrColInd_ );
-      h_csrColInd_ = NULL;
-    }
-    if( h_csrVal_ ) {
-      free( h_csrVal_ );
-      h_csrVal_ = NULL;
-    }
-    if( h_cscColPtr_ ) {
-      free( h_cscColPtr_ );
-      h_cscColPtr_ = NULL;
-    }
-    if( h_cscRowInd_ ) {
-      free( h_cscRowInd_ );
-      h_cscRowInd_ = NULL;
-    }
-    if( h_cscVal_ ) {
-      free( h_cscVal_ );
-      h_cscVal_ = NULL;
-    }
-
-    if( d_csrRowPtr_ ) {
-      CUDA( cudaFree(d_csrRowPtr_) );
-      d_csrRowPtr_ = NULL;
-    }
-    if( d_csrColInd_ ) {
-      CUDA( cudaFree(d_csrColInd_) );
-      d_csrColInd_ = NULL;
-    }
-    if( d_csrVal_ ) {
-      CUDA( cudaFree(d_csrVal_) );
-      d_csrVal_ = NULL;
-    }
-    if( d_cscColPtr_ ) {
-      CUDA( cudaFree(d_cscColPtr_) );
-      d_cscColPtr_ = NULL;
-    }
-    if( d_cscRowInd_ ) {
-      CUDA( cudaFree(d_cscRowInd_) );
-      d_cscRowInd_ = NULL;
-    }
-    if( d_cscVal_ ) {
-      CUDA( cudaFree(d_cscVal_) );
-      d_cscVal_ = NULL;
-    }
-    ncapacity_ = 0;
+    nvals_ = 0;
 
     return GrB_SUCCESS;
   }

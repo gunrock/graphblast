@@ -212,6 +212,58 @@ void testNvals( char const* mtx )
   BOOST_ASSERT( nvals==nvals_t );
 }
 
+void testBuild( char const* mtx )
+{
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  std::vector<graphblas::Index> adj_row, adj_col, blk_row, blk_col;
+  std::vector<float> adj_val, blk_val;
+
+  // Read in sparse matrix
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+
+  // Matrix adj (adjacency matrix)
+  graphblas::Matrix<float> adj(nrows, ncols);
+  CHECKVOID( adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+
+  CHECKVOID( adj.extractTuples(&adj_row, &adj_col, &adj_val, &nvals) );
+  BOOST_ASSERT_LIST( adj_row, row_indices, nvals );
+  BOOST_ASSERT_LIST( adj_col, col_indices, nvals );
+  BOOST_ASSERT_LIST( adj_val, values,      nvals );
+}
+
+void testSetElement( char const* mtx )
+{
+}
+
+void testExtractElement( char const* mtx )
+{
+}
+
+void testExtractTuples( char const* mtx )
+{
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  std::vector<graphblas::Index> adj_row, adj_col, blk_row, blk_col;
+  std::vector<float> adj_val, blk_val;
+
+  // Read in sparse matrix
+  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+
+  // Matrix adj (adjacency matrix)
+  graphblas::Matrix<float> adj(nrows, ncols);
+  CHECKVOID( adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+
+  CHECKVOID( adj.extractTuples(&adj_row, &adj_col, &adj_val, &nvals) );
+  BOOST_ASSERT_LIST( adj_row, row_indices, nvals );
+  BOOST_ASSERT_LIST( adj_col, col_indices, nvals );
+  BOOST_ASSERT_LIST( adj_val, values,      nvals );
+}
+
 /*void testCusparseSpgemm( char const* mtx, const int select )
 {
   std::vector<graphblas::Index> row_indices;
@@ -436,6 +488,8 @@ BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
   testNrows(  "dataset/small/test_cc.mtx" );
   testNcols(  "dataset/small/test_cc.mtx" );
   testNvals(  "dataset/small/test_cc.mtx" );
+  testBuild(  "dataset/small/test_cc.mtx" );
+  testExtractTuples( "dataset/small/test_cc.mtx" );
   /*testCusparseSpgemm( "dataset/small/test_cc.mtx" );
   testCusparseSpgemm( "dataset/small/test_cc.mtx", 2 );
   testFill( 10, 10 );
@@ -451,6 +505,8 @@ BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
   testNrows(  "dataset/small/test_bc.mtx" );
   testNcols(  "dataset/small/test_bc.mtx" );
   testNvals(  "dataset/small/test_bc.mtx" );
+  testBuild(  "dataset/small/test_bc.mtx" );
+  testExtractTuples( "dataset/small/test_bc.mtx" );
   /*testCusparseSpgemm( "dataset/small/test_bc.mtx" );
   testCusparseSpgemm( "dataset/small/test_bc.mtx", 2 );
   testFill( 40, 40 );
@@ -466,6 +522,8 @@ BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
   testNrows(  "dataset/small/chesapeake.mtx" );
   testNcols(  "dataset/small/chesapeake.mtx" );
   testNvals(  "dataset/small/chesapeake.mtx" );
+  testBuild(  "dataset/small/chesapeake.mtx" );
+  testExtractTuples( "dataset/small/chesapeake.mtx" );
   /*testCusparseSpgemm( "dataset/small/chesapeake.mtx" );
   testCusparseSpgemm( "dataset/small/chesapeake.mtx", 2 );
   testFill( 100, 100 );

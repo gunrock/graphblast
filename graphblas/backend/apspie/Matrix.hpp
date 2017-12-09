@@ -149,6 +149,7 @@ namespace backend
     Index ncols;
     if(      mat_type_ == GrB_SPARSE ) CHECK( sparse_.ncols(&ncols) );
     else if( mat_type_ == GrB_DENSE  ) CHECK(  dense_.ncols(&ncols) );
+    else ncols = ncols_;
 
     // Update ncols_ with latest value
     ncols_   = ncols;
@@ -160,8 +161,9 @@ namespace backend
   inline Info Matrix<T>::nvals( Index* nvals_t ) 
   {
     Index nvals;
-    if(      mat_type_ == GrB_SPARSE ) CHECK( sparse_.nvals(nvals_t) );
-    else if( mat_type_ == GrB_DENSE  ) CHECK(  dense_.nvals(nvals_t) );
+    if(      mat_type_ == GrB_SPARSE ) CHECK( sparse_.nvals(&nvals) );
+    else if( mat_type_ == GrB_DENSE  ) CHECK(  dense_.nvals(&nvals) );
+    else nvals = nvals_;
 
     // Update nvals_ with latest value
     nvals_   = nvals;
