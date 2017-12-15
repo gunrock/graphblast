@@ -44,42 +44,53 @@ void testNnew( const std::vector<int>& rhs_ind,
   BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_val.size() );
 }
 
-void testDup( const std::vector<int>& rhs )
+void testDup( const std::vector<int>& rhs_ind,
+              const std::vector<int>& rhs_val, 
+              int                     rhs_size )
 {
-  graphblas::Vector<int> vec1(rhs.size());
-  graphblas::Index size = rhs.size();
-  std::vector<int> lhs;
-  CHECKVOID( vec1.build(&rhs, rhs.size()) );
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  graphblas::Vector<int> vec1(rhs_size);
+  graphblas::Index size = rhs_size;
+  graphblas::Index nvals= rhs_ind.size();
+  std::vector<int> lhs_ind;
+  std::vector<int> lhs_val;
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
 
-  graphblas::Vector<int> vec2(rhs.size());
+  graphblas::Vector<int> vec2(rhs_size);
   vec2.dup( &vec1 );
 
-  size = rhs.size();
-  CHECKVOID( vec2.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  nvals = rhs_ind.size();
+  CHECKVOID( vec2.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
 }
 
 // Test properties:
 // 1) vec_type_ is GrB_UNKNOWN
 // 2) nvals_ is 0
 // 3) nsize_ remains the same
-void testClear( const std::vector<int>& rhs )
+void testClear( const std::vector<int>& rhs_ind,
+                const std::vector<int>& rhs_val, 
+                int                     rhs_size )
 {
-  graphblas::Vector<int> vec1(rhs.size());
-  graphblas::Index size = rhs.size();
-  std::vector<int> lhs;
-  CHECKVOID( vec1.build(&rhs, rhs.size()) );
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  graphblas::Vector<int> vec1(rhs_size);
+  graphblas::Index size = rhs_size;
+  graphblas::Index nvals= rhs_ind.size();
+  std::vector<int> lhs_ind;
+  std::vector<int> lhs_val;
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
   
   CHECKVOID( vec1.clear() );
-  lhs.clear();
+  lhs_ind.clear();
+  lhs_val.clear();
   CHECKVOID( vec1.size(&size) );
-  BOOST_ASSERT( size==rhs.size() );
+  BOOST_ASSERT( size==rhs_size );
 
-  graphblas::Index nvals;
   CHECKVOID( vec1.nvals(&nvals) );
   BOOST_ASSERT( nvals==0 );
 
@@ -88,40 +99,55 @@ void testClear( const std::vector<int>& rhs )
   BOOST_ASSERT( storage==graphblas::GrB_UNKNOWN );
 }
 
-void testSize( const std::vector<int>& rhs )
+void testSize( const std::vector<int>& rhs_ind,
+               const std::vector<int>& rhs_val, 
+               int                     rhs_size )
 {
-  graphblas::Vector<int> vec1(rhs.size());
-  graphblas::Index size = rhs.size();
-  std::vector<int> lhs;
-  CHECKVOID( vec1.build(&rhs, rhs.size()) );
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  graphblas::Vector<int> vec1(rhs_size);
+  graphblas::Index size = rhs_size;
+  graphblas::Index nvals= rhs_ind.size();
+  std::vector<int> lhs_ind;
+  std::vector<int> lhs_val;
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
   
   CHECKVOID( vec1.size(&size) );
-  BOOST_ASSERT( size==rhs.size() );
+  BOOST_ASSERT( size==rhs_size );
 }
 
-void testNvals( const std::vector<int>& rhs )
+void testNvals( const std::vector<int>& rhs_ind,
+                const std::vector<int>& rhs_val, 
+                int                     rhs_size )
 {
-  graphblas::Vector<int> vec1(rhs.size());
-  graphblas::Index size = rhs.size();
-  std::vector<int> lhs;
-  CHECKVOID( vec1.build(&rhs, rhs.size()) );
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
-  
-  CHECKVOID( vec1.nvals(&size) );
-  BOOST_ASSERT( size==rhs.size() );
+  graphblas::Vector<int> vec1(rhs_size);
+  graphblas::Index size = rhs_size;
+  graphblas::Index nvals= rhs_ind.size();
+  std::vector<int> lhs_ind;
+  std::vector<int> lhs_val;
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
+
+  CHECKVOID( vec1.nvals(&nvals) );
+  BOOST_ASSERT( nvals==rhs_ind.size() );
 }
 
-void testBuild( const std::vector<int>& rhs )
+void testBuild( const std::vector<int>& rhs_ind,
+                const std::vector<int>& rhs_val, 
+                int                     rhs_size )
 {
-  graphblas::Vector<int> vec1(rhs.size());
-  graphblas::Index size = rhs.size();
-  std::vector<int> lhs;
-  CHECKVOID( vec1.build(&rhs, rhs.size()) );
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  graphblas::Vector<int> vec1(rhs_size);
+  graphblas::Index size = rhs_size;
+  graphblas::Index nvals= rhs_ind.size();
+  std::vector<int> lhs_ind;
+  std::vector<int> lhs_val;
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
 }
 
 void testSetElement( const std::vector<int>& rhs )
@@ -132,14 +158,19 @@ void testExtractElement( const std::vector<int>& rhs )
 {
 }
 
-void testExtractTuples( const std::vector<int>& rhs )
+void testExtractTuples( const std::vector<int>& rhs_ind,
+                        const std::vector<int>& rhs_val, 
+                        int                     rhs_size )
 {
-  graphblas::Vector<int> vec1(rhs.size());
-  graphblas::Index size = rhs.size();
-  std::vector<int> lhs;
-  CHECKVOID( vec1.build(&rhs, rhs.size()) );
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  graphblas::Vector<int> vec1(rhs_size);
+  graphblas::Index size = rhs_size;
+  graphblas::Index nvals= rhs_ind.size();
+  std::vector<int> lhs_ind;
+  std::vector<int> lhs_val;
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
 }
 
 void testOperatorGetElement( const std::vector<int>& rhs )
@@ -148,38 +179,34 @@ void testOperatorGetElement( const std::vector<int>& rhs )
 
 void testFill( int size )
 {
-  graphblas::Vector<int> vec1(size);
-  std::vector<int> lhs;
-  std::vector<int> rhs(size, 5);
-  CHECKVOID( vec1.fill(5) );
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, size );
 }
 
 void testFillAscending( int size )
 {
-  graphblas::Vector<int> vec1(size);
-  std::vector<int> lhs;
-  std::vector<int> rhs(size);
-  std::iota( std::begin(rhs), std::end(rhs), 0);
-  CHECKVOID( vec1.fillAscending(size) );
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, size );
 }
 
-void testResize( const std::vector<int>& rhs, const int nvals )
+void testResize( const std::vector<int>& rhs_ind,
+                 const std::vector<int>& rhs_val,
+                 const int               rhs_size, 
+                 const int               target_size )
 {
-  graphblas::Vector<int> vec1(rhs.size());
-  graphblas::Index size = rhs.size();
-  std::vector<int> lhs;
-  CHECKVOID( vec1.build(&rhs, rhs.size()) );
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  graphblas::Vector<int> vec1(rhs_size);
+  graphblas::Index size = rhs_size;
+  graphblas::Index nvals= rhs_ind.size();
+  std::vector<int> lhs_ind;
+  std::vector<int> lhs_val;
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
 
-  CHECKVOID( vec1.resize(nvals) );
-  size = rhs.size();
-  CHECKVOID( vec1.extractTuples(&lhs, &size) );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  CHECKVOID( vec1.resize(target_size) );
+  CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
+
+  CHECKVOID( vec1.size(&size) );
+  BOOST_ASSERT( size==target_size );
 }
 
 struct TestVector
@@ -198,20 +225,19 @@ BOOST_FIXTURE_TEST_CASE( vec1, TestVector )
   std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   testVector( ind, vec, 12 );
   testNnew(   ind, vec, 12 );
-  /*testDup(    vec );
-  testClear(  vec );
-  testSize(   vec );
-  testNvals(  vec );
-  testBuild(  vec );
-  testExtractTuples(  vec );
-  testFill(           20 );
-  testFillAscending(  20 );*/
+  testDup(    ind, vec, 12 );
+  testClear(  ind, vec, 12 );
+  testSize(   ind, vec, 12 );
+  testNvals(  ind, vec, 12 );
+  testBuild(  ind, vec, 12 );
+  testExtractTuples( ind, vec, 12 );
 }
 
 BOOST_FIXTURE_TEST_CASE( vec2, TestVector )
 {
+  std::vector<int> ind = {1, 2, 3, 4, 5, 6, 7, 8, 0, 2};
   std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 0, 2};
-  //testResize( vec, 15 );
+  testResize( ind, vec, 12, 15 );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

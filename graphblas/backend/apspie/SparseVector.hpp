@@ -106,13 +106,11 @@ namespace backend
   template <typename T>
   Info SparseVector<T>::dup( const SparseVector* rhs )
   {
-    Info err;
     nvals_ = rhs->nvals_;
     nsize_ = rhs->nsize_;
 
     if( d_ind_==NULL && h_ind_==NULL && d_val_==NULL && h_val_==NULL )
-      err = allocate();
-    if( err != GrB_SUCCESS ) return err;
+      CHECK( allocate() );
 
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
@@ -123,7 +121,7 @@ namespace backend
         cudaMemcpyDeviceToDevice ) );
 
     need_update_ = true;
-    return err; 
+    return GrB_SUCCESS; 
   }
 
   template <typename T>

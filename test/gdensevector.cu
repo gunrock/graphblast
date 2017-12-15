@@ -169,6 +169,11 @@ void testResize( const std::vector<int>& rhs, const int nvals )
   size = rhs.size();
   CHECKVOID( vec1.extractTuples(&lhs, &size) );
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+
+  CHECKVOID( vec1.size(&size) );
+  BOOST_ASSERT( size==nvals );
+  CHECKVOID( vec1.nvals(&size) );
+  BOOST_ASSERT( size==nvals );
 }
 
 struct TestVector
