@@ -197,12 +197,12 @@ namespace backend
 
     if( *n>nvals_ )
     {
-      std::cout << "Error: Too many tuples requested!\n";
+      std::cout << "Error: DeVec Too many tuples requested!\n";
       return GrB_UNINITIALIZED_OBJECT;
     }
     if( *n<nvals_ ) 
     {
-      std::cout << "Error: Insufficient space!\n";
+      std::cout << "Error: DeVec Insufficient space!\n";
       //return GrB_INSUFFICIENT_SPACE;
     }
 
@@ -305,7 +305,7 @@ namespace backend
       h_val_ = (T*) malloc(nvals_*sizeof(T));
     else
     {
-      std::cout << "Error: Host allocation unsuccessful!\n";
+      std::cout << "Error: DeVec Host allocation unsuccessful!\n";
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
@@ -314,14 +314,14 @@ namespace backend
       CUDA( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
     else
     {
-      std::cout << "Error: Device allocation unsuccessful!\n";
+      std::cout << "Error: DeVec Device allocation unsuccessful!\n";
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
     if( h_val_==NULL || d_val_==NULL )
     {
-      std::cout << "Error: Out of memory!\n";
-      return GrB_OUT_OF_MEMORY;
+      std::cout << "Error: DeVec Out of memory!\n";
+      //return GrB_OUT_OF_MEMORY;
     }
 
     return GrB_SUCCESS;

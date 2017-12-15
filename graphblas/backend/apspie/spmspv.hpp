@@ -11,6 +11,7 @@
 #include "graphblas/backend/apspie/Descriptor.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
+#include "graphblas/backend/apspie/kernels/spmspv.hpp"
 
 namespace graphblas
 {
@@ -75,21 +76,30 @@ namespace backend
     const int tb = static_cast<int>(tb_mode);
     const int nt = static_cast<int>(nt_mode);
 
+    dim3 NT, NB;
+    NT.x = nt;
+    NT.y = 1;
+    NT.z = 1;
+    NB.x = (ta*A_nrows+nt-1)/nt;
+    NB.y = 1;
+    NB.z = 1;
+
     // Only difference between masked and unmasked versions if whether
     // filterKernel() is called afterwards or not
-    if( useMask )
+    if( use_mask )
     {
-      spmvKernel<false,false,false><<<NB,NT>>>(
-          w->d_val, NULL, op->identity(),
-          op->mul_, op->add_, A_nrows, A->nvals_,
+      spmspvKernel<false,false,false><<<NB,NT>>>(
+          w->d_val_, NULL, op->identity(),
+          mgpu::multiplies<a>(), mgpu::plus<a>(), A_nrows, A->nvals_,
           A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-      filterKernel<<<>>>(mask->d_val_);
+      //filterKernel<<<NB,NT>>>(w->d_val,mask->d_val_);
+      //streamCompactKernel<<<NB,NT>(w->d_val);
     }
     else
     {
-      spmvKernel<false,false,false><<<NB,NT>>>(
-          w->d_val, NULL, op->identity(),
-          op->mul_, op->add_, A_nrows, A->nvals_,
+      spmspvKernel<false,false,false><<<NB,NT>>>(
+          w->d_val_, NULL, op->identity(),
+          mgpu::multiplies<a>(), mgpu::plus<a>(), A_nrows, A->nvals_,
           A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
     }
     w->need_update_ = true;

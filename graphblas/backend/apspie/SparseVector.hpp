@@ -99,6 +99,7 @@ namespace backend
   Info SparseVector<T>::nnew( Index nsize )
   {
     nsize_ = nsize;
+    CHECK( allocate() );
     return GrB_SUCCESS;
   }
 
@@ -161,7 +162,10 @@ namespace backend
     if( nvals_>0 )
       return GrB_OUTPUT_NOT_EMPTY;
     if( h_ind_==NULL || h_val_==NULL || d_ind_==NULL || d_val_==NULL )
+    {
+      std::cout << "Error: SpVec Uninitialized object!\n";
       return GrB_UNINITIALIZED_OBJECT;
+    }
 
     nvals_ = nvals;
 
@@ -233,7 +237,7 @@ namespace backend
   const T& SparseVector<T>::operator[]( Index ind )
   {
     gpuToCpu();
-    if( ind>=nvals_ ) std::cout << "Error: Index out of bounds!\n";
+    if( ind>=nvals_ ) std::cout << "Error: Spvec Index out of bounds!\n";
 
     for( Index i=0; i<nvals_; i++ )
       if( h_ind_[i]==ind )
@@ -330,7 +334,7 @@ namespace backend
     }
     else
     {
-      std::cout << "Error: Host allocation unsuccessful!\n";
+      std::cout << "Error: SpVec Host allocation unsuccessful!\n";
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
@@ -342,12 +346,15 @@ namespace backend
     }
     else
     {
-      std::cout << "Error: Host allocation unsuccessful!\n";
+      std::cout << "Error: SpVec Device allocation unsuccessful!\n";
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
     if( h_ind_==NULL || h_val_==NULL || d_ind_==NULL || d_val_==NULL )
-      return GrB_OUT_OF_MEMORY;
+    {
+      std::cout << "Error: SpVec Out of memory!\n";
+      //return GrB_OUT_OF_MEMORY;
+    }
 
     return GrB_SUCCESS;
   }
