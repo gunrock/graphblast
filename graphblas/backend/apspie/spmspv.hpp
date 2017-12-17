@@ -68,60 +68,29 @@ namespace backend
     const Index  A_nrows     = (!use_tran) ? A->ncols_       : A->nrows_;
     const Index* Ah_csrRowPtr= (!use_tran) ? A->h_cscColPtr_ : A->h_csrRowPtr_;
 
-    // Get descriptor parameters for nthreads
-    Desc_value ta_mode, tb_mode, nt_mode;
-    CHECK( desc->get(GrB_TA, &ta_mode) );
-    CHECK( desc->get(GrB_TB, &tb_mode) );
-    CHECK( desc->get(GrB_NT, &nt_mode) );
-
-    const int ta = static_cast<int>(ta_mode);
-    const int tb = static_cast<int>(tb_mode);
-    const int nt = static_cast<int>(nt_mode);
-
-    dim3 NT, NB;
-    NT.x = nt;
-    NT.y = 1;
-    NT.z = 1;
-    NB.x = (ta*A_nrows+nt-1)/nt;
-    NB.y = 1;
-    NB.z = 1;
-
-    /*// Step 1) Statistics:
-    // -count upper limit of how many nnz are in output vector
-    Index nnz = 0;
-    if( u->nvals_ < 512 )
-    {
-      CHECK( u->gpuToCpu(true) );
-      //CUDA( cudaMemcpy(u->h_ind_, u->d_ind_, u->nvals_*sizeof(Index),
-      //    cudaMemcpyDeviceToHost) );
-
-      for( int i=0; i<u->nvals_; i++ )
-      {
-        Index row = u->h_ind_[i];
-        nnz += Ah_csrRowPtr_[row+1]-Ah_csrRowPtr_[row];
-      }
-    }
-    else nnz = 513;
-
-    // Step 2) Select kernel based on nnz:
-    // 1) 0      nnz: output 0 vector
-    // 2) 1      nnz: output 1 vector
-    // 3) 2-32   nnz: use heap method
-    // 4) 33-512 nnz: use bitonic method
-    // 5) 513+   nnz: use ESC method
-    if( nnz==0 )
-    {
-      NB.x = 
-    }*/
+    // Get descriptor parameter on which one to use
+    Desc_value spmspv_mode;
+    CHECK( desc->get(GrB_SPMSPVMODE, &spmspv_mode) );
 
     // Only difference between masked and unmasked versions if whether
     // eWiseMult() is called afterwards or not
     if( use_mask )
     {
-      spmspvKernel<false,false,false><<<NB,NT>>>(
-          temp_ind, temp_val, NULL, op->identity(),
-          mgpu::multiplies<a>(), mgpu::plus<a>(), A_nrows, A->nvals_,
-          A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_ );
+      if( spmspv_mode==GrB_APSPIE )
+        spmspvApspie<false,false,false>(
+            temp_ind, temp_val, NULL, op->identity(),
+            op->mul_, op->add_, A_nrows, A->nvals_,
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+      else if( spmspv_mode==GrB_GUNROCKLB )
+        spmspvLB<false,false,false>(
+            temp_ind, temp_val, NULL, op->identity(),
+            op->mul_, op->add_, A_nrows, A->nvals_,
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+      else if( spmspv_mode==GrB_GUNROCKTWC )
+        spmspvTWC<false,false,false>(
+            temp_ind, temp_val, NULL, op->identity(),
+            op->mul_, op->add_, A_nrows, A->nvals_,
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
       //eWiseMultKernel<<<NB,NT>>>( 
       //    w->d_ind_, w->d_val_, NULL, NULL, op, temp_ind, temp_val, 
       //    mask->d_ind_, mask->d_val_ );
@@ -130,10 +99,21 @@ namespace backend
     }
     else
     {
-      spmspvKernel<false,false,false><<<NB,NT>>>(
-          w->d_val_, NULL, op->identity(),
-          mgpu::multiplies<a>(), mgpu::plus<a>(), A_nrows, A->nvals_,
-          A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+      if( spmspv_mode==GrB_APSPIE )
+        spmspvApspie<false,false,false>(
+            w->d_val_, NULL, op->identity(),
+            op->mul_, op->add_, A_nrows, A->nvals_,
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val, desc_ );
+      else if( spmspv_mode==GrB_GUNROCKLB )
+        spmspvLB<false,false,false>(
+            w->d_val_, NULL, op->identity(),
+            op->mul_, op->add_, A_nrows, A->nvals_,
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val, desc_ );
+      else if( spmspv_mode==GrB_GUNROCKTWC )
+        spmspvTWC<false,false,false>(
+            w->d_val_, NULL, op->identity(),
+            op->mul_, op->add_, A_nrows, A->nvals_,
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val, desc_ );
     }
     w->need_update_ = true;
     return GrB_SUCCESS;

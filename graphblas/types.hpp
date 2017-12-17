@@ -45,6 +45,7 @@ namespace graphblas
                    GrB_TB, 
                    GrB_NT,
                    GrB_MXVMODE,
+                   GrB_SPMSPVMODE,
                    GrB_TOL,
                    GrB_NDESCFIELD};
 
@@ -57,8 +58,12 @@ namespace graphblas
                    GrB_FIXEDROW,
                    GrB_FIXEDCOL,
                    GrB_MERGEPATH =   9,
-                   GrB_PUSHONLY  =  10,  // for GrB_MXVMODE
-                   GrB_PULLONLY  =  11,  // for GrB_MXVMODE
+                   GrB_PUSHPULL  =  10,  // for GrB_MXVMODE
+                   GrB_PUSHONLY  =  11,  // for GrB_MXVMODE
+                   GrB_PULLONLY  =  12,  // for GrB_MXVMODE
+                   GrB_APSPIE    =  13,  // for GrB_SPMSPVMODE
+                   GrB_GUNROCKLB =  14,  // for GrB_SPMSPVMODE
+                   GrB_GUNROCKTWC=  15,  // for GrB_SPMSPVMODE
                    GrB_8         =   8,  // for GrB_TA, GrB_TB, GrB_NT
                    GrB_16        =  16,  // for GrB_TOL
                    GrB_32        =  32,
