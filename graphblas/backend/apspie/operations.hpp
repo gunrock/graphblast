@@ -105,7 +105,7 @@ namespace backend
     CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
     CHECK( desc->get( GrB_TOL,     &tol      ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
-    if( vxm_mode==GrB_DEFAULT )
+    if( vxm_mode==GrB_PUSHPULL )
       CHECK( u_t->convert( op->identity(), (int)tol ) );
     else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
       CHECK( u_t->dense2sparse( op->identity(), (int)tol ) );
@@ -176,7 +176,7 @@ namespace backend
     Desc_value tol;
     CHECK( desc->get( GrB_MXVMODE, &mxv_mode ) );
     CHECK( desc->get( GrB_TOL,     &tol      ) );
-    if( mxv_mode==GrB_DEFAULT )
+    if( mxv_mode==GrB_PUSHPULL )
       CHECK( u->convert( op->identity(), (int)tol ) );
     else if( mxv_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
       CHECK( u->dense2sparse( op->identity(), (int)tol ) );

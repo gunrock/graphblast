@@ -62,8 +62,9 @@ namespace graphblas
                    GrB_PUSHONLY  =  11,  // for GrB_MXVMODE
                    GrB_PULLONLY  =  12,  // for GrB_MXVMODE
                    GrB_APSPIE    =  13,  // for GrB_SPMSPVMODE
-                   GrB_GUNROCKLB =  14,  // for GrB_SPMSPVMODE
-                   GrB_GUNROCKTWC=  15,  // for GrB_SPMSPVMODE
+                   GrB_APSPIELB  =  14,  // for GrB_SPMSPVMODE
+                   GrB_GUNROCKLB =  15,  // for GrB_SPMSPVMODE
+                   GrB_GUNROCKTWC=  17,  // for GrB_SPMSPVMODE
                    GrB_8         =   8,  // for GrB_TA, GrB_TB, GrB_NT
                    GrB_16        =  16,  // for GrB_TOL
                    GrB_32        =  32,

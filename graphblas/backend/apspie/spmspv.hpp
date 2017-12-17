@@ -104,6 +104,11 @@ namespace backend
             w->d_val_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val, desc_ );
+      else if( spmspv_mode==GrB_APSPIELB )
+        spmspvApspieLB<false,false,false>(
+            w->d_val_, NULL, op->identity(),
+            op->mul_, op->add_, A_nrows, A->nvals_,
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val, desc_ );
       else if( spmspv_mode==GrB_GUNROCKLB )
         spmspvLB<false,false,false>(
             w->d_val_, NULL, op->identity(),
