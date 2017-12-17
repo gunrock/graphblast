@@ -81,13 +81,18 @@ namespace backend
             temp_ind, temp_val, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+      else if( spmspv_mode==GrB_APSPIELB )
+        spmspvApspieLB<false,false,false>(
+            temp_ind, temp_val, NULL, op->identity(),
+            op->mul_, op->add_, A_nrows, A->nvals_,
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )
-        spmspvLB<false,false,false>(
+        spmspvGunrockLB<false,false,false>(
             temp_ind, temp_val, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
       else if( spmspv_mode==GrB_GUNROCKTWC )
-        spmspvTWC<false,false,false>(
+        spmspvGunrockTWC<false,false,false>(
             temp_ind, temp_val, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
@@ -101,24 +106,24 @@ namespace backend
     {
       if( spmspv_mode==GrB_APSPIE )
         spmspvApspie<false,false,false>(
-            w->d_val_, NULL, op->identity(),
+            w->d_ind_, w->d_val_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val, desc_ );
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
       else if( spmspv_mode==GrB_APSPIELB )
         spmspvApspieLB<false,false,false>(
-            w->d_val_, NULL, op->identity(),
+            w->d_ind_, w->d_val_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val, desc_ );
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )
-        spmspvLB<false,false,false>(
-            w->d_val_, NULL, op->identity(),
+        spmspvGunrockLB<false,false,false>(
+            w->d_ind_, w->d_val_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val, desc_ );
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
       else if( spmspv_mode==GrB_GUNROCKTWC )
-        spmspvTWC<false,false,false>(
-            w->d_val_, NULL, op->identity(),
+        spmspvGunrockTWC<false,false,false>(
+            w->d_ind_, w->d_val_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val, desc_ );
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
     }
     w->need_update_ = true;
     return GrB_SUCCESS;

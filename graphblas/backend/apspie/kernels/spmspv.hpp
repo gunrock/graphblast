@@ -31,7 +31,8 @@ namespace backend
   template <bool UseScmp, bool UseAccum, bool UseRepl,
             typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
-  void spmspvApspie( W*                w_val,
+  Info spmspvApspie( Index*            w_ind,
+                     W*                w_val,
                      AccumOp           accum_op,
                      a                 identity,
                      MulOp             mul_op,
@@ -41,6 +42,7 @@ namespace backend
                      const Index*      A_csrRowPtr,
                      const Index*      A_csrColInd,
                      const a*          A_csrVal,
+                     const Index*      u_ind,
                      const U*          u_val,
                      const Descriptor* desc )
   {
@@ -146,7 +148,8 @@ namespace backend
   template <bool UseScmp, bool UseAccum, bool UseRepl,
             typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
-  void spmspvApspieLB( W*                w_val,
+  Info spmspvApspieLB( Index*            w_ind,
+                       W*                w_val,
                        AccumOp           accum_op,
                        a                 identity,
                        MulOp             mul_op,
@@ -156,6 +159,7 @@ namespace backend
                        const Index*      A_csrRowPtr,
                        const Index*      A_csrColInd,
                        const a*          A_csrVal,
+                       const Index*      u_ind,
                        const U*          u_val,
                        const Descriptor* desc )
   {
@@ -213,7 +217,8 @@ namespace backend
   template <bool UseScmp, bool UseAccum, bool UseRepl,
             typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
-  void spmspvGunrockLB( W*                w_val,
+  Info spmspvGunrockLB( Index*            w_ind,
+                        W*                w_val,
                         AccumOp           accum_op,
                         a                 identity,
                         MulOp             mul_op,
@@ -223,6 +228,7 @@ namespace backend
                         const Index*      A_csrRowPtr,
                         const Index*      A_csrColInd,
                         const a*          A_csrVal,
+                        const Index*      u_ind,
                         const U*          u_val,
                         const Descriptor* desc )
   {
@@ -231,7 +237,8 @@ namespace backend
   template <bool UseScmp, bool UseAccum, bool UseRepl,
             typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
-  void spmspvGunrockTWC( W*                w_val,
+  Info spmspvGunrockTWC( Index*            w_ind,
+                         W*                w_val,
                          AccumOp           accum_op,
                          a                 identity,
                          MulOp             mul_op,
@@ -241,6 +248,7 @@ namespace backend
                          const Index*      A_csrRowPtr,
                          const Index*      A_csrColInd,
                          const a*          A_csrVal,
+                         const Index*      u_ind,
                          const U*          u_val,
                          const Descriptor* desc )
   {
