@@ -3,11 +3,6 @@
 
 #include <iostream>
 
-#include <cuda.h>
-#include <cusparse.h>
-
-#include <moderngpu.cuh>
-
 #include "graphblas/backend/apspie/Descriptor.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
@@ -76,6 +71,11 @@ namespace backend
     // eWiseMult() is called afterwards or not
     if( use_mask )
     {
+      // temp_ind and temp_val need |V| memory
+      desc->resize(2*A_nrows);
+      Index* temp_ind = (Index*) desc->d_buffer_;
+      T*     temp_val = (T*)     desc->d_buffer_+A_nrows;
+
       if( spmspv_mode==GrB_APSPIE )
         spmspvApspie<false,false,false>(
             temp_ind, temp_val, NULL, op->identity(),

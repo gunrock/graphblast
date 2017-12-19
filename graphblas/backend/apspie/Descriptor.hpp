@@ -72,10 +72,17 @@ namespace backend
 
   Info Descriptor::resize( size_t target )
   {
+    void* d_temp_buffer = d_buffer_;
+
     if( target>d_size_ )
     {
-      CUDA( cudaFree( d_buffer_ ) );
-      cudaMalloc( &d_buffer_, target );
+      CUDA( cudaMalloc(&d_buffer_, target*4) );
+      if( d_temp_buffer!=NULL )
+        CUDA( cudaMemcpy(d_buffer_, d_temp_buffer, d_size_*4, 
+            cudaMemcpyDeviceToDevice) );
+      d_size_ = target;
+
+      CUDA( cudaFree( d_temp_buffer ) );
     }
     return GrB_SUCCESS;
   }
