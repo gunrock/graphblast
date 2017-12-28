@@ -33,6 +33,7 @@ namespace backend
             typename AccumOp, typename MulOp, typename AddOp>
   Info spmspvApspie( Index*            w_ind,
                      W*                w_val,
+                     Index*            w_nvals,
                      AccumOp           accum_op,
                      a                 identity,
                      MulOp             mul_op,
@@ -44,6 +45,7 @@ namespace backend
                      const a*          A_csrVal,
                      const Index*      u_ind,
                      const U*          u_val,
+                     const Index*      u_nvals,
                      const Descriptor* desc )
   {
     // Get descriptor parameters for nthreads
@@ -140,8 +142,8 @@ namespace backend
   // Memory requirements: 2|E|*GrB_THRESHOLD
   //   -GrB_THRESHOLD is defined in graphblas/types.hpp
   // 
-  //  -> d_cscSwapInd   |E|*GrB_THRESHOLD
-  //  -> d_cscSwapVal   |E|*GrB_THRESHOLD
+  //  -> d_cscSwapInd   |E|*GrB_THRESHOLD [2*A_nrows:|E|*GrB_THRESHOLD]
+  //  -> d_cscSwapVal   |E|*GrB_THRESHOLD [2*A_nrows+|E|*GrB_THRESHOLD]
   //  -> d_temp_storage runtime constant
   //
   // TODO: can lower 2|E|*GrB_THRESHOLD memory requirement further by doing 
@@ -151,6 +153,7 @@ namespace backend
             typename AccumOp, typename MulOp, typename AddOp>
   Info spmspvApspieLB( Index*            w_ind,
                        W*                w_val,
+                       Index*            w_nvals,
                        AccumOp           accum_op,
                        a                 identity,
                        MulOp             mul_op,
@@ -162,6 +165,7 @@ namespace backend
                        const a*          A_csrVal,
                        const Index*      u_ind,
                        const U*          u_val,
+                       const Index*      u_nvals,
                        const Descriptor* desc )
   {
     // Get descriptor parameters for nthreads
@@ -194,23 +198,32 @@ namespace backend
 		//  modify spmvCsrIndirectBinary() to stop after expand phase
     //  output: 1) expanded index array 2) expanded value array
     mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, A_nvals, A_csrRowPtr, 
-        u_ind, A_nrows, u_val, true, w_ind, w_val, (T)0, 
+        A_nrows, u_ind, u_val, *u_nvals, true, w_ind, w_val, *w_nvals, (T)0, 
         mul_op, add_op, desc->d_context_);
 
 		//Step 5) Sort step
     //  -> d_cscSwapInd |E|/2
     //  -> d_cscSwapVal |E|/2
-		cub::DeviceRadixSort::SortPairs( desc->d_temp_storage, temp_storage_bytes, 
-        w_ind, d->d_cscSwapInd, w_val, d->d_cscSwapVal, total );
-		CUDA( cudaMalloc(&d->d_temp_storage, temp_storage_bytes) );
-		cub::DeviceRadixSort::SortPairs( d->d_temp_storage, temp_storage_bytes, 
-        w_ind, d->d_cscSwapInd, w_val, d->d_cscSwapVal, total );
+    size_t temp_storage_bytes;
+    float  size           = A_nvals*GrB_THRESHOLD+1;
+    Descriptor* desc_t    = const_cast<Descriptor*>(desc);
+    Index* d_cscSwapInd   = (Index*) desc_t->d_buffer_+2*A_nrows;
+    T*     d_cscSwapVal   = (T*)     desc_t->d_buffer_+2*A_nrows+(int) size;
+    void*  d_temp_storage = desc_t->d_buffer_+2*A_nrows+2*(int) size;
+		
+    cub::DeviceRadixSort::SortPairs( d_temp_storage, temp_storage_bytes, 
+        w_ind, d_cscSwapInd, w_val, d_cscSwapVal, *w_nvals );
+		CUDA( cudaMalloc(&d_temp_storage, temp_storage_bytes) );
+		cub::DeviceRadixSort::SortPairs( d_temp_storage, temp_storage_bytes, 
+        w_ind, d_cscSwapInd, w_val, d_cscSwapVal, *w_nvals );
 		//MergesortKeys(d_cscVecInd, total, mgpu::less<int>(), desc->d_context_);
 
 		//Step 7) Segmented Reduce By Key
-		ReduceByKey( d->d_cscSwapInd, d->d_cscSwapVal, total, (float)0, 
+    Index  w_nvals_t      = 0;
+		ReduceByKey( d_cscSwapInd, d_cscSwapVal, *w_nvals, (float)0, 
         mgpu::plus<float>(), mgpu::equal_to<int>(), w_ind, w_val, 
-        &h_cscVecCount, (int*)0, desc->d_context_ );
+        &w_nvals_t, (int*)0, *(desc->d_context_) );
+    *w_nvals = w_nvals_t;
 
 		//printf("Current iteration: %d nonzero vector, %d edges\n",  h_cscVecCount, total);
     return GrB_SUCCESS;
@@ -221,6 +234,7 @@ namespace backend
             typename AccumOp, typename MulOp, typename AddOp>
   Info spmspvGunrockLB( Index*            w_ind,
                         W*                w_val,
+                        Index*            w_nvals,
                         AccumOp           accum_op,
                         a                 identity,
                         MulOp             mul_op,
@@ -232,6 +246,7 @@ namespace backend
                         const a*          A_csrVal,
                         const Index*      u_ind,
                         const U*          u_val,
+                        const Index*      u_nvals,
                         const Descriptor* desc )
   {
   }
@@ -241,6 +256,7 @@ namespace backend
             typename AccumOp, typename MulOp, typename AddOp>
   Info spmspvGunrockTWC( Index*            w_ind,
                          W*                w_val,
+                         Index*            w_nvals,
                          AccumOp           accum_op,
                          a                 identity,
                          MulOp             mul_op,
@@ -252,6 +268,7 @@ namespace backend
                          const a*          A_csrVal,
                          const Index*      u_ind,
                          const U*          u_val,
+                         const Index*      u_nvals,
                          const Descriptor* desc )
   {
   }

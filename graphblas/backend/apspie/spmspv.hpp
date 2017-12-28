@@ -73,30 +73,35 @@ namespace backend
     {
       // temp_ind and temp_val need |V| memory
       desc->resize(2*A_nrows);
-      Index* temp_ind = (Index*) desc->d_buffer_;
-      T*     temp_val = (T*)     desc->d_buffer_+A_nrows;
+      Index* temp_ind   = (Index*) desc->d_buffer_;
+      T*     temp_val   = (T*)     desc->d_buffer_+A_nrows;
+      Index  temp_nvals = 0;
 
       if( spmspv_mode==GrB_APSPIE )
         spmspvApspie<false,false,false>(
-            temp_ind, temp_val, NULL, op->identity(),
+            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_APSPIELB )
         spmspvApspieLB<false,false,false>(
-            temp_ind, temp_val, NULL, op->identity(),
+            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
             //op->mul_, op->add_, A_nrows, A->nvals_,
             mgpu::multiplies<a>(), mgpu::plus<a>(), A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )
         spmspvGunrockLB<false,false,false>(
-            temp_ind, temp_val, NULL, op->identity(),
+            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            u->d_ind_, u->d_val_, &u->nvals_,desc );
       else if( spmspv_mode==GrB_GUNROCKTWC )
         spmspvGunrockTWC<false,false,false>(
-            temp_ind, temp_val, NULL, op->identity(),
+            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            u->d_ind_, u->d_val_, &u->nvals_, desc );
       //eWiseMultKernel<<<NB,NT>>>( 
       //    w->d_ind_, w->d_val_, NULL, NULL, op, temp_ind, temp_val, 
       //    mask->d_ind_, mask->d_val_ );
@@ -107,24 +112,28 @@ namespace backend
     {
       if( spmspv_mode==GrB_APSPIE )
         spmspvApspie<false,false,false>(
-            w->d_ind_, w->d_val_, NULL, op->identity(),
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_APSPIELB )
         spmspvApspieLB<false,false,false>(
-            w->d_ind_, w->d_val_, NULL, op->identity(),
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )
         spmspvGunrockLB<false,false,false>(
-            w->d_ind_, w->d_val_, NULL, op->identity(),
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKTWC )
         spmspvGunrockTWC<false,false,false>(
-            w->d_ind_, w->d_val_, NULL, op->identity(),
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, desc );
+            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            u->d_ind_, u->d_val_, &u->nvals_, desc );
     }
     w->need_update_ = true;
     return GrB_SUCCESS;
