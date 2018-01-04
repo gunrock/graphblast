@@ -198,8 +198,8 @@ namespace backend
 		//  modify spmvCsrIndirectBinary() to stop after expand phase
     //  output: 1) expanded index array 2) expanded value array
     mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, A_nvals, A_csrRowPtr, 
-        A_nrows, u_ind, u_val, *u_nvals, true, w_ind, w_val, *w_nvals, (T)0, 
-        mul_op, add_op, desc->d_context_);
+        A_nrows, u_ind, u_val, *u_nvals, true, w_ind, w_val, w_nvals, (T)0, 
+        mul_op, *(desc->d_context_));
 
 		//Step 5) Sort step
     //  -> d_cscSwapInd |E|/2
@@ -221,7 +221,7 @@ namespace backend
 		//Step 7) Segmented Reduce By Key
     Index  w_nvals_t      = 0;
 		ReduceByKey( d_cscSwapInd, d_cscSwapVal, *w_nvals, (float)0, 
-        mgpu::plus<float>(), mgpu::equal_to<int>(), w_ind, w_val, 
+        add_op, mgpu::equal_to<int>(), w_ind, w_val, 
         &w_nvals_t, (int*)0, *(desc->d_context_) );
     *w_nvals = w_nvals_t;
 
