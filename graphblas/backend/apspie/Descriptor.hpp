@@ -76,28 +76,36 @@ namespace backend
   Info Descriptor::resize( size_t target, std::string field )
   {
     void*   d_temp_buffer;
-    void*   d_target;
     size_t* d_size;
     if( field=="buffer" ) 
     {
       d_temp_buffer =  d_buffer_;
-      d_target      =  d_buffer_;
       d_size        = &d_buffer_size_;
     }
-    else if( field=="temp"   )
+    else if( field=="temp" )
     {
       d_temp_buffer =  d_temp_;
-      d_target      =  d_temp_;
       d_size        = &d_temp_size_;
     }
 
     if( target>*d_size )
     {
-      CUDA( cudaMalloc(&d_target, target) );
-      if( d_temp_buffer!=NULL )
-        CUDA( cudaMemcpy(d_target, d_temp_buffer, target, 
-            cudaMemcpyDeviceToDevice) );
-      std::cout << "Resizing from " << *d_size << " to " << target << "!\n";
+      if( field=="buffer" ) 
+      {
+        CUDA( cudaMalloc(&d_buffer_, target) );
+        if( d_temp_buffer!=NULL )
+          CUDA( cudaMemcpy(d_buffer_, d_temp_buffer, *d_size, 
+              cudaMemcpyDeviceToDevice) );
+      }
+      else if( field=="temp" ) 
+      {
+        CUDA( cudaMalloc(&d_temp_, target) );
+        if( d_temp_buffer!=NULL )
+          CUDA( cudaMemcpy(d_temp_, d_temp_buffer, *d_size, 
+              cudaMemcpyDeviceToDevice) );
+      }
+      std::cout << "Resizing "+field+" from " << *d_size << " to " << 
+          target << "!\n";
       *d_size = target;
 
       CUDA( cudaFree(d_temp_buffer) );

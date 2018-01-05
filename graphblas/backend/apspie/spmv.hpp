@@ -116,7 +116,7 @@ __device__ op_func_t p_mul_func = mul_func;
         NB.x = (ta*A_nrows+nt-1)/nt;
         NB.y = 1;
         NB.z = 1;
-        KernelSpmvMaskedOr<true,false,false><<<NB,NT>>>( 
+        spmvMaskedOrKernel<true,false,false><<<NB,NT>>>( 
             w->d_val_, mask->d_val_, NULL, op->identity(),
             //w->d_val_, mask->d_val_, NULL, A_nrows, A->nvals_, 
             op->mul_, op->add_, A_nrows, A->nvals_, 

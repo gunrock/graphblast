@@ -67,12 +67,16 @@ namespace backend
     Desc_value spmspv_mode;
     CHECK( desc->get(GrB_SPMSPVMODE, &spmspv_mode) );
 
+    // temp_ind and temp_val need |V| memory for masked case, so just allocate 
+    // this much memory for now. TODO: optimize for memory
+    int size          = (float)A->nvals_*GrB_THRESHOLD+1;
+    desc->resize((2*A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
+
     // Only difference between masked and unmasked versions if whether
     // eWiseMult() is called afterwards or not
     if( use_mask )
     {
       // temp_ind and temp_val need |V| memory
-      desc->resize(2*A_nrows, "buffer");
       Index* temp_ind   = (Index*) desc->d_buffer_;
       T*     temp_val   = (T*)     desc->d_buffer_+A_nrows;
       Index  temp_nvals = 0;
@@ -95,7 +99,7 @@ namespace backend
             temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, 
-            u->d_ind_, u->d_val_, &u->nvals_,desc );
+            u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKTWC )
         spmspvGunrockTWC<false,false,false>(
             temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
