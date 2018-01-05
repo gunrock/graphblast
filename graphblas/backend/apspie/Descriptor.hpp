@@ -17,7 +17,8 @@ namespace backend
     Descriptor() : desc_{ GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, 
                           GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL,
                           GrB_APSPIELB, GrB_16 },
-                   h_buffer_(NULL), h_size_(0), d_buffer_(NULL), d_size_(0),
+                   d_buffer_(NULL), d_buffer_size_(0),
+                   d_temp_(NULL),   d_temp_size_(0),
                    d_context_(mgpu::CreateCudaDevice(0)) {}
 
     // Default Destructor
@@ -31,14 +32,16 @@ namespace backend
     Info toggleTranspose( Desc_field field );
 
     private:
-    Info resize( size_t target );
+    Info resize( size_t target, std::string field );
 
     private:
     Desc_value desc_[GrB_NDESCFIELD];
-    void*      h_buffer_;
-    size_t     h_size_;
+    //void*      h_buffer_;
+    //size_t     h_size_;
     void*      d_buffer_;
-    size_t     d_size_;
+    size_t     d_buffer_size_;
+    void*      d_temp_;        // Used for CUB calls
+    size_t     d_temp_size_;
 
     // MGPU context
     mgpu::ContextPtr d_context_;
@@ -46,8 +49,8 @@ namespace backend
 
   Descriptor::~Descriptor()
   {
-    if( h_buffer_!=NULL ) free(h_buffer_);
     if( d_buffer_!=NULL ) CUDA( cudaFree(d_buffer_) );
+    if( d_temp_  !=NULL ) CUDA( cudaFree(d_temp_)   );
   }
 
   Info Descriptor::set( Desc_field field, Desc_value value )
@@ -70,19 +73,34 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  Info Descriptor::resize( size_t target )
+  Info Descriptor::resize( size_t target, std::string field )
   {
-    void* d_temp_buffer = d_buffer_;
-
-    if( target>d_size_ )
+    void*   d_temp_buffer;
+    void*   d_target;
+    size_t* d_size;
+    if( field=="buffer" ) 
     {
-      CUDA( cudaMalloc(&d_buffer_, target*4) );
-      if( d_temp_buffer!=NULL )
-        CUDA( cudaMemcpy(d_buffer_, d_temp_buffer, d_size_*4, 
-            cudaMemcpyDeviceToDevice) );
-      d_size_ = target;
+      d_temp_buffer =  d_buffer_;
+      d_target      =  d_buffer_;
+      d_size        = &d_buffer_size_;
+    }
+    else if( field=="temp"   )
+    {
+      d_temp_buffer =  d_temp_;
+      d_target      =  d_temp_;
+      d_size        = &d_temp_size_;
+    }
 
-      CUDA( cudaFree( d_temp_buffer ) );
+    if( target>*d_size )
+    {
+      CUDA( cudaMalloc(&d_target, target) );
+      if( d_temp_buffer!=NULL )
+        CUDA( cudaMemcpy(d_target, d_temp_buffer, target, 
+            cudaMemcpyDeviceToDevice) );
+      std::cout << "Resizing from " << *d_size << " to " << target << "!\n";
+      *d_size = target;
+
+      CUDA( cudaFree(d_temp_buffer) );
     }
     return GrB_SUCCESS;
   }

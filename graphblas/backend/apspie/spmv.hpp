@@ -116,7 +116,7 @@ __device__ op_func_t p_mul_func = mul_func;
         NB.x = (ta*A_nrows+nt-1)/nt;
         NB.y = 1;
         NB.z = 1;
-        spmvMaskedOrKernel<true,false,false><<<NB,NT>>>( 
+        KernelSpmvMaskedOr<true,false,false><<<NB,NT>>>( 
             w->d_val_, mask->d_val_, NULL, op->identity(),
             //w->d_val_, mask->d_val_, NULL, A_nrows, A->nvals_, 
             op->mul_, op->add_, A_nrows, A->nvals_, 
@@ -171,11 +171,11 @@ __device__ op_func_t p_mul_func = mul_func;
 
       // TODO: add semiring inputs to CUB
       /*size_t temp_storage_bytes = 0;
-			cub::DeviceSpmv::CsrMV(desc->d_buffer_, temp_storage_bytes, A->d_csrVal_,
+			cub::DeviceSpmv::CsrMV(desc->d_temp_, temp_storage_bytes, A->d_csrVal_,
 					A->d_csrRowPtr_, A->d_csrColInd_, u->d_val_, w->d_val_,
 					A->nrows_, A->ncols_, A->nvals_, 1.f, 0.f);
-      desc->resize( temp_storage_bytes );
-			cub::DeviceSpmv::CsrMV(desc->d_buffer_, desc->d_size_, A->d_csrVal_,
+      desc->resize( temp_storage_bytes, "temp" );
+			cub::DeviceSpmv::CsrMV(desc->d_temp_, desc->d_temp_size_, A->d_csrVal_,
 					A->d_csrRowPtr_, A->d_csrColInd_, u->d_val_, w->d_val_,
 					A->nrows_, A->ncols_, A->nvals_, 1.f, 0.f);*/
     }

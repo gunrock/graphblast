@@ -42,9 +42,9 @@ int main( int argc, char** argv )
 
   // Vector x
   graphblas::Vector<float> x(nrows);
-  std::vector<graphblas::Index> x_ind = {0  };
-  std::vector<float>            x_val = {1.f};
-  CHECK( x.build(&x_ind, &x_val, 1, GrB_NULL) );
+  std::vector<graphblas::Index> x_ind = {1,   2,   3};
+  std::vector<float>            x_val = {1.f, 1.f, 1.f};
+  CHECK( x.build(&x_ind, &x_val, 3, GrB_NULL) );
   CHECK( x.size(&nrows) );
   if( DEBUG ) CHECK( x.print() );
 
@@ -65,8 +65,8 @@ int main( int argc, char** argv )
       std::multiplies<float>() );*/
   float A = GrB_PLUS_FP32(3.f,2.f);
   float B = GrB_TIMES_FP32(3.f,2.f);
-  std::cout << A << std::endl;
-  std::cout << B << std::endl;
+  //std::cout << A << std::endl;
+  //std::cout << B << std::endl;
   graphblas::Monoid  <float> GrB_FP32Add;
   GrB_FP32Add.nnew( GrB_PLUS_FP32, 0.f );
   graphblas::Semiring<float,float,float> GrB_FP32AddMul;
@@ -89,7 +89,7 @@ int main( int argc, char** argv )
   CpuTimer cpu_vxm;
   //cudaProfilerStart();
   cpu_vxm.Start();
-  int NUM_ITER = 10;
+  int NUM_ITER = 1;//0;
   for( int i=0; i<NUM_ITER; i++ )
   {
     graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, 

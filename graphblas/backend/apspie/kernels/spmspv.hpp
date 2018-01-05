@@ -13,6 +13,43 @@ namespace graphblas
 {
 namespace backend
 {
+  __global__ void KernelComputeNvals( const Index* A_csrRowPtr, 
+                                      const Index* u_ind, 
+                                      Index        u_nvals, 
+                                      Index*       d_temp_nvals )
+  {
+    int tid = threadIdx.x;
+    int gid = blockIdx.x*blockDim.x+tid;
+    Index length = 0;
+
+    if( gid<u_nvals )
+    {
+      Index row   = __ldg( u_ind+gid );
+
+      Index start = __ldg( A_csrRowPtr+row   );
+      Index end   = __ldg( A_csrRowPtr+row+1 );
+      length      = end-start;
+      if( tid<10 ) printf("%d: %d = %d - %d\n", length, start, end);
+    }
+
+    const int NT = 128;
+    typedef mgpu::CTAReduce<NT> R;
+
+    union Shared
+    {
+      typename R::Storage reduce_storage;
+    };
+    __shared__ Shared shared;
+
+    int output_total = R::Reduce(tid, length, shared.reduce_storage);
+
+    if( tid==0 )
+    {
+      d_temp_nvals[blockIdx.x] = output_total;
+      printf("%d\n", output_total);
+    }
+  }
+
   // Memory requirements: (4|V|+5|E|)*GrB_THRESHOLD
   //   -GrB_THRESHOLD is defined in graphblas/types.hpp
   //
@@ -182,9 +219,25 @@ namespace backend
     NT.x = nt;
     NT.y = 1;
     NT.z = 1;
-    NB.x = (ta*A_nrows+nt-1)/nt;
+    NB.x = (*u_nvals+nt-1)/nt;
     NB.y = 1;
     NB.z = 1;
+
+    //Step 0) Must compute how many elements are in the selected region in the
+    //        worst-case. This is a global reduce.
+    int  h_temp_nvals;
+    int* d_temp_nvals;
+    CUDA( cudaMalloc(&d_temp_nvals, NB.x*sizeof(int)) );
+    assert( *u_nvals<A_nrows );
+
+    KernelComputeNvals<<<NB,NT>>>( A_csrRowPtr, u_ind, *u_nvals, d_temp_nvals );
+    if( NB.x>1 )
+      mgpu::Reduce( d_temp_nvals, NB.x, (int)0, mgpu::plus<int>(),
+          (int*)0, &h_temp_nvals, *(desc->d_context_) );
+    else
+      CUDA( cudaMemcpy(&h_temp_nvals, d_temp_nvals, sizeof(int), 
+          cudaMemcpyDeviceToHost) );
+    printf( "h_temp_nvals: %d\n", h_temp_nvals );
 
 		//Step 1) Gather from CSR graph into one big array  |     |  |
     //Step 2) Vector Portion
@@ -197,33 +250,37 @@ namespace backend
 		//Step 1-4) custom kernel method (1 single kernel)
 		//  modify spmvCsrIndirectBinary() to stop after expand phase
     //  output: 1) expanded index array 2) expanded value array
-    mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, A_nvals, A_csrRowPtr, 
-        A_nrows, u_ind, u_val, *u_nvals, false, w_ind, w_val, w_nvals, (T)0, 
-        mul_op, *(desc->d_context_));
+    mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, h_temp_nvals, 
+        A_csrRowPtr, A_nrows, u_ind, u_val, *u_nvals, false, w_ind, w_val, 
+        w_nvals, (T)identity, mul_op, *(desc->d_context_));
+
+    printDevice( "w_ind",   w_ind, 10 );
+    printDevice( "w_val",   w_val, 10 );
+    //printf( "h_temp_nvals: %d\n", h_temp_nvals );
 
 		//Step 5) Sort step
     //  -> d_cscSwapInd |E|/2
     //  -> d_cscSwapVal |E|/2
     size_t temp_storage_bytes;
-    float  size           = A_nvals*GrB_THRESHOLD+1;
-    Descriptor* desc_t    = const_cast<Descriptor*>(desc);
-    Index* d_cscSwapInd   = (Index*) desc_t->d_buffer_+2*A_nrows;
-    T*     d_cscSwapVal   = (T*)     desc_t->d_buffer_+2*A_nrows+(int) size;
-    void*  d_temp_storage = desc_t->d_buffer_+2*A_nrows+2*(int) size;
-		
-    cub::DeviceRadixSort::SortPairs( d_temp_storage, temp_storage_bytes, 
-        w_ind, d_cscSwapInd, w_val, d_cscSwapVal, *w_nvals );
-		CUDA( cudaMalloc(&d_temp_storage, temp_storage_bytes) );
-		cub::DeviceRadixSort::SortPairs( d_temp_storage, temp_storage_bytes, 
-        w_ind, d_cscSwapInd, w_val, d_cscSwapVal, *w_nvals );
+    float  size         = A_nvals*GrB_THRESHOLD+1;
+    Descriptor* desc_t  = const_cast<Descriptor*>(desc);
+    Index* d_cscSwapInd = (Index*) desc_t->d_buffer_+2*A_nrows;
+    T*     d_cscSwapVal = (T*)     desc_t->d_buffer_+2*A_nrows+(int) size;
+
+    cub::DeviceRadixSort::SortPairs( desc_t->d_temp_, temp_storage_bytes, w_ind,
+        d_cscSwapInd, w_val, d_cscSwapVal, *w_nvals );
+    desc_t->resize( temp_storage_bytes, "temp" );
+		//CUDA( cudaMalloc(&d_temp_storage, temp_storage_bytes) );
+		cub::DeviceRadixSort::SortPairs( desc_t->d_temp_, temp_storage_bytes, w_ind,
+        d_cscSwapInd, w_val, d_cscSwapVal, *w_nvals );
 		//MergesortKeys(d_cscVecInd, total, mgpu::less<int>(), desc->d_context_);
 
-		//Step 7) Segmented Reduce By Key
-    Index  w_nvals_t      = 0;
-		ReduceByKey( d_cscSwapInd, d_cscSwapVal, *w_nvals, (float)0, 
+		//Step 6) Segmented Reduce By Key
+    Index  w_nvals_t    = 0;
+		/*ReduceByKey( d_cscSwapInd, d_cscSwapVal, *w_nvals, (float)0, 
         add_op, mgpu::equal_to<int>(), w_ind, w_val, 
-        &w_nvals_t, (int*)0, *(desc->d_context_) );
-    *w_nvals = w_nvals_t;
+        &w_nvals_t, (int*)0, *(desc->d_context_) );*/
+    *w_nvals            = w_nvals_t;
 
 		//printf("Current iteration: %d nonzero vector, %d edges\n",  h_cscVecCount, total);
     return GrB_SUCCESS;

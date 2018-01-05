@@ -72,7 +72,7 @@ namespace backend
     if( use_mask )
     {
       // temp_ind and temp_val need |V| memory
-      desc->resize(2*A_nrows);
+      desc->resize(2*A_nrows, "buffer");
       Index* temp_ind   = (Index*) desc->d_buffer_;
       T*     temp_val   = (T*)     desc->d_buffer_+A_nrows;
       Index  temp_nvals = 0;
@@ -119,7 +119,7 @@ namespace backend
       else if( spmspv_mode==GrB_APSPIELB )
         spmspvApspieLB<false,false,false>(
             w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
-            mgpu::multiplies<a>, mgpu::plus<a>, A_nrows, A->nvals_,
+            mgpu::multiplies<a>(), mgpu::plus<a>(), A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, 
             u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )

@@ -17,7 +17,7 @@ namespace backend
   template <bool UseScmp, bool UseAccum, bool UseRepl,
             typename W, typename a, typename U, typename M,
             typename AccumOp, typename MulOp, typename AddOp>
-  __global__ void spmvMaskedOrKernel( W*           w_val,
+  __global__ void KernelSpmvMaskedOr( W*           w_val,
                                       const M*     mask_val,
                                       AccumOp      accum_op,
                                       a            identity,
