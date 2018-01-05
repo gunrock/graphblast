@@ -198,7 +198,7 @@ namespace backend
 		//  modify spmvCsrIndirectBinary() to stop after expand phase
     //  output: 1) expanded index array 2) expanded value array
     mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, A_nvals, A_csrRowPtr, 
-        A_nrows, u_ind, u_val, *u_nvals, true, w_ind, w_val, w_nvals, (T)0, 
+        A_nrows, u_ind, u_val, *u_nvals, false, w_ind, w_val, w_nvals, (T)0, 
         mul_op, *(desc->d_context_));
 
 		//Step 5) Sort step

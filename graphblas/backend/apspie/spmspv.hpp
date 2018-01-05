@@ -119,7 +119,7 @@ namespace backend
       else if( spmspv_mode==GrB_APSPIELB )
         spmspvApspieLB<false,false,false>(
             w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
-            op->mul_, op->add_, A_nrows, A->nvals_,
+            mgpu::multiplies<a>, mgpu::plus<a>, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, 
             u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )

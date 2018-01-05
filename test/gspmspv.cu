@@ -34,21 +34,22 @@ int main( int argc, char** argv )
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  a.build( &row_indices, &col_indices, &values, nvals, GrB_NULL );
-  a.nrows( &nrows );
-  a.ncols( &ncols );
-  a.nvals( &nvals );
-  if( DEBUG ) a.print();
+  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+  CHECK( a.nrows(&nrows) );
+  CHECK( a.ncols(&ncols) );
+  CHECK( a.nvals(&nvals) );
+  if( DEBUG ) CHECK( a.print() );
 
   // Vector x
   graphblas::Vector<float> x(nrows);
-  x.fill( 1.f );
-  x.size( &nrows );
-  if( DEBUG ) x.print();
+  std::vector<graphblas::Index> x_ind = {0  };
+  std::vector<float>            x_val = {1.f};
+  CHECK( x.build(&x_ind, &x_val, 1, GrB_NULL) );
+  CHECK( x.size(&nrows) );
+  if( DEBUG ) CHECK( x.print() );
 
   // Vector y
   graphblas::Vector<float> y(nrows);
-  if( DEBUG ) y.print();
 
   // Descriptor
   graphblas::Descriptor desc;
@@ -81,8 +82,8 @@ int main( int argc, char** argv )
   warmup.Start();
   //graphblas::vxm<float, float, float>( &y, &x, &GrB_PLUS_FP32, &GrB_FP32AddMul, 
   //    &x, &a, &desc );
-  graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, &GrB_FP32AddMul, 
-      &x, &a, &desc );
+  graphblas::vxm<float, float, float>(&y, GrB_NULL, GrB_NULL, &GrB_FP32AddMul, 
+      &x, &a, &desc);
   warmup.Stop();
  
   CpuTimer cpu_vxm;

@@ -22,7 +22,7 @@ void testVector( const std::vector<int>& rhs_ind,
   graphblas::Index nvals= rhs_ind.size();
   std::vector<int> lhs_ind;
   std::vector<int> lhs_val;
-  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, GrB_NULL) );
   CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
   BOOST_ASSERT_LIST( lhs_ind, rhs_ind, nvals );
   BOOST_ASSERT_LIST( lhs_val, rhs_val, nvals );
@@ -38,7 +38,7 @@ void testNnew( const std::vector<int>& rhs_ind,
   graphblas::Index nvals= rhs_ind.size();
   std::vector<int> lhs_ind;
   std::vector<int> lhs_val;
-  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, GrB_NULL) );
   CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
   BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
   BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_val.size() );
@@ -53,7 +53,7 @@ void testDup( const std::vector<int>& rhs_ind,
   graphblas::Index nvals= rhs_ind.size();
   std::vector<int> lhs_ind;
   std::vector<int> lhs_val;
-  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, GrB_NULL) );
   CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
   BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
   BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
@@ -80,7 +80,7 @@ void testClear( const std::vector<int>& rhs_ind,
   graphblas::Index nvals= rhs_ind.size();
   std::vector<int> lhs_ind;
   std::vector<int> lhs_val;
-  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, GrB_NULL) );
   CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
   BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
   BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
@@ -108,7 +108,7 @@ void testSize( const std::vector<int>& rhs_ind,
   graphblas::Index nvals= rhs_ind.size();
   std::vector<int> lhs_ind;
   std::vector<int> lhs_val;
-  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, GrB_NULL) );
   CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
   BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
   BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
@@ -126,7 +126,7 @@ void testNvals( const std::vector<int>& rhs_ind,
   graphblas::Index nvals= rhs_ind.size();
   std::vector<int> lhs_ind;
   std::vector<int> lhs_val;
-  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, GrB_NULL) );
   CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
   BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
   BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
@@ -144,7 +144,7 @@ void testBuild( const std::vector<int>& rhs_ind,
   graphblas::Index nvals= rhs_ind.size();
   std::vector<int> lhs_ind;
   std::vector<int> lhs_val;
-  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, GrB_NULL) );
   CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
   BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
   BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
@@ -167,7 +167,7 @@ void testExtractTuples( const std::vector<int>& rhs_ind,
   graphblas::Index nvals= rhs_ind.size();
   std::vector<int> lhs_ind;
   std::vector<int> lhs_val;
-  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, GrB_NULL) );
   CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
   BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
   BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
@@ -195,7 +195,7 @@ void testResize( const std::vector<int>& rhs_ind,
   graphblas::Index nvals= rhs_ind.size();
   std::vector<int> lhs_ind;
   std::vector<int> lhs_val;
-  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, NULL) );
+  CHECKVOID( vec1.build(&rhs_ind, &rhs_val, nvals, GrB_NULL) );
   CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
   BOOST_ASSERT_LIST( lhs_ind, rhs_ind, rhs_ind.size() );
   BOOST_ASSERT_LIST( lhs_val, rhs_val, rhs_ind.size() );
