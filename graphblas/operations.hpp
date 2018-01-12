@@ -74,6 +74,7 @@ namespace graphblas
     backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
         : &desc->descriptor_;
 
+    //std::cout << "graphblas: " << (mask_t!=NULL) << std::endl;
     return backend::vxm<W,U,a>( &w->vector_, mask_t, accum_t, &op->op_, 
         &u->vector_, &A->matrix_, desc_t );
   }

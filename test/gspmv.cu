@@ -50,6 +50,14 @@ int main( int argc, char** argv )
   graphblas::Vector<float> y(nrows);
   if( DEBUG ) y.print();
 
+  // Mask
+  graphblas::Vector<float> m(nrows);
+  std::vector<graphblas::Index> m_ind = {1,   2,   3};
+  std::vector<float>            m_val = {1.f, 1.f, 1.f};
+  CHECK( m.build(&m_ind, &m_val, 3, GrB_NULL) );
+  CHECK( m.size(&nrows) );
+  if( DEBUG ) CHECK( m.print() );
+
   // Descriptor
   graphblas::Descriptor desc;
 
@@ -79,10 +87,10 @@ int main( int argc, char** argv )
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  //graphblas::vxm<float, float, float>( &y, &x, &GrB_PLUS_FP32, &GrB_FP32AddMul, 
-  //    &x, &a, &desc );
-  graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, &GrB_FP32AddMul, 
+  graphblas::vxm<float, float, float>( &y, &m, GrB_NULL, &GrB_FP32AddMul, 
       &x, &a, &desc );
+  //graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, &GrB_FP32AddMul, 
+  //    &x, &a, &desc );
   warmup.Stop();
  
   CpuTimer cpu_vxm;
@@ -91,8 +99,10 @@ int main( int argc, char** argv )
   int NUM_ITER = 10;
   for( int i=0; i<NUM_ITER; i++ )
   {
-    graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, 
+    graphblas::vxm<float, float, float>( &y, &m, GrB_NULL, 
         &GrB_FP32AddMul, &x, &a, &desc );
+    //graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, 
+    //    &GrB_FP32AddMul, &x, &a, &desc );
   }
   //cudaProfilerStop();
   cpu_vxm.Stop();

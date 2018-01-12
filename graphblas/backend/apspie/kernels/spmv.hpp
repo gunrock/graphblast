@@ -17,18 +17,18 @@ namespace backend
   template <bool UseScmp, bool UseAccum, bool UseRepl,
             typename W, typename a, typename U, typename M,
             typename AccumOp, typename MulOp, typename AddOp>
-  __global__ void spmvMaskedOrKernel( W*           w_val,
-                                      const M*     mask_val,
-                                      AccumOp      accum_op,
-                                      a            identity,
-                                      MulOp        mul_op,
-                                      AddOp        add_op,
-                                      Index        A_nrows,
-                                      Index        A_nvals,
-                                      const Index* A_csrRowPtr,
-                                      const Index* A_csrColInd,
-                                      const a*     A_csrVal,
-                                      const U*     u_val )
+  __global__ void spmvDenseMaskedOrKernel( W*           w_val,
+                                           const M*     mask_val,
+                                           AccumOp      accum_op,
+                                           a            identity,
+                                           MulOp        mul_op,
+                                           AddOp        add_op,
+                                           Index        A_nrows,
+                                           Index        A_nvals,
+                                           const Index* A_csrRowPtr,
+                                           const Index* A_csrColInd,
+                                           const a*     A_csrVal,
+                                           const U*     u_val )
   {
     unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
 

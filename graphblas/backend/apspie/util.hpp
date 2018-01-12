@@ -54,6 +54,16 @@ void printCode( const char* str, const T* array, int length )
   if( temp ) free( temp );
 }
 
+void printState( bool use_mask, bool use_accum, bool use_scmp, bool use_repl, 
+    bool use_tran )
+{
+  std::cout << "Mask: " << use_mask  << std::endl;
+  std::cout << "Accum:" << use_accum << std::endl;
+  std::cout << "SCMP: " << use_scmp  << std::endl;
+  std::cout << "Repl: " << use_repl  << std::endl;
+  std::cout << "Tran: " << use_tran  << std::endl;
+}
+
 struct GpuTimer
 {
   cudaEvent_t start;

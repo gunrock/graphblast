@@ -97,8 +97,9 @@ namespace backend
         mask_dense  = const_cast<DenseVector<U>*>(&mask->dense_);
     }
 
-    auto maskVector = (mask_sparse!=NULL) ? mask_sparse : NULL;
-    maskVector = (mask_dense!=NULL) ? (SparseVector<U>*) mask_dense : NULL;
+    auto maskVector = (mask_vec_type==GrB_SPARSE) ? mask_sparse : NULL;
+    maskVector      = (mask_vec_type!=GrB_SPARSE) ? 
+        (SparseVector<U>*) mask_dense : maskVector;
 
     // Conversions:
     Desc_value vxm_mode, tol;
@@ -122,6 +123,9 @@ namespace backend
     // 1) SpMSpV: SpMat x SpVe
     // 2) SpMV:   SpMat x DeVec
     // 3) GeMV:   DeMat x DeVec
+    /*std::cout << "sparse " << (mask_sparse!=NULL) << std::endl;
+    std::cout << "dense  " << (mask_dense!=NULL) << std::endl;
+    std::cout << "apspie " << (maskVector!=NULL) << std::endl;*/
     if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
     {
       CHECK( w->setStorage( GrB_SPARSE ) );

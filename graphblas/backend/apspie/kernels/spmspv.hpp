@@ -230,12 +230,14 @@ namespace backend
     assert( *u_nvals<A_nrows );
 
     indirectScanKernel<<<NB,NT>>>( A_csrRowPtr, u_ind, *u_nvals, d_temp_nvals );
+    CUDA( cudaDeviceSynchronize() );
     if( NB.x>1 )
       mgpu::Reduce( d_temp_nvals, NB.x, (int)0, mgpu::plus<int>(), (int*)0, 
           w_nvals, *(desc->d_context_) );
     else
       CUDA( cudaMemcpy(w_nvals, d_temp_nvals, sizeof(int), 
           cudaMemcpyDeviceToHost) );
+    CUDA( cudaFree(d_temp_nvals) );
     std::cout << "w_nvals: " << *w_nvals << std::endl;
 
 		//Step 1) Gather from CSR graph into one big array  |     |  |
@@ -252,9 +254,13 @@ namespace backend
     mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, *w_nvals, 
         A_csrRowPtr, A_nrows, u_ind, u_val, *u_nvals, false, w_ind, w_val, 
         w_nvals, (T)identity, mul_op, *(desc->d_context_));
+    CUDA( cudaDeviceSynchronize() );
 
-    printDevice( "w_ind", w_ind, 10 );
-    printDevice( "w_val", w_val, 10 );
+    std::cout << "w_nvals: " << *w_nvals << std::endl;
+    printDevice( "w_ind", w_ind, 6 );
+    printDevice( "w_val", w_val, 6 );
+    //printDevice( "w_ind", w_ind, *w_nvals );
+    //printDevice( "w_val", w_val, *w_nvals );
 
 		//Step 5) Sort step
     //  -> d_cscSwapInd |E|/2
@@ -265,11 +271,11 @@ namespace backend
     void* d_cscSwapInd = desc_t->d_buffer_+ 2*A_nrows      *sizeof(Index);
     void* d_cscSwapVal = desc_t->d_buffer_+(2*A_nrows+size)*sizeof(Index);
 
-    CUDA( cudaMemcpy((Index*)d_cscSwapInd, w_ind, *w_nvals*sizeof(Index), 
+    /*CUDA( cudaMemcpy((Index*)d_cscSwapInd, w_ind, *w_nvals*sizeof(Index), 
         cudaMemcpyDeviceToDevice) );
     CUDA( cudaMemcpy((T*)    d_cscSwapVal, w_val, *w_nvals*sizeof(T), 
-        cudaMemcpyDeviceToDevice) );
-    cub::DeviceRadixSort::SortPairs( desc_t->d_temp_, temp_storage_bytes, w_ind,
+        cudaMemcpyDeviceToDevice) );*/
+    /*cub::DeviceRadixSort::SortPairs( desc_t->d_temp_, temp_storage_bytes, w_ind,
         (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );
     desc_t->resize( temp_storage_bytes, "temp" );
     std::cout << "temp_storage_bytes: " << temp_storage_bytes << std::endl;
@@ -285,7 +291,7 @@ namespace backend
 		ReduceByKey( (Index*)d_cscSwapInd, (T*)d_cscSwapVal, *w_nvals, (float)0, 
         add_op, mgpu::equal_to<int>(), w_ind, w_val, 
         &w_nvals_t, (int*)0, *(desc->d_context_) );
-    *w_nvals            = w_nvals_t;
+    *w_nvals            = w_nvals_t;*/
 
 		//printf("Current iteration: %d nonzero vector, %d edges\n",  h_cscVecCount, total);
     return GrB_SUCCESS;

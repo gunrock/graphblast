@@ -87,6 +87,7 @@ __device__ op_func_t p_mul_func = mul_func;
     bool use_repl = (repl_mode==GrB_REPLACE) ? true : false;
     bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN) ?
         true : false;
+    //printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
 
     // Transpose (default is CSR):
     const Index* A_csrRowPtr = (use_tran) ? A->d_cscColPtr_ : A->d_csrRowPtr_;
@@ -107,7 +108,7 @@ __device__ op_func_t p_mul_func = mul_func;
     if( use_mask )
     {
       // TODO: add if condition here for if( add_ == GrB_LOR )
-      if( true )
+      if( false )
       {
         dim3 NT, NB;
         NT.x = nt;
@@ -116,7 +117,7 @@ __device__ op_func_t p_mul_func = mul_func;
         NB.x = (ta*A_nrows+nt-1)/nt;
         NB.y = 1;
         NB.z = 1;
-        spmvMaskedOrKernel<true,false,false><<<NB,NT>>>( 
+        spmvDenseMaskedOrKernel<true,false,false><<<NB,NT>>>( 
             w->d_val_, mask->d_val_, NULL, op->identity(),
             //w->d_val_, mask->d_val_, NULL, A_nrows, A->nvals_, 
             op->mul_, op->add_, A_nrows, A->nvals_, 
@@ -125,10 +126,11 @@ __device__ op_func_t p_mul_func = mul_func;
       // TODO: add else condition here for generic mask semiring
       else
       {
-        mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, 
-        A_csrRowPtr, A_nrows, u->d_val_, true, w->d_val_, 
-        op->identity(), mgpu::multiplies<a>(), mgpu::plus<a>(), 
-        *(desc->d_context_) );
+        std::cout << "Indirect Spmv called!\n";
+        mgpu::SpmvCsrIndirectBinary( A_csrVal, A_csrColInd, A->nvals_,
+            A_csrRowPtr, mask->d_ind_, A_nrows, u->d_val_, true, w->d_val_,
+            op->identity(), mgpu::multiplies<a>(), mgpu::plus<a>(),
+            *(desc->d_context_) );
       }
     }
     else if( !use_mask )

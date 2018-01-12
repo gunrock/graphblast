@@ -305,7 +305,7 @@ namespace backend
       h_val_ = (T*) malloc(nvals_*sizeof(T));
     else
     {
-      std::cout << "Error: DeVec Host allocation unsuccessful!\n";
+      //std::cout << "Error: DeVec Host allocation unsuccessful!\n";
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
@@ -314,7 +314,7 @@ namespace backend
       CUDA( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
     else
     {
-      std::cout << "Error: DeVec Device allocation unsuccessful!\n";
+      //std::cout << "Error: DeVec Device allocation unsuccessful!\n";
       //return GrB_UNINITIALIZED_OBJECT;
     }
 

@@ -332,7 +332,7 @@ namespace backend
     }
     else
     {
-      std::cout << "Error: SpVec Host allocation unsuccessful!\n";
+      //std::cout << "Error: SpVec Host allocation unsuccessful!\n";
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
@@ -344,7 +344,7 @@ namespace backend
     }
     else
     {
-      std::cout << "Error: SpVec Device allocation unsuccessful!\n";
+      //std::cout << "Error: SpVec Device allocation unsuccessful!\n";
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
