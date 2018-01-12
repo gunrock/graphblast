@@ -51,8 +51,15 @@ int main( int argc, char** argv )
   // Vector y
   graphblas::Vector<float> y(nrows);
 
+  // Vector mask
+  graphblas::Vector<float> m(nrows);
+  CHECK( m.fill(-1.f) );
+  CHECK( m.setElement(0.f, 1) );
+  CHECK( m.size(&nrows) );
+
   // Descriptor
   graphblas::Descriptor desc;
+  desc.set(
 
   // Semiring
   graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
@@ -82,7 +89,7 @@ int main( int argc, char** argv )
   warmup.Start();
   //graphblas::vxm<float, float, float>( &y, &x, &GrB_PLUS_FP32, &GrB_FP32AddMul, 
   //    &x, &a, &desc );
-  graphblas::vxm<float, float, float>(&y, GrB_NULL, GrB_NULL, &GrB_FP32AddMul, 
+  graphblas::vxm<float, float, float>(&y, &m, GrB_NULL, &GrB_FP32AddMul, 
       &x, &a, &desc);
   warmup.Stop();
  

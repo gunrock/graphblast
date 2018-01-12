@@ -8,6 +8,8 @@
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 #include "graphblas/backend/apspie/operations.hpp"
 #include "graphblas/backend/apspie/kernels/spmspv.hpp"
+#include "graphblas/backend/apspie/kernels/apply.hpp"
+#include "graphblas/backend/apspie/kernels/util.hpp"
 
 namespace graphblas
 {
@@ -18,20 +20,6 @@ namespace backend
             typename BinaryOpT,      typename SemiringT>
   Info spmspv( SparseVector<W>*       w,
                const DenseVector<M>*  mask,
-               const BinaryOpT*       accum,
-               const SemiringT*       op,
-               const SparseMatrix<a>* A,
-               const SparseVector<U>* u,
-               Descriptor*            desc )
-  {
-    std::cout << "Error: Feature not implemented yet!\n";
-    return GrB_SUCCESS;
-  }
-
-  template <typename W, typename a, typename U, typename M,
-            typename BinaryOpT,      typename SemiringT>
-  Info spmspv( SparseVector<W>*       w,
-               const SparseVector<M>* mask,
                const BinaryOpT*       accum,
                const SemiringT*       op,
                const SparseMatrix<a>* A,
@@ -70,7 +58,7 @@ namespace backend
     // temp_ind and temp_val need |V| memory for masked case, so just allocate 
     // this much memory for now. TODO: optimize for memory
     int size          = (float)A->nvals_*GrB_THRESHOLD+1;
-    desc->resize((2*A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
+    desc->resize((4*A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
 
     // Only difference between masked and unmasked versions if whether
     // eWiseMult() is called afterwards or not
@@ -83,34 +71,58 @@ namespace backend
 
       if( spmspv_mode==GrB_APSPIE )
         spmspvApspie<false,false,false>(
-            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, 
             u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_APSPIELB )
         spmspvApspieLB<false,false,false>(
-            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
             //op->mul_, op->add_, A_nrows, A->nvals_,
             mgpu::multiplies<a>(), mgpu::plus<a>(), A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, 
             u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )
         spmspvGunrockLB<false,false,false>(
-            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, 
             u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKTWC )
         spmspvGunrockTWC<false,false,false>(
-            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, 
             u->d_ind_, u->d_val_, &u->nvals_, desc );
-      //eWiseMultKernel<<<NB,NT>>>( 
-      //    w->d_ind_, w->d_val_, NULL, NULL, op, temp_ind, temp_val, 
-      //    mask->d_ind_, mask->d_val_ );
-      //filterKernel<<<NB,NT>>>(w->d_val,mask->d_val_);
-      //streamCompactKernel<<<NB,NT>(w->d_val);
+
+      // Get descriptor parameters for nthreads
+      Desc_value nt_mode;
+      CHECK( desc->get(GrB_NT, &nt_mode) );
+      const int nt = static_cast<int>(nt_mode);
+      dim3 NT, NB;
+			NT.x = nt;
+			NT.y = 1;
+			NT.z = 1;
+			NB.x = (temp_nvals+nt-1)/nt;
+			NB.y = 1;
+			NB.z = 1; 
+      applyKernel<true,false,false><<<NB,NT>>>( temp_ind, temp_val, 
+          mask->d_val_, (void*)NULL, (U)-1.f, mgpu::identity<U>(), w->d_ind_, 
+          w->d_val_, w->nvals_ );
+      temp_nvals = w->nvals_;
+      printDevice("temp_ind", temp_ind, w->nvals_);
+      printDevice("temp_val", temp_val, w->nvals_);
+
+      /*Descriptor* desc_t  = const_cast<Descriptor*>(desc);
+      Index* d_flag = (Index*) desc->d_buffer_+2*A_nrows;
+      Index* d_scan = (Index*) desc->d_buffer_+3*A_nrows;
+
+      updateFlagKernel<<<NB,NT>>>( d_flag, (W)0, temp_val, w->nvals_ );
+      mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 
+          mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
+          *(desc_t->d_context_) );
+      streamCompactKernel<<<NB,NT>>>( w->d_ind_, w->d_val_, d_scan, (W)0, 
+          temp_ind, temp_val, temp_nvals );*/
     }
     else
     {
@@ -140,6 +152,20 @@ namespace backend
             u->d_ind_, u->d_val_, &u->nvals_, desc );
     }
     w->need_update_ = true;
+    return GrB_SUCCESS;
+  }
+
+  template <typename W, typename a, typename U, typename M,
+            typename BinaryOpT,      typename SemiringT>
+  Info spmspv( SparseVector<W>*       w,
+               const SparseVector<M>* mask,
+               const BinaryOpT*       accum,
+               const SemiringT*       op,
+               const SparseMatrix<a>* A,
+               const SparseVector<U>* u,
+               Descriptor*            desc )
+  {
+    std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 

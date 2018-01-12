@@ -97,9 +97,9 @@ namespace backend
         mask_dense  = const_cast<DenseVector<U>*>(&mask->dense_);
     }
 
-    auto maskVector = (mask_vec_type==GrB_SPARSE) ? mask_sparse : NULL;
-    maskVector      = (mask_vec_type!=GrB_SPARSE) ? 
-        (SparseVector<U>*) mask_dense : maskVector;
+    auto maskVector = (mask_vec_type==GrB_DENSE) ? mask_dense : NULL;
+    maskVector      = (mask_vec_type!=GrB_DENSE) ? 
+        (DenseVector<U>*) mask_sparse : maskVector;
 
     // Conversions:
     Desc_value vxm_mode, tol;

@@ -29,25 +29,27 @@ namespace backend
       Index start = __ldg( A_csrRowPtr+row   );
       Index end   = __ldg( A_csrRowPtr+row+1 );
       length      = end-start;
+
+      d_temp_nvals[gid] = length;
       //if( tid<10 ) printf("%d: %d = %d - %d\n", length, start, end);
     }
 
-    const int NT = 128;
+    /*const int NT = 128;
     typedef mgpu::CTAReduce<NT> R;
 
     union Shared
     {
-      typename R::Storage reduce_storage;
+      typename R::Storage reduce;
     };
     __shared__ Shared shared;
 
-    int output_total = R::Reduce(tid, length, shared.reduce_storage);
+    int output_total = R::Reduce(tid, length, shared.reduce);
 
     if( tid==0 )
     {
       d_temp_nvals[blockIdx.x] = output_total;
       //printf("%d\n", output_total);
-    }
+    }*/
   }
 
   // Memory requirements: (4|V|+5|E|)*GrB_THRESHOLD
@@ -225,19 +227,21 @@ namespace backend
 
     //Step 0) Must compute how many elements are in the selected region in the
     //        worst-case. This is a global reduce.
-    int* d_temp_nvals;
-    CUDA( cudaMalloc(&d_temp_nvals, NB.x*sizeof(int)) );
+    //  -> d_temp_nvals |V|
+    //  -> d_scan       |V|
+    Descriptor* desc_t  = const_cast<Descriptor*>(desc);
+    void* d_temp_nvals = desc_t->d_buffer_+2*A_nrows*sizeof(Index);
+    void* d_scan       = desc_t->d_buffer_+3*A_nrows*sizeof(Index);
     assert( *u_nvals<A_nrows );
 
-    indirectScanKernel<<<NB,NT>>>( A_csrRowPtr, u_ind, *u_nvals, d_temp_nvals );
-    CUDA( cudaDeviceSynchronize() );
-    if( NB.x>1 )
-      mgpu::Reduce( d_temp_nvals, NB.x, (int)0, mgpu::plus<int>(), (int*)0, 
-          w_nvals, *(desc->d_context_) );
-    else
-      CUDA( cudaMemcpy(w_nvals, d_temp_nvals, sizeof(int), 
-          cudaMemcpyDeviceToHost) );
-    CUDA( cudaFree(d_temp_nvals) );
+    indirectScanKernel<<<NB,NT>>>( A_csrRowPtr, u_ind, *u_nvals, 
+        (Index*) d_temp_nvals );
+    mgpu::Scan<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals, 0,
+        mgpu::plus<int>(), (Index*)d_scan+(*u_nvals), w_nvals, (Index*)d_scan, 
+        *(desc->d_context_) );
+    printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
+    printDevice( "d_scan",       (Index*)d_scan,       *u_nvals+1 );
+
     std::cout << "w_nvals: " << *w_nvals << std::endl;
 
 		//Step 1) Gather from CSR graph into one big array  |     |  |
@@ -251,10 +255,16 @@ namespace backend
 		//Step 1-4) custom kernel method (1 single kernel)
 		//  modify spmvCsrIndirectBinary() to stop after expand phase
     //  output: 1) expanded index array 2) expanded value array
-    mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, *w_nvals, 
-        A_csrRowPtr, A_nrows, u_ind, u_val, *u_nvals, false, w_ind, w_val, 
-        w_nvals, (T)identity, mul_op, *(desc->d_context_));
-    CUDA( cudaDeviceSynchronize() );
+		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
+        A_csrColInd, u_ind, w_ind, *(desc->d_context_) );
+		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
+        A_csrVal, u_ind, w_val, *(desc->d_context_) );
+
+		//Step 4) Element-wise multiplication
+    //mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, *w_nvals, 
+    //    A_csrRowPtr, A_nrows, u_ind, u_val, *u_nvals, false, w_ind, w_val, 
+    //    w_nvals, (T)identity, mul_op, *(desc->d_context_));
+    //CUDA( cudaDeviceSynchronize() );
 
     std::cout << "w_nvals: " << *w_nvals << std::endl;
     printDevice( "w_ind", w_ind, 6 );
@@ -267,15 +277,14 @@ namespace backend
     //  -> d_cscSwapVal |E|/2
     size_t temp_storage_bytes;
     int    size         = (float)  A_nvals*GrB_THRESHOLD+1;
-    Descriptor* desc_t  = const_cast<Descriptor*>(desc);
-    void* d_cscSwapInd = desc_t->d_buffer_+ 2*A_nrows      *sizeof(Index);
-    void* d_cscSwapVal = desc_t->d_buffer_+(2*A_nrows+size)*sizeof(Index);
+    void* d_cscSwapInd = desc_t->d_buffer_+ 4*A_nrows      *sizeof(Index);
+    void* d_cscSwapVal = desc_t->d_buffer_+(4*A_nrows+size)*sizeof(Index);
 
     /*CUDA( cudaMemcpy((Index*)d_cscSwapInd, w_ind, *w_nvals*sizeof(Index), 
         cudaMemcpyDeviceToDevice) );
     CUDA( cudaMemcpy((T*)    d_cscSwapVal, w_val, *w_nvals*sizeof(T), 
         cudaMemcpyDeviceToDevice) );*/
-    /*cub::DeviceRadixSort::SortPairs( desc_t->d_temp_, temp_storage_bytes, w_ind,
+    cub::DeviceRadixSort::SortPairs( desc_t->d_temp_, temp_storage_bytes, w_ind,
         (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );
     desc_t->resize( temp_storage_bytes, "temp" );
     std::cout << "temp_storage_bytes: " << temp_storage_bytes << std::endl;
@@ -291,7 +300,7 @@ namespace backend
 		ReduceByKey( (Index*)d_cscSwapInd, (T*)d_cscSwapVal, *w_nvals, (float)0, 
         add_op, mgpu::equal_to<int>(), w_ind, w_val, 
         &w_nvals_t, (int*)0, *(desc->d_context_) );
-    *w_nvals            = w_nvals_t;*/
+    *w_nvals            = w_nvals_t;
 
 		//printf("Current iteration: %d nonzero vector, %d edges\n",  h_cscVecCount, total);
     return GrB_SUCCESS;
