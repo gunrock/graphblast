@@ -110,10 +110,12 @@ namespace backend
           mask->d_val_, (void*)NULL, (U)-1.f, mgpu::identity<U>(), w->d_ind_, 
           w->d_val_, w->nvals_ );
       temp_nvals = w->nvals_;
+      printDevice("w_ind", w->d_ind_, w->nvals_);
+      printDevice("w_val", w->d_val_, w->nvals_);
       printDevice("temp_ind", temp_ind, w->nvals_);
       printDevice("temp_val", temp_val, w->nvals_);
 
-      /*Descriptor* desc_t  = const_cast<Descriptor*>(desc);
+      Descriptor* desc_t  = const_cast<Descriptor*>(desc);
       Index* d_flag = (Index*) desc->d_buffer_+2*A_nrows;
       Index* d_scan = (Index*) desc->d_buffer_+3*A_nrows;
 
@@ -122,7 +124,7 @@ namespace backend
           mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
           *(desc_t->d_context_) );
       streamCompactKernel<<<NB,NT>>>( w->d_ind_, w->d_val_, d_scan, (W)0, 
-          temp_ind, temp_val, temp_nvals );*/
+          temp_ind, temp_val, temp_nvals );
     }
     else
     {

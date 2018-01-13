@@ -59,7 +59,7 @@ int main( int argc, char** argv )
 
   // Descriptor
   graphblas::Descriptor desc;
-  desc.set(
+  CHECK( desc.set(graphblas::GrB_MASK, graphblas::GrB_SCMP) );
 
   // Semiring
   graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;

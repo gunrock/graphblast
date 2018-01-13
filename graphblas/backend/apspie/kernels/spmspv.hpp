@@ -284,10 +284,10 @@ namespace backend
         cudaMemcpyDeviceToDevice) );
     CUDA( cudaMemcpy((T*)    d_cscSwapVal, w_val, *w_nvals*sizeof(T), 
         cudaMemcpyDeviceToDevice) );*/
-    cub::DeviceRadixSort::SortPairs( desc_t->d_temp_, temp_storage_bytes, w_ind,
+    cub::DeviceRadixSort::SortPairs( NULL, temp_storage_bytes, w_ind,
         (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );
-    desc_t->resize( temp_storage_bytes, "temp" );
     std::cout << "temp_storage_bytes: " << temp_storage_bytes << std::endl;
+    desc_t->resize( temp_storage_bytes, "temp" );
 		//CUDA( cudaMalloc(&d_temp_storage, temp_storage_bytes) );
 		cub::DeviceRadixSort::SortPairs( desc_t->d_temp_, temp_storage_bytes, w_ind,
         (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );

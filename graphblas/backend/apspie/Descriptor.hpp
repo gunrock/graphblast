@@ -90,6 +90,8 @@ namespace backend
 
     if( target>*d_size )
     {
+      std::cout << "Resizing "+field+" from " << *d_size << " to " << 
+          target << "!\n";
       if( field=="buffer" ) 
       {
         CUDA( cudaMalloc(&d_buffer_, target) );
@@ -104,8 +106,6 @@ namespace backend
           CUDA( cudaMemcpy(d_temp_, d_temp_buffer, *d_size, 
               cudaMemcpyDeviceToDevice) );
       }
-      std::cout << "Resizing "+field+" from " << *d_size << " to " << 
-          target << "!\n";
       *d_size = target;
 
       CUDA( cudaFree(d_temp_buffer) );
