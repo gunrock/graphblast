@@ -12,6 +12,9 @@
 
 namespace graphblas
 {
+  // TODO: make all operations mxm, mxv, etc. follow vxm() and assign() 
+  // constant variant 
+
   template <typename c, typename a, typename b, typename m, 
             typename BinaryOpT,     typename SemiringT>
   Info mxm( Matrix<c>*       C,
@@ -222,7 +225,7 @@ namespace graphblas
   template <typename W, typename U, typename M,
             typename BinaryOpT>
   Info assign( Vector<W>*                w,
-               const Vector<M>*          mask,
+               const Vector<U>*          mask,
                const BinaryOpT*          accum,
                const Vector<U>*          u,
                const std::vector<Index>* indices,
@@ -275,11 +278,10 @@ namespace graphblas
 
   }
 
-  template <typename W, typename T, typename M,
-            typename BinaryOpT>
+  template <typename W, typename T>
   Info assign( Vector<W>*                w,
-               const Vector<M>*          mask,
-               const BinaryOpT*          accum,
+               const Vector<W>*          mask,
+               const BinaryOp<W,W,W>*    accum,
                T                         val,
                const std::vector<Index>* indices,
                Index                     nindices,
@@ -293,7 +295,7 @@ namespace graphblas
     // -only have one case (no transpose option)
     CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
 
-    backend::Vector<M>*  mask_t = (mask==NULL ) ? NULL : &mask->vector_;
+    auto                 mask_t = (mask==NULL ) ? NULL : &mask->vector_;
     auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 

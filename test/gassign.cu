@@ -32,34 +32,23 @@ int main( int argc, char** argv )
         nvals, DEBUG );
   }
 
-  // Matrix A
-  graphblas::Matrix<float> a(nrows, ncols);
-  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
-  CHECK( a.nrows(&nrows) );
-  CHECK( a.ncols(&ncols) );
-  CHECK( a.nvals(&nvals) );
-  if( DEBUG ) CHECK( a.print() );
-
-  // Vector x
-  graphblas::Vector<float> x(nrows);
-  std::vector<graphblas::Index> x_ind = {1,   2,   3};
-  std::vector<float>            x_val = {1.f, 1.f, 1.f};
-  CHECK( x.build(&x_ind, &x_val, 3, GrB_NULL) );
-  CHECK( x.size(&nrows) );
-  if( DEBUG ) CHECK( x.print() );
-
-  // Vector y
-  graphblas::Vector<float> y(nrows);
-
   // Vector mask
   graphblas::Vector<float> m(nrows);
-  CHECK( m.fill(-1.f) );
-  CHECK( m.setElement(0.f, 1) );
+  std::vector<graphblas::Index> m_ind = {1,   2,   3};
+  std::vector<float>            m_val = {1.f, 1.f, 1.f};
+  CHECK( m.build(&m_ind, &m_val, 3, GrB_NULL) );
   CHECK( m.size(&nrows) );
+  if( DEBUG ) CHECK( m.print() );
+
+  // Vector v
+  graphblas::Vector<float> v(nrows);
+  CHECK( v.fill(-1.f) );
+  CHECK( v.setElement(0.f, 1) );
+  CHECK( v.size(&nrows) );
 
   // Descriptor
   graphblas::Descriptor desc;
-  CHECK( desc.set(graphblas::GrB_MASK, graphblas::GrB_SCMP) );
+  //CHECK( desc.set(graphblas::GrB_MASK, graphblas::GrB_SCMP) );
 
   // Semiring
   graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
@@ -87,10 +76,8 @@ int main( int argc, char** argv )
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  //graphblas::vxm<float, float, float>( &y, &x, &GrB_PLUS_FP32, &GrB_FP32AddMul, 
-  //    &x, &a, &desc );
-  graphblas::vxm<float, float, float>(&y, &m, GrB_NULL, &GrB_FP32AddMul, 
-      &x, &a, &desc);
+  graphblas::assign<float, float>(&v, &m, GrB_NULL, (float)1.f, GrB_ALL, nrows, 
+      &desc);
   warmup.Stop();
  
   CpuTimer cpu_vxm;
@@ -99,8 +86,8 @@ int main( int argc, char** argv )
   int NUM_ITER = 1;//0;
   for( int i=0; i<NUM_ITER; i++ )
   {
-    graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, 
-        &GrB_FP32AddMul, &x, &a, &desc );
+    graphblas::assign<float, float>(&v, &m, GrB_NULL, (float)1.f, GrB_ALL,
+        nrows, &desc);
   }
   //cudaProfilerStop();
   cpu_vxm.Stop();
@@ -111,7 +98,7 @@ int main( int argc, char** argv )
   float elapsed_vxm = cpu_vxm.ElapsedMillis();
   std::cout << "vxm, " << elapsed_vxm/NUM_ITER << "\n";
 
-  if( DEBUG ) y.print();
+  if( DEBUG ) v.print();
   /*c.extractTuples( out_denseVal );
   for( int i=0; i<nvals; i++ )
   {

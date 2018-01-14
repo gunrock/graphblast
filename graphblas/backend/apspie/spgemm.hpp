@@ -21,7 +21,7 @@ namespace backend
   template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,      typename SemiringT>
   Info spgemm( SparseMatrix<c>*       C, 
-               const SparseMatrix<m>* mask,
+               const Matrix<m>*       mask,
                const BinaryOpT*       accum, 
                const SemiringT*       op, 
                const SparseMatrix<a>* A,
