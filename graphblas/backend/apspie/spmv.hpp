@@ -19,20 +19,6 @@ namespace graphblas
 namespace backend
 {
 
-  template <typename W, typename a, typename U, typename M,
-            typename BinaryOpT,      typename SemiringT>
-  Info spmv( DenseVector<W>*        w,
-             const DenseVector<M>*  mask,
-             const BinaryOpT*       accum,
-             const SemiringT*       op,
-             const SparseMatrix<a>* A,
-             const DenseVector<U>*  u,
-             Descriptor*            desc )
-  {
-    std::cout << "Error: Feature not implemented yet!\n";
-    return GrB_SUCCESS;
-  }
-
   template <typename MulOp, typename AddOp, typename T>
   __global__ void kernel( MulOp mul_op, AddOp add_op, T* val )
   {
@@ -63,7 +49,7 @@ __device__ op_func_t p_mul_func = mul_func;
   template <typename W, typename a, typename U, typename M,
             typename BinaryOpT,      typename SemiringT>
   Info spmv( DenseVector<W>*        w,
-             const SparseVector<M>* mask,
+             const Vector<M>*       mask,
              const BinaryOpT*       accum,
              const SemiringT*       op,
              const SparseMatrix<a>* A,
@@ -108,32 +94,56 @@ __device__ op_func_t p_mul_func = mul_func;
     if( use_mask )
     {
       // TODO: add if condition here for if( add_ == GrB_LOR )
-      if( false )
+      if(false)
       {
-        dim3 NT, NB;
-        NT.x = nt;
-        NT.y = 1;
-        NT.z = 1;
-        NB.x = (ta*A_nrows+nt-1)/nt;
-        NB.y = 1;
-        NB.z = 1;
-        spmvDenseMaskedOrKernel<true,false,false><<<NB,NT>>>( 
-            w->d_val_, mask->d_val_, NULL, op->identity(),
-            //w->d_val_, mask->d_val_, NULL, A_nrows, A->nvals_, 
-            op->mul_, op->add_, A_nrows, A->nvals_, 
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+				// Mask type
+				// 1) Dense mask
+				// 2) Sparse mask (TODO)
+				// 3) Uninitialized
+				Storage mask_vec_type;
+				CHECK( mask->getStorage(&mask_vec_type) );
+
+				if( mask_vec_type==GrB_DENSE )
+				{
+					dim3 NT, NB;
+					NT.x = nt;
+					NT.y = 1;
+					NT.z = 1;
+					NB.x = (ta*A_nrows+nt-1)/nt;
+					NB.y = 1;
+					NB.z = 1;
+          if( use_scmp )
+						spmvDenseMaskedOrKernel<true,false,false><<<NB,NT>>>( 
+								w->d_val_, mask->dense_.d_val_, NULL, op->identity(),
+								op->mul_, op->add_, A_nrows, A->nvals_, 
+								A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+          else
+						spmvDenseMaskedOrKernel<true,false,false><<<NB,NT>>>( 
+								w->d_val_, mask->dense_.d_val_, NULL, op->identity(),
+								op->mul_, op->add_, A_nrows, A->nvals_, 
+								A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+				}
+				else if( mask_vec_type==GrB_SPARSE )
+				{
+					std::cout << "Error: Feature not implemented yet!\n";
+				}
+				else
+				{
+					return GrB_UNINITIALIZED_OBJECT;
+				}
       }
       // TODO: add else condition here for generic mask semiring
       else
       {
         std::cout << "Indirect Spmv called!\n";
-        mgpu::SpmvCsrIndirectBinary( A_csrVal, A_csrColInd, A->nvals_,
-            A_csrRowPtr, mask->d_ind_, A_nrows, u->d_val_, true, w->d_val_,
-            op->identity(), mgpu::multiplies<a>(), mgpu::plus<a>(),
-            *(desc->d_context_) );
+			  std::cout << "Error: Feature not implemented yet!\n";
+        /*mgpu::SpmvCsrIndirectBinary( A_csrVal, A_csrColInd, A->nvals_,
+            A_csrRowPtr, mask->dense_.d_ind_, A_nrows, u->d_val_, true, 
+            w->d_val_, op->identity(), mgpu::multiplies<a>(), mgpu::plus<a>(),
+            *(desc->d_context_) );*/
       }
     }
-    else if( !use_mask )
+    else
     {
 
       // Testing code - Stephen Jones

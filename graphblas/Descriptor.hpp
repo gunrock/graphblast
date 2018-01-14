@@ -34,16 +34,6 @@ namespace graphblas
     private:
     // Data members that are same for all backends
     backend::Descriptor descriptor_;
-
-    /*template <typename c, typename m, typename a, typename b>
-    friend Info mxm( Matrix<c>&        C,
-                     const Matrix<m>&  mask,
-                     const BinaryOp&   accum,
-                     const Semiring&   op,
-                     const Matrix<a>&  A,
-                     const Matrix<b>&  B,
-                     const Descriptor& desc );*/
-
   };
 
   Info Descriptor::set( Desc_field field, Desc_value value )

@@ -19,7 +19,7 @@ namespace backend
   template <typename W, typename a, typename U, typename M,
             typename BinaryOpT,      typename SemiringT>
   Info gemv( DenseVector<W>*        w,
-             const DenseVector<M>* mask,
+             const Vector<M>*       mask,
              const BinaryOpT*       accum,
              const SemiringT*       op,
              const DenseMatrix<a>*  A,
@@ -34,7 +34,7 @@ namespace backend
   template <typename W, typename a, typename U, typename M,
             typename BinaryOpT,      typename SemiringT>
   Info gemv( DenseVector<W>*        w,
-             const SparseVector<M>* mask,
+             const Vector<M>*       mask,
              const BinaryOpT*       accum,
              const SemiringT*       op,
              const DenseMatrix<a>*  A,

@@ -167,7 +167,10 @@ namespace backend
   Info DenseVector<T>::setElement( T     val,
                                    Index index )
   {
-    std::cout << "Error: Feature not implemented yet!\n";
+    CHECK( gpuToCpu() );
+    h_val_[index] = val;
+    CHECK( cpuToGpu() );
+    //std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 

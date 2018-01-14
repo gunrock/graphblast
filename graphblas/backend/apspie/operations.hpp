@@ -85,22 +85,6 @@ namespace backend
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
 
-    Storage mask_vec_type;
-    SparseVector<U>* mask_sparse = NULL;
-    DenseVector<U>*  mask_dense  = NULL;
-    if( mask!=NULL )
-    {
-      CHECK( mask->getStorage( &mask_vec_type ) );
-      if( mask_vec_type==GrB_SPARSE )
-        mask_sparse = const_cast<SparseVector<U>*>(&mask->sparse_);
-      else
-        mask_dense  = const_cast<DenseVector<U>*>(&mask->dense_);
-    }
-
-    auto maskVector = (mask_vec_type==GrB_DENSE) ? mask_dense : NULL;
-    maskVector      = (mask_vec_type!=GrB_DENSE) ? 
-        (DenseVector<U>*) mask_sparse : maskVector;
-
     // Conversions:
     Desc_value vxm_mode, tol;
     CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
@@ -119,7 +103,7 @@ namespace backend
     if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
 	  CHECK( desc->toggleTranspose( GrB_INP1 ) );
 
-    // 3 cases:
+    // Breakdown into 3 cases:
     // 1) SpMSpV: SpMat x SpVe
     // 2) SpMV:   SpMat x DeVec
     // 3) GeMV:   DeMat x DeVec
@@ -129,22 +113,16 @@ namespace backend
     if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
     {
       CHECK( w->setStorage( GrB_SPARSE ) );
-      CHECK( spmspv( &w->sparse_, maskVector, accum, op, &A->sparse_, 
+      CHECK( spmspv( &w->sparse_, mask, accum, op, &A->sparse_, 
           &u->sparse_, desc ) );
     }
     else
     {
       CHECK( w->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_SPARSE )
-      {
-        CHECK( spmv( &w->dense_, maskVector, accum, op, &A->sparse_, 
-            &u->dense_, desc ) );
-      }
+        CHECK( spmv(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, desc));
       else
-      {
-        CHECK( gemv( &w->dense_, maskVector, accum, op, &A->dense_, 
-            &u->dense_, desc ) );
-      }
+        CHECK( gemv( &w->dense_, mask, accum, op, &A->dense_, &u->dense_, desc));
     }
 
     // Undo change to desc by toggling again
@@ -323,7 +301,7 @@ namespace backend
                Index                     nindices,
                Descriptor*               desc )
   {
-
+    return GrB_SUCCESS;
   }
 
   template <typename c, typename a, typename m,
@@ -379,7 +357,72 @@ namespace backend
                Index                     nindices,
                Descriptor*               desc )
   {
+    // Get storage
+    /*Storage u_vec_type;
+    CHECK( u->getStorage( &u_vec_type ) );
 
+    Storage mask_vec_type;
+    SparseVector<U>* mask_sparse = NULL;
+    DenseVector<U>*  mask_dense  = NULL;
+    if( mask!=NULL )
+    {
+      CHECK( mask->getStorage( &mask_vec_type ) );
+      if( mask_vec_type==GrB_SPARSE )
+        mask_sparse = const_cast<SparseVector<U>*>(&mask->sparse_);
+      else
+        mask_dense  = const_cast<DenseVector<U>*>(&mask->dense_);
+    }
+
+    auto maskVector = (mask_vec_type==GrB_DENSE) ? mask_dense : NULL;
+    maskVector      = (mask_vec_type!=GrB_DENSE) ? 
+        (DenseVector<U>*) mask_sparse : maskVector;
+
+    // Conversions:
+    Desc_value vxm_mode, tol;
+    CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
+    CHECK( desc->get( GrB_TOL,     &tol      ) );
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
+    if( vxm_mode==GrB_PUSHPULL )
+      CHECK( u_t->convert( op->identity(), (int)tol ) );
+    else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
+      CHECK( u_t->dense2sparse( op->identity(), (int)tol ) );
+    else if( vxm_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
+      CHECK( u_t->sparse2dense( op->identity() ) );
+
+    // Transpose:
+    Desc_value inp0_mode;
+    CHECK( desc->get(GrB_INP0, &inp0_mode) );
+    if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
+	  CHECK( desc->toggleTranspose( GrB_INP1 ) );
+
+    // 2 cases:
+    // 1) SpVec
+    // 2) DeVec
+    std::cout << "sparse " << (mask_sparse!=NULL) << std::endl;
+    std::cout << "dense  " << (mask_dense!=NULL) << std::endl;
+    std::cout << "apspie " << (maskVector!=NULL) << std::endl;
+    if( vec_type==GrB_SPARSE )
+    {
+      CHECK( w->setStorage( GrB_SPARSE ) );
+      CHECK( assignSp( &w->sparse_, maskVector, accum, op, &A->sparse_, 
+          &u->sparse_, desc ) );
+    }
+    else if( vec_type==GrB_DENSE )
+    {
+      CHECK( w->setStorage( GrB_DENSE ) );
+      CHECK( assignDe( &w->dense_, maskVector, accum, op, &A->sparse_, 
+          &u->dense_, desc ) );
+      else
+      {
+        CHECK( gemv( &w->dense_, maskVector, accum, op, &A->dense_, 
+            &u->dense_, desc ) );
+      }
+    }
+
+    // Undo change to desc by toggling again
+	  CHECK( desc->toggleTranspose( GrB_INP1 ) );
+
+    return GrB_SUCCESS;*/
   }
 
   template <typename c, typename T, typename m,

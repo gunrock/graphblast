@@ -67,8 +67,7 @@ namespace backend
   //  -> w_ind          |E|*GrB_THRESHOLD
   //  -> w_val          |E|*GrB_THRESHOLD
   //  -> d_temp_storage runtime constant
-  template <bool UseScmp, bool UseAccum, bool UseRepl,
-            typename W, typename a, typename U,
+  template <typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
   Info spmspvApspie( Index*            w_ind,
                      W*                w_val,
@@ -85,7 +84,7 @@ namespace backend
                      const Index*      u_ind,
                      const U*          u_val,
                      const Index*      u_nvals,
-                     const Descriptor* desc )
+                     Descriptor*       desc )
   {
     // Get descriptor parameters for nthreads
     /*Desc_value ta_mode, tb_mode, nt_mode;
@@ -187,8 +186,7 @@ namespace backend
   //
   // TODO: can lower 2|E|*GrB_THRESHOLD memory requirement further by doing 
   //       external memory sorting
-  template <bool UseScmp, bool UseAccum, bool UseRepl,
-            typename W, typename a, typename U,
+  template <typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
   Info spmspvApspieLB( Index*            w_ind,
                        W*                w_val,
@@ -205,7 +203,7 @@ namespace backend
                        const Index*      u_ind,
                        const U*          u_val,
                        const Index*      u_nvals,
-                       const Descriptor* desc )
+                       Descriptor*       desc )
   {
     // Get descriptor parameters for nthreads
     Desc_value ta_mode, tb_mode, nt_mode;
@@ -229,9 +227,8 @@ namespace backend
     //        worst-case. This is a global reduce.
     //  -> d_temp_nvals |V|
     //  -> d_scan       |V|
-    Descriptor* desc_t  = const_cast<Descriptor*>(desc);
-    void* d_temp_nvals = desc_t->d_buffer_+2*A_nrows*sizeof(Index);
-    void* d_scan       = desc_t->d_buffer_+3*A_nrows*sizeof(Index);
+    void* d_temp_nvals = desc->d_buffer_+2*A_nrows*sizeof(Index);
+    void* d_scan       = desc->d_buffer_+3*A_nrows*sizeof(Index);
     assert( *u_nvals<A_nrows );
 
     indirectScanKernel<<<NB,NT>>>( A_csrRowPtr, u_ind, *u_nvals, 
@@ -277,8 +274,8 @@ namespace backend
     //  -> d_cscSwapVal |E|/2
     size_t temp_storage_bytes;
     int    size         = (float)  A_nvals*GrB_THRESHOLD+1;
-    void* d_cscSwapInd = desc_t->d_buffer_+ 4*A_nrows      *sizeof(Index);
-    void* d_cscSwapVal = desc_t->d_buffer_+(4*A_nrows+size)*sizeof(Index);
+    void* d_cscSwapInd = desc->d_buffer_+ 4*A_nrows      *sizeof(Index);
+    void* d_cscSwapVal = desc->d_buffer_+(4*A_nrows+size)*sizeof(Index);
 
     /*CUDA( cudaMemcpy((Index*)d_cscSwapInd, w_ind, *w_nvals*sizeof(Index), 
         cudaMemcpyDeviceToDevice) );
@@ -287,9 +284,9 @@ namespace backend
     cub::DeviceRadixSort::SortPairs( NULL, temp_storage_bytes, w_ind,
         (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );
     std::cout << "temp_storage_bytes: " << temp_storage_bytes << std::endl;
-    desc_t->resize( temp_storage_bytes, "temp" );
+    desc->resize( temp_storage_bytes, "temp" );
 		//CUDA( cudaMalloc(&d_temp_storage, temp_storage_bytes) );
-		cub::DeviceRadixSort::SortPairs( desc_t->d_temp_, temp_storage_bytes, w_ind,
+		cub::DeviceRadixSort::SortPairs( desc->d_temp_, temp_storage_bytes, w_ind,
         (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );
 		//MergesortKeys(d_cscVecInd, total, mgpu::less<int>(), desc->d_context_);
     printDevice( "SwapInd", (Index*)d_cscSwapInd, 10 );
@@ -306,8 +303,7 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  template <bool UseScmp, bool UseAccum, bool UseRepl,
-            typename W, typename a, typename U,
+  template <typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
   Info spmspvGunrockLB( Index*            w_ind,
                         W*                w_val,
@@ -324,12 +320,12 @@ namespace backend
                         const Index*      u_ind,
                         const U*          u_val,
                         const Index*      u_nvals,
-                        const Descriptor* desc )
+                        Descriptor*       desc )
   {
+    return GrB_SUCCESS;
   }
 
-  template <bool UseScmp, bool UseAccum, bool UseRepl,
-            typename W, typename a, typename U,
+  template <typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
   Info spmspvGunrockTWC( Index*            w_ind,
                          W*                w_val,
@@ -346,8 +342,9 @@ namespace backend
                          const Index*      u_ind,
                          const U*          u_val,
                          const Index*      u_nvals,
-                         const Descriptor* desc )
+                         Descriptor*       desc )
   {
+    return GrB_SUCCESS;
   }
 
   //__global__ void filterKernel();

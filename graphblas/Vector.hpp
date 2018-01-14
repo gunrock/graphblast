@@ -67,7 +67,7 @@ namespace graphblas
                      const Semiring*   op,
                      const Vector<U>*  u,
                      const Matrix<a>*  A,
-                     const Descriptor* desc );*/
+                     Descriptor*       desc );*/
   };
 
   template <typename T>
