@@ -96,6 +96,7 @@ namespace backend
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, 
             u->d_ind_, u->d_val_, &u->nvals_, desc );
+      CUDA( cudaDeviceSynchronize() );
 
       // Get descriptor parameters for nthreads
       Desc_value nt_mode;
@@ -115,18 +116,20 @@ namespace backend
       // 3) Uninitialized
       Storage mask_vec_type;
       CHECK( mask->getStorage(&mask_vec_type) );
+      assert( mask->dense_.nvals_ >= temp_nvals );
 
+      // For visited nodes, assign 0.f to vector
       // For GrB_DENSE mask, need to add parameter for mask_identity to user
       if( mask_vec_type==GrB_DENSE )
       {
         if( use_scmp )
           assignSparseKernel<true, true, true><<<NB,NT>>>( temp_ind, temp_val, 
-              temp_nvals, (mask->dense_).d_val_, (M)-1.f, (BinaryOp<U,U,U>*)NULL,
-              (U)0.f, (Index*)NULL, A_nrows );
+              temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
+              (BinaryOp<U,U,U>*)NULL, (U)0.f, (Index*)NULL, A_nrows );
         else
           assignSparseKernel<false,true, true><<<NB,NT>>>( temp_ind, temp_val,
-              temp_nvals, (mask->dense_).d_val_, (M)-1.f, (BinaryOp<U,U,U>*)NULL,
-              (U)0.f, (Index*)NULL, A_nrows );
+              temp_nvals, (mask->dense_).d_val_, (M)-1.f,
+              (BinaryOp<U,U,U>*)NULL, (U)0.f, (Index*)NULL, A_nrows );
       }
       else if( mask_vec_type==GrB_SPARSE )
       {
@@ -138,10 +141,12 @@ namespace backend
         return GrB_UNINITIALIZED_OBJECT;
       }
 
+      CUDA( cudaDeviceSynchronize() );
       printDevice("mask", (mask->dense_).d_val_, A_nrows);
       printDevice("temp_ind", temp_ind, temp_nvals);
       printDevice("temp_val", temp_val, temp_nvals);
 
+      // Prune 0.f's from vector
       Index* d_flag = (Index*) desc->d_buffer_+2*A_nrows;
       Index* d_scan = (Index*) desc->d_buffer_+3*A_nrows;
 

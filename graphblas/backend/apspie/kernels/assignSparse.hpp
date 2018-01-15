@@ -33,7 +33,7 @@ namespace backend
           M     m_val = __ldg( mask_val+ind );
           if( UseScmp^(m_val==mask_identity) )
           {
-            printf("Success: %d\n", row);
+            //printf("Success: %d\n", row);
             u_val[row] = val;
           }
         }

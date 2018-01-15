@@ -264,10 +264,8 @@ namespace backend
     //CUDA( cudaDeviceSynchronize() );
 
     std::cout << "w_nvals: " << *w_nvals << std::endl;
-    printDevice( "w_ind", w_ind, 6 );
-    printDevice( "w_val", w_val, 6 );
-    //printDevice( "w_ind", w_ind, *w_nvals );
-    //printDevice( "w_val", w_val, *w_nvals );
+    printDevice( "w_ind", w_ind, *w_nvals );
+    printDevice( "w_val", w_val, *w_nvals );
 
 		//Step 5) Sort step
     //  -> d_cscSwapInd |E|/2
