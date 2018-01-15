@@ -73,6 +73,7 @@ namespace backend
     Info convert( T identity, int tol );
     Info sparse2dense( T identity );
     Info dense2sparse( T identity, int tol );
+    Info swap( Vector* rhs );
 
     private: 
     Index           nsize_;
@@ -339,6 +340,25 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  // Assume both are of the same type to make things easier
+  template <typename T>
+  Info Vector<T>::swap( Vector* rhs )
+  {
+    if( vec_type_!=rhs->vec_type_ || vec_type_==GrB_UNKNOWN ) 
+      return GrB_INVALID_OBJECT;
+
+    if(      vec_type_==GrB_SPARSE ) CHECK( sparse_.swap(&rhs->sparse_) );
+    else if( vec_type_==GrB_DENSE  ) CHECK(  dense_.swap(&rhs->dense_ ) );
+
+    Index temp_nsize = nsize_;
+    Index temp_nvals = nvals_;
+    nsize_ = rhs->nsize_;
+    nvals_ = rhs->nvals_;
+    rhs->nsize_ = temp_nsize;
+    rhs->nvals_ = temp_nvals;
+
+    return GrB_SUCCESS;
+  }
 }  // backend
 }  // graphblas
 

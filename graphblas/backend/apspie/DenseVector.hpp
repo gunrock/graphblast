@@ -70,6 +70,7 @@ namespace backend
     Info allocate();  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
+    Info swap( DenseVector* rhs );
 
     private:
     // Note nsize_ is understood to be the same as nvals_, so it is omitted
@@ -352,6 +353,25 @@ namespace backend
       CUDA( cudaDeviceSynchronize() );
     }
     need_update_ = false;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseVector<T>::swap( DenseVector* rhs )
+  {
+    // Change member scalars
+    Index temp_nvals = nvals_;
+    nvals_ = rhs->nvals_;
+    rhs->nvals_ = temp_nvals;
+
+    // Only need to change GPU pointers
+    T*     temp_val_ = d_val_;
+    d_val_           = rhs->d_val_;
+    rhs->d_val_      = temp_val_;
+
+    need_update_     = true;
+    rhs->need_update_= true;
+
     return GrB_SUCCESS;
   }
 

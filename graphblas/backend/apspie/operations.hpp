@@ -100,7 +100,7 @@ namespace backend
     Desc_value inp0_mode;
     CHECK( desc->get(GrB_INP0, &inp0_mode) );
     if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
-	  CHECK( desc->toggleTranspose( GrB_INP1 ) );
+	  CHECK( desc->toggle( GrB_INP1 ) );
 
     // Breakdown into 3 cases:
     // 1) SpMSpV: SpMat x SpVe
@@ -122,7 +122,7 @@ namespace backend
     }
 
     // Undo change to desc by toggling again
-	  CHECK( desc->toggleTranspose( GrB_INP1 ) );
+	  CHECK( desc->toggle( GrB_INP1 ) );
 
     return GrB_SUCCESS;
   }

@@ -54,8 +54,9 @@ namespace graphblas
     Info fillAscending(  Index nvals );
     Info print(          bool force_update = false );
     Info countUnique(    Index* count );
-    Info setStorage( Storage  vec_type );
-    Info getStorage( Storage* vec_type ) const;
+    Info setStorage(     Storage  vec_type );
+    Info getStorage(     Storage* vec_type ) const;
+    Info swap(           Vector* rhs );
 
     private:
     backend::Vector<T> vector_;
@@ -211,6 +212,13 @@ namespace graphblas
   {
     if( vec_type==NULL ) return GrB_NULL_POINTER;
     return vector_.getStorage( vec_type );
+  }
+
+  template <typename T>
+  Info Vector<T>::swap( Vector* rhs )
+  {
+    if( rhs==NULL ) return GrB_NULL_POINTER;
+    return vector_.swap( &rhs->vector_ );
   }
 
 }  // graphblas

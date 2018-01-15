@@ -72,6 +72,7 @@ namespace backend
     Info allocate();  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
+    Info swap( SparseVector* rhs );
 
     private:
     Index  nsize_; // 5 ways to set: (1) Vector (2) nnew (3) dup (4) resize
@@ -385,6 +386,30 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  template <typename T>
+  Info SparseVector<T>::swap( SparseVector* rhs )
+  {
+    // Change member scalars
+    Index temp_nsize = nsize_;
+    Index temp_nvals = nvals_;
+    nsize_ = rhs->nsize_;
+    nvals_ = rhs->nvals_;
+    rhs->nsize_ = temp_nsize;
+    rhs->nvals_ = temp_nvals;
+
+    // Only need to change GPU pointers
+    Index* temp_ind_ = d_ind_;
+    T*     temp_val_ = d_val_;
+    d_ind_           = rhs->d_ind_;
+    d_val_           = rhs->d_val_;
+    rhs->d_ind_      = temp_ind_;
+    rhs->d_val_      = temp_val_;
+
+    need_update_     = true;
+    rhs->need_update_= true; 
+
+    return GrB_SUCCESS;
+  }
 }  // backend
 }  // graphblas
 

@@ -37,8 +37,8 @@ namespace graphblas
              GrB_INDEX_OUT_OF_BOUNDS,
              GrB_PANIC};
 
-  enum Desc_field {GrB_OUTP,
-                   GrB_MASK,
+  enum Desc_field {GrB_MASK,
+                   GrB_OUTP,
                    GrB_INP0,
                    GrB_INP1,
                    GrB_MODE, 
@@ -51,8 +51,8 @@ namespace graphblas
                    GrB_NDESCFIELD};
 
   enum Desc_value {GrB_SCMP,             // for GrB_MASK
-                   GrB_TRAN,             // for GrB_INP0, GrB_INP1
                    GrB_REPLACE,          // for GrB_OUTP
+                   GrB_TRAN,             // for GrB_INP0, GrB_INP1
                    GrB_DEFAULT,
                    GrB_CUSPARSE,         // for SpMV, SpMM
                    GrB_CUSPARSE2, 

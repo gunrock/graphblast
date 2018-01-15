@@ -354,15 +354,21 @@ namespace graphblas
     // Use op->operator()
   }
 
-  template <typename T, typename U,
-            typename BinaryOpT,     typename MonoidT>
-  Info reduce( T*               val,
-               const BinaryOpT* accum,
-               const MonoidT*   op,
-               const Vector<U>* u,
-               Descriptor*      desc )
+  template <typename T, typename U>
+  Info reduce( T*                     val,
+               const BinaryOp<U,U,U>* accum,
+               const Monoid<U>*       op,
+               const Vector<U>*       u,
+               Descriptor*            desc )
   {
+    // Null pointer check
+    if( val==NULL || u==NULL )
+      return GrB_UNINITIALIZED_OBJECT;
 
+    auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
+    backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+
+    return backend::reduce( val, accum_t, &op->op_, &u->vector_, desc_t );
   }
 
   template <typename T, typename a,
@@ -387,6 +393,6 @@ namespace graphblas
 
   }
 
-}  // graphblas
+} // graphblas
 
 #endif  // GRB_OPERATIONS_HPP

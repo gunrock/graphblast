@@ -3,35 +3,56 @@
 
 namespace graphblas
 {
-  Info bfs( const graphblas::Matrix<bool>* A, graphblas::Index s )
+  // Use float for now for both v and A
+  Info bfs( Vector<float>*       v,
+            const Matrix<float>* A, 
+            Index                s )
   {
-    graphblas::Index n;
+    Index n;
     CHECK( A->nrows( &n ) );
 
-    graphblas::Vector<int>  v(n);
-    graphblas::Vector<bool> q1(n);
-    graphblas::Vector<bool> q2(n);
+    // Visited vector (use float for now)
+    CHECK( v->fill(-1.f) );
+    CHECK( v->setElement(0.f, s) );
+
+    // Frontier vectors (use float for now)
+    Vector<float> q1(n);
+    Vector<float> q2(n);
     std::vector<Index> indices(1,s);
-    std::vector<bool>  values( 1,true);
-    CHECK( q1.build(&indices, &values, 1) );
+    std::vector<float>  values(1,1.f);
+    CHECK( q1.build(&indices, &values, 1, GrB_NULL) );
 
-    graphblas::BinaryOp GrB_LOR(  graphblas::logical_or() );
-    graphblas::BinaryOp GrB_LAND( graphblas::logical_and() );
-    graphblas::Monoid   GrB_Lor( GrB_LOR, false );
-    graphblas::Semiring GrB_Boolean( GrB_Lor, GrB_LAND );
+    // Semiring
+    /*BinaryOp GrB_LOR(  logical_or() );
+    BinaryOp GrB_LAND( logical_and() );
+    Monoid   GrB_Lor( GrB_LOR, false );
+    Semiring GrB_Boolean( GrB_Lor, GrB_LAND );*/
+		BinaryOp<float,float,float> GrB_PLUS_FP32;
+		GrB_PLUS_FP32.nnew( plus<float>() );
+		BinaryOp<float,float,float> GrB_TIMES_FP32;
+		GrB_TIMES_FP32.nnew( multiplies<float>() );
+		Monoid  <float> GrB_FP32Add;
+		GrB_FP32Add.nnew( GrB_PLUS_FP32, 0.f );
+		Semiring<float,float,float> GrB_FP32AddMul;
+		GrB_FP32AddMul.nnew( GrB_FP32Add, GrB_TIMES_FP32 );
 
-    graphblas::Descriptor desc_nomask;
+    Descriptor desc;
 
-    graphblas::Index d = 0;
-    bool succ = false;
+    float d    = 0;
+    float succ = false;
     do
     {
+      std::cout << "Iteration " << d << std::endl;
       d++;
-      CHECK( assign(&v, &q1, GrB_NULL, d, GrB_ALL, n, &desc_nomask) );
-      CHECK( vxm(   &q2, &v, GrB_NULL, GrB_Boolean, &q1, A, &desc_nomask) );
-      CHECK( swap(  &q2, &q1 ) );
-      CHECK( reduce(&succ, GrB_NULL, GrB_Lor, &q2, &desc_nomask) );
-    } while( succ );
+      assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, &desc);
+      CHECK( desc.toggle(GrB_MASK) );
+      vxm<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, &q1, A, &desc);
+      CHECK( desc.toggle(GrB_MASK) );
+      CHECK( q2.swap(&q1) );
+      reduce<float,float>(&succ, GrB_NULL, &GrB_FP32Add, &q2, 
+          &desc);
+    } while( d==0 );
+    //} while( succ );
 
     return GrB_SUCCESS;
   }

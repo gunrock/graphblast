@@ -28,8 +28,8 @@ namespace backend
     Info set( Desc_field field, Desc_value  value );
     Info get( Desc_field field, Desc_value* value ) const;
 
-    // Private methods
-    Info toggleTranspose( Desc_field field );
+    // Useful methods
+    Info toggle( Desc_field field );
 
     private:
     Info resize( size_t target, std::string field );
@@ -66,10 +66,20 @@ namespace backend
   }
 
   // Toggles transpose vs. non-transpose
-  Info Descriptor::toggleTranspose( Desc_field field )
+  Info Descriptor::toggle( Desc_field field )
   {
-    if( desc_[field]!=GrB_DEFAULT ) desc_[field] = GrB_DEFAULT;
-    else desc_[field] = GrB_TRAN;
+    int my_field = static_cast<int>(field);
+    if( my_field<4 )
+    {
+      if(  desc_[field]!=GrB_DEFAULT ) desc_[field] = GrB_DEFAULT;
+      else
+      {
+        if( my_field>2 )
+          desc_[field] = GrB_TRAN;
+        else
+          desc_[field] = static_cast<Desc_value>(my_field);
+      }
+    }
     return GrB_SUCCESS;
   }
 

@@ -31,6 +31,9 @@ namespace graphblas
     Info set( Desc_field field, int value );
     Info get( Desc_field field, Desc_value* value ) const;
 
+    // Useful methods
+    Info toggle( Desc_field field );
+
     private:
     // Data members that are same for all backends
     backend::Descriptor descriptor_;
@@ -50,6 +53,11 @@ namespace graphblas
   {
     if( value==NULL ) return GrB_NULL_POINTER;
     return descriptor_.get( field, value );
+  }
+
+  Info Descriptor::toggle( Desc_field field )
+  {
+    return descriptor_.toggle( field );
   }
 
 }  // graphblas
