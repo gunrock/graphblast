@@ -211,9 +211,17 @@ namespace backend
     values->clear();
 
     if( *n>nvals_ )
+    {
+      std::cout << *n << " > " << nvals_ << std::endl;
+      std::cout << "Error: *n > nvals!\n";
       return GrB_UNINITIALIZED_OBJECT;
+    }
     else if( *n<nvals_ ) 
+    {
+      std::cout << *n << " < " << nvals_ << std::endl;
+      std::cout << "Error: *n < nvals!\n";
       return GrB_INSUFFICIENT_SPACE;
+    }
 
     for( Index i=0; i<*n; i++ )
     {
@@ -350,7 +358,8 @@ namespace backend
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
-    if( h_ind_==NULL || h_val_==NULL || d_ind_==NULL || d_val_==NULL )
+    if( nsize_!=0 && (h_ind_==NULL || h_val_==NULL || 
+        d_ind_==NULL || d_val_==NULL) )
     {
       std::cout << "Error: SpVec Out of memory!\n";
       //return GrB_OUT_OF_MEMORY;
@@ -392,21 +401,30 @@ namespace backend
     // Change member scalars
     Index temp_nsize = nsize_;
     Index temp_nvals = nvals_;
-    nsize_ = rhs->nsize_;
-    nvals_ = rhs->nvals_;
-    rhs->nsize_ = temp_nsize;
-    rhs->nvals_ = temp_nvals;
+    nsize_           = rhs->nsize_;
+    nvals_           = rhs->nvals_;
+    rhs->nsize_      = temp_nsize;
+    rhs->nvals_      = temp_nvals;
 
-    // Only need to change GPU pointers
-    Index* temp_ind_ = d_ind_;
-    T*     temp_val_ = d_val_;
+    // Change CPU pointers
+    Index* temp_ind_ = h_ind_;
+    T*     temp_val_ = h_val_;
+    h_ind_           = rhs->h_ind_;
+    h_val_           = rhs->h_val_;
+    rhs->h_ind_      = temp_ind_;
+    rhs->h_val_      = temp_val_;
+
+    // Change GPU pointers
+    temp_ind_        = d_ind_;
+    temp_val_        = d_val_;
     d_ind_           = rhs->d_ind_;
     d_val_           = rhs->d_val_;
     rhs->d_ind_      = temp_ind_;
     rhs->d_val_      = temp_val_;
 
-    need_update_     = true;
-    rhs->need_update_= true; 
+    bool temp_update = need_update_;
+    need_update_     = rhs->need_update_;
+    rhs->need_update_= temp_update; 
 
     return GrB_SUCCESS;
   }

@@ -113,8 +113,16 @@ void testBuild( const std::vector<int>& rhs )
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 }
 
-void testSetElement( const std::vector<int>& rhs )
+void testSetElement( std::vector<int>& rhs, int val, int ind )
 {
+  graphblas::Vector<int> vec1(rhs.size());
+  graphblas::Index size = rhs.size();
+  std::vector<int> lhs;
+  CHECKVOID( vec1.build(&rhs, rhs.size()) );
+  CHECKVOID( vec1.setElement(val, ind) );
+  CHECKVOID( vec1.extractTuples(&lhs, &size) );
+  rhs[ind] = val;
+  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 }
 
 void testExtractElement( const std::vector<int>& rhs )
@@ -176,6 +184,28 @@ void testResize( const std::vector<int>& rhs, const int nvals )
   BOOST_ASSERT( size==nvals );
 }
 
+void testSwap( const std::vector<int>& lhs, const std::vector<int>& rhs )
+{
+  graphblas::Vector<int> vec1(lhs.size());
+  graphblas::Index lhs_size = lhs.size();
+  std::vector<int> lhs_val;
+  CHECKVOID( vec1.build(&lhs, lhs.size()) );
+
+  graphblas::Vector<int> vec2(rhs.size());
+  graphblas::Index rhs_size = rhs.size();
+  std::vector<int> rhs_val;
+  CHECKVOID( vec2.build(&rhs, rhs.size()) );
+
+  CHECKVOID( vec1.swap(&vec2) );
+  CHECKVOID( vec1.extractTuples(&lhs_val, &rhs_size) ); 
+  CHECKVOID( vec2.extractTuples(&rhs_val, &lhs_size) ); 
+  
+  CHECKVOID( vec1.print() );
+  CHECKVOID( vec2.print() );
+  BOOST_ASSERT_LIST( lhs_val, rhs, rhs_size );
+  BOOST_ASSERT_LIST( rhs_val, lhs, lhs_size );
+}
+
 struct TestVector
 {
   TestVector() :
@@ -196,6 +226,7 @@ BOOST_FIXTURE_TEST_CASE( vec1, TestVector )
   testSize(   vec );
   testNvals(  vec );
   testBuild(  vec );
+  testSetElement(     vec, 4, 5 );
   testExtractTuples(  vec );
   testFill(           20 );
   testFillAscending(  20 );
@@ -205,6 +236,13 @@ BOOST_FIXTURE_TEST_CASE( vec2, TestVector )
 {
   std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 0, 2};
   testResize( vec, 15 );
+}
+
+BOOST_FIXTURE_TEST_CASE( vec3, TestVector )
+{
+  std::vector<int> vec1 = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  std::vector<int> vec2 = {1, 2, 3, 4, 5, 6, 7, 8, 0, 2, 11};
+  testSwap( vec1, vec2 );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

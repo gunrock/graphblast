@@ -345,7 +345,11 @@ namespace backend
   Info Vector<T>::swap( Vector* rhs )
   {
     if( vec_type_!=rhs->vec_type_ || vec_type_==GrB_UNKNOWN ) 
+    {
+      //std::cout << vec_type_ << " != " << rhs->vec_type_ << std::endl;
+      //std::cout << "Error: Format not equivalent!\n";
       return GrB_INVALID_OBJECT;
+    }
 
     if(      vec_type_==GrB_SPARSE ) CHECK( sparse_.swap(&rhs->sparse_) );
     else if( vec_type_==GrB_DENSE  ) CHECK(  dense_.swap(&rhs->dense_ ) );

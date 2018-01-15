@@ -203,11 +203,13 @@ namespace backend
 
     if( *n>nvals_ )
     {
+      std::cout << *n << " > " << nvals_ << std::endl;
       std::cout << "Error: DeVec Too many tuples requested!\n";
       return GrB_UNINITIALIZED_OBJECT;
     }
     if( *n<nvals_ ) 
     {
+      std::cout << *n << " < " << nvals_ << std::endl;
       std::cout << "Error: DeVec Insufficient space!\n";
       //return GrB_INSUFFICIENT_SPACE;
     }
@@ -324,7 +326,7 @@ namespace backend
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
-    if( h_val_==NULL || d_val_==NULL )
+    if( nvals_>0 && (h_val_==NULL || d_val_==NULL) )
     {
       std::cout << "Error: DeVec Out of memory!\n";
       //return GrB_OUT_OF_MEMORY;
@@ -364,13 +366,19 @@ namespace backend
     nvals_ = rhs->nvals_;
     rhs->nvals_ = temp_nvals;
 
-    // Only need to change GPU pointers
-    T*     temp_val_ = d_val_;
+    // Change CPU pointers
+    T*     temp_val_ = h_val_;
+    h_val_           = rhs->h_val_;
+    rhs->h_val_      = temp_val_;
+
+    // Change GPU pointers
+    temp_val_        = d_val_;
     d_val_           = rhs->d_val_;
     rhs->d_val_      = temp_val_;
 
-    need_update_     = true;
-    rhs->need_update_= true;
+    bool temp_update = need_update_;
+    need_update_     = rhs->need_update_;
+    rhs->need_update_= temp_update;
 
     return GrB_SUCCESS;
   }
