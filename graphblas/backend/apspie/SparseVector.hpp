@@ -154,6 +154,7 @@ namespace backend
   {
     if( nvals > nsize_ )
     {
+      std::cout << "SpVec Build with indices greater than nsize_\n";
       std::cout << "Error: Feature not implemented yet!\n";
       return GrB_PANIC;
     }

@@ -7,6 +7,7 @@
 #include "graphblas/backend/apspie/spmspv.hpp"
 #include "graphblas/backend/apspie/spmv.hpp"
 #include "graphblas/backend/apspie/gemv.hpp"
+#include "graphblas/backend/apspie/assign.hpp"
 #include "graphblas/backend/apspie/Descriptor.hpp"
 
 namespace graphblas

@@ -26,6 +26,7 @@ namespace backend
              const DenseMatrix<b>*  B,
              Descriptor*            desc )
   {
+    std::cout << "GEMM\n";
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }

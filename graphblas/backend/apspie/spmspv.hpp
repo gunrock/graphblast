@@ -8,7 +8,7 @@
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 #include "graphblas/backend/apspie/operations.hpp"
 #include "graphblas/backend/apspie/kernels/spmspv.hpp"
-#include "graphblas/backend/apspie/kernels/apply.hpp"
+#include "graphblas/backend/apspie/kernels/assignSparse.hpp"
 #include "graphblas/backend/apspie/kernels/util.hpp"
 
 namespace graphblas
@@ -116,19 +116,21 @@ namespace backend
       Storage mask_vec_type;
       CHECK( mask->getStorage(&mask_vec_type) );
 
+      // For GrB_DENSE mask, need to add parameter for mask_identity to user
       if( mask_vec_type==GrB_DENSE )
       {
         if( use_scmp )
-          applyKernel<true><<<NB,NT>>>( temp_ind, temp_val, 
-              (mask->dense_).d_val_, (void*)NULL, (M)-1.f, 
-              mgpu::identity<Index>(), temp_nvals );
+          assignSparseKernel<true, true, true><<<NB,NT>>>( temp_ind, temp_val, 
+              temp_nvals, (mask->dense_).d_val_, (M)-1.f, (BinaryOp<U,U,U>*)NULL,
+              (U)0.f, (Index*)NULL, A_nrows );
         else
-          applyKernel<false><<<NB,NT>>>( temp_ind, temp_val,
-              (mask->dense_).d_val_, (void*)NULL, (M)-1.f, 
-              mgpu::identity<Index>(), temp_nvals );
+          assignSparseKernel<false,true, true><<<NB,NT>>>( temp_ind, temp_val,
+              temp_nvals, (mask->dense_).d_val_, (M)-1.f, (BinaryOp<U,U,U>*)NULL,
+              (U)0.f, (Index*)NULL, A_nrows );
       }
       else if( mask_vec_type==GrB_SPARSE )
       {
+        std::cout << "Spmspv Sparse Mask\n";
         std::cout << "Error: Feature not implemented yet!\n";
       }
       else
@@ -143,9 +145,9 @@ namespace backend
       Index* d_flag = (Index*) desc->d_buffer_+2*A_nrows;
       Index* d_scan = (Index*) desc->d_buffer_+3*A_nrows;
 
-      updateFlagKernel<<<NB,NT>>>( d_flag, (Index)-1, temp_ind, temp_nvals );
+      updateFlagKernel<<<NB,NT>>>( d_flag, 0.f, temp_val, temp_nvals );
       mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 
-          mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
+          mgpu::plus<Index>(), d_scan+temp_nvals, &w->nvals_, d_scan, 
           *(desc->d_context_) );
       printDevice("d_flag", d_flag, temp_nvals);
       printDevice("d_scan", d_scan, temp_nvals);

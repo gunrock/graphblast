@@ -142,6 +142,7 @@ namespace backend
                               Index                     nvals,
                               const BinaryOp<T,T,T>*    dup )
   {
+    std::cout << "DeVec Build Using Sparse Indices\n";
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
@@ -170,7 +171,6 @@ namespace backend
     CHECK( gpuToCpu() );
     h_val_[index] = val;
     CHECK( cpuToGpu() );
-    //std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
 
@@ -178,6 +178,7 @@ namespace backend
   Info DenseVector<T>::extractElement( T*    val,
                                        Index index )
   {
+    std::cout << "DeVec ExtractElement\n";
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
@@ -187,6 +188,7 @@ namespace backend
                                       std::vector<T>*     values,
                                       Index*              n )
   {
+    std::cout << "DeVec ExtractTuples into Sparse Indices\n";
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }

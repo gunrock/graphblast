@@ -8,17 +8,18 @@ namespace graphblas
 namespace backend
 {
 
-  __global__ void updateFlagKernel( Index*       d_flag,
-                                    Index        identity,
-                                    const Index* u_ind,
-                                    Index        u_nvals )
+  template <typename U>
+  __global__ void updateFlagKernel( Index*   d_flag,
+                                    U        identity,
+                                    const U* u_val,
+                                    Index    u_nvals )
   {
     unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
 
     for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
     {
-      Index ind = __ldg( u_ind+row );
-      if( ind==identity )
+      U val = __ldg( u_val+row );
+      if( val==identity )
         d_flag[row] = 0;
       else
         d_flag[row] = 1;
@@ -29,7 +30,7 @@ namespace backend
   __global__ void streamCompactKernel( Index* w_ind,
                                        W*     w_val,
                                        Index* d_scan,
-                                       Index  identity,
+                                       U      identity,
                                        Index* u_ind,
                                        U*     u_val,
                                        Index  u_nvals )
@@ -42,7 +43,7 @@ namespace backend
       U     val     = __ldg( u_val +row );
       Index scatter = __ldg( d_scan+row );
 
-      if(ind!=identity)
+      if(val!=identity)
       {
         w_ind[scatter] = ind;
         w_val[scatter] = val;

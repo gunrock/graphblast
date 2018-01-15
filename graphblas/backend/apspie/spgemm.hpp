@@ -28,6 +28,7 @@ namespace backend
                const SparseMatrix<b>* B,
                Descriptor*            desc )
   {
+    std::cout << "SpGEMM\n";
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }

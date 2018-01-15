@@ -27,6 +27,7 @@ namespace backend
              const DenseMatrix<b>*  B,
              Descriptor*            desc )
   {
+    std::cout << "SpMat x DeMat SpMM\n";
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
@@ -41,6 +42,7 @@ namespace backend
              const SparseMatrix<b>* B,
              Descriptor*            desc )
   {
+    std::cout << "DeMat x SpMat SpMM\n";
     std::cout << "Error: Feature not implemented yet!\n";
     return GrB_SUCCESS;
   }
