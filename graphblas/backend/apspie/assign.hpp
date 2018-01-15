@@ -9,7 +9,6 @@
 #include "graphblas/backend/apspie/operations.hpp"
 #include "graphblas/backend/apspie/kernels/assignDense.hpp"
 #include "graphblas/backend/apspie/kernels/assignSparse.hpp"
-#include "graphblas/backend/apspie/kernels/util.hpp"
 
 namespace graphblas
 {

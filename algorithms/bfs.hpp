@@ -13,7 +13,6 @@ namespace graphblas
 
     // Visited vector (use float for now)
     CHECK( v->fill(-1.f) );
-    CHECK( v->setElement(0.f, s) );
 
     // Frontier vectors (use float for now)
     Vector<float> q1(n);
@@ -37,12 +36,15 @@ namespace graphblas
 		GrB_FP32AddMul.nnew( GrB_FP32Add, GrB_TIMES_FP32 );
 
     Descriptor desc;
+    CHECK( desc.set(GrB_MXVMODE, GrB_PUSHONLY) );
 
     float d    = 0;
     float succ = false;
     do
     {
-      std::cout << "Iteration " << d << std::endl;
+      std::cout << "Iteration " << d << ":\n";
+      v->print();
+      q1.print();
       d++;
       assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, &desc);
       CHECK( desc.toggle(GrB_MASK) );
@@ -51,8 +53,9 @@ namespace graphblas
       CHECK( q2.swap(&q1) );
       reduce<float,float>(&succ, GrB_NULL, &GrB_FP32Add, &q2, 
           &desc);
-    } while( d==0 );
-    //} while( succ );
+      std::cout << "succ: " << succ << std::endl;
+    //} while( d==0 );
+    } while( succ>0 );
 
     return GrB_SUCCESS;
   }

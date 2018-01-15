@@ -277,15 +277,11 @@ namespace backend
     void* d_cscSwapInd = desc->d_buffer_+ 4*A_nrows      *sizeof(Index);
     void* d_cscSwapVal = desc->d_buffer_+(4*A_nrows+size)*sizeof(Index);
 
-    /*CUDA( cudaMemcpy((Index*)d_cscSwapInd, w_ind, *w_nvals*sizeof(Index), 
-        cudaMemcpyDeviceToDevice) );
-    CUDA( cudaMemcpy((T*)    d_cscSwapVal, w_val, *w_nvals*sizeof(T), 
-        cudaMemcpyDeviceToDevice) );*/
     cub::DeviceRadixSort::SortPairs( NULL, temp_storage_bytes, w_ind,
         (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );
-    std::cout << "temp_storage_bytes: " << temp_storage_bytes << std::endl;
+
     desc->resize( temp_storage_bytes, "temp" );
-		//CUDA( cudaMalloc(&d_temp_storage, temp_storage_bytes) );
+
 		cub::DeviceRadixSort::SortPairs( desc->d_temp_, temp_storage_bytes, w_ind,
         (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );
 		//MergesortKeys(d_cscVecInd, total, mgpu::less<int>(), desc->d_context_);

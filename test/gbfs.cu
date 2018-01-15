@@ -54,10 +54,10 @@ int main( int argc, char** argv )
   //cudaProfilerStart();
   cpu_vxm.Start();
   int NUM_ITER = 1;//0;
-  for( int i=0; i<NUM_ITER; i++ )
+  /*for( int i=0; i<NUM_ITER; i++ )
   {
     graphblas::bfs(&v, &a, 0);
-  }
+  }*/
   //cudaProfilerStop();
   cpu_vxm.Stop();
 

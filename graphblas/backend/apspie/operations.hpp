@@ -8,6 +8,7 @@
 #include "graphblas/backend/apspie/spmv.hpp"
 #include "graphblas/backend/apspie/gemv.hpp"
 #include "graphblas/backend/apspie/assign.hpp"
+#include "graphblas/backend/apspie/reduce.hpp"
 #include "graphblas/backend/apspie/Descriptor.hpp"
 
 namespace graphblas
@@ -23,6 +24,9 @@ namespace backend
   template <typename T1, typename T2, typename T3>
   class BinaryOp;
   
+  template <typename T>
+  class Monoid;
+
   template <typename T1, typename T2, typename T3>
   class Semiring;
 
@@ -424,15 +428,30 @@ namespace backend
     // Use op->operator()
   }
 
-  template <typename T, typename U,
-            typename BinaryOpT,     typename MonoidT>
-  Info reduce( T*                val,
-               const BinaryOpT*  accum,
-               const MonoidT*    op,
-               const Vector<U>*  u,
-               Descriptor*       desc )
+  template <typename T, typename U>
+  Info reduce( T*                     val,
+               const BinaryOp<U,U,U>* accum,
+               const Monoid<U>*       op,
+               const Vector<U>*       u,
+               Descriptor*            desc )
   {
+    // Get storage:
+    Storage vec_type;
+    CHECK( u->getStorage( &vec_type ) );
 
+    // 2 cases:
+    // 1) SpVec
+    // 2) DeVec
+    if( vec_type==GrB_SPARSE )
+    {
+      CHECK( reduceInner( val, accum, op, &u->sparse_, desc) );
+    }
+    else if( vec_type==GrB_DENSE )
+    {
+      CHECK( reduceInner( val, accum, op, &u->dense_, desc) );
+    }
+
+    return GrB_SUCCESS;
   }
 
   template <typename T, typename a,
