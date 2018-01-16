@@ -11,7 +11,7 @@
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
-#include "graphblas/graph/bfs.hpp"
+#include "graphblas/algorithm/bfs.hpp"
 #include "test/test.hpp"
 
 int main( int argc, char** argv )
@@ -44,22 +44,23 @@ int main( int argc, char** argv )
   // Vector v
   graphblas::Vector<float> v(nrows);
 
+  // Descriptor desc
+  graphblas::Descriptor desc;
+
   // Cpu BFS
   CpuTimer bfs_cpu;
   graphblas::Index* h_bfs_cpu = (graphblas::Index*)malloc(nrows*
       sizeof(graphblas::Index));
   int depth = 1000;
   bfs_cpu.Start();
-  //graphblas::graph::bfsCpu( 0, nrows, a.matrix_.sparse_.h_cscColPtr_, 
-  //    a.matrix_.sparse_.h_cscRowInd_, h_bfs_cpu, depth );
-  graphblas::graph::bfsCpu( 0, nrows, a.matrix_.sparse_.h_csrRowPtr_, 
+  graphblas::algorithm::bfsCpu( 0, nrows, a.matrix_.sparse_.h_csrRowPtr_, 
       a.matrix_.sparse_.h_csrColInd_, h_bfs_cpu, depth );
   bfs_cpu.Stop();
 
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::graph::bfs(&v, &a, 0);
+  graphblas::algorithm::bfs(&v, &a, 0, &desc);
   warmup.Stop();
  
   CpuTimer vxm_gpu;
@@ -68,7 +69,7 @@ int main( int argc, char** argv )
   int NUM_ITER = 1;//0;
   /*for( int i=0; i<NUM_ITER; i++ )
   {
-    graphblas::bfs(&v, &a, 0);
+    graphblas::algorithm::bfs(&v, &a, 0, &desc);
   }*/
   //cudaProfilerStop();
   vxm_gpu.Stop();

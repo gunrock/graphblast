@@ -1,11 +1,11 @@
-#ifndef GRB_GRAPHBLAS_GRAPH_BFS_HPP
-#define GRB_GRAPHBLAS_GRAPH_BFS_HPP
+#ifndef GRB_ALGORITHM_BFS_HPP
+#define GRB_ALGORITHM_BFS_HPP
 
-#include "graphblas/graph/testBfs.hpp"
+#include "graphblas/algorithm/testBfs.hpp"
 
 namespace graphblas
 {
-namespace graph
+namespace algorithm
 {
   // Use float for now for both v and A
   Info bfs( Vector<float>*       v,
@@ -82,7 +82,7 @@ namespace graph
 		return GrB_SUCCESS; 
 	}
 
-}  // graph
+}  // algorithm
 }  // graphblas
 
-#endif  // GRB_BFS_HPP
+#endif  // GRB_ALGORITHM_BFS_HPP
