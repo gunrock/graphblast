@@ -44,7 +44,8 @@ namespace backend
     bool use_allowdupl; //TODO opt4
     bool use_struconly; //TODO opt5
 
-    printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
+    if( GrB_DEBUG)
+      printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
 
     // Transpose (default is CSC):
     const Index* A_csrRowPtr = (!use_tran) ? A->d_cscColPtr_ : A->d_csrRowPtr_;
@@ -141,10 +142,13 @@ namespace backend
         return GrB_UNINITIALIZED_OBJECT;
       }
 
-      CUDA( cudaDeviceSynchronize() );
-      printDevice("mask", (mask->dense_).d_val_, A_nrows);
-      printDevice("temp_ind", temp_ind, temp_nvals);
-      printDevice("temp_val", temp_val, temp_nvals);
+      if( GrB_DEBUG )
+      {
+        CUDA( cudaDeviceSynchronize() );
+        printDevice("mask", (mask->dense_).d_val_, A_nrows);
+        printDevice("temp_ind", temp_ind, temp_nvals);
+        printDevice("temp_val", temp_val, temp_nvals);
+      }
 
       // Prune 0.f's from vector
       desc->resize((4*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
@@ -155,13 +159,21 @@ namespace backend
       mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 
           mgpu::plus<Index>(), d_scan+temp_nvals, &w->nvals_, d_scan, 
           *(desc->d_context_) );
-      printDevice("d_flag", d_flag, temp_nvals);
-      printDevice("d_scan", d_scan, temp_nvals);
+
+      if( GrB_DEBUG )
+      {
+        printDevice("d_flag", d_flag, temp_nvals);
+        printDevice("d_scan", d_scan, temp_nvals);
+      }
 
       streamCompactKernel<<<NB,NT>>>( w->d_ind_, w->d_val_, d_scan, (W)0, 
           temp_ind, temp_val, temp_nvals );
-      printDevice("w_ind", w->d_ind_, w->nvals_);
-      printDevice("w_val", w->d_val_, w->nvals_);
+
+      if( GrB_DEBUG )
+      {
+        printDevice("w_ind", w->d_ind_, w->nvals_);
+        printDevice("w_val", w->d_val_, w->nvals_);
+      }
     }
     else
     {

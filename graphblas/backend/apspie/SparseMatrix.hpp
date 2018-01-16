@@ -38,7 +38,7 @@ namespace backend
           h_cscColPtr_(NULL), h_cscRowInd_(NULL), h_cscVal_(NULL),
           d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
           d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
-          need_update_(0) {}
+          need_update_(0),    symmetric_(1) {}
 
     SparseMatrix( Index nrows, Index ncols )
         : nrows_(nrows), ncols_(ncols), nvals_(0), ncapacity_(0), nempty_(0),
@@ -46,7 +46,7 @@ namespace backend
           h_cscColPtr_(NULL), h_cscRowInd_(NULL), h_cscVal_(NULL),
           d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
           d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
-          need_update_(0) {}
+          need_update_(0),    symmetric_(1) {}
 
     ~SparseMatrix();
 
@@ -95,6 +95,8 @@ namespace backend
                         U     start );
 
     private:
+    Info allocateCpu();
+    Info allocateGpu();
     Info allocate();  // 3 ways to allocate: (1) dup, (2) build, (3) spgemm
                       //                     (4) fill,(5) fillAscending
     Info printCSR( const char* str ); // private method for pretty printing
@@ -127,15 +129,8 @@ namespace backend
     T*     d_cscVal_;
 
     // GPU variables
-    //void*  buffer_;
-    //size_t buffer_size_;
     bool   need_update_;
-    // CSC format
-    // TODO: add CSC support. 
-    // -this will be useful and necessary for direction-optimized SpMV
-    /*Index* h_cscRowInd;
-    Index* h_cscColPtr;
-    T*     h_cscVal;*/
+    bool   symmetric_;
 
     /*template <typename a, typename b>
     friend Info cubReduce( Vector<b>&             B,
@@ -151,15 +146,20 @@ namespace backend
     if( h_csrRowPtr_!=NULL ) free(h_csrRowPtr_);
     if( h_csrColInd_!=NULL ) free(h_csrColInd_);
     if( h_csrVal_   !=NULL ) free(h_csrVal_   );
-    if( h_cscColPtr_!=NULL ) free(h_cscColPtr_);
-    if( h_cscRowInd_!=NULL ) free(h_cscRowInd_);
-    if( h_cscVal_   !=NULL ) free(h_cscVal_   );
     if( d_csrRowPtr_!=NULL ) CUDA( cudaFree(d_csrRowPtr_) );
     if( d_csrColInd_!=NULL ) CUDA( cudaFree(d_csrColInd_) );
     if( d_csrVal_   !=NULL ) CUDA( cudaFree(d_csrVal_   ) );
-    if( d_cscColPtr_!=NULL ) CUDA( cudaFree(d_cscColPtr_) );
-    if( d_cscRowInd_!=NULL ) CUDA( cudaFree(d_cscRowInd_) );
-    if( d_cscVal_   !=NULL ) CUDA( cudaFree(d_cscVal_   ) );
+
+    if( !symmetric_ )
+    {
+      if( h_cscColPtr_!=NULL ) free(h_cscColPtr_);
+      if( h_cscRowInd_!=NULL ) free(h_cscRowInd_);
+      if( h_cscVal_   !=NULL ) free(h_cscVal_   );
+
+      if( d_cscColPtr_!=NULL ) CUDA( cudaFree(d_cscColPtr_) );
+      if( d_cscRowInd_!=NULL ) CUDA( cudaFree(d_cscRowInd_) );
+      if( d_cscVal_   !=NULL ) CUDA( cudaFree(d_cscVal_   ) );
+    }
   }
 
   template <typename T>
@@ -179,7 +179,8 @@ namespace backend
   {
     if( nrows_ != rhs->nrows_ ) return GrB_DIMENSION_MISMATCH;
     if( ncols_ != rhs->ncols_ ) return GrB_DIMENSION_MISMATCH;
-    nvals_ = rhs->nvals_;
+    nvals_     = rhs->nvals_;
+    symmetric_ = rhs->symmetric_;
 
     CHECK( allocate() );
 
@@ -193,13 +194,16 @@ namespace backend
     CUDA( cudaMemcpy( d_csrVal_,    rhs->d_csrVal_,    nvals_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
 
-    CUDA( cudaMemcpy( d_cscColPtr_, rhs->d_cscColPtr_, (ncols_+1)*
-        sizeof(Index), cudaMemcpyDeviceToDevice ) );
-    CUDA( cudaMemcpy( d_cscRowInd_, rhs->d_cscRowInd_, nvals_*sizeof(Index),
-        cudaMemcpyDeviceToDevice ) );
-    CUDA( cudaMemcpy( d_cscVal_,    rhs->d_cscVal_,    nvals_*sizeof(T),
-        cudaMemcpyDeviceToDevice ) );
-    CUDA( cudaDeviceSynchronize() );
+    if( !symmetric_ )
+    {
+      CUDA( cudaMemcpy( d_cscColPtr_, rhs->d_cscColPtr_, (ncols_+1)*
+          sizeof(Index), cudaMemcpyDeviceToDevice ) );
+      CUDA( cudaMemcpy( d_cscRowInd_, rhs->d_cscRowInd_, nvals_*sizeof(Index),
+          cudaMemcpyDeviceToDevice ) );
+      CUDA( cudaMemcpy( d_cscVal_,    rhs->d_cscVal_,    nvals_*sizeof(T),
+          cudaMemcpyDeviceToDevice ) );
+      CUDA( cudaDeviceSynchronize() );
+    }
 
     need_update_ = true;
     return GrB_SUCCESS; 
@@ -242,7 +246,7 @@ namespace backend
                                const BinaryOp<T,T,T>*    dup )
   {
     nvals_ = nvals;
-    CHECK( allocate() );
+    CHECK( allocateCpu() );
 
     // Convert to CSR if transpose is false (iter 1)
     //            CSC if transpose is true  (iter 0)
@@ -304,6 +308,29 @@ namespace backend
       temp = csrRowPtr[nrows];
       csrRowPtr[nrows] = cumsum;
       cumsum = temp;
+    }
+
+    // Check symmetric without passing in parameter from user
+    // i.e. if every csrRowPtr == cscColPtr, then:
+    // 1) free h_cscColPtr, h_cscRowInd, h_cscVal
+    // 2) set them equal to their CSR counterparts
+    symmetric_ = true;
+    for( Index i=0; i<nvals_; i++ )
+    {
+      if( h_csrColInd_[i]!=h_cscRowInd_[i] )
+      {
+        symmetric_ = false;
+        break;
+      }
+    }
+    if( symmetric_ )
+    {
+      free( h_cscColPtr_ );
+      free( h_cscRowInd_ );
+      free( h_cscVal_    );
+      h_cscColPtr_ = h_csrRowPtr_;
+      h_cscRowInd_ = h_csrColInd_;
+      h_cscVal_    = h_csrVal_;
     }
 
     CHECK( cpuToGpu() );
@@ -524,7 +551,7 @@ namespace backend
   }
 
   template <typename T>
-  Info SparseMatrix<T>::allocate()
+  Info SparseMatrix<T>::allocateCpu()
   {
     // Allocate
     ncapacity_ = kcap_ratio_*nvals_;
@@ -536,6 +563,7 @@ namespace backend
       h_csrColInd_ = (Index*)malloc(ncapacity_*sizeof(Index));
     if( nvals_>0 && h_csrVal_ == NULL )
       h_csrVal_    = (T*)    malloc(ncapacity_*sizeof(T));
+
     if( ncols_>0 && h_cscColPtr_ == NULL ) 
       h_cscColPtr_ = (Index*)malloc((ncols_+1)*sizeof(Index));
     if( nvals_>0 && h_cscRowInd_ == NULL )
@@ -543,6 +571,15 @@ namespace backend
     if( nvals_>0 && h_cscVal_ == NULL )
       h_cscVal_    = (T*)    malloc(ncapacity_*sizeof(T));
 
+    if( h_csrRowPtr_==NULL || h_csrColInd_==NULL || h_csrVal_==NULL )
+      return GrB_OUT_OF_MEMORY;
+
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info SparseMatrix<T>::allocateGpu()
+  {
     // GPU malloc
     if( nrows_>0 && d_csrRowPtr_ == NULL )
       CUDA( cudaMalloc( &d_csrRowPtr_, (nrows_+1)*sizeof(Index)) );
@@ -550,19 +587,27 @@ namespace backend
       CUDA( cudaMalloc( &d_csrColInd_, ncapacity_*sizeof(Index)) );
     if( nvals_>0 && d_csrVal_ == NULL )
       CUDA( cudaMalloc( &d_csrVal_, ncapacity_*sizeof(T)) );
-    if( nrows_>0 && d_cscColPtr_ == NULL )
-      CUDA( cudaMalloc( &d_cscColPtr_, (ncols_+1)*sizeof(Index)) );
-    if( nvals_>0 && d_cscRowInd_ == NULL )
-      CUDA( cudaMalloc( &d_cscRowInd_, ncapacity_*sizeof(Index)) );
-    if( nvals_>0 && d_cscVal_ == NULL )
-      CUDA( cudaMalloc( &d_cscVal_, ncapacity_*sizeof(T)) );
+    if( !symmetric_ )
+    {
+      if( nrows_>0 && d_cscColPtr_ == NULL )
+        CUDA( cudaMalloc( &d_cscColPtr_, (ncols_+1)*sizeof(Index)) );
+      if( nvals_>0 && d_cscRowInd_ == NULL )
+        CUDA( cudaMalloc( &d_cscRowInd_, ncapacity_*sizeof(Index)) );
+      if( nvals_>0 && d_cscVal_ == NULL )
+        CUDA( cudaMalloc( &d_cscVal_, ncapacity_*sizeof(T)) );
+    }
 
-    if( h_csrRowPtr_==NULL || h_csrColInd_==NULL || h_csrVal_==NULL ||
-        h_cscColPtr_==NULL || h_cscRowInd_==NULL || h_cscVal_==NULL ||
-        d_csrRowPtr_==NULL || d_csrColInd_==NULL || d_csrVal_==NULL || 
-        d_cscColPtr_==NULL || d_cscRowInd_==NULL || d_cscVal_==NULL ) 
+    if( d_csrRowPtr_==NULL || d_csrColInd_==NULL || d_csrVal_==NULL )
       return GrB_OUT_OF_MEMORY;
 
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info SparseMatrix<T>::allocate()
+  {
+    CHECK( allocateCpu() );
+    CHECK( allocateGpu() );
     return GrB_SUCCESS;
   }
 
@@ -618,18 +663,31 @@ namespace backend
   template <typename T>
   Info SparseMatrix<T>::cpuToGpu()
   {
+    CHECK( allocateGpu() );
+
     CUDA( cudaMemcpy( d_csrRowPtr_, h_csrRowPtr_, (nrows_+1)*sizeof(Index),
         cudaMemcpyHostToDevice ) );
     CUDA( cudaMemcpy( d_csrColInd_, h_csrColInd_, nvals_*sizeof(Index),
         cudaMemcpyHostToDevice ) );
     CUDA( cudaMemcpy( d_csrVal_,    h_csrVal_,    nvals_*sizeof(T),
         cudaMemcpyHostToDevice ) );
-    CUDA( cudaMemcpy( d_cscColPtr_, h_cscColPtr_, (ncols_+1)*sizeof(Index),
-        cudaMemcpyHostToDevice ) );
-    CUDA( cudaMemcpy( d_cscRowInd_, h_cscRowInd_, nvals_*sizeof(Index),
-        cudaMemcpyHostToDevice ) );
-    CUDA( cudaMemcpy( d_cscVal_,    h_cscVal_,    nvals_*sizeof(T),
-        cudaMemcpyHostToDevice ) );
+
+    if( !symmetric_ )
+    {
+      CUDA( cudaMemcpy( d_cscColPtr_, h_cscColPtr_, (ncols_+1)*sizeof(Index),
+          cudaMemcpyHostToDevice ) );
+      CUDA( cudaMemcpy( d_cscRowInd_, h_cscRowInd_, nvals_*sizeof(Index),
+          cudaMemcpyHostToDevice ) );
+      CUDA( cudaMemcpy( d_cscVal_,    h_cscVal_,    nvals_*sizeof(T),
+          cudaMemcpyHostToDevice ) );
+    }
+    else
+    {
+      d_cscColPtr_ = d_csrRowPtr_;
+      d_cscRowInd_ = d_csrColInd_;
+      d_cscVal_    = d_csrVal_;
+    }
+
     CUDA( cudaDeviceSynchronize() );
     return GrB_SUCCESS;
   }
@@ -646,12 +704,17 @@ namespace backend
           cudaMemcpyDeviceToHost ) );
       CUDA( cudaMemcpy( h_csrVal_,    d_csrVal_,    nvals_*sizeof(T),
           cudaMemcpyDeviceToHost ) );
-      CUDA( cudaMemcpy( h_cscColPtr_, d_cscColPtr_, (ncols_+1)*sizeof(Index),
-          cudaMemcpyDeviceToHost ) );
-      CUDA( cudaMemcpy( h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
-          cudaMemcpyDeviceToHost ) );
-      CUDA( cudaMemcpy( h_cscVal_,    d_cscVal_,    nvals_*sizeof(T),
-          cudaMemcpyDeviceToHost ) );
+
+      if( !symmetric_ )
+      {
+        CUDA( cudaMemcpy( h_cscColPtr_, d_cscColPtr_, (ncols_+1)*sizeof(Index),
+            cudaMemcpyDeviceToHost ) );
+        CUDA( cudaMemcpy( h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
+            cudaMemcpyDeviceToHost ) );
+        CUDA( cudaMemcpy( h_cscVal_,    d_cscVal_,    nvals_*sizeof(T),
+            cudaMemcpyDeviceToHost ) );
+      }
+
       CUDA( cudaDeviceSynchronize() );
     }
     need_update_ = false;

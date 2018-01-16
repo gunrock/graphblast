@@ -9,6 +9,22 @@
 namespace graphblas
 {
 
+  template <typename U>
+  Info checkDimVecNvals( const Vector<U>*   u,
+                         const std::string& str )
+  {
+    if( u==NULL ) return GrB_INVALID_OBJECT;
+    Index u_nvals;
+    CHECK( u->nvals(&u_nvals) );
+    if( u_nvals==0 )
+    {
+      std::cout << str << std::endl;
+      //CHECK( w.dup(u) );
+      return GrB_INVALID_OBJECT;
+    }
+    return GrB_SUCCESS;
+  }
+
   template <typename a, typename b>
   Info checkDimRowCol( const Matrix<a>* A, 
                        const Matrix<b>* B, 

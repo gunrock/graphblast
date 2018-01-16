@@ -62,6 +62,16 @@ namespace graphblas
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
+    Index u_nvals = 0;
+    CHECK( u->nvals(&u_nvals) );
+    if( u_nvals==0 )
+    {
+      std::cout << "u.nvals == 0\n";
+      CHECK( w->dup(u) );
+      return GrB_SUCCESS;
+    }
+    //CHECK( checkDimVecNvals(  u,    "u.nvals == 0"    ) );
+
     // Case 1: u*A
     CHECK( checkDimRowSize(  A, u,    "A.nrows != u.size"    ) );
     CHECK( checkDimColSize(  A, w,    "A.ncols != w.size"    ) );
@@ -97,6 +107,8 @@ namespace graphblas
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
+    CHECK( checkDimVecNvals( u, "u.nvals == 0" ) );
+
     // Case 1: A *u
     CHECK( checkDimColSize(  A, u,    "A.ncols != u.size"    ) );
     CHECK( checkDimRowSize(  A, w,    "A.nrows != w.size"    ) );

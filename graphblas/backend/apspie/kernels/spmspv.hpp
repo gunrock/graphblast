@@ -227,17 +227,22 @@ namespace backend
     void* d_temp_nvals = (void*)w_ind;
     void* d_scan       = (void*)w_val;
     assert( *u_nvals<A_nrows );
+    std::cout << NT.x << " " << NB.x << std::endl;
 
     indirectScanKernel<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
 				*u_nvals );
     mgpu::Scan<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals, 0,
         mgpu::plus<int>(), (Index*)d_scan+(*u_nvals), w_nvals, (Index*)d_scan, 
         *(desc->d_context_) );
-    printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
-    printDevice( "d_scan",       (Index*)d_scan,       *u_nvals+1 );
 
-    std::cout << "u_nvals: " << *u_nvals << std::endl;
-    std::cout << "w_nvals: " << *w_nvals << std::endl;
+    if( GrB_DEBUG )
+    {
+      printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
+      printDevice( "d_scan",       (Index*)d_scan,       *u_nvals+1 );
+
+      std::cout << "u_nvals: " << *u_nvals << std::endl;
+      std::cout << "w_nvals: " << *w_nvals << std::endl;
+    }
 
 		//Step 1) Gather from CSR graph into one big array  |     |  |
     //Step 2) Vector Portion
@@ -250,8 +255,8 @@ namespace backend
 		//Step 1-4) custom kernel method (1 single kernel)
 		//  modify spmvCsrIndirectBinary() to stop after expand phase
     //  output: 1) expanded index array 2) expanded value array
-    //  -> d_csrSwapInd |E|/2
-    //  -> d_csrSwapVal |E|/2
+    //  -> d_csrSwapInd |E|xGrB_THRESHOLD
+    //  -> d_csrSwapVal |E|xGrB_THRESHOLD
     int    size         = (float)  A_nvals*GrB_THRESHOLD+1;
     void* d_csrSwapInd = desc->d_buffer_+ 2*A_nrows      *sizeof(Index);
     void* d_csrSwapVal = desc->d_buffer_+(2*A_nrows+size)*sizeof(Index);
@@ -274,28 +279,43 @@ namespace backend
     //    w_nvals, (T)identity, mul_op, *(desc->d_context_));
     //CUDA( cudaDeviceSynchronize() );
 
-    printDevice( "SwapInd", (Index*)d_csrSwapInd, *w_nvals );
-    printDevice( "SwapVal", (T*)    d_csrSwapVal, *w_nvals );
+    if( GrB_DEBUG )
+    {
+      printDevice( "SwapInd", (Index*)d_csrSwapInd, *w_nvals );
+      printDevice( "SwapVal", (T*)    d_csrSwapVal, *w_nvals );
+    }
 
 		//Step 5) Sort step
-    //  -> d_csrTempInd |E|/2
-    //  -> d_csrTempVal |E|/2
+    //  -> d_csrTempInd |E|xGrB_THRESHOLD
+    //  -> d_csrTempVal |E|xGrB_THRESHOLD
     size_t temp_storage_bytes;
     void* d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     void* d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
 
-    cub::DeviceRadixSort::SortPairs( NULL, temp_storage_bytes, 
+    CUDA( cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes, 
 				(Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
-				(T*)d_csrTempVal, *w_nvals );
+				(T*)d_csrTempVal, *w_nvals) );
+
+    if( GrB_DEBUG )
+    {
+      std::cout << temp_storage_bytes << " bytes required!\n";
+    }
 
     desc->resize( temp_storage_bytes, "temp" );
 
-    cub::DeviceRadixSort::SortPairs( desc->d_temp_, temp_storage_bytes, 
+    CUDA( cub::DeviceRadixSort::SortPairs(desc->d_temp_, temp_storage_bytes, 
 				(Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
-				(T*)d_csrTempVal, *w_nvals );
+				(T*)d_csrTempVal, *w_nvals) );
+    //desc->clear("temp");
 		//MergesortKeys(d_csrVecInd, total, mgpu::less<int>(), desc->d_context_);
-    printDevice( "TempInd", (Index*)d_csrTempInd, *w_nvals );
-    printDevice( "TempVal", (T*)    d_csrTempVal, *w_nvals );
+    if( GrB_DEBUG )
+    {
+      printDevice( "TempInd", (Index*)d_csrTempInd, *w_nvals );
+      printDevice( "TempVal", (T*)    d_csrTempVal, *w_nvals );
+    }
+
+		printf("Current iteration: %d nonzero vector, %d edges\n", *u_nvals, 
+        *w_nvals);
 
 		//Step 6) Segmented Reduce By Key
     Index  w_nvals_t    = 0;
@@ -304,7 +324,6 @@ namespace backend
         &w_nvals_t, (int*)0, *(desc->d_context_) );
     *w_nvals            = w_nvals_t;
 
-		//printf("Current iteration: %d nonzero vector, %d edges\n",  h_csrVecCount, total);
     return GrB_SUCCESS;
   }
 

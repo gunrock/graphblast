@@ -18,8 +18,12 @@ namespace backend
                           GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL,
                           GrB_APSPIELB, GrB_16 },
                    d_buffer_(NULL), d_buffer_size_(0),
-                   d_temp_(NULL),   d_temp_size_(0),
-                   d_context_(mgpu::CreateCudaDevice(0)) {}
+                   //d_temp_(NULL),   d_temp_size_(0),
+                   d_context_(mgpu::CreateCudaDevice(0)) 
+    {
+      d_temp_size_ = 183551;
+      CUDA( cudaMalloc(&d_temp_, d_temp_size_) );
+    }
 
     // Default Destructor
     ~Descriptor();
@@ -33,6 +37,7 @@ namespace backend
 
     private:
     Info resize( size_t target, std::string field );
+    Info clear( std::string field );
 
     private:
     Desc_value desc_[GrB_NDESCFIELD];
@@ -120,6 +125,21 @@ namespace backend
 
       CUDA( cudaFree(d_temp_buffer) );
     }
+    return GrB_SUCCESS;
+  }
+
+  Info Descriptor::clear( std::string field )
+  {
+    if( d_buffer_size_>0 )
+    { 
+      if( field=="buffer" )
+        CUDA( cudaMemset(d_buffer_, 0, d_buffer_size_) );
+        //CUDA( cudaMemsetAsync(d_buffer_, 0, d_buffer_size_) );
+      else if( field=="temp" )
+        CUDA( cudaMemset(d_temp_,   0, d_temp_size_) );
+        //CUDA( cudaMemsetAsync(d_temp_,   0, d_temp_size_) );
+    }
+
     return GrB_SUCCESS;
   }
 

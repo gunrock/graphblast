@@ -79,11 +79,11 @@ namespace backend
       else if( mask_vec_type==GrB_SPARSE )
       {
         if( use_scmp )
-          assignDenseKernel<true, true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_, 
+          assignDenseKernel<true, true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
               (mask->sparse_).d_ind_, (mask->sparse_).nvals_, accum, 
               (W)val, indices_t, nindices );
         else
-          assignDenseKernel<false,true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_, 
+          assignDenseKernel<false,true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
               (mask->sparse_).d_ind_, (mask->sparse_).nvals_, accum, 
               (W)val, indices_t, nindices );
       }
@@ -92,8 +92,11 @@ namespace backend
         return GrB_UNINITIALIZED_OBJECT;
       }
 
-      printDevice("mask", (mask->sparse_).d_val_, mask->sparse_.nvals_);
-      printDevice("w_val", w->d_val_, w->nvals_);
+      if( GrB_DEBUG )
+      {
+        printDevice("mask", (mask->sparse_).d_val_, mask->sparse_.nvals_);
+        printDevice("w_val", w->d_val_, w->nvals_);
+      }
     }
     else
     {

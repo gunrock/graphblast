@@ -51,7 +51,7 @@ int main( int argc, char** argv )
   CpuTimer bfs_cpu;
   graphblas::Index* h_bfs_cpu = (graphblas::Index*)malloc(nrows*
       sizeof(graphblas::Index));
-  int depth = 1000;
+  int depth = 2000;
   bfs_cpu.Start();
   graphblas::algorithm::bfsCpu( 0, nrows, a.matrix_.sparse_.h_csrRowPtr_, 
       a.matrix_.sparse_.h_csrColInd_, h_bfs_cpu, depth );
@@ -62,15 +62,19 @@ int main( int argc, char** argv )
   warmup.Start();
   graphblas::algorithm::bfs(&v, &a, 0, &desc);
   warmup.Stop();
+
+  std::vector<float> h_bfs_gpu;
+  CHECK( v.extractTuples(&h_bfs_gpu, &nrows) );
+  BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
  
   CpuTimer vxm_gpu;
   //cudaProfilerStart();
   vxm_gpu.Start();
   int NUM_ITER = 1;//0;
-  /*for( int i=0; i<NUM_ITER; i++ )
+  for( int i=0; i<NUM_ITER; i++ )
   {
     graphblas::algorithm::bfs(&v, &a, 0, &desc);
-  }*/
+  }
   //cudaProfilerStop();
   vxm_gpu.Stop();
 
@@ -81,27 +85,8 @@ int main( int argc, char** argv )
   float elapsed_vxm = vxm_gpu.ElapsedMillis();
   std::cout << "vxm, " << elapsed_vxm/NUM_ITER << "\n";
 
-  std::vector<float> h_bfs_gpu;
   CHECK( v.extractTuples(&h_bfs_gpu, &nrows) );
   BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
 
-  /*c.extractTuples( out_denseVal );
-  for( int i=0; i<nvals; i++ )
-  {
-    graphblas::Index row = row_indices[i];
-    graphblas::Index col = col_indices[i];
-    float            val = values[i];
-    if( col<max_ncols )
-    {
-      // Row major order
-      if( ROW_MAJOR )
-      //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
-        BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
-      else
-      // Column major order
-      //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
-        BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
-    }
-  }*/
   return 0;
 }
