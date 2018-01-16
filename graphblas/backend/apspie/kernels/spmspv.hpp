@@ -13,13 +13,12 @@ namespace graphblas
 {
 namespace backend
 {
-  __global__ void indirectScanKernel( const Index* A_csrRowPtr, 
+  __global__ void indirectScanKernel( Index*       d_temp_nvals,
+			                                const Index* A_csrRowPtr, 
                                       const Index* u_ind, 
-                                      Index        u_nvals, 
-                                      Index*       d_temp_nvals )
+                                      Index        u_nvals )
   {
-    int tid = threadIdx.x;
-    int gid = blockIdx.x*blockDim.x+tid;
+    int gid = blockIdx.x*blockDim.x+threadIdx.x;
     Index length = 0;
 
     if( gid<u_nvals )
@@ -33,37 +32,35 @@ namespace backend
       d_temp_nvals[gid] = length;
       //if( tid<10 ) printf("%d: %d = %d - %d\n", length, start, end);
     }
-
-    /*const int NT = 128;
-    typedef mgpu::CTAReduce<NT> R;
-
-    union Shared
-    {
-      typename R::Storage reduce;
-    };
-    __shared__ Shared shared;
-
-    int output_total = R::Reduce(tid, length, shared.reduce);
-
-    if( tid==0 )
-    {
-      d_temp_nvals[blockIdx.x] = output_total;
-      //printf("%d\n", output_total);
-    }*/
   }
+
+  __global__ void indirectGather( Index*       d_temp_nvals, 
+																	const Index* A_csrRowPtr, 
+			                            const Index* u_ind, 
+																	Index        u_nvals )
+	{
+    int gid = blockIdx.x*blockDim.x+threadIdx.x;
+
+		if( gid<u_nvals )
+		{
+      Index   row = __ldg( u_ind+gid );
+			Index start = __ldg( A_csrRowPtr+row );
+			d_temp_nvals[gid] = start;
+		}
+	}
 
   // Memory requirements: (4|V|+5|E|)*GrB_THRESHOLD
   //   -GrB_THRESHOLD is defined in graphblas/types.hpp
   //
-  //  -> d_cscColBad    |V|*GrB_THRESHOLD
-  //  -> d_cscColGood   |V|*GrB_THRESHOLD
-  //  -> d_cscColDiff   |V|*GrB_THRESHOLD
+  //  -> d_csrColBad    |V|*GrB_THRESHOLD
+  //  -> d_csrColGood   |V|*GrB_THRESHOLD
+  //  -> d_csrColDiff   |V|*GrB_THRESHOLD
   //  -> d_index        |V|*GrB_THRESHOLD
-  //  -> d_cscVecInd    |E|*GrB_THRESHOLD (u_ind)
-  //  -> d_cscSwapInd   |E|*GrB_THRESHOLD
-  //  -> d_cscVecVal    |E|*GrB_THRESHOLD
-  //  -> d_cscTempVal   |E|*GrB_THRESHOLD (u_val)
-  //  -> d_cscSwapVal   |E|*GrB_THRESHOLD
+  //  -> d_csrVecInd    |E|*GrB_THRESHOLD (u_ind)
+  //  -> d_csrSwapInd   |E|*GrB_THRESHOLD
+  //  -> d_csrVecVal    |E|*GrB_THRESHOLD
+  //  -> d_csrTempVal   |E|*GrB_THRESHOLD (u_val)
+  //  -> d_csrSwapVal   |E|*GrB_THRESHOLD
   //  -> w_ind          |E|*GrB_THRESHOLD
   //  -> w_val          |E|*GrB_THRESHOLD
   //  -> d_temp_storage runtime constant
@@ -106,73 +103,73 @@ namespace backend
 
 		//Step 1) Gather from CSR graph into one big array  |     |  |
 		// 1. Extracts the row lengths we are interested in 3  3  3  2  3  1
-		//  -> d_cscColBad  |V|/2
+		//  -> d_csrColBad  |V|/2
 		// 2. Scans them, giving the offset from 0          0  3  6  8
-		//  -> d_cscColGood |V|/2
+		//  -> d_csrColGood |V|/2
 		// 3. Extracts the col indices starts we are interested in 0  6  9
-		//  -> d_cscColBad  |V|/2
+		//  -> d_csrColBad  |V|/2
 		// 4. Extracts the neighbour lists
-		//  -> d_cscVecInd  |E|/2 (u_ind)
-		//  -> d_cscVecVal  |E|/2
-		IntervalGather( h_cscVecCount, u_ind, d->d_index, h_cscVecCount, d->d_cscColDiff, d->d_cscColBad, context );
-		mgpu::Scan<mgpu::MgpuScanTypeExc>( d->d_cscColBad, h_cscVecCount, 0, mgpu::plus<int>(), (int*)0, &total, d->d_cscColGood, context );
-		IntervalGather( h_cscVecCount, u_ind, d->d_index, h_cscVecCount, d_cscColPtr, d->d_cscColBad, context );
+		//  -> d_csrVecInd  |E|/2 (u_ind)
+		//  -> d_csrVecVal  |E|/2
+		IntervalGather( h_csrVecCount, u_ind, d->d_index, h_csrVecCount, d->d_csrColDiff, d->d_csrColBad, context );
+		mgpu::Scan<mgpu::MgpuScanTypeExc>( d->d_csrColBad, h_csrVecCount, 0, mgpu::plus<int>(), (int*)0, &total, d->d_csrColGood, context );
+		IntervalGather( h_csrVecCount, u_ind, d->d_index, h_csrVecCount, d_csrColPtr, d->d_csrColBad, context );
 
-		//printf("Processing %d nodes frontier size: %d\n", h_cscVecCount, total);
+		//printf("Processing %d nodes frontier size: %d\n", h_csrVecCount, total);
 
     //Step 2) Vector Portion
 		// a) naive method
 		//   -IntervalExpand into frontier-length list
-		//      1. Gather the elements indexed by d_cscVecInd
-		//      2. Expand the elements to memory set by d_cscColGood
+		//      1. Gather the elements indexed by d_csrVecInd
+		//      2. Expand the elements to memory set by d_csrColGood
 		//   -Element-wise multiplication with frontier
-    //  -> d_cscTempVal |E|/2 (u_val)
-    //  -> d_cscSwapVal |E|/2
-		//IntervalGather( h_cscVecCount, d->d_cscVecInd, d->d_index, h_cscVecCount, d_randVec, d->d_cscTempVal, context );
-		IntervalExpand( total, d->d_cscColGood, u_val, h_cscVecCount, d->d_cscSwapVal, context );
+    //  -> d_csrTempVal |E|/2 (u_val)
+    //  -> d_csrSwapVal |E|/2
+		//IntervalGather( h_csrVecCount, d->d_csrVecInd, d->d_index, h_csrVecCount, d_randVec, d->d_csrTempVal, context );
+		IntervalExpand( total, d->d_csrColGood, u_val, h_csrVecCount, d->d_csrSwapVal, context );
 
 		//Step 3) Matrix Structure Portion
-    //  -> d_cscVecInd  |E|/2
-    //  -> d_cscTempVal |E|/2
-		IntervalGather( total, d->d_cscColBad, d->d_cscColGood, h_cscVecCount, d_cscRowInd, d->d_cscVecInd, context );
-		IntervalGather( total, d->d_cscColBad, d->d_cscColGood, h_cscVecCount, d_cscVal, d->d_cscTempVal, context );
+    //  -> d_csrVecInd  |E|/2
+    //  -> d_csrTempVal |E|/2
+		IntervalGather( total, d->d_csrColBad, d->d_csrColGood, h_csrVecCount, d_csrRowInd, d->d_csrVecInd, context );
+		IntervalGather( total, d->d_csrColBad, d->d_csrColGood, h_csrVecCount, d_csrVal, d->d_csrTempVal, context );
 
 		//Step 4) Element-wise multiplication
-		elementMult<<<NBLOCKS, NTHREADS>>>( total, d->d_cscSwapVal, d->d_cscTempVal, d->d_cscVecVal );
+		elementMult<<<NBLOCKS, NTHREADS>>>( total, d->d_csrSwapVal, d->d_csrTempVal, d->d_csrVecVal );
 
 		//Step 1-4) custom kernel method (1 single kernel)
 		//  modify spmvCsrBinary() to use Indirect load and stop after expand phase
     //  output: 1) index array 2) value array
 
 		//Step 5) Sort step
-    //  -> d_cscSwapInd |E|/2
-    //  -> d_cscVecVal  |E|/2
-    //  -> d_cscSwapVal |E|/2
+    //  -> d_csrSwapInd |E|/2
+    //  -> d_csrVecVal  |E|/2
+    //  -> d_csrSwapVal |E|/2
 		cub::DeviceRadixSort::SortPairs( d->d_temp_storage, temp_storage_bytes, 
-        d->d_cscVecInd, d->d_cscSwapInd, d->d_cscVecVal, d->d_cscSwapVal, 
+        d->d_csrVecInd, d->d_csrSwapInd, d->d_csrVecVal, d->d_csrSwapVal, 
         total );
 		CUDA( cudaMalloc(&d->d_temp_storage, temp_storage_bytes) );
 		cub::DeviceRadixSort::SortPairs( d->d_temp_storage, temp_storage_bytes, 
-        d->d_cscVecInd, d->d_cscSwapInd, d->d_cscVecVal, d->d_cscSwapVal, 
+        d->d_csrVecInd, d->d_csrSwapInd, d->d_csrVecVal, d->d_csrSwapVal, 
         total );
-		//MergesortKeys(d_cscVecInd, total, mgpu::less<int>(), context);
+		//MergesortKeys(d_csrVecInd, total, mgpu::less<int>(), context);
 
 		//Step 6) Gather the rand values
-		//gather<<<NBLOCKS,NTHREADS>>>( total, d_cscVecVal, d_randVec, d_cscVecVal );
+		//gather<<<NBLOCKS,NTHREADS>>>( total, d_csrVecVal, d_randVec, d_csrVecVal );
 
 		//Step 7) Segmented Reduce By Key
-		ReduceByKey( d->d_cscSwapInd, d->d_cscSwapVal, total, (float)0, 
+		ReduceByKey( d->d_csrSwapInd, d->d_csrSwapVal, total, (float)0, 
         mgpu::plus<float>(), mgpu::equal_to<int>(), w_ind, w_val, 
-        &h_cscVecCount, (int*)0, context );
+        &h_csrVecCount, (int*)0, context );
 
-		//printf("Current iteration: %d nonzero vector, %d edges\n",  h_cscVecCount, total);
+		//printf("Current iteration: %d nonzero vector, %d edges\n",  h_csrVecCount, total);
 
 		//Step 8) Reset dense flag array
     //  -> d_mmResult  |V|
 		//preprocessFlag<<<NBLOCKS,NTHREADS>>>( d_mmResult, m );
 
     //Step 9) Sparse Vector to Dense Vector
-		//scatterFloat<<<NBLOCKS,NTHREADS>>>( h_cscVecCount, d->d_cscSwapInd, d->d_cscSwapVal, d_mmResult );
+		//scatterFloat<<<NBLOCKS,NTHREADS>>>( h_csrVecCount, d->d_csrSwapInd, d->d_csrSwapVal, d_mmResult );
     //return total;*/
     return GrB_SUCCESS;
   }
@@ -180,8 +177,8 @@ namespace backend
   // Memory requirements: 2|E|*GrB_THRESHOLD
   //   -GrB_THRESHOLD is defined in graphblas/types.hpp
   // 
-  //  -> d_cscSwapInd   |E|*GrB_THRESHOLD [2*A_nrows: 1*|E|*GrB_THRESHOLD]
-  //  -> d_cscSwapVal   |E|*GrB_THRESHOLD [2*A_nrows+ 2*|E|*GrB_THRESHOLD]
+  //  -> d_csrSwapInd   |E|*GrB_THRESHOLD [2*A_nrows: 1*|E|*GrB_THRESHOLD]
+  //  -> d_csrSwapVal   |E|*GrB_THRESHOLD [2*A_nrows+ 2*|E|*GrB_THRESHOLD]
   //  -> d_temp_storage runtime constant
   //
   // TODO: can lower 2|E|*GrB_THRESHOLD memory requirement further by doing 
@@ -227,35 +224,49 @@ namespace backend
     //        worst-case. This is a global reduce.
     //  -> d_temp_nvals |V|
     //  -> d_scan       |V|
-    void* d_temp_nvals = desc->d_buffer_+2*A_nrows*sizeof(Index);
-    void* d_scan       = desc->d_buffer_+3*A_nrows*sizeof(Index);
+    void* d_temp_nvals = (void*)w_ind;
+    void* d_scan       = (void*)w_val;
     assert( *u_nvals<A_nrows );
 
-    indirectScanKernel<<<NB,NT>>>( A_csrRowPtr, u_ind, *u_nvals, 
-        (Index*) d_temp_nvals );
+    indirectScanKernel<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
+				*u_nvals );
     mgpu::Scan<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals, 0,
         mgpu::plus<int>(), (Index*)d_scan+(*u_nvals), w_nvals, (Index*)d_scan, 
         *(desc->d_context_) );
     printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
     printDevice( "d_scan",       (Index*)d_scan,       *u_nvals+1 );
 
+    std::cout << "u_nvals: " << *u_nvals << std::endl;
     std::cout << "w_nvals: " << *w_nvals << std::endl;
 
 		//Step 1) Gather from CSR graph into one big array  |     |  |
     //Step 2) Vector Portion
 		//   -IntervalExpand into frontier-length list
-		//      1. Gather the elements indexed by d_cscVecInd
-		//      2. Expand the elements to memory set by d_cscColGood
+		//      1. Gather the elements indexed by d_csrVecInd
+		//      2. Expand the elements to memory set by d_csrColGood
 		//   -Element-wise multiplication with frontier
 		//Step 3) Matrix Structure Portion
 		//Step 4) Element-wise multiplication
 		//Step 1-4) custom kernel method (1 single kernel)
 		//  modify spmvCsrIndirectBinary() to stop after expand phase
     //  output: 1) expanded index array 2) expanded value array
+    //  -> d_csrSwapInd |E|/2
+    //  -> d_csrSwapVal |E|/2
+    int    size         = (float)  A_nvals*GrB_THRESHOLD+1;
+    void* d_csrSwapInd = desc->d_buffer_+ 2*A_nrows      *sizeof(Index);
+    void* d_csrSwapVal = desc->d_buffer_+(2*A_nrows+size)*sizeof(Index);
+		/*indirectGather<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
+				*u_nvals );
+    printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
+		IntervalGather( *w_nvals, (Index*)d_temp_nvals, (Index*)d_scan, *u_nvals, 
+        A_csrColInd, d_csrSwapInd, *(desc->d_context_) );
+		IntervalGather( *w_nvals, (Index*)d_temp_nvals, (Index*)d_scan, *u_nvals, 
+        A_csrVal, d_csrSwapVal, *(desc->d_context_) );*/
+
 		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
-        A_csrColInd, u_ind, w_ind, *(desc->d_context_) );
+        A_csrColInd, u_ind, d_csrSwapInd, *(desc->d_context_) );
 		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
-        A_csrVal, u_ind, w_val, *(desc->d_context_) );
+        A_csrVal, u_ind, d_csrSwapVal, *(desc->d_context_) );
 
 		//Step 4) Element-wise multiplication
     //mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, *w_nvals, 
@@ -263,37 +274,38 @@ namespace backend
     //    w_nvals, (T)identity, mul_op, *(desc->d_context_));
     //CUDA( cudaDeviceSynchronize() );
 
-    std::cout << "w_nvals: " << *w_nvals << std::endl;
-    printDevice( "w_ind", w_ind, *w_nvals );
-    printDevice( "w_val", w_val, *w_nvals );
+    printDevice( "SwapInd", d_csrSwapInd, *w_nvals );
+    printDevice( "SwapVal", d_csrSwapVal, *w_nvals );
 
 		//Step 5) Sort step
-    //  -> d_cscSwapInd |E|/2
-    //  -> d_cscSwapVal |E|/2
+    //  -> d_csrTempInd |E|/2
+    //  -> d_csrTempVal |E|/2
     size_t temp_storage_bytes;
     int    size         = (float)  A_nvals*GrB_THRESHOLD+1;
-    void* d_cscSwapInd = desc->d_buffer_+ 4*A_nrows      *sizeof(Index);
-    void* d_cscSwapVal = desc->d_buffer_+(4*A_nrows+size)*sizeof(Index);
+    void* d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
+    void* d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
 
-    cub::DeviceRadixSort::SortPairs( NULL, temp_storage_bytes, w_ind,
-        (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );
+    cub::DeviceRadixSort::SortPairs( NULL, temp_storage_bytes, 
+				(Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
+				(T*)d_csrTempVal, *w_nvals );
 
     desc->resize( temp_storage_bytes, "temp" );
 
-		cub::DeviceRadixSort::SortPairs( desc->d_temp_, temp_storage_bytes, w_ind,
-        (Index*)d_cscSwapInd, w_val, (T*)d_cscSwapVal, *w_nvals );
-		//MergesortKeys(d_cscVecInd, total, mgpu::less<int>(), desc->d_context_);
-    printDevice( "SwapInd", (Index*)d_cscSwapInd, 10 );
-    printDevice( "SwapVal", (T*)    d_cscSwapVal, 10 );
+    cub::DeviceRadixSort::SortPairs( desc->d_temp_, temp_storage_bytes, 
+				(Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
+				(T*)d_csrTempVal, *w_nvals );
+		//MergesortKeys(d_csrVecInd, total, mgpu::less<int>(), desc->d_context_);
+    printDevice( "TempInd", (Index*)d_csrTempInd, 10 );
+    printDevice( "TempVal", (T*)    d_csrTempVal, 10 );
 
 		//Step 6) Segmented Reduce By Key
     Index  w_nvals_t    = 0;
-		ReduceByKey( (Index*)d_cscSwapInd, (T*)d_cscSwapVal, *w_nvals, (float)0, 
+		ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrTempVal, *w_nvals, (float)0, 
         add_op, mgpu::equal_to<int>(), w_ind, w_val, 
         &w_nvals_t, (int*)0, *(desc->d_context_) );
     *w_nvals            = w_nvals_t;
 
-		//printf("Current iteration: %d nonzero vector, %d edges\n",  h_cscVecCount, total);
+		//printf("Current iteration: %d nonzero vector, %d edges\n",  h_csrVecCount, total);
     return GrB_SUCCESS;
   }
 

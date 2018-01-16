@@ -94,7 +94,7 @@ __device__ op_func_t p_mul_func = mul_func;
     if( use_mask )
     {
       // TODO: add if condition here for if( add_ == GrB_LOR )
-      if(false)
+      if(true)
       {
 				// Mask type
 				// 1) Dense mask
