@@ -64,18 +64,16 @@ namespace algorithm
   }
 
   template <typename T>
-  Info bfsCpu( Index  source, 
-			         Index  nrows, 
-							 Index* h_csrRowPtr,
-							 Index* h_csrColInd,
-							 T*     h_bfs_cpu,
-							 Index  depth )
+  Info bfsCpu( Index        source, 
+			         Index        nrows, 
+							 const Index* h_csrRowPtr,
+							 const Index* h_csrColInd,
+							 T*           h_bfs_cpu,
+							 Index        depth )
   {
-		typedef int VertexId; // Use as the node identifier type
+		Index* reference_check_preds = NULL;
 
-		VertexId *reference_check_preds = NULL;
-
-		SimpleReferenceBfs<VertexId,T>( nrows, h_csrRowPtr, h_csrColInd, h_bfs_cpu, 
+		SimpleReferenceBfs<T>( nrows, h_csrRowPtr, h_csrColInd, h_bfs_cpu, 
         reference_check_preds, source, depth);
 
 		//print_array(h_bfsResultCPU, m);

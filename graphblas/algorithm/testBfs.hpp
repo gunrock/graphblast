@@ -10,27 +10,27 @@ namespace graphblas
 namespace algorithm
 {
   // A simple CPU-based reference BFS ranking implementation
-  template <typename VertexId, typename value>
-  int SimpleReferenceBfs( const VertexId  m, 
-                          const VertexId* h_rowPtrA, 
-                          const VertexId* h_colIndA,
-                          value           source_path,
-                          VertexId*       predecessor,
-                          VertexId        src,
-                          VertexId        stop)
+  template <typename T>
+  int SimpleReferenceBfs( Index        m, 
+                          const Index* h_rowPtrA, 
+                          const Index* h_colIndA,
+                          T*           source_path,
+                          Index*       predecessor,
+                          Index        src,
+                          Index        stop)
   {
     //initialize distances
-    for (VertexId i = 0; i < m; ++i)
+    for (Index i = 0; i < m; ++i)
     {
       source_path[i] = -1;
       if (MARK_PREDECESSORS)
         predecessor[i] = -1;
     }
     source_path[src] = 0;
-    VertexId search_depth = 0;
+    Index search_depth = 0;
 
     // Initialize queue for managing previously-discovered nodes
-    std::deque<VertexId> frontier;
+    std::deque<Index> frontier;
     frontier.push_back(src);
 
     //
@@ -42,9 +42,9 @@ namespace algorithm
     while (!frontier.empty())
     {
       // Dequeue node from frontier
-      VertexId dequeued_node = frontier.front();
+      Index dequeued_node = frontier.front();
       frontier.pop_front();
-      VertexId neighbor_dist = source_path[dequeued_node] + 1;
+      Index neighbor_dist = source_path[dequeued_node] + 1;
       if( neighbor_dist > stop )
         break;
 
@@ -55,7 +55,7 @@ namespace algorithm
       for (int edge = edges_begin; edge < edges_end; ++edge) 
       {
         //Lookup neighbor and enqueue if undiscovered
-        VertexId neighbor = h_colIndA[edge];
+        Index neighbor = h_colIndA[edge];
         if (source_path[neighbor] == -1) 
         {
           source_path[neighbor] = neighbor_dist;

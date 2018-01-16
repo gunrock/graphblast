@@ -481,51 +481,51 @@ BOOST_AUTO_TEST_SUITE(dup_suite)
 
 BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
 {
-  testMatrix( "dataset/small/test_cc.mtx" );
-  testNnew(   "dataset/small/test_cc.mtx" );
-  testDup(    "dataset/small/test_cc.mtx" );
-  testClear(  "dataset/small/test_cc.mtx" );
-  testNrows(  "dataset/small/test_cc.mtx" );
-  testNcols(  "dataset/small/test_cc.mtx" );
-  testNvals(  "dataset/small/test_cc.mtx" );
-  testBuild(  "dataset/small/test_cc.mtx" );
-  testExtractTuples( "dataset/small/test_cc.mtx" );
-  /*testCusparseSpgemm( "dataset/small/test_cc.mtx" );
-  testCusparseSpgemm( "dataset/small/test_cc.mtx", 2 );
+  testMatrix( "data/small/test_cc.mtx" );
+  testNnew(   "data/small/test_cc.mtx" );
+  testDup(    "data/small/test_cc.mtx" );
+  testClear(  "data/small/test_cc.mtx" );
+  testNrows(  "data/small/test_cc.mtx" );
+  testNcols(  "data/small/test_cc.mtx" );
+  testNvals(  "data/small/test_cc.mtx" );
+  testBuild(  "data/small/test_cc.mtx" );
+  testExtractTuples( "data/small/test_cc.mtx" );
+  /*testCusparseSpgemm( "data/small/test_cc.mtx" );
+  testCusparseSpgemm( "data/small/test_cc.mtx", 2 );
   testFill( 10, 10 );
   testTranspose( 10, 10 );*/
 }
 
 BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
 {
-  testMatrix( "dataset/small/test_bc.mtx" );
-  testNnew(   "dataset/small/test_bc.mtx" );
-  testDup(    "dataset/small/test_bc.mtx" );
-  testClear(  "dataset/small/test_bc.mtx" );
-  testNrows(  "dataset/small/test_bc.mtx" );
-  testNcols(  "dataset/small/test_bc.mtx" );
-  testNvals(  "dataset/small/test_bc.mtx" );
-  testBuild(  "dataset/small/test_bc.mtx" );
-  testExtractTuples( "dataset/small/test_bc.mtx" );
-  /*testCusparseSpgemm( "dataset/small/test_bc.mtx" );
-  testCusparseSpgemm( "dataset/small/test_bc.mtx", 2 );
+  testMatrix( "data/small/test_bc.mtx" );
+  testNnew(   "data/small/test_bc.mtx" );
+  testDup(    "data/small/test_bc.mtx" );
+  testClear(  "data/small/test_bc.mtx" );
+  testNrows(  "data/small/test_bc.mtx" );
+  testNcols(  "data/small/test_bc.mtx" );
+  testNvals(  "data/small/test_bc.mtx" );
+  testBuild(  "data/small/test_bc.mtx" );
+  testExtractTuples( "data/small/test_bc.mtx" );
+  /*testCusparseSpgemm( "data/small/test_bc.mtx" );
+  testCusparseSpgemm( "data/small/test_bc.mtx", 2 );
   testFill( 40, 40 );
   testTranspose( 40, 40 );*/
 }
 
 BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
 {
-  testMatrix( "dataset/small/chesapeake.mtx" );
-  testNnew(   "dataset/small/chesapeake.mtx" );
-  testDup(    "dataset/small/chesapeake.mtx" );
-  testClear(  "dataset/small/chesapeake.mtx" );
-  testNrows(  "dataset/small/chesapeake.mtx" );
-  testNcols(  "dataset/small/chesapeake.mtx" );
-  testNvals(  "dataset/small/chesapeake.mtx" );
-  testBuild(  "dataset/small/chesapeake.mtx" );
-  testExtractTuples( "dataset/small/chesapeake.mtx" );
-  /*testCusparseSpgemm( "dataset/small/chesapeake.mtx" );
-  testCusparseSpgemm( "dataset/small/chesapeake.mtx", 2 );
+  testMatrix( "data/small/chesapeake.mtx" );
+  testNnew(   "data/small/chesapeake.mtx" );
+  testDup(    "data/small/chesapeake.mtx" );
+  testClear(  "data/small/chesapeake.mtx" );
+  testNrows(  "data/small/chesapeake.mtx" );
+  testNcols(  "data/small/chesapeake.mtx" );
+  testNvals(  "data/small/chesapeake.mtx" );
+  testBuild(  "data/small/chesapeake.mtx" );
+  testExtractTuples( "data/small/chesapeake.mtx" );
+  /*testCusparseSpgemm( "data/small/chesapeake.mtx" );
+  testCusparseSpgemm( "data/small/chesapeake.mtx", 2 );
   testFill( 100, 100 );
   testTranspose( 100, 100 );*/
 }
@@ -535,7 +535,7 @@ BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
   std::vector<int> row_indices(1, 1);
   std::vector<int> col_indices(1, 1);
   std::vector<float> values(   1, 20.);
-  testMxm( "dataset/small/test_cc.mtx", row_indices, col_indices, values, 5 );
+  testMxm( "data/small/test_cc.mtx", row_indices, col_indices, values, 5 );
 }
 
 BOOST_FIXTURE_TEST_CASE( dup17, TestMatrix )
@@ -543,7 +543,7 @@ BOOST_FIXTURE_TEST_CASE( dup17, TestMatrix )
   std::vector<int> row_indices(1, 1);
   std::vector<int> col_indices(1, 1);
   std::vector<float> values(   1, 15.);
-  testMxm( "dataset/small/test_bc.mtx", row_indices, col_indices, values, 5 );
+  testMxm( "data/small/test_bc.mtx", row_indices, col_indices, values, 5 );
 }
 
 BOOST_FIXTURE_TEST_CASE( dup18, TestMatrix )
@@ -551,21 +551,21 @@ BOOST_FIXTURE_TEST_CASE( dup18, TestMatrix )
   std::vector<int> row_indices(1, 1);
   std::vector<int> col_indices(1, 1);
   std::vector<float> values(   1, 170.);
-  testMxm( "dataset/small/chesapeake.mtx", row_indices, col_indices, values, 5 );
+  testMxm( "data/small/chesapeake.mtx", row_indices, col_indices, values, 5 );
 }
 
 BOOST_FIXTURE_TEST_CASE( dup19, TestMatrix )
 {
   std::vector<float> correct{   1., 1., 3., 2., 2., 3., 3., 0., 1., 2., 2. };
   std::vector<float> correct_t{ 3., 3., 3., 2., 3., 1., 0., 3., 2., 0., 0. };
-  testReduce( "dataset/small/test_cc.mtx", correct, correct_t );
+  testReduce( "data/small/test_cc.mtx", correct, correct_t );
 }
 
 BOOST_FIXTURE_TEST_CASE( dup20, TestMatrix )
 {
   std::vector<float> correct{   1., 1., 3., 2., 2., 3., 3. };
   std::vector<float> correct_t{ 3., 3., 3., 2., 3., 1., 0. };
-  testReduce( "dataset/small/test_bc.mtx", correct, correct_t );
+  testReduce( "data/small/test_bc.mtx", correct, correct_t );
 }*/
 
 BOOST_AUTO_TEST_SUITE_END()
