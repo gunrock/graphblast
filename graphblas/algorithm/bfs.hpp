@@ -11,7 +11,8 @@ namespace algorithm
   Info bfs( Vector<float>*       v,
             const Matrix<float>* A, 
             Index                s,
-		        Descriptor*          desc	)
+		        Descriptor*          desc,
+            bool                 transpose=false )
   {
     Index n;
     CHECK( A->nrows( &n ) );
@@ -44,40 +45,51 @@ namespace algorithm
 
     float d    = 0;
     float succ = false;
+    CpuTimer cpu_tight;
+    cpu_tight.Start();
     do
     {
-      std::cout << "Iteration " << d << ":\n";
       if( GrB_DEBUG )
       {
+        std::cout << "Iteration " << d << ":\n";
         v->print();
         q1.print();
+        std::cout << "succ: " << succ << std::endl;
       }
       assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, desc);
       CHECK( desc->toggle(GrB_MASK) );
-      vxm<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, &q1, A, desc);
+      if( transpose )
+        mxv<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, A, &q1, desc);
+      else
+        vxm<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, &q1, A, desc);
       CHECK( desc->toggle(GrB_MASK) );
       CHECK( q2.swap(&q1) );
       reduce<float,float>(&succ, GrB_NULL, &GrB_FP32Add, &q2, desc);
       d++;
-      std::cout << "succ: " << succ << std::endl;
-    //} while( d==0 );
     } while( succ>0 );
+    cpu_tight.Stop();
+    std::cout << "tight, " << cpu_tight.ElapsedMillis() << ", \n";
 
     return GrB_SUCCESS;
   }
 
-  template <typename T>
-  Info bfsCpu( Index        source, 
-			         Index        nrows, 
-							 const Index* h_csrRowPtr,
-							 const Index* h_csrColInd,
-							 T*           h_bfs_cpu,
-							 Index        depth )
+  template <typename T, typename a>
+  Info bfsCpu( Index        source,
+               Matrix<a>*   A,
+               T*           h_bfs_cpu,
+							 Index        depth,
+               bool         transpose=false )
   {
 		Index* reference_check_preds = NULL;
 
-		SimpleReferenceBfs<T>( nrows, h_csrRowPtr, h_csrColInd, h_bfs_cpu, 
-        reference_check_preds, source, depth);
+    if( transpose )
+		  SimpleReferenceBfs<T>( A->matrix_.nrows_, A->matrix_.sparse_.h_cscColPtr_,
+          A->matrix_.sparse_.h_cscRowInd_, h_bfs_cpu, reference_check_preds, 
+          source, depth);
+    else
+		  SimpleReferenceBfs<T>( A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+          A->matrix_.sparse_.h_csrColInd_, h_bfs_cpu, reference_check_preds, 
+          source, depth);
 
 		//print_array(h_bfsResultCPU, m);
 		return GrB_SUCCESS; 

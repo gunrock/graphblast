@@ -23,14 +23,19 @@ int main( int argc, char** argv )
 
   // Parse arguments
   bool DEBUG = true;
+  bool transpose;
 
   // Read in sparse matrix
   if (argc < 2) {
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
+    po::variables_map vm;
+    parseArgs( argc, argv, vm );
+    int directed = vm["directed"].as<int>();
+    transpose    = vm["transpose"].as<bool>();
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, DEBUG );
+        nvals, directed, DEBUG );
   }
 
   // Matrix A
@@ -53,14 +58,13 @@ int main( int argc, char** argv )
       sizeof(graphblas::Index));
   int depth = 2000;
   bfs_cpu.Start();
-  graphblas::algorithm::bfsCpu( 0, nrows, a.matrix_.sparse_.h_csrRowPtr_, 
-      a.matrix_.sparse_.h_csrColInd_, h_bfs_cpu, depth );
+  graphblas::algorithm::bfsCpu( 0, &a, h_bfs_cpu, depth, transpose );
   bfs_cpu.Stop();
 
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::algorithm::bfs(&v, &a, 0, &desc);
+  graphblas::algorithm::bfs(&v, &a, 0, &desc, transpose);
   warmup.Stop();
 
   std::vector<float> h_bfs_gpu;
@@ -70,10 +74,10 @@ int main( int argc, char** argv )
   CpuTimer vxm_gpu;
   //cudaProfilerStart();
   vxm_gpu.Start();
-  int NUM_ITER = 1;//0;
+  int NUM_ITER = 10;//0;
   for( int i=0; i<NUM_ITER; i++ )
   {
-    graphblas::algorithm::bfs(&v, &a, 0, &desc);
+    graphblas::algorithm::bfs(&v, &a, 0, &desc, transpose);
   }
   //cudaProfilerStop();
   vxm_gpu.Stop();

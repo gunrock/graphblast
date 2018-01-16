@@ -30,7 +30,7 @@ void testMatrix( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -52,7 +52,7 @@ void testNnew( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj;
@@ -76,7 +76,7 @@ void testDup( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -108,7 +108,7 @@ void testClear( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -144,7 +144,7 @@ void testNrows( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -170,7 +170,7 @@ void testNcols( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -196,7 +196,7 @@ void testNvals( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -222,7 +222,7 @@ void testBuild( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -252,7 +252,7 @@ void testExtractTuples( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -276,7 +276,7 @@ void testExtractTuples( char const* mtx )
   std::vector<float> C_values;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Set identity matrix to be as big as sparse matrix
   std::vector<graphblas::Index> I_row_indices( nrows+1, 0 );
@@ -394,7 +394,7 @@ void testMxm( char const* mtx,
   graphblas::Info err;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   // Set partition matrix
   graphblas::Matrix<float> curr_partition;
@@ -448,7 +448,7 @@ void testReduce( char const* mtx,
   graphblas::Info err;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, nvals, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
 
   graphblas::Matrix<float> adj(nrows, ncols);
   err = adj.build( row_indices, col_indices, values, nvals );

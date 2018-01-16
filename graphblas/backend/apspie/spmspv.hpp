@@ -99,6 +99,14 @@ namespace backend
             u->d_ind_, u->d_val_, &u->nvals_, desc );
       CUDA( cudaDeviceSynchronize() );
 
+      if( temp_nvals==0 )
+      {
+        std::cout << "No neighbours!\n";
+        w->nvals_       = 0;
+        w->need_update_ = true;
+        return GrB_SUCCESS;
+      }
+
       // Get descriptor parameters for nthreads
       Desc_value nt_mode;
       CHECK( desc->get(GrB_NT, &nt_mode) );

@@ -110,6 +110,7 @@ namespace backend
       if( field=="buffer" ) 
       {
         CUDA( cudaMalloc(&d_buffer_, target) );
+        printMemory( "desc_buffer" );
         if( d_temp_buffer!=NULL )
           CUDA( cudaMemcpy(d_buffer_, d_temp_buffer, *d_size, 
               cudaMemcpyDeviceToDevice) );
@@ -117,6 +118,7 @@ namespace backend
       else if( field=="temp" ) 
       {
         CUDA( cudaMalloc(&d_temp_, target) );
+        printMemory( "desc_temp" );
         if( d_temp_buffer!=NULL )
           CUDA( cudaMemcpy(d_temp_, d_temp_buffer, *d_size, 
               cudaMemcpyDeviceToDevice) );

@@ -275,6 +275,7 @@ namespace backend
 
     CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
     CUDA( cudaMalloc( &d_val_, nsize_*sizeof(T)) );
+    printMemory( "SpVec" );
     if( d_temp_ind!=NULL )
       CUDA( cudaMemcpy( d_ind_, d_temp_ind, to_copy*sizeof(Index), 
           cudaMemcpyDeviceToDevice) );
@@ -351,6 +352,7 @@ namespace backend
     {
       CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
       CUDA( cudaMalloc( &d_val_, nsize_*sizeof(T)) );
+      printMemory( "d_ind, d_val" );
     }
     else
     {

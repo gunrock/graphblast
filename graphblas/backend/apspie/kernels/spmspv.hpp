@@ -226,8 +226,11 @@ namespace backend
     //  -> d_scan       |V|
     void* d_temp_nvals = (void*)w_ind;
     void* d_scan       = (void*)w_val;
-    assert( *u_nvals<A_nrows );
-    std::cout << NT.x << " " << NB.x << std::endl;
+    if( GrB_DEBUG )
+    {
+      assert( *u_nvals<A_nrows );
+      std::cout << NT.x << " " << NB.x << std::endl;
+    }
 
     indirectScanKernel<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
 				*u_nvals );
@@ -243,6 +246,10 @@ namespace backend
       std::cout << "u_nvals: " << *u_nvals << std::endl;
       std::cout << "w_nvals: " << *w_nvals << std::endl;
     }
+
+    // No neighbors is one possible stopping condition
+    if( *w_nvals==0 )
+      return GrB_SUCCESS;
 
 		//Step 1) Gather from CSR graph into one big array  |     |  |
     //Step 2) Vector Portion
@@ -314,8 +321,11 @@ namespace backend
       printDevice( "TempVal", (T*)    d_csrTempVal, *w_nvals );
     }
 
-		printf("Current iteration: %d nonzero vector, %d edges\n", *u_nvals, 
+		if( GrB_DEBUG )
+    {
+      printf("Current iteration: %d nonzero vector, %d edges\n", *u_nvals, 
         *w_nvals);
+    }
 
 		//Step 6) Segmented Reduce By Key
     Index  w_nvals_t    = 0;

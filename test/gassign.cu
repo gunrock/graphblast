@@ -29,7 +29,7 @@ int main( int argc, char** argv )
     exit(1);
   } else { 
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, DEBUG );
+        nvals, 0, DEBUG );
   }
 
   // Vector mask

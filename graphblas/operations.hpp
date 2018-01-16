@@ -92,12 +92,11 @@ namespace graphblas
         &u->vector_, &A->matrix_, desc_t );
   }
 
-  template <typename W, typename a, typename U, typename M, 
-            typename BinaryOpT,     typename SemiringT>
+  template <typename W, typename a, typename U>
   Info mxv( Vector<W>*       w,
-            const Vector<M>* mask,
-            const BinaryOpT* accum,
-            const SemiringT* op,
+            const Vector<U>* mask,
+            const BinaryOp<a,a,a>* accum,
+            const Semiring<a,a,a>* op,
             const Matrix<a>* A,
             const Vector<U>* u,
             Descriptor*      desc )
@@ -107,7 +106,15 @@ namespace graphblas
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
-    CHECK( checkDimVecNvals( u, "u.nvals == 0" ) );
+    Index u_nvals = 0;
+    CHECK( u->nvals(&u_nvals) );
+    if( u_nvals==0 )
+    {
+      std::cout << "u.nvals == 0\n";
+      CHECK( w->dup(u) );
+      return GrB_SUCCESS;
+    }
+    //CHECK( checkDimVecNvals( u, "u.nvals == 0" ) );
 
     // Case 1: A *u
     CHECK( checkDimColSize(  A, u,    "A.ncols != u.size"    ) );
@@ -116,9 +123,12 @@ namespace graphblas
 
     // Case 2: AT*u
 
-    backend::Vector<M>*  mask_t = (mask==NULL ) ? NULL : &mask->vector_;
-    auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
-    backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+    const backend::Vector<U>*        mask_t = (mask==NULL ) ? NULL 
+        : &mask->vector_;
+    const backend::BinaryOp<a,a,a>* accum_t = (accum==NULL) ? NULL 
+        : &accum->op_;
+    backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
+        : &desc->descriptor_;
 
     return backend::mxv( &w->vector_, mask_t, accum_t, &op->op_, &A->matrix_,
         &u->vector_, desc_t );

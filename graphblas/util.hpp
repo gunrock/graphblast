@@ -47,6 +47,8 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
     ("split", po::value<bool>()->default_value(false), 
        "split spgemm computation")
     ("iter", po::value<int>()->default_value(10), "number of iterations")
+    ("directed", po::value<int>()->default_value(0), "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected")
+    ("transpose", po::value<bool>()->default_value(false), "use transpose graph")
     ("device", po::value<int>()->default_value(0), "GPU device number")
     ("debug", po::value<bool>()->default_value(false), "debug on")
   ;
@@ -290,14 +292,15 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
 }
 
 template<typename T>
-int readMtx( const char *fname,
+int readMtx( const char*                    fname,
              std::vector<graphblas::Index>& row_indices,
              std::vector<graphblas::Index>& col_indices,
-             std::vector<T>& values,
-             graphblas::Index& nrows,
-             graphblas::Index& ncols,
-             graphblas::Index& nvals,
-             const bool DEBUG )
+             std::vector<T>&                values,
+             graphblas::Index&              nrows,
+             graphblas::Index&              ncols,
+             graphblas::Index&              nvals,
+             int                            directed,
+             bool                           DEBUG )
 {
   int ret_code;
   MM_typecode matcode;
@@ -325,8 +328,11 @@ int readMtx( const char *fname,
   else if (mm_is_pattern(matcode))
     readTuples<T>( row_indices, col_indices, values, nvals, f );
 
-  // If graph is symmetric, replicate it out in memory
-  if( mm_is_symmetric(matcode) )
+  // Directed controls how matrix is interpreted:
+  // 0: If it is marked symmetric, then double the edges. Else do nothing.
+  // 1: Force matrix to be unsymmetric.
+  // 2: Force matrix to be symmetric.
+  if( (mm_is_symmetric(matcode) && directed==0) || directed==2 )
   // If user wants to treat MTX as a directed graph
   //if( undirected )
     makeSymmetric<T>( row_indices, col_indices, values, nvals, f );

@@ -319,7 +319,10 @@ namespace backend
 
     // GPU malloc
     if( nvals_>0 && d_val_ == NULL )
+    {
       CUDA( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
+      printMemory( "DeVec" );
+    }
     else
     {
       //std::cout << "Error: DeVec Device allocation unsuccessful!\n";
