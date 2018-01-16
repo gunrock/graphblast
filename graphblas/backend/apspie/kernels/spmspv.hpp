@@ -264,9 +264,9 @@ namespace backend
         A_csrVal, d_csrSwapVal, *(desc->d_context_) );*/
 
 		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
-        A_csrColInd, u_ind, d_csrSwapInd, *(desc->d_context_) );
+        A_csrColInd, u_ind, (Index*)d_csrSwapInd, *(desc->d_context_) );
 		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
-        A_csrVal, u_ind, d_csrSwapVal, *(desc->d_context_) );
+        A_csrVal, u_ind, (T*)d_csrSwapVal, *(desc->d_context_) );
 
 		//Step 4) Element-wise multiplication
     //mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, *w_nvals, 
@@ -274,14 +274,13 @@ namespace backend
     //    w_nvals, (T)identity, mul_op, *(desc->d_context_));
     //CUDA( cudaDeviceSynchronize() );
 
-    printDevice( "SwapInd", d_csrSwapInd, *w_nvals );
-    printDevice( "SwapVal", d_csrSwapVal, *w_nvals );
+    printDevice( "SwapInd", (Index*)d_csrSwapInd, *w_nvals );
+    printDevice( "SwapVal", (T*)    d_csrSwapVal, *w_nvals );
 
 		//Step 5) Sort step
     //  -> d_csrTempInd |E|/2
     //  -> d_csrTempVal |E|/2
     size_t temp_storage_bytes;
-    int    size         = (float)  A_nvals*GrB_THRESHOLD+1;
     void* d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     void* d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
 
@@ -295,8 +294,8 @@ namespace backend
 				(Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
 				(T*)d_csrTempVal, *w_nvals );
 		//MergesortKeys(d_csrVecInd, total, mgpu::less<int>(), desc->d_context_);
-    printDevice( "TempInd", (Index*)d_csrTempInd, 10 );
-    printDevice( "TempVal", (T*)    d_csrTempVal, 10 );
+    printDevice( "TempInd", (Index*)d_csrTempInd, *w_nvals );
+    printDevice( "TempVal", (T*)    d_csrTempVal, *w_nvals );
 
 		//Step 6) Segmented Reduce By Key
     Index  w_nvals_t    = 0;

@@ -60,7 +60,7 @@ namespace backend
     // temp_ind and temp_val need |V| memory for masked case, so just allocate 
     // this much memory for now. TODO: optimize for memory
     int size          = (float)A->nvals_*GrB_THRESHOLD+1;
-    desc->resize((2*A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
+    desc->resize((2*A_nrows+4*size)*max(sizeof(Index),sizeof(T)), "buffer");
 
     // Only difference between masked and unmasked versions if whether
     // eWiseMult() is called afterwards or not
