@@ -3,7 +3,8 @@
 
 #define GrB_NULL      NULL
 #define GrB_ALL       NULL
-#define GrB_DEBUG     false
+#define GrB_DEBUG     false // print debug info
+#define GrB_MEMORY    true  // print memory usage info
 //#define GrB_NULL       nullptr
 //#define GrB_NULL       static_cast<int*>(NULL)
 #define GrB_THRESHOLD 1.0 //0.5

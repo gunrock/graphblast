@@ -24,9 +24,12 @@ namespace graphblas
   void printMemory( const char* str )
   {
     size_t free, total;
-    CUDA( cudaMemGetInfo(&free, &total) );
-    std::cout << str << ": " << free << " bytes left out of " << total << 
+    if( GrB_MEMORY )
+    {
+      CUDA( cudaMemGetInfo(&free, &total) );
+      std::cout << str << ": " << free << " bytes left out of " << total << 
         " bytes\n";
+    }
   }
 
   template <typename T>

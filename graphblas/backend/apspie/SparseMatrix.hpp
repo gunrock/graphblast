@@ -105,8 +105,8 @@ namespace backend
     Info gpuToCpu( bool force_update=false );
 
     private:
-    const T kcap_ratio_ = 1.f;
-    const T kresize_ratio_ = 1.f;
+    const T kcap_ratio_    = 1.2f;  // Note: nasty bug if this is set to 1.f!
+    const T kresize_ratio_ = 1.2f;
 
     Index nrows_;
     Index ncols_;
