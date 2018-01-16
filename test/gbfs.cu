@@ -11,7 +11,7 @@
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
-#include "algorithms/bfs.hpp"
+#include "graphblas/graph/bfs.hpp"
 #include "test/test.hpp"
 
 int main( int argc, char** argv )
@@ -44,28 +44,45 @@ int main( int argc, char** argv )
   // Vector v
   graphblas::Vector<float> v(nrows);
 
+  // Cpu BFS
+  CpuTimer bfs_cpu;
+  graphblas::Index* h_bfs_cpu = (graphblas::Index*)malloc(nrows*
+      sizeof(graphblas::Index));
+  int depth = 1000;
+  bfs_cpu.Start();
+  //graphblas::graph::bfsCpu( 0, nrows, a.matrix_.sparse_.h_cscColPtr_, 
+  //    a.matrix_.sparse_.h_cscRowInd_, h_bfs_cpu, depth );
+  graphblas::graph::bfsCpu( 0, nrows, a.matrix_.sparse_.h_csrRowPtr_, 
+      a.matrix_.sparse_.h_csrColInd_, h_bfs_cpu, depth );
+  bfs_cpu.Stop();
+
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::bfs(&v, &a, 0);
+  graphblas::graph::bfs(&v, &a, 0);
   warmup.Stop();
  
-  CpuTimer cpu_vxm;
+  CpuTimer vxm_gpu;
   //cudaProfilerStart();
-  cpu_vxm.Start();
+  vxm_gpu.Start();
   int NUM_ITER = 1;//0;
   /*for( int i=0; i<NUM_ITER; i++ )
   {
     graphblas::bfs(&v, &a, 0);
   }*/
   //cudaProfilerStop();
-  cpu_vxm.Stop();
+  vxm_gpu.Stop();
 
   float flop = 0;
+  std::cout << "cpu, " << bfs_cpu.ElapsedMillis() << ", \n";
   if( DEBUG ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
-  float elapsed_vxm = cpu_vxm.ElapsedMillis();
+  float elapsed_vxm = vxm_gpu.ElapsedMillis();
   std::cout << "vxm, " << elapsed_vxm/NUM_ITER << "\n";
+
+  std::vector<float> h_bfs_gpu;
+  CHECK( v.extractTuples(&h_bfs_gpu, &nrows) );
+  BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
 
   /*c.extractTuples( out_denseVal );
   for( int i=0; i<nvals; i++ )

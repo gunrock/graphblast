@@ -58,6 +58,7 @@ void BOOST_ASSERT_LIST( const T* lhs,
     //std::cout << lhs[i] << "==" << rhs[i] << std::endl;
     BOOST_ASSERT( lhs[i] == rhs[i] );
   }
+	std::cout << "All correct!\n";
 }
 
 template <typename T>

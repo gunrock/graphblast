@@ -5,7 +5,7 @@
 #define GrB_ALL       NULL
 //#define GrB_NULL       nullptr
 //#define GrB_NULL       static_cast<int*>(NULL)
-#define GrB_THRESHOLD 0.5
+#define GrB_THRESHOLD 1.0 //0.5
 
 #include <cstddef>
 #include <cstdint>
