@@ -23,8 +23,7 @@ namespace algorithm
     // Frontier vectors (use float for now)
     Vector<float> q1(n);
     Vector<float> q2(n);
-    std::vector<Index> indices(1,s);
-    std::vector<float>  values(1,1.f);
+
     Desc_value desc_value;
     CHECK( desc->get(GrB_MXVMODE, &desc_value) );
     if( desc_value==GrB_PULLONLY )
@@ -33,7 +32,11 @@ namespace algorithm
       CHECK( q1.setElement(1.f,s) );
     }
     else
+    {
+      std::vector<Index> indices(1,s);
+      std::vector<float>  values(1,1.f);
       CHECK( q1.build(&indices, &values, 1, GrB_NULL) );
+    }
 
     // Semiring
     /*BinaryOp GrB_LOR(  logical_or() );
@@ -50,7 +53,7 @@ namespace algorithm
 		GrB_FP32AddMul.nnew( GrB_FP32Add, GrB_TIMES_FP32 );
 
     float d    = 0;
-    float succ = false;
+    float succ = 0.f;
     CpuTimer cpu_tight;
     cpu_tight.Start();
     do
@@ -60,7 +63,6 @@ namespace algorithm
         std::cout << "Iteration " << d << ":\n";
         v->print();
         q1.print();
-        std::cout << "succ: " << succ << std::endl;
       }
       if( desc->descriptor_.timing_==2 )
       {
@@ -78,6 +80,9 @@ namespace algorithm
       CHECK( desc->toggle(GrB_MASK) );
       CHECK( q2.swap(&q1) );
       reduce<float,float>(&succ, GrB_NULL, &GrB_FP32Add, &q2, desc);
+
+      if( desc->descriptor_.debug() )
+        std::cout << "succ: " << succ << " " << (int)succ << std::endl;
       d++;
     } while( succ>0 );
     cpu_tight.Stop();

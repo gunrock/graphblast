@@ -99,6 +99,11 @@ namespace backend
           assignDenseSparseMaskedKernel<false,true ,true ><<<NB,NT>>>( 
               w->d_val_, w->nvals_, (mask->sparse_).d_ind_, 
               (mask->sparse_).nvals_, accum, (W)val, indices_t, nindices );
+
+        if( desc->debug() )
+        {
+          printDevice("mask_ind", (mask->sparse_).d_ind_, mask->sparse_.nvals_);
+        }
       }
       else
       {
@@ -107,7 +112,7 @@ namespace backend
 
       if( desc->debug() )
       {
-        printDevice("mask", (mask->sparse_).d_val_, mask->sparse_.nvals_);
+        printDevice("mask_val", (mask->sparse_).d_val_, mask->sparse_.nvals_);
         printDevice("w_val", w->d_val_, w->nvals_);
       }
     }

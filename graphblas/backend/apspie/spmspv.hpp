@@ -9,6 +9,7 @@
 #include "graphblas/backend/apspie/operations.hpp"
 #include "graphblas/backend/apspie/spmspvInner.hpp"
 #include "graphblas/backend/apspie/kernels/assignSparse.hpp"
+#include "graphblas/backend/apspie/kernels/assignDense.hpp"
 #include "graphblas/backend/apspie/kernels/util.hpp"
 
 namespace graphblas
@@ -17,10 +18,10 @@ namespace backend
 {
 
   template <typename W, typename a, typename U, typename M,
-            typename BinaryOpT,      typename SemiringT>
+            typename SemiringT>
   Info spmspv( SparseVector<W>*       w,
                const Vector<M>*       mask,
-               const BinaryOpT*       accum,
+               const BinaryOp<a,a,a>*       accum,
                const SemiringT*       op,
                const SparseMatrix<a>* A,
                const SparseVector<U>* u,
@@ -132,60 +133,101 @@ namespace backend
       CHECK( mask->getStorage(&mask_vec_type) );
       assert( mask->dense_.nvals_ >= temp_nvals );
 
-      // For visited nodes, assign 0.f to vector
-      // For GrB_DENSE mask, need to add parameter for mask_identity to user
-      if( mask_vec_type==GrB_DENSE )
+      if( GrB_STRUCONLY )
       {
         if( use_scmp )
-          assignSparseKernel<true, true, true><<<NB,NT>>>( temp_ind, temp_val, 
+          assignDenseDenseMaskedKernel<true,true,true><<<NB,NT>>>(temp_ind, 
               temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
-              (BinaryOp<U,U,U>*)NULL, (U)0.f, (Index*)NULL, A_nrows );
-        else
-          assignSparseKernel<false,true, true><<<NB,NT>>>( temp_ind, temp_val,
-              temp_nvals, (mask->dense_).d_val_, (M)-1.f,
-              (BinaryOp<U,U,U>*)NULL, (U)0.f, (Index*)NULL, A_nrows );
-      }
-      else if( mask_vec_type==GrB_SPARSE )
-      {
-        std::cout << "Spmspv Sparse Mask\n";
-        std::cout << "Error: Feature not implemented yet!\n";
+              (BinaryOp<Index,Index,Index>*)NULL, 
+              (Index)0, 
+              (Index*)NULL, 
+              A_nrows);
+
+        if( desc->debug() )
+        {
+          CUDA( cudaDeviceSynchronize() );
+          printDevice("mask", (mask->dense_).d_val_, A_nrows);
+          printDevice("temp_ind", temp_ind, A_nrows);
+        }
+
+        // Turn dense vector into sparse
+        desc->resize((3*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
+        Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
+
+        mgpu::Scan<mgpu::MgpuScanTypeExc>( temp_ind, A_nrows, (Index)0, 
+            mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
+            *(desc->d_context_) );
+
+        if( desc->debug() )
+        {
+          printDevice("d_scan", d_scan, A_nrows);
+        }
+
+        streamCompactKernel<<<NB,NT>>>(w->d_ind_, temp_ind, d_scan, (W)0, 
+            temp_ind, A_nrows);
+
+        if( desc->debug() )
+        {
+          printDevice("w_ind", w->d_ind_, w->nvals_);
+        }
       }
       else
       {
-        return GrB_UNINITIALIZED_OBJECT;
-      }
+        // For visited nodes, assign 0.f to vector
+        // For GrB_DENSE mask, need to add parameter for mask_identity to user
+        if( mask_vec_type==GrB_DENSE )
+        {
+          if( use_scmp )
+            assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, temp_val, 
+              temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
+              (BinaryOp<U,U,U>*)NULL, (U)0.f, (Index*)NULL, A_nrows);
+          else
+            assignSparseKernel<false,true, true><<<NB,NT>>>(temp_ind, temp_val, 
+              temp_nvals, (mask->dense_).d_val_, (M)-1.f,
+              (BinaryOp<U,U,U>*)NULL, (U)0.f, (Index*)NULL, A_nrows);
+        }
+        else if( mask_vec_type==GrB_SPARSE )
+        {
+          std::cout << "Spmspv Sparse Mask\n";
+          std::cout << "Error: Feature not implemented yet!\n";
+        }
+        else
+        {
+          return GrB_UNINITIALIZED_OBJECT;
+        }
 
-      if( desc->debug() )
-      {
-        CUDA( cudaDeviceSynchronize() );
-        printDevice("mask", (mask->dense_).d_val_, A_nrows);
-        printDevice("temp_ind", temp_ind, temp_nvals);
-        printDevice("temp_val", temp_val, temp_nvals);
-      }
+        if( desc->debug() )
+        {
+          CUDA( cudaDeviceSynchronize() );
+          printDevice("mask", (mask->dense_).d_val_, A_nrows);
+          printDevice("temp_ind", temp_ind, temp_nvals);
+          printDevice("temp_val", temp_val, temp_nvals);
+        }
 
-      // Prune 0.f's from vector
-      desc->resize((4*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
-      Index* d_flag = (Index*) desc->d_buffer_+2*A_nrows;
-      Index* d_scan = (Index*) desc->d_buffer_+3*A_nrows;
+        // Prune 0.f's from vector
+        desc->resize((4*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
+        Index* d_flag = (Index*) desc->d_buffer_+2*A_nrows;
+        Index* d_scan = (Index*) desc->d_buffer_+3*A_nrows;
 
-      updateFlagKernel<<<NB,NT>>>( d_flag, 0.f, temp_val, temp_nvals );
-      mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 
-          mgpu::plus<Index>(), d_scan+temp_nvals, &w->nvals_, d_scan, 
-          *(desc->d_context_) );
+        updateFlagKernel<<<NB,NT>>>( d_flag, 0.f, temp_val, temp_nvals );
+        mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 
+            mgpu::plus<Index>(), d_scan+temp_nvals, &w->nvals_, d_scan, 
+            *(desc->d_context_) );
 
-      if( desc->debug() )
-      {
-        printDevice("d_flag", d_flag, temp_nvals);
-        printDevice("d_scan", d_scan, temp_nvals);
-      }
+        if( desc->debug() )
+        {
+          printDevice("d_flag", d_flag, temp_nvals);
+          printDevice("d_scan", d_scan, temp_nvals);
+        }
 
-      streamCompactKernel<<<NB,NT>>>( w->d_ind_, w->d_val_, d_scan, (W)0, 
-          temp_ind, temp_val, temp_nvals );
+        streamCompactKernel<<<NB,NT>>>(w->d_ind_, w->d_val_, d_scan, (W)0,
+            temp_ind, temp_val, temp_nvals);
 
-      if( desc->debug() )
-      {
-        printDevice("w_ind", w->d_ind_, w->nvals_);
-        printDevice("w_val", w->d_val_, w->nvals_);
+        if( desc->debug() )
+        {
+          printDevice("w_ind", w->d_ind_, w->nvals_);
+          printDevice("w_val", w->d_val_, w->nvals_);
+        }
       }
     }
     else

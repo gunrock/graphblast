@@ -199,7 +199,7 @@ namespace backend
     }
 
     indirectScanKernel<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
-				*u_nvals );
+        *u_nvals );
     mgpu::Scan<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals, 0,
         mgpu::plus<int>(), (Index*)d_scan+(*u_nvals), w_nvals, (Index*)d_scan, 
         *(desc->d_context_) );
@@ -211,6 +211,12 @@ namespace backend
 
       std::cout << "u_nvals: " << *u_nvals << std::endl;
       std::cout << "w_nvals: " << *w_nvals << std::endl;
+    }
+
+    if( GrB_STRUCONLY )
+    {
+      CUDA( cudaMemset(w_ind, 0, A_nrows) );
+      //CUDA( cudaMemsetAsync(w_ind, 0, A_nrows) );
     }
 
     // No neighbors is one possible stopping condition
@@ -241,10 +247,12 @@ namespace backend
 		IntervalGather( *w_nvals, (Index*)d_temp_nvals, (Index*)d_scan, *u_nvals, 
         A_csrVal, d_csrSwapVal, *(desc->d_context_) );*/
 
+    // TODO: Add element-wise multiplication with frontier
 		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
         A_csrColInd, u_ind, (Index*)d_csrSwapInd, *(desc->d_context_) );
-		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
-        A_csrVal, u_ind, (T*)d_csrSwapVal, *(desc->d_context_) );
+    if( !GrB_STRUCONLY )
+		  IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
+          A_csrVal, u_ind, (T*)d_csrSwapVal, *(desc->d_context_) );
 
 		//Step 4) Element-wise multiplication
     //mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, *w_nvals, 
@@ -255,7 +263,8 @@ namespace backend
     if( desc->debug() )
     {
       printDevice( "SwapInd", (Index*)d_csrSwapInd, *w_nvals );
-      printDevice( "SwapVal", (T*)    d_csrSwapVal, *w_nvals );
+      if( !GrB_STRUCONLY )
+        printDevice( "SwapVal", (T*)    d_csrSwapVal, *w_nvals );
     }
 
 		//Step 5) Sort step
@@ -265,26 +274,49 @@ namespace backend
     void* d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     void* d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
 
-    CUDA( cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes, 
-				(Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
-				(T*)d_csrTempVal, *w_nvals) );
-
-    if( desc->debug() )
+    if( GrB_STRUCONLY )
     {
-      std::cout << temp_storage_bytes << " bytes required!\n";
+      CUDA( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
+          (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals) );
+      
+      if( desc->debug() )
+      {
+        std::cout << temp_storage_bytes << " bytes required!\n";
+      }
+
+      desc->resize( temp_storage_bytes, "temp" );
+
+      CUDA( cub::DeviceRadixSort::SortKeys(desc->d_temp_, temp_storage_bytes,
+          (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals) );
+
+      if( desc->debug() )
+      {
+        printDevice( "TempInd", (Index*)d_csrTempInd, *w_nvals );
+      }
     }
-
-    desc->resize( temp_storage_bytes, "temp" );
-
-    CUDA( cub::DeviceRadixSort::SortPairs(desc->d_temp_, temp_storage_bytes, 
-				(Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
-				(T*)d_csrTempVal, *w_nvals) );
-    //desc->clear("temp");
-		//MergesortKeys(d_csrVecInd, total, mgpu::less<int>(), desc->d_context_);
-    if( desc->debug() )
+    else
     {
-      printDevice( "TempInd", (Index*)d_csrTempInd, *w_nvals );
-      printDevice( "TempVal", (T*)    d_csrTempVal, *w_nvals );
+      CUDA( cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes, 
+          (Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
+          (T*)d_csrTempVal, *w_nvals) );
+
+      if( desc->debug() )
+      {
+        std::cout << temp_storage_bytes << " bytes required!\n";
+      }
+
+      desc->resize( temp_storage_bytes, "temp" );
+
+      CUDA( cub::DeviceRadixSort::SortPairs(desc->d_temp_, temp_storage_bytes, 
+          (Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
+          (T*)d_csrTempVal, *w_nvals) );
+      //MergesortKeys(d_csrVecInd, total, mgpu::less<int>(), desc->d_context_);
+
+      if( desc->debug() )
+      {
+        printDevice( "TempInd", (Index*)d_csrTempInd, *w_nvals );
+        printDevice( "TempVal", (T*)    d_csrTempVal, *w_nvals );
+      }
     }
 
 		if( desc->debug() )
@@ -294,11 +326,20 @@ namespace backend
     }
 
 		//Step 6) Segmented Reduce By Key
-    Index  w_nvals_t    = 0;
-		ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrTempVal, *w_nvals, (float)0, 
-        add_op, mgpu::equal_to<int>(), w_ind, w_val, 
-        &w_nvals_t, (int*)0, *(desc->d_context_) );
-    *w_nvals            = w_nvals_t;
+    if( GrB_STRUCONLY )
+    {
+      NB.x = (*w_nvals+nt-1)/nt;
+      scatter<<<NB,NT>>>(w_ind, (Index*)d_csrTempInd, *w_nvals);
+      *w_nvals = A_nrows;
+    }
+    else
+    {
+      Index  w_nvals_t = 0;
+      ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrTempVal, *w_nvals, (float)0, 
+          add_op, mgpu::equal_to<int>(), w_ind, w_val, 
+          &w_nvals_t, (int*)0, *(desc->d_context_) );
+      *w_nvals         = w_nvals_t;
+    }
 
     return GrB_SUCCESS;
   }

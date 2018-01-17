@@ -12,13 +12,13 @@ namespace backend
   template <bool UseScmp, bool UseMask, bool UseAll,
             typename U, typename M>
   __global__ void assignDenseDenseMaskedKernel( U*               u_val,
-                                     Index            u_nvals,
-                                     const M*         mask_val,
-                                     M                mask_identity,
-                                     const BinaryOp<U,U,U>* accum_op,
-                                     U                val,
-                                     const Index*     indices,
-                                     Index            nindices )
+                                                Index            u_nvals,
+                                                const M*         mask_val,
+                                                M                mask_identity,
+                                                const BinaryOp<U,U,U>* accum_op,
+                                                U                val,
+                                                const Index*     indices,
+                                                Index            nindices )
   {
     unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
 

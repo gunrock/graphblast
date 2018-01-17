@@ -27,13 +27,13 @@ namespace backend
   }
 
   template <typename W, typename U>
-  __global__ void streamCompactKernel( Index* w_ind,
-                                       W*     w_val,
-                                       Index* d_scan,
-                                       U      identity,
-                                       Index* u_ind,
-                                       U*     u_val,
-                                       Index  u_nvals )
+  __global__ void streamCompactKernel( Index*       w_ind,
+                                       W*           w_val,
+                                       const Index* d_scan,
+                                       U            identity,
+                                       const Index* u_ind,
+                                       const U*     u_val,
+                                       Index        u_nvals )
   {
     unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -47,6 +47,29 @@ namespace backend
       {
         w_ind[scatter] = ind;
         w_val[scatter] = val;
+      }
+    }
+  }
+
+  template <typename U>
+  __global__ void streamCompactKernel( Index*       w_ind,
+                                       const Index* d_flag,
+                                       const Index* d_scan,
+                                       U            identity,
+                                       const Index* u_ind,
+                                       Index        u_nvals )
+  {
+    unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
+
+    for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
+    {
+      Index ind     = __ldg( u_ind +row );
+      Index scatter = __ldg( d_scan+row );
+      Index flag    = __ldg( d_flag+row );
+
+      if( flag )
+      {
+        w_ind[scatter] = row;
       }
     }
   }
@@ -84,6 +107,18 @@ namespace backend
       Index   row = __ldg( u_ind+gid );
       Index start = __ldg( A_csrRowPtr+row );
       d_temp_nvals[gid] = start;
+    }
+  }
+
+  __global__ void scatter( Index*       w_ind,
+                         const Index* u_ind,
+                         Index        u_nvals )
+  {
+    int gid = blockIdx.x*blockDim.x+threadIdx.x;
+
+    if( gid<u_nvals )
+    {
+      w_ind[u_ind[gid]] = 1;
     }
   }
 

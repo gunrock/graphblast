@@ -21,15 +21,24 @@ int main( int argc, char** argv )
   graphblas::Index nrows, ncols, nvals;
 
   // Parse arguments
-  bool DEBUG = true;
+  bool debug;
+  bool transpose;
+  int  directed;
+  int  niter;
+  po::variables_map vm;
 
   // Read in sparse matrix
   if (argc < 2) {
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
+    parseArgs( argc, argv, vm );
+    debug     = vm["debug"    ].as<bool>();
+    transpose = vm["transpose"].as<bool>();
+    directed  = vm["directed" ].as<int>();
+    niter     = vm["niter"    ].as<int>();
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, 0, DEBUG );
+        nvals, directed, debug );
   }
 
   // Matrix A
@@ -38,15 +47,15 @@ int main( int argc, char** argv )
   CHECK( a.nrows(&nrows) );
   CHECK( a.ncols(&ncols) );
   CHECK( a.nvals(&nvals) );
-  if( DEBUG ) CHECK( a.print() );
+  if( debug ) CHECK( a.print() );
 
   // Vector x
   graphblas::Vector<float> x(nrows);
   std::vector<graphblas::Index> x_ind = {1,   2,   3};
-  std::vector<float>            x_val = {2.f, 2.f, 2.f};
+  std::vector<float>            x_val = {1.f, 1.f, 1.f};
   CHECK( x.build(&x_ind, &x_val, 3, GrB_NULL) );
   CHECK( x.size(&nrows) );
-  if( DEBUG ) CHECK( x.print() );
+  if( debug ) CHECK( x.print() );
 
   // Vector y
   graphblas::Vector<float> y(nrows);
@@ -59,6 +68,7 @@ int main( int argc, char** argv )
 
   // Descriptor
   graphblas::Descriptor desc;
+  CHECK( desc.loadArgs(vm) );
   CHECK( desc.set(graphblas::GrB_MASK, graphblas::GrB_SCMP) );
   CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHONLY) );
 
@@ -97,8 +107,7 @@ int main( int argc, char** argv )
   CpuTimer cpu_vxm;
   //cudaProfilerStart();
   cpu_vxm.Start();
-  int NUM_ITER = 1;//0;
-  for( int i=0; i<NUM_ITER; i++ )
+  for( int i=0; i<niter; i++ )
   {
     graphblas::vxm<float, float, float>( &y, &m, GrB_NULL, 
         &GrB_FP32AddMul, &x, &a, &desc );
@@ -107,12 +116,12 @@ int main( int argc, char** argv )
   cpu_vxm.Stop();
 
   float flop = 0;
-  if( DEBUG ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
+  if( debug ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
   float elapsed_vxm = cpu_vxm.ElapsedMillis();
-  std::cout << "vxm, " << elapsed_vxm/NUM_ITER << "\n";
+  std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
-  if( DEBUG ) y.print();
+  if( debug ) y.print();
   /*c.extractTuples( out_denseVal );
   for( int i=0; i<nvals; i++ )
   {
