@@ -3,8 +3,8 @@
 
 #define GrB_NULL      NULL
 #define GrB_ALL       NULL
-//#define GrB_DEBUG     false // print debug info
-//#define GrB_MEMORY    false//true  // print memory usage info
+// TODO: change GrB_MEMORY into commandline parameter
+#define GrB_MEMORY    false  // print memory usage info
 //#define GrB_NULL       nullptr
 //#define GrB_NULL       static_cast<int*>(NULL)
 #define GrB_THRESHOLD 1.0 //0.5
@@ -50,8 +50,6 @@ namespace graphblas
                    GrB_MXVMODE,
                    GrB_SPMSPVMODE,
                    GrB_TOL,
-                   GrB_DEBUG,
-                   GrB_MEMORY,
                    GrB_NDESCFIELD};
 
   enum Desc_value {GrB_SCMP,             // for GrB_MASK
@@ -70,8 +68,6 @@ namespace graphblas
                    GrB_APSPIELB  =  14,  // for GrB_SPMSPVMODE
                    GrB_GUNROCKLB =  15,  // for GrB_SPMSPVMODE
                    GrB_GUNROCKTWC=  17,  // for GrB_SPMSPVMODE
-                   GrB_DEBUGON   =  18,  // for GrB_DEBUG
-                   GrB_MEMORYON  =  19,  // for GrB_MEMORY
                    GrB_8         =   8,  // for GrB_TA, GrB_TB, GrB_NT
                    GrB_16        =  16,  // for GrB_TOL
                    GrB_32        =  32,

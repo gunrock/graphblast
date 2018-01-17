@@ -39,7 +39,7 @@ namespace backend
     bool use_scmp = (scmp_mode==GrB_SCMP);
     bool use_repl = (repl_mode==GrB_REPLACE); //TODO
 
-    if( GrB_DEBUG )
+    if( desc->debug() )
     {
       std::cout << "Executing assignDense\n";
       printState( use_mask, use_accum, use_scmp, use_repl, false );
@@ -105,7 +105,7 @@ namespace backend
         return GrB_UNINITIALIZED_OBJECT;
       }
 
-      if( GrB_DEBUG )
+      if( desc->debug() )
       {
         printDevice("mask", (mask->sparse_).d_val_, mask->sparse_.nvals_);
         printDevice("w_val", w->d_val_, w->nvals_);

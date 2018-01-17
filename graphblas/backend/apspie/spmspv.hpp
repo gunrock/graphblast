@@ -7,7 +7,7 @@
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 #include "graphblas/backend/apspie/operations.hpp"
-#include "graphblas/backend/apspie/kernels/spmspv.hpp"
+#include "graphblas/backend/apspie/spmspvInner.hpp"
 #include "graphblas/backend/apspie/kernels/assignSparse.hpp"
 #include "graphblas/backend/apspie/kernels/util.hpp"
 
@@ -46,7 +46,7 @@ namespace backend
     bool use_allowdupl; //TODO opt4
     bool use_struconly; //TODO opt5
 
-    if( GrB_DEBUG)
+    if( desc->debug())
     { 
       std::cout << "Executing Spmspv\n";
       printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
@@ -155,7 +155,7 @@ namespace backend
         return GrB_UNINITIALIZED_OBJECT;
       }
 
-      if( GrB_DEBUG )
+      if( desc->debug() )
       {
         CUDA( cudaDeviceSynchronize() );
         printDevice("mask", (mask->dense_).d_val_, A_nrows);
@@ -173,7 +173,7 @@ namespace backend
           mgpu::plus<Index>(), d_scan+temp_nvals, &w->nvals_, d_scan, 
           *(desc->d_context_) );
 
-      if( GrB_DEBUG )
+      if( desc->debug() )
       {
         printDevice("d_flag", d_flag, temp_nvals);
         printDevice("d_scan", d_scan, temp_nvals);
@@ -182,7 +182,7 @@ namespace backend
       streamCompactKernel<<<NB,NT>>>( w->d_ind_, w->d_val_, d_scan, (W)0, 
           temp_ind, temp_val, temp_nvals );
 
-      if( GrB_DEBUG )
+      if( desc->debug() )
       {
         printDevice("w_ind", w->d_ind_, w->nvals_);
         printDevice("w_val", w->d_val_, w->nvals_);

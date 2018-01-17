@@ -16,6 +16,9 @@
 #include "graphblas/algorithm/bfs.hpp"
 #include "test/test.hpp"
 
+bool debug_;
+bool memory_;
+
 int main( int argc, char** argv )
 {
   std::vector<graphblas::Index> row_indices;

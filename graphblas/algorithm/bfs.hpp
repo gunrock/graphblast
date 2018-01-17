@@ -55,7 +55,7 @@ namespace algorithm
     cpu_tight.Start();
     do
     {
-      if( GrB_DEBUG )
+      if( desc->descriptor_.debug() )
       {
         std::cout << "Iteration " << d << ":\n";
         v->print();

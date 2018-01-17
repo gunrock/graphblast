@@ -1,5 +1,5 @@
-#ifndef GRB_BACKEND_APSPIE_KERNELS_SPMSPV_HPP
-#define GRB_BACKEND_APSPIE_KERNELS_SPMSPV_HPP
+#ifndef GRB_BACKEND_APSPIE_SPMSPVINNER_HPP
+#define GRB_BACKEND_APSPIE_SPMSPVINNER_HPP
 
 #include <iostream>
 
@@ -9,46 +9,12 @@
 #include <moderngpu.cuh>
 #include <cub.cuh>
 
+#include "graphblas/backend/apspie/kernels/util.hpp"
+
 namespace graphblas
 {
 namespace backend
 {
-  __global__ void indirectScanKernel( Index*       d_temp_nvals,
-			                                const Index* A_csrRowPtr, 
-                                      const Index* u_ind, 
-                                      Index        u_nvals )
-  {
-    int gid = blockIdx.x*blockDim.x+threadIdx.x;
-    Index length = 0;
-
-    if( gid<u_nvals )
-    {
-      Index row   = __ldg( u_ind+gid );
-
-      Index start = __ldg( A_csrRowPtr+row   );
-      Index end   = __ldg( A_csrRowPtr+row+1 );
-      length      = end-start;
-
-      d_temp_nvals[gid] = length;
-      //if( tid<10 ) printf("%d: %d = %d - %d\n", length, start, end);
-    }
-  }
-
-  __global__ void indirectGather( Index*       d_temp_nvals, 
-																	const Index* A_csrRowPtr, 
-			                            const Index* u_ind, 
-																	Index        u_nvals )
-	{
-    int gid = blockIdx.x*blockDim.x+threadIdx.x;
-
-		if( gid<u_nvals )
-		{
-      Index   row = __ldg( u_ind+gid );
-			Index start = __ldg( A_csrRowPtr+row );
-			d_temp_nvals[gid] = start;
-		}
-	}
-
   // Memory requirements: (4|V|+5|E|)*GrB_THRESHOLD
   //   -GrB_THRESHOLD is defined in graphblas/types.hpp
   //
@@ -226,7 +192,7 @@ namespace backend
     //  -> d_scan       |V|
     void* d_temp_nvals = (void*)w_ind;
     void* d_scan       = (void*)w_val;
-    if( GrB_DEBUG )
+    if( desc->debug() )
     {
       assert( *u_nvals<A_nrows );
       std::cout << NT.x << " " << NB.x << std::endl;
@@ -238,7 +204,7 @@ namespace backend
         mgpu::plus<int>(), (Index*)d_scan+(*u_nvals), w_nvals, (Index*)d_scan, 
         *(desc->d_context_) );
 
-    if( GrB_DEBUG )
+    if( desc->debug() )
     {
       printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
       printDevice( "d_scan",       (Index*)d_scan,       *u_nvals+1 );
@@ -286,7 +252,7 @@ namespace backend
     //    w_nvals, (T)identity, mul_op, *(desc->d_context_));
     //CUDA( cudaDeviceSynchronize() );
 
-    if( GrB_DEBUG )
+    if( desc->debug() )
     {
       printDevice( "SwapInd", (Index*)d_csrSwapInd, *w_nvals );
       printDevice( "SwapVal", (T*)    d_csrSwapVal, *w_nvals );
@@ -303,7 +269,7 @@ namespace backend
 				(Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
 				(T*)d_csrTempVal, *w_nvals) );
 
-    if( GrB_DEBUG )
+    if( desc->debug() )
     {
       std::cout << temp_storage_bytes << " bytes required!\n";
     }
@@ -315,13 +281,13 @@ namespace backend
 				(T*)d_csrTempVal, *w_nvals) );
     //desc->clear("temp");
 		//MergesortKeys(d_csrVecInd, total, mgpu::less<int>(), desc->d_context_);
-    if( GrB_DEBUG )
+    if( desc->debug() )
     {
       printDevice( "TempInd", (Index*)d_csrTempInd, *w_nvals );
       printDevice( "TempVal", (T*)    d_csrTempVal, *w_nvals );
     }
 
-		if( GrB_DEBUG )
+		if( desc->debug() )
     {
       printf("Current iteration: %d nonzero vector, %d edges\n", *u_nvals, 
         *w_nvals);

@@ -31,9 +31,10 @@ namespace backend
         u->nvals_, mgpu::plus<T>(), op->identity()) );
 
     CHECK( desc->resize(temp_storage_bytes, "temp") );
-    if( GrB_DEBUG )
+    if( desc->debug() )
     {
-      std::cout << temp_storage_bytes << " <= " << desc->d_temp_size_ << std::endl;
+      std::cout << temp_storage_bytes << " <= " << desc->d_temp_size_ << 
+          std::endl;
     }
 
     CUDA( cub::DeviceReduce::Reduce(desc->d_temp_, temp_storage_bytes, 

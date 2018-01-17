@@ -584,12 +584,10 @@ namespace backend
     if( nrows_>0 && d_csrRowPtr_ == NULL )
     {
       CUDA( cudaMalloc( &d_csrRowPtr_, (nrows_+1)*sizeof(Index)) );
-      printMemory( "csrRowPtr" );
     }
     if( nvals_>0 && d_csrColInd_ == NULL )
     {
       CUDA( cudaMalloc( &d_csrColInd_, ncapacity_*sizeof(Index)) );
-      printMemory( "csrColInd" );
     }
     if( nvals_>0 && d_csrVal_ == NULL )
     {
@@ -601,12 +599,10 @@ namespace backend
       if( nrows_>0 && d_cscColPtr_ == NULL )
       {
         CUDA( cudaMalloc( &d_cscColPtr_, (ncols_+1)*sizeof(Index)) );
-        printMemory( "cscColPtr" );
       }
       if( nvals_>0 && d_cscRowInd_ == NULL )
       {
         CUDA( cudaMalloc( &d_cscRowInd_, ncapacity_*sizeof(Index)) );
-        printMemory( "cscRowInd" );
       }
       if( nvals_>0 && d_cscVal_ == NULL )
       {

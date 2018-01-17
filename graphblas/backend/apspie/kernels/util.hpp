@@ -51,6 +51,42 @@ namespace backend
     }
   }
 
+  __global__ void indirectScanKernel( Index*       d_temp_nvals,
+                                      const Index* A_csrRowPtr,
+                                      const Index* u_ind,
+                                      Index        u_nvals )
+  {
+    int gid = blockIdx.x*blockDim.x+threadIdx.x;
+    Index length = 0;
+
+    if( gid<u_nvals )
+    {
+      Index row   = __ldg( u_ind+gid );
+
+      Index start = __ldg( A_csrRowPtr+row   );
+      Index end   = __ldg( A_csrRowPtr+row+1 );
+      length      = end-start;
+
+      d_temp_nvals[gid] = length;
+      //if( tid<10 ) printf("%d: %d = %d - %d\n", length, start, end);
+    }
+  }
+
+  __global__ void indirectGather( Index*       d_temp_nvals,
+                                  const Index* A_csrRowPtr,
+                                  const Index* u_ind,
+                                  Index        u_nvals )
+  {
+    int gid = blockIdx.x*blockDim.x+threadIdx.x;
+
+    if( gid<u_nvals )
+    {
+      Index   row = __ldg( u_ind+gid );
+      Index start = __ldg( A_csrRowPtr+row );
+      d_temp_nvals[gid] = start;
+    }
+  }
+
 }  // backend
 }  // graphblas
 

@@ -16,8 +16,7 @@ namespace backend
     public:
     // Descriptions of these default settings are in "graphblas/types.hpp"
     Descriptor() : desc_{ GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, 
-      GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL, GrB_APSPIELB, GrB_16,
-      GrB_DEFAULT, GrB_DEFAULT },
+      GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL, GrB_APSPIELB,GrB_16},
       //d_buffer_(NULL), d_buffer_size_(0), d_temp_(NULL), d_temp_size_(0),
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
       split_(0), niter_(0), directed_(0), mxvmode_(0), transpose_(0), 
@@ -42,8 +41,10 @@ namespace backend
     // Useful methods
     Info toggle( Desc_field field );
     Info loadArgs( const po::variables_map& vm );
-    bool debug() const;
-    bool memory() const;
+
+    // TODO: make this static so printMemory can use it
+    bool debug()  { return debug_;  }
+    bool memory() { return memory_; }
 
     private:
     Info resize( size_t target, std::string field );
@@ -133,7 +134,7 @@ namespace backend
 
     if( target>*d_size )
     {
-      if( GrB_MEMORY )
+      if( memory_ )
       {
         std::cout << "Resizing "+field+" from " << *d_size << " to " << 
             target << "!\n";
@@ -141,7 +142,7 @@ namespace backend
       if( field=="buffer" ) 
       {
         CUDA( cudaMalloc(&d_buffer_, target) );
-        if( GrB_MEMORY )
+        if( memory_ )
         {
           printMemory( "desc_buffer" );
         }
@@ -152,7 +153,7 @@ namespace backend
       else if( field=="temp" ) 
       {
         CUDA( cudaMalloc(&d_temp_, target) );
-        if( GrB_MEMORY )
+        if( memory_ )
         {
           printMemory( "desc_temp" );
         }

@@ -20,7 +20,8 @@
 
 namespace graphblas
 {
-
+namespace backend
+{
   void printMemory( const char* str )
   {
     size_t free, total;
@@ -28,7 +29,7 @@ namespace graphblas
     {
       CUDA( cudaMemGetInfo(&free, &total) );
       std::cout << str << ": " << free << " bytes left out of " << total << 
-        " bytes\n";
+          " bytes\n";
     }
   }
 
@@ -111,6 +112,7 @@ namespace graphblas
     }
   };
 
+}  // backend
 }  // graphblas
 
 #endif  // GRB_BACKEND_APSPIE_UTIL_HPP

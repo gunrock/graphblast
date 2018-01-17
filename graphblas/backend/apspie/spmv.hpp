@@ -74,7 +74,7 @@ __device__ op_func_t p_mul_func = mul_func;
     bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN) ?
         true : false;
 
-    if( GrB_DEBUG )
+    if( desc->debug() )
     {
       std::cout << "Executing Spmv\n";
       printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
@@ -86,7 +86,7 @@ __device__ op_func_t p_mul_func = mul_func;
     const T*     A_csrVal    = (use_tran) ? A->d_cscVal_    : A->d_csrVal_;
     const Index  A_nrows     = (use_tran) ? A->ncols_       : A->nrows_;
 
-    if( GrB_DEBUG )
+    if( desc->debug() )
     {
       std::cout << "cscColPtr: " << A->d_cscColPtr_ << std::endl;
       std::cout << "cscRowInd: " << A->d_cscRowInd_ << std::endl;
@@ -139,7 +139,7 @@ __device__ op_func_t p_mul_func = mul_func;
 								op->mul_, op->add_, A_nrows, A->nvals_, 
 								A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
 
-          if( GrB_DEBUG )
+          if( desc->debug() )
             printDevice("w_val", w->d_val_, A_nrows);
 				}
 				else if( mask_vec_type==GrB_SPARSE )
