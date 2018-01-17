@@ -39,6 +39,12 @@ namespace backend
     bool use_scmp = (scmp_mode==GrB_SCMP);
     bool use_repl = (repl_mode==GrB_REPLACE); //TODO
 
+    if( GrB_DEBUG )
+    {
+      std::cout << "Executing assignDense\n";
+      printState( use_mask, use_accum, use_scmp, use_repl, false );
+    }
+
     Index* indices_t = NULL;
     if( !use_all && nindices>0 )
     {
@@ -66,32 +72,33 @@ namespace backend
 
       // Mask type
       // 1) Dense mask
-      // 2) Sparse mask (TODO)
+      // 2) Sparse mask
       // 3) Uninitialized
       Storage mask_vec_type;
       CHECK( mask->getStorage(&mask_vec_type) );
 
       if( mask_vec_type==GrB_DENSE )
       {
+        // TODO: must allow user to specify identity for dense mask vectors
         if( use_scmp )
-          assignDenseDenseMaskedKernel<true, true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
-              (mask->dense_).d_val_, (M)-1.f, accum, (W)val, indices_t, 
-              nindices );
+          assignDenseDenseMaskedKernel<true, true ,true ><<<NB,NT>>>( w->d_val_,
+              w->nvals_, (mask->dense_).d_val_, (M)0.f, accum, (W)val, 
+              indices_t, nindices );
         else
-          assignDenseDenseMaskedKernel<false,true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
-              (mask->dense_).d_val_, (M)-1.f, accum, (W)val, indices_t, 
-              nindices );
+          assignDenseDenseMaskedKernel<false,true ,true ><<<NB,NT>>>( w->d_val_,
+              w->nvals_, (mask->dense_).d_val_, (M)0.f, accum, (W)val, 
+              indices_t, nindices );
       }
       else if( mask_vec_type==GrB_SPARSE )
       {
         if( use_scmp )
-          assignDenseSparseMaskedKernel<true, true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
-              (mask->sparse_).d_ind_, (mask->sparse_).nvals_, accum, 
-              (W)val, indices_t, nindices );
+          assignDenseSparseMaskedKernel<true, true ,true ><<<NB,NT>>>( 
+              w->d_val_, w->nvals_, (mask->sparse_).d_ind_, 
+              (mask->sparse_).nvals_, accum, (W)val, indices_t, nindices );
         else
-          assignDenseSparseMaskedKernel<false,true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
-              (mask->sparse_).d_ind_, (mask->sparse_).nvals_, accum, 
-              (W)val, indices_t, nindices );
+          assignDenseSparseMaskedKernel<false,true ,true ><<<NB,NT>>>( 
+              w->d_val_, w->nvals_, (mask->sparse_).d_ind_, 
+              (mask->sparse_).nvals_, accum, (W)val, indices_t, nindices );
       }
       else
       {

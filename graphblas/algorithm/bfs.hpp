@@ -65,6 +65,13 @@ namespace algorithm
         std::cout << "succ: " << succ << std::endl;
       }
       assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, desc);
+      if( GrB_DEBUG )
+      {
+        std::cout << "Iteration " << d << ":\n";
+        v->print();
+        q1.print();
+        std::cout << "succ: " << succ << std::endl;
+      }
       CHECK( desc->toggle(GrB_MASK) );
       if( transpose )
         mxv<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, A, &q1, desc);

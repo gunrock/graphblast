@@ -21,15 +21,23 @@ namespace backend
 									  const DenseVector<U>*  u,
 									  Descriptor*            desc )
   {
+    // Nasty bug! Must point d_val at desc->d_buffer_ only after it gets 
+    // possibly resized!
+    CHECK( desc->resize(sizeof(T), "buffer") );
     T* d_val = (T*) desc->d_buffer_;
-    desc->resize(sizeof(T), "buffer");
     size_t temp_storage_bytes = 0;
-    cub::DeviceReduce::Reduce( NULL, temp_storage_bytes, u->d_val_, d_val, 
-        u->nvals_, mgpu::plus<T>(), op->identity() );
 
-    desc->resize( temp_storage_bytes, "temp" );
-    cub::DeviceReduce::Reduce( desc->d_temp_, temp_storage_bytes, u->d_val_, 
-        d_val, u->nvals_, mgpu::plus<T>(), op->identity() );
+    CUDA( cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, u->d_val_, d_val, 
+        u->nvals_, mgpu::plus<T>(), op->identity()) );
+
+    CHECK( desc->resize(temp_storage_bytes, "temp") );
+    if( GrB_DEBUG )
+    {
+      std::cout << temp_storage_bytes << " <= " << desc->d_temp_size_ << std::endl;
+    }
+
+    CUDA( cub::DeviceReduce::Reduce(desc->d_temp_, temp_storage_bytes, 
+        u->d_val_, d_val, u->nvals_, mgpu::plus<T>(), op->identity()) );
     CUDA( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
 
     return GrB_SUCCESS;

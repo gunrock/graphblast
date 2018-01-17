@@ -19,6 +19,7 @@ namespace backend
             typename AccumOp, typename MulOp, typename AddOp>
   __global__ void spmvDenseMaskedOrKernel( W*           w_val,
                                            const M*     mask_val,
+                                           M            mask_identity,
                                            AccumOp      accum_op,
                                            a            identity,
                                            MulOp        mul_op,
@@ -35,7 +36,7 @@ namespace backend
     for( ; row<A_nrows; row+=gridDim.x*blockDim.x )
     {
       M val = __ldg( mask_val+row );
-      if( val!=-1.f )
+      if( UseScmp^(val!=mask_identity) )
         continue;
 
       bool discoverable = false;
@@ -46,12 +47,9 @@ namespace backend
       {
         Index col_ind = __ldg( A_csrColInd+row_start );
         val           = __ldg( mask_val+col_ind );
-        if( UseScmp && val!=-1.f )
-        {
-          discoverable = true;
-          break;
-        }
-        if( !UseScmp && val==-1.f )
+
+        // Early exit if visited parent is discovered
+        if( val!=mask_identity )
         {
           discoverable = true;
           break;
@@ -59,7 +57,9 @@ namespace backend
       }
 
       if( discoverable )
-        w_val[row] = true;
+        w_val[row] = 1.f;
+      else
+        w_val[row] = 0.f;
     }
   }
 

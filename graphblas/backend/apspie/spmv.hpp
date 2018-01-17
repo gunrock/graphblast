@@ -119,12 +119,12 @@ __device__ op_func_t p_mul_func = mul_func;
 					NB.z = 1;
           if( use_scmp )
 						spmvDenseMaskedOrKernel<true,false,false><<<NB,NT>>>( 
-								w->d_val_, mask->dense_.d_val_, NULL, op->identity(),
+								w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
 								op->mul_, op->add_, A_nrows, A->nvals_, 
 								A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
           else
 						spmvDenseMaskedOrKernel<true,false,false><<<NB,NT>>>( 
-								w->d_val_, mask->dense_.d_val_, NULL, op->identity(),
+								w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
 								op->mul_, op->add_, A_nrows, A->nvals_, 
 								A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
 				}

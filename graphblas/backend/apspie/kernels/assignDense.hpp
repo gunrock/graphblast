@@ -33,7 +33,7 @@ namespace backend
 					// val passes through if either:
 					// 1) UseScmp is not selected and m_val is zero
 					// 2) UseScmp is selected and m_val is not zero
-          if( UseScmp^(m_val==mask_identity) )
+          if( UseScmp^(m_val!=mask_identity) )
             u_val[row] = val;
         }
 				else
