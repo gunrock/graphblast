@@ -34,25 +34,41 @@
 
 namespace po = boost::program_options;
 
-void parseArgs( int argc, char**argv, po::variables_map& vm ) {
+void parseArgs( int argc, char**argv, po::variables_map& vm ) 
+{
   // Declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
-    ("help", "produce help message")
-    ("ta", po::value<int>()->default_value(32), "threads per A row")
-    ("tb", po::value<int>()->default_value(32), "B slab width")
-    ("nt", po::value<int>()->default_value(128), "threads per block")
+    ("help", 
+        "produce help message")
+    ("ta", po::value<int>()->default_value(32), 
+        "threads per A row")
+    ("tb", po::value<int>()->default_value(32), 
+        "B slab width")
     ("mode", po::value<std::string>()->default_value("fixedrow"), 
-       "row or column")
+        "row or column")
     ("split", po::value<bool>()->default_value(false), 
-       "split spgemm computation")
-    ("iter", po::value<int>()->default_value(10), "number of iterations")
-    ("directed", po::value<int>()->default_value(0), "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected")
-    ("transpose", po::value<bool>()->default_value(false), "use transpose graph")
-    ("direction", po::value<int>()->default_value(1), "0: push-pull, 1: push only, 2: pull only")
-    ("device", po::value<int>()->default_value(0), "GPU device number")
-    ("debug", po::value<bool>()->default_value(false), "debug on")
-    ("memory", po::value<bool>()->default_value(false), "memory info on")
+        "True means split spgemm computation")
+
+    // General params
+    ("niter", po::value<int>()->default_value(10), 
+        "Number of iterations to run after warmup")
+    ("directed", po::value<int>()->default_value(0), 
+        "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected")
+    ("mxvmode", po::value<int>()->default_value(1), 
+        "0: push-pull, 1: push only, 2: pull only")
+    ("transpose", po::value<bool>()->default_value(false), 
+        "True means use transpose graph")
+
+    // GPU params
+    ("nthread", po::value<int>()->default_value(128), 
+        "Number of threads per block")
+    ("ndevice", po::value<int>()->default_value(0), 
+        "GPU device number to use")
+    ("debug", po::value<bool>()->default_value(false), 
+        "True means show debug messages")
+    ("memory", po::value<bool>()->default_value(false), 
+        "True means show memory info")
   ;
 
   po::store(po::parse_command_line(argc, argv, desc), vm);

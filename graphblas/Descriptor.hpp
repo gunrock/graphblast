@@ -33,6 +33,7 @@ namespace graphblas
 
     // Useful methods
     Info toggle( Desc_field field );
+    Info loadArgs( const po::variables_map& vm );
 
     private:
     // Data members that are same for all backends
@@ -58,6 +59,11 @@ namespace graphblas
   Info Descriptor::toggle( Desc_field field )
   {
     return descriptor_.toggle( field );
+  }
+
+  Info Descriptor::loadArgs( const po::variables_map& vm )
+  {
+    return descriptor_.loadArgs( vm );
   }
 
 }  // graphblas

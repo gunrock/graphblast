@@ -16,12 +16,18 @@ namespace backend
     public:
     // Descriptions of these default settings are in "graphblas/types.hpp"
     Descriptor() : desc_{ GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, 
-                          GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL,
-                          GrB_APSPIELB, GrB_16, GrB_DEFAULT, GrB_DEFAULT },
-                   d_buffer_(NULL), d_buffer_size_(0),
-                   //d_temp_(NULL),   d_temp_size_(0),
-                   d_context_(mgpu::CreateCudaDevice(0)) 
+      GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL, GrB_APSPIELB, GrB_16,
+      GrB_DEFAULT, GrB_DEFAULT },
+      //d_buffer_(NULL), d_buffer_size_(0), d_temp_(NULL), d_temp_size_(0),
+      d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
+      split_(0), niter_(0), directed_(0), mxvmode_(0), transpose_(0), 
+      nthread_(0), ndevice_(0), debug_(0), memory_(0)
     {
+      // Preallocate d_buffer_size
+      d_buffer_size_ = 183551;
+      CUDA( cudaMalloc(&d_buffer_, d_buffer_size_) );
+
+      // Preallocate d_temp_size
       d_temp_size_ = 183551;
       CUDA( cudaMalloc(&d_temp_, d_temp_size_) );
     }
@@ -35,6 +41,9 @@ namespace backend
 
     // Useful methods
     Info toggle( Desc_field field );
+    Info loadArgs( const po::variables_map& vm );
+    bool debug() const;
+    bool memory() const;
 
     private:
     Info resize( size_t target, std::string field );
@@ -42,15 +51,33 @@ namespace backend
 
     private:
     Desc_value desc_[GrB_NDESCFIELD];
-    //void*      h_buffer_;
-    //size_t     h_size_;
-    void*      d_buffer_;
-    size_t     d_buffer_size_;
-    void*      d_temp_;        // Used for CUB calls
-    size_t     d_temp_size_;
+
+    // Workspace memory
+    void*       d_buffer_;      // Used for internal graphblas calls
+    size_t      d_buffer_size_;
+    void*       d_temp_;        // Used for CUB calls
+    size_t      d_temp_size_;
 
     // MGPU context
     mgpu::ContextPtr d_context_;
+
+    // Algorithm specific params
+    int         ta_;
+    int         tb_;
+    std::string mode_;
+    bool        split_;
+
+    // General params
+    int         niter_;
+    int         directed_;
+    int         mxvmode_;
+    bool        transpose_;
+
+    // GPU params
+    int         nthread_;
+    int         ndevice_;
+    bool        debug_;
+    bool        memory_;
   };
 
   Descriptor::~Descriptor()
@@ -153,6 +180,47 @@ namespace backend
     }
 
     return GrB_SUCCESS;
+  }
+
+  Info Descriptor::loadArgs( const po::variables_map& vm )
+  {
+    // Algorithm specific params
+    ta_        = vm["ta"       ].as<int>();
+    tb_        = vm["tb"       ].as<int>();
+    mode_      = vm["mode"     ].as<std::string>();
+    split_     = vm["split"    ].as<bool>();
+
+    // General params
+    niter_     = vm["niter"    ].as<int>();
+    directed_  = vm["directed" ].as<int>();
+    mxvmode_   = vm["mxvmode"  ].as<int>();
+    transpose_ = vm["transpose"].as<bool>();
+
+    // GPU params
+    nthread_   = vm["nthread"  ].as<int>();
+    ndevice_   = vm["ndevice"  ].as<int>();
+    debug_     = vm["debug"    ].as<bool>();
+    memory_    = vm["memory"   ].as<bool>();
+
+		switch( mxvmode_ )
+		{
+			case 0:
+				CHECK( set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHPULL) );
+				break;
+			case 1:
+				CHECK( set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHONLY) );
+				break;
+			case 2:
+				CHECK( set(graphblas::GrB_MXVMODE, graphblas::GrB_PULLONLY) );
+				break;
+			default:
+				std::cout << "Error: incorrect mxvmode selection!\n";
+		}
+
+    // TODO: Enable ndevice_
+    //if( ndevice_!=0 )
+
+    return GrB_SUCCESS; 
   }
 
 }  // backend

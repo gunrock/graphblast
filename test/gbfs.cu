@@ -25,23 +25,21 @@ int main( int argc, char** argv )
 
   // Parse arguments
   bool debug;
-  bool memory;
-  int directed;
   bool transpose;
-  int  direction;
+  int  directed;
+  int  niter;
+  po::variables_map vm;
 
   // Read in sparse matrix
   if (argc < 2) {
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
-    po::variables_map vm;
     parseArgs( argc, argv, vm );
     debug     = vm["debug"    ].as<bool>();
-    memory    = vm["memory"   ].as<bool>();
-    directed  = vm["directed" ].as<int>();
     transpose = vm["transpose"].as<bool>();
-    direction = vm["direction"].as<int>();
+    directed  = vm["directed" ].as<int>();
+    niter     = vm["niter"    ].as<int>();
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
         nvals, directed, debug );
   }
@@ -59,20 +57,7 @@ int main( int argc, char** argv )
 
   // Descriptor desc
   graphblas::Descriptor desc;
-  switch( direction )
-  {
-    case 0:
-      CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHPULL) );
-      break;
-    case 1:
-      CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHONLY) );
-      break;
-    case 2:
-      CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PULLONLY) );
-      break;
-    default:
-      std::cout << "Error: incorrect mxvmode selection!\n";
-  }
+  CHECK( desc.loadArgs(vm) );
 
   // Cpu BFS
   CpuTimer bfs_cpu;
@@ -96,8 +81,7 @@ int main( int argc, char** argv )
   CpuTimer vxm_gpu;
   cudaProfilerStart();
   vxm_gpu.Start();
-  int NUM_ITER = 1;//0;
-  for( int i=0; i<NUM_ITER; i++ )
+  for( int i=0; i<niter; i++ )
   {
     graphblas::algorithm::bfs(&v, &a, 0, &desc, transpose);
   }
@@ -109,7 +93,7 @@ int main( int argc, char** argv )
   std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
   float elapsed_vxm = vxm_gpu.ElapsedMillis();
-  std::cout << "vxm, " << elapsed_vxm/NUM_ITER << "\n";
+  std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
   CHECK( v.extractTuples(&h_bfs_gpu, &nrows) );
   BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
