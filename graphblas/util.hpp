@@ -57,8 +57,12 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected")
     ("mxvmode", po::value<int>()->default_value(1), 
         "0: push-pull, 1: push only, 2: pull only")
+    ("timing", po::value<int>()->default_value(1),
+        "0: final timing, 1: per niter timing, 2: per graphblas algorithm timing")
     ("transpose", po::value<bool>()->default_value(false), 
         "True means use transpose graph")
+    ("verbose", po::value<bool>()->default_value(true),
+        "0: CSV timing output, 1: correctness indicator")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 

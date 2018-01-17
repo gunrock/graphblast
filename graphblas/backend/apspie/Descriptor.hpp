@@ -19,8 +19,8 @@ namespace backend
       GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL, GrB_APSPIELB,GrB_16},
       //d_buffer_(NULL), d_buffer_size_(0), d_temp_(NULL), d_temp_size_(0),
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
-      split_(0), niter_(0), directed_(0), mxvmode_(0), transpose_(0), 
-      nthread_(0), ndevice_(0), debug_(0), memory_(0)
+      split_(0), niter_(0), directed_(0), timing_(0), mxvmode_(0), 
+      transpose_(0), verbose_(0), nthread_(0), ndevice_(0), debug_(0),memory_(0)
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -72,7 +72,9 @@ namespace backend
     int         niter_;
     int         directed_;
     int         mxvmode_;
+    int         timing_;
     bool        transpose_;
+    bool        verbose_;
 
     // GPU params
     int         nthread_;
@@ -194,8 +196,10 @@ namespace backend
     // General params
     niter_     = vm["niter"    ].as<int>();
     directed_  = vm["directed" ].as<int>();
+    timing_    = vm["timing"   ].as<int>();
     mxvmode_   = vm["mxvmode"  ].as<int>();
     transpose_ = vm["transpose"].as<bool>();
+    verbose_   = vm["verbose"  ].as<bool>();
 
     // GPU params
     nthread_   = vm["nthread"  ].as<int>();

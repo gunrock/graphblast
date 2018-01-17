@@ -62,6 +62,13 @@ namespace algorithm
         q1.print();
         std::cout << "succ: " << succ << std::endl;
       }
+      if( desc->descriptor_.timing_==2 )
+      {
+        cpu_tight.Stop();
+        std::cout << "tight, " << cpu_tight.ElapsedMillis() << ", \n";
+        std::cout << "Iteration " << d << ":\n";
+        cpu_tight.Start();
+      }
       assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, desc);
       CHECK( desc->toggle(GrB_MASK) );
       if( transpose )
