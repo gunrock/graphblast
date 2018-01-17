@@ -14,9 +14,10 @@ namespace backend
   class Descriptor
   {
     public:
+    // Descriptions of these default settings are in "graphblas/types.hpp"
     Descriptor() : desc_{ GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, 
                           GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL,
-                          GrB_APSPIELB, GrB_16 },
+                          GrB_APSPIELB, GrB_16, GrB_DEFAULT, GrB_DEFAULT },
                    d_buffer_(NULL), d_buffer_size_(0),
                    //d_temp_(NULL),   d_temp_size_(0),
                    d_context_(mgpu::CreateCudaDevice(0)) 
@@ -105,12 +106,18 @@ namespace backend
 
     if( target>*d_size )
     {
-      std::cout << "Resizing "+field+" from " << *d_size << " to " << 
-          target << "!\n";
+      if( GrB_MEMORY )
+      {
+        std::cout << "Resizing "+field+" from " << *d_size << " to " << 
+            target << "!\n";
+      }
       if( field=="buffer" ) 
       {
         CUDA( cudaMalloc(&d_buffer_, target) );
-        printMemory( "desc_buffer" );
+        if( GrB_MEMORY )
+        {
+          printMemory( "desc_buffer" );
+        }
         if( d_temp_buffer!=NULL )
           CUDA( cudaMemcpy(d_buffer_, d_temp_buffer, *d_size, 
               cudaMemcpyDeviceToDevice) );
@@ -118,7 +125,10 @@ namespace backend
       else if( field=="temp" ) 
       {
         CUDA( cudaMalloc(&d_temp_, target) );
-        printMemory( "desc_temp" );
+        if( GrB_MEMORY )
+        {
+          printMemory( "desc_temp" );
+        }
         if( d_temp_buffer!=NULL )
           CUDA( cudaMemcpy(d_temp_, d_temp_buffer, *d_size, 
               cudaMemcpyDeviceToDevice) );

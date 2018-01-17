@@ -24,7 +24,9 @@ int main( int argc, char** argv )
   graphblas::Index nrows, ncols, nvals;
 
   // Parse arguments
-  bool DEBUG = true;
+  bool debug;
+  bool memory;
+  int directed;
   bool transpose;
   int  direction;
 
@@ -35,11 +37,13 @@ int main( int argc, char** argv )
   } else { 
     po::variables_map vm;
     parseArgs( argc, argv, vm );
-    int directed = vm["directed"].as<int>();
-    transpose    = vm["transpose"].as<bool>();
-    direction    = vm["direction"].as<int>();
+    debug     = vm["debug"    ].as<bool>();
+    memory    = vm["memory"   ].as<bool>();
+    directed  = vm["directed" ].as<int>();
+    transpose = vm["transpose"].as<bool>();
+    direction = vm["direction"].as<int>();
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, directed, DEBUG );
+        nvals, directed, debug );
   }
 
   // Matrix A
@@ -48,7 +52,7 @@ int main( int argc, char** argv )
   CHECK( a.nrows(&nrows) );
   CHECK( a.ncols(&ncols) );
   CHECK( a.nvals(&nvals) );
-  if( DEBUG ) CHECK( a.print() );
+  if( debug ) CHECK( a.print() );
 
   // Vector v
   graphblas::Vector<float> v(nrows);
@@ -102,7 +106,7 @@ int main( int argc, char** argv )
 
   float flop = 0;
   std::cout << "cpu, " << bfs_cpu.ElapsedMillis() << ", \n";
-  if( DEBUG ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
+  std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
   float elapsed_vxm = vxm_gpu.ElapsedMillis();
   std::cout << "vxm, " << elapsed_vxm/NUM_ITER << "\n";

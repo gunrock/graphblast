@@ -86,6 +86,17 @@ __device__ op_func_t p_mul_func = mul_func;
     const T*     A_csrVal    = (use_tran) ? A->d_cscVal_    : A->d_csrVal_;
     const Index  A_nrows     = (use_tran) ? A->ncols_       : A->nrows_;
 
+    if( GrB_DEBUG )
+    {
+      std::cout << "cscColPtr: " << A->d_cscColPtr_ << std::endl;
+      std::cout << "cscRowInd: " << A->d_cscRowInd_ << std::endl;
+      std::cout << "cscVal:    " << A->d_cscVal_    << std::endl;
+
+      std::cout << "csrRowPtr: " << A->d_csrRowPtr_ << std::endl;
+      std::cout << "csrColInd: " << A->d_csrColInd_ << std::endl;
+      std::cout << "csrVal:    " << A->d_csrVal_    << std::endl;
+    }
+
     // Get descriptor parameters for nthreads
     Desc_value ta_mode, tb_mode, nt_mode;
     CHECK( desc->get(GrB_TA, &ta_mode) );
@@ -114,19 +125,22 @@ __device__ op_func_t p_mul_func = mul_func;
 					NT.x = nt;
 					NT.y = 1;
 					NT.z = 1;
-					NB.x = (ta*A_nrows+nt-1)/nt;
+					NB.x = (A_nrows+nt-1)/nt;
 					NB.y = 1;
 					NB.z = 1;
           if( use_scmp )
-						spmvDenseMaskedOrKernel<true,false,false><<<NB,NT>>>( 
+						spmvDenseMaskedOrKernel<true, false,false><<<NB,NT>>>( 
 								w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
 								op->mul_, op->add_, A_nrows, A->nvals_, 
 								A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
           else
-						spmvDenseMaskedOrKernel<true,false,false><<<NB,NT>>>( 
+						spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
 								w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
 								op->mul_, op->add_, A_nrows, A->nvals_, 
 								A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+
+          if( GrB_DEBUG )
+            printDevice("w_val", w->d_val_, A_nrows);
 				}
 				else if( mask_vec_type==GrB_SPARSE )
 				{

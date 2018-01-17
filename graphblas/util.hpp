@@ -52,6 +52,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
     ("direction", po::value<int>()->default_value(1), "0: push-pull, 1: push only, 2: pull only")
     ("device", po::value<int>()->default_value(0), "GPU device number")
     ("debug", po::value<bool>()->default_value(false), "debug on")
+    ("memory", po::value<bool>()->default_value(false), "memory info on")
   ;
 
   po::store(po::parse_command_line(argc, argv, desc), vm);

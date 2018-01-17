@@ -35,24 +35,29 @@ namespace backend
 
     for( ; row<A_nrows; row+=gridDim.x*blockDim.x )
     {
-      M val = __ldg( mask_val+row );
-      if( UseScmp^(val!=mask_identity) )
-        continue;
-
       bool discoverable = false;
-      Index row_start   = __ldg( A_csrRowPtr+row   );
-      Index row_end     = __ldg( A_csrRowPtr+row+1 );
 
-      for( ; row_start < row_end; row_start++ )
+      M val = __ldg( mask_val+row );
+      if( UseScmp^(val==mask_identity) )
       {
-        Index col_ind = __ldg( A_csrColInd+row_start );
-        val           = __ldg( mask_val+col_ind );
+      }
+      else
+      {
+        Index row_start   = __ldg( A_csrRowPtr+row   );
+        Index row_end     = __ldg( A_csrRowPtr+row+1 );
 
-        // Early exit if visited parent is discovered
-        if( val!=mask_identity )
+        for( ; row_start<row_end; row_start++ )
         {
-          discoverable = true;
-          break;
+          Index col_ind = __ldg( A_csrColInd+row_start );
+          val           = __ldg( mask_val+col_ind );
+          //printf("%d %d: %d %f\n", threadIdx.x, row_start, col_ind, val);
+
+          // Early exit if visited parent is discovered
+          if( val!=mask_identity )
+          {
+            discoverable = true;
+            break;
+          }
         }
       }
 
