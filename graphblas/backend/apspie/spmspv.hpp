@@ -45,7 +45,10 @@ namespace backend
     bool use_struconly; //TODO opt5
 
     if( GrB_DEBUG)
+    { 
+      std::cout << "Executing Spmspv\n";
       printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
+    }
 
     // Transpose (default is CSC):
     const Index* A_csrRowPtr = (!use_tran) ? A->d_cscColPtr_ : A->d_csrRowPtr_;

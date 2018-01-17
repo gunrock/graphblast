@@ -73,7 +73,12 @@ __device__ op_func_t p_mul_func = mul_func;
     bool use_repl = (repl_mode==GrB_REPLACE) ? true : false;
     bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN) ?
         true : false;
-    //printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
+
+    if( GrB_DEBUG )
+    {
+      std::cout << "Executing Spmv\n";
+      printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
+    }
 
     // Transpose (default is CSR):
     const Index* A_csrRowPtr = (use_tran) ? A->d_cscColPtr_ : A->d_csrRowPtr_;

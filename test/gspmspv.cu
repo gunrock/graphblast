@@ -60,6 +60,7 @@ int main( int argc, char** argv )
   // Descriptor
   graphblas::Descriptor desc;
   CHECK( desc.set(graphblas::GrB_MASK, graphblas::GrB_SCMP) );
+  CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHONLY) );
 
   // Semiring
   graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
@@ -99,7 +100,7 @@ int main( int argc, char** argv )
   int NUM_ITER = 1;//0;
   for( int i=0; i<NUM_ITER; i++ )
   {
-    graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, 
+    graphblas::vxm<float, float, float>( &y, &m, GrB_NULL, 
         &GrB_FP32AddMul, &x, &a, &desc );
   }
   //cudaProfilerStop();
