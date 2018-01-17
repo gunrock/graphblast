@@ -73,17 +73,23 @@ namespace backend
 
       if( mask_vec_type==GrB_DENSE )
       {
-        std::cout << "Dense Masked DeVec Assign Constant\n";
-        std::cout << "Error: Feature not implemented yet!\n";
+        if( use_scmp )
+          assignDenseDenseMaskedKernel<true, true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
+              (mask->dense_).d_val_, (M)-1.f, accum, (W)val, indices_t, 
+              nindices );
+        else
+          assignDenseDenseMaskedKernel<false,true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
+              (mask->dense_).d_val_, (M)-1.f, accum, (W)val, indices_t, 
+              nindices );
       }
       else if( mask_vec_type==GrB_SPARSE )
       {
         if( use_scmp )
-          assignDenseKernel<true, true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
+          assignDenseSparseMaskedKernel<true, true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
               (mask->sparse_).d_ind_, (mask->sparse_).nvals_, accum, 
               (W)val, indices_t, nindices );
         else
-          assignDenseKernel<false,true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
+          assignDenseSparseMaskedKernel<false,true ,true ><<<NB,NT>>>( w->d_val_, w->nvals_,
               (mask->sparse_).d_ind_, (mask->sparse_).nvals_, accum, 
               (W)val, indices_t, nindices );
       }

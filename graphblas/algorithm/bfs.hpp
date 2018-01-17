@@ -25,7 +25,15 @@ namespace algorithm
     Vector<float> q2(n);
     std::vector<Index> indices(1,s);
     std::vector<float>  values(1,1.f);
-    CHECK( q1.build(&indices, &values, 1, GrB_NULL) );
+    Desc_value desc_value;
+    CHECK( desc->get(GrB_MXVMODE, &desc_value) );
+    if( desc_value==GrB_PULLONLY )
+    {
+      CHECK( q1.fill(0.f) );
+      CHECK( q1.setElement(1.f,s) );
+    }
+    else
+      CHECK( q1.build(&indices, &values, 1, GrB_NULL) );
 
     // Semiring
     /*BinaryOp GrB_LOR(  logical_or() );

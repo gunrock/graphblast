@@ -49,6 +49,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm ) {
     ("iter", po::value<int>()->default_value(10), "number of iterations")
     ("directed", po::value<int>()->default_value(0), "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected")
     ("transpose", po::value<bool>()->default_value(false), "use transpose graph")
+    ("direction", po::value<int>()->default_value(1), "0: push-pull, 1: push only, 2: pull only")
     ("device", po::value<int>()->default_value(0), "GPU device number")
     ("debug", po::value<bool>()->default_value(false), "debug on")
   ;

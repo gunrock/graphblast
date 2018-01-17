@@ -42,8 +42,9 @@ int main( int argc, char** argv )
 
   // Vector x
   graphblas::Vector<float> x(nrows);
-  x.fill( 1.f );
-  x.size( &nrows );
+  CHECK( x.fill( 0.f ) );
+  CHECK( x.setElement(1.f, 0) );
+  CHECK( x.size( &nrows ) );
   if( DEBUG ) x.print();
 
   // Vector y
@@ -52,14 +53,14 @@ int main( int argc, char** argv )
 
   // Mask
   graphblas::Vector<float> m(nrows);
-  std::vector<graphblas::Index> m_ind = {1,   2,   3};
-  std::vector<float>            m_val = {1.f, 1.f, 1.f};
-  CHECK( m.build(&m_ind, &m_val, 3, GrB_NULL) );
+  CHECK( m.fill(-1.f) );
+  CHECK( m.setElement(0.f, 0) );
   CHECK( m.size(&nrows) );
   if( DEBUG ) CHECK( m.print() );
 
   // Descriptor
   graphblas::Descriptor desc;
+  CHECK( desc.set(graphblas::GrB_MASK, graphblas::GrB_SCMP) );
 
   // Semiring
   graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;

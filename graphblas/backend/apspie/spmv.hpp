@@ -125,6 +125,7 @@ __device__ op_func_t p_mul_func = mul_func;
 				}
 				else if( mask_vec_type==GrB_SPARSE )
 				{
+          std::cout << "DeVec Sparse Mask Spmv\n";
 					std::cout << "Error: Feature not implemented yet!\n";
 				}
 				else
@@ -135,7 +136,7 @@ __device__ op_func_t p_mul_func = mul_func;
       // TODO: add else condition here for generic mask semiring
       else
       {
-        std::cout << "Indirect Spmv called!\n";
+        std::cout << "Indirect Spmv\n";
 			  std::cout << "Error: Feature not implemented yet!\n";
         /*mgpu::SpmvCsrIndirectBinary( A_csrVal, A_csrColInd, A->nvals_,
             A_csrRowPtr, mask->dense_.d_ind_, A_nrows, u->d_val_, true, 

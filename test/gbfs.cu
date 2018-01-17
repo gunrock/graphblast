@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <cuda_profiler_api.h>
+
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
@@ -24,6 +26,7 @@ int main( int argc, char** argv )
   // Parse arguments
   bool DEBUG = true;
   bool transpose;
+  int  direction;
 
   // Read in sparse matrix
   if (argc < 2) {
@@ -34,6 +37,7 @@ int main( int argc, char** argv )
     parseArgs( argc, argv, vm );
     int directed = vm["directed"].as<int>();
     transpose    = vm["transpose"].as<bool>();
+    direction    = vm["direction"].as<int>();
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
         nvals, directed, DEBUG );
   }
@@ -51,6 +55,20 @@ int main( int argc, char** argv )
 
   // Descriptor desc
   graphblas::Descriptor desc;
+  switch( direction )
+  {
+    case 0:
+      CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHPULL) );
+      break;
+    case 1:
+      CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHONLY) );
+      break;
+    case 2:
+      CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PULLONLY) );
+      break;
+    default:
+      std::cout << "Error: incorrect mxvmode selection!\n";
+  }
 
   // Cpu BFS
   CpuTimer bfs_cpu;
@@ -72,14 +90,14 @@ int main( int argc, char** argv )
   BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
  
   CpuTimer vxm_gpu;
-  //cudaProfilerStart();
+  cudaProfilerStart();
   vxm_gpu.Start();
-  int NUM_ITER = 10;//0;
+  int NUM_ITER = 1;//0;
   for( int i=0; i<NUM_ITER; i++ )
   {
     graphblas::algorithm::bfs(&v, &a, 0, &desc, transpose);
   }
-  //cudaProfilerStop();
+  cudaProfilerStop();
   vxm_gpu.Stop();
 
   float flop = 0;

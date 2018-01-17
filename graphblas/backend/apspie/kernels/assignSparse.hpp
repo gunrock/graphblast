@@ -8,6 +8,7 @@ namespace graphblas
 namespace backend
 {
 
+  // This is the dense mask variant of assignSparse
   // Iterating along u_ind and u_val is better
   template <bool UseScmp, bool UseMask, bool UseAll,
             typename U, typename M>
@@ -27,10 +28,14 @@ namespace backend
     {
       for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
       {
-        Index ind   = __ldg( u_ind   +row );
+        Index ind = __ldg( u_ind   +row );
         if( UseMask )
         {
-          M     m_val = __ldg( mask_val+ind );
+          M m_val = __ldg( mask_val+ind );
+
+          // val passes through if either:
+          // 1) UseScmp is not selected and m_val is zero
+          // 2) UseScmp is selected and m_val is not zero
           if( UseScmp^(m_val==mask_identity) )
           {
             //printf("Success: %d\n", row);
