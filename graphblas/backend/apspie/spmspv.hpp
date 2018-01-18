@@ -111,7 +111,8 @@ namespace backend
 
       if( temp_nvals==0 )
       {
-        std::cout << "No neighbours!\n";
+        if( desc->debug() )
+          std::cout << "No neighbours!\n";
         w->nvals_       = 0;
         w->need_update_ = true;
         return GrB_SUCCESS;
