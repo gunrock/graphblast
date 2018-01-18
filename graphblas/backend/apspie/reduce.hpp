@@ -51,7 +51,7 @@ namespace backend
 									  const SparseVector<U>* u,
 									  Descriptor*            desc )
   {
-    if( GrB_STRUCONLY )
+    if( desc->struconly() )
     {
       *val = u->nvals_;
     }

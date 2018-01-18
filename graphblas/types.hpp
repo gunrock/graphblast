@@ -5,7 +5,6 @@
 #define GrB_ALL       NULL
 // TODO: change GrB_MEMORY into commandline parameter
 #define GrB_MEMORY    false  // print memory usage info
-#define GrB_STRUCONLY true
 //#define GrB_NULL       nullptr
 //#define GrB_NULL       static_cast<int*>(NULL)
 #define GrB_THRESHOLD 1.0 //0.5

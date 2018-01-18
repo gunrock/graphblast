@@ -51,6 +51,8 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "True means split spgemm computation")
 
     // General params
+    ("source", po::value<int>()->default_value(0),
+        "Source node traversal is launched from")
     ("niter", po::value<int>()->default_value(10), 
         "Number of iterations to run after warmup")
     ("directed", po::value<int>()->default_value(0), 
@@ -61,8 +63,12 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "0: final timing, 1: per niter timing, 2: per graphblas algorithm timing")
     ("transpose", po::value<bool>()->default_value(false), 
         "True means use transpose graph")
+    ("mtxinfo", po::value<bool>()->default_value(true),
+        "True means show matrix MTX info")
     ("verbose", po::value<bool>()->default_value(true),
-        "0: CSV timing output, 1: correctness indicator")
+        "0: timing output only, 1: correctness indicator")
+    ("struconly", po::value<bool>()->default_value(false),
+        "True means use implied nonzeroes, False means key-value operations")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 

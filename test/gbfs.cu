@@ -29,8 +29,10 @@ int main( int argc, char** argv )
   // Parse arguments
   bool debug;
   bool transpose;
+  bool mtxinfo;
   int  directed;
   int  niter;
+  int  source;
   po::variables_map vm;
 
   // Read in sparse matrix
@@ -41,10 +43,12 @@ int main( int argc, char** argv )
     parseArgs( argc, argv, vm );
     debug     = vm["debug"    ].as<bool>();
     transpose = vm["transpose"].as<bool>();
+    mtxinfo   = vm["mtxinfo"  ].as<bool>();
     directed  = vm["directed" ].as<int>();
     niter     = vm["niter"    ].as<int>();
+    source    = vm["source"   ].as<int>();
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, directed, debug );
+        nvals, directed, mtxinfo );
   }
 
   // Matrix A
@@ -68,13 +72,13 @@ int main( int argc, char** argv )
       sizeof(graphblas::Index));
   int depth = 2000;
   bfs_cpu.Start();
-  graphblas::algorithm::bfsCpu( 0, &a, h_bfs_cpu, depth, transpose );
+  graphblas::algorithm::bfsCpu( source, &a, h_bfs_cpu, depth, transpose );
   bfs_cpu.Stop();
 
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::algorithm::bfs(&v, &a, 0, &desc, transpose);
+  graphblas::algorithm::bfs(&v, &a, source, &desc, transpose);
   warmup.Stop();
 
   std::vector<float> h_bfs_gpu;
@@ -86,7 +90,7 @@ int main( int argc, char** argv )
   vxm_gpu.Start();
   for( int i=0; i<niter; i++ )
   {
-    graphblas::algorithm::bfs(&v, &a, 0, &desc, transpose);
+    graphblas::algorithm::bfs(&v, &a, source, &desc, transpose);
   }
   cudaProfilerStop();
   vxm_gpu.Stop();

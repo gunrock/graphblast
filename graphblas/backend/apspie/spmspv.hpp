@@ -50,11 +50,10 @@ namespace backend
     if( desc->debug())
     {
       std::cout << "Executing Spmspv\n";
-      #ifdef GrB_STRUCONLY
+      if( desc->struconly() )
         std::cout << "In structure only mode\n";
-      #else
+      else
         std::cout << "In key-value mode\n";
-      #endif
       printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
     }
 
@@ -138,7 +137,7 @@ namespace backend
       CHECK( mask->getStorage(&mask_vec_type) );
       assert( mask->dense_.nvals_ >= temp_nvals );
 
-      if( GrB_STRUCONLY )
+      if( desc->struconly() )
       {
         if( use_scmp )
           assignDenseDenseMaskedKernel<true,true,true><<<NB,NT>>>(temp_ind, 

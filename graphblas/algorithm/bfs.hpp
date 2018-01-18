@@ -55,7 +55,8 @@ namespace algorithm
     float d    = 0;
     float succ = 0.f;
     CpuTimer cpu_tight;
-    cpu_tight.Start();
+    if( desc->descriptor_.timing_>0 )
+      cpu_tight.Start();
     do
     {
       if( desc->descriptor_.debug() )
@@ -67,8 +68,7 @@ namespace algorithm
       if( desc->descriptor_.timing_==2 )
       {
         cpu_tight.Stop();
-        std::cout << "tight, " << cpu_tight.ElapsedMillis() << ", \n";
-        std::cout << "Iteration " << d << ":\n";
+        std::cout << d-1 << ", " << cpu_tight.ElapsedMillis() << "\n";
         cpu_tight.Start();
       }
       assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, desc);
@@ -85,8 +85,11 @@ namespace algorithm
         std::cout << "succ: " << succ << " " << (int)succ << std::endl;
       d++;
     } while( succ>0 );
-    cpu_tight.Stop();
-    std::cout << "tight, " << cpu_tight.ElapsedMillis() << ", \n";
+    if( desc->descriptor_.timing_>0 )
+    {
+      cpu_tight.Stop();
+      std::cout << "tight, " << cpu_tight.ElapsedMillis() << ", \n";
+    }
 
     return GrB_SUCCESS;
   }

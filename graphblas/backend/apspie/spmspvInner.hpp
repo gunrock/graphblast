@@ -213,7 +213,7 @@ namespace backend
       std::cout << "w_nvals: " << *w_nvals << std::endl;
     }
 
-    if( GrB_STRUCONLY )
+    if( desc->struconly() )
     {
       CUDA( cudaMemset(w_ind, 0, A_nrows) );
       //CUDA( cudaMemsetAsync(w_ind, 0, A_nrows) );
@@ -250,7 +250,7 @@ namespace backend
     // TODO: Add element-wise multiplication with frontier
 		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
         A_csrColInd, u_ind, (Index*)d_csrSwapInd, *(desc->d_context_) );
-    if( !GrB_STRUCONLY )
+    if( !desc->struconly() )
 		  IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
           A_csrVal, u_ind, (T*)d_csrSwapVal, *(desc->d_context_) );
 
@@ -263,7 +263,7 @@ namespace backend
     if( desc->debug() )
     {
       printDevice( "SwapInd", (Index*)d_csrSwapInd, *w_nvals );
-      if( !GrB_STRUCONLY )
+      if( !desc->struconly() )
         printDevice( "SwapVal", (T*)    d_csrSwapVal, *w_nvals );
     }
 
@@ -274,7 +274,7 @@ namespace backend
     void* d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     void* d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
 
-    if( GrB_STRUCONLY )
+    if( desc->struconly() )
     {
       CUDA( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
           (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals) );
@@ -326,7 +326,7 @@ namespace backend
     }
 
 		//Step 6) Segmented Reduce By Key
-    if( GrB_STRUCONLY )
+    if( desc->struconly() )
     {
       NB.x = (*w_nvals+nt-1)/nt;
       scatter<<<NB,NT>>>(w_ind, (Index*)d_csrTempInd, *w_nvals);

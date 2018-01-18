@@ -20,7 +20,8 @@ namespace backend
       //d_buffer_(NULL), d_buffer_size_(0), d_temp_(NULL), d_temp_size_(0),
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
       split_(0), niter_(0), directed_(0), timing_(0), mxvmode_(0), 
-      transpose_(0), verbose_(0), nthread_(0), ndevice_(0), debug_(0),memory_(0)
+      transpose_(0), verbose_(0), struconly_(0), nthread_(0), ndevice_(0), 
+      debug_(0), memory_(0)
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -43,8 +44,11 @@ namespace backend
     Info loadArgs( const po::variables_map& vm );
 
     // TODO: make this static so printMemory can use it
-    bool debug()  { return debug_;  }
-    bool memory() { return memory_; }
+    inline bool debug()     { return debug_;  }
+    inline bool memory()    { return memory_; }
+
+    // TODO: use this in lieu of GrB_BOOL detector for now
+    inline bool struconly() { return struconly_; }
 
     private:
     Info resize( size_t target, std::string field );
@@ -75,6 +79,7 @@ namespace backend
     int         timing_;
     bool        transpose_;
     bool        verbose_;
+    bool        struconly_;
 
     // GPU params
     int         nthread_;
@@ -200,6 +205,7 @@ namespace backend
     mxvmode_   = vm["mxvmode"  ].as<int>();
     transpose_ = vm["transpose"].as<bool>();
     verbose_   = vm["verbose"  ].as<bool>();
+    struconly_ = vm["struconly"].as<bool>();
 
     // GPU params
     nthread_   = vm["nthread"  ].as<int>();

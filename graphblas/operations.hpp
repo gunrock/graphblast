@@ -111,7 +111,8 @@ namespace graphblas
     CHECK( u->nvals(&u_nvals) );
     if( u_nvals==0 )
     {
-      std::cout << "u.nvals == 0\n";
+      if( desc->descriptor_.debug() )
+        std::cout << "u.nvals == 0\n";
       CHECK( w->dup(u) );
       return GrB_SUCCESS;
     }
