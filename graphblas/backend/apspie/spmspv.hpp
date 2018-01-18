@@ -140,6 +140,13 @@ namespace backend
 
       if( desc->struconly() )
       {
+        desc->resize((3*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
+        Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
+        int temp;
+        mgpu::Scan<mgpu::MgpuScanTypeExc>( temp_ind, A_nrows, (Index)0,
+            mgpu::plus<Index>(), (Index*)0, &temp, d_scan,
+            *(desc->d_context_) );
+
         if( use_scmp )
           assignDenseDenseMaskedKernel<true,true,true><<<NB,NT>>>(temp_ind, 
               temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
@@ -160,7 +167,7 @@ namespace backend
 
         // Turn dense vector into sparse
         desc->resize((3*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
-        Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
+        //Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
 
         mgpu::Scan<mgpu::MgpuScanTypeExc>( temp_ind, A_nrows, (Index)0, 
             mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
@@ -169,6 +176,8 @@ namespace backend
         if( desc->debug() )
         {
           printDevice("d_scan", d_scan, A_nrows);
+          std::cout << "Pre-assign frontier size: " << temp << std::endl;
+          std::cout << "Frontier size: " << w->nvals_ << std::endl;
         }
 
         streamCompactKernel<<<NB,NT>>>(w->d_ind_, temp_ind, d_scan, (W)0, 
@@ -226,6 +235,7 @@ namespace backend
         {
           printDevice("d_flag", d_flag, temp_nvals);
           printDevice("d_scan", d_scan, temp_nvals);
+          std::cout << "Frontier size: " << w->nvals_ << std::endl;
         }
 
         streamCompactKernel<<<NB,NT>>>(w->d_ind_, w->d_val_, d_scan, (W)0,

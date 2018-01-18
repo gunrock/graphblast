@@ -111,14 +111,16 @@ namespace backend
   }
 
   __global__ void scatter( Index*       w_ind,
-                         const Index* u_ind,
-                         Index        u_nvals )
+                           const Index* u_ind,
+                           Index        u_nvals )
   {
     int gid = blockIdx.x*blockDim.x+threadIdx.x;
 
     if( gid<u_nvals )
     {
-      w_ind[u_ind[gid]] = 1;
+      Index ind = __ldg(u_ind+gid);
+
+      w_ind[ind] = 1;
     }
   }
 
