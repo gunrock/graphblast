@@ -48,8 +48,13 @@ namespace backend
     bool use_struconly; //TODO opt5
 
     if( desc->debug())
-    { 
+    {
       std::cout << "Executing Spmspv\n";
+      #ifdef GrB_STRUCONLY
+        std::cout << "In structure only mode\n";
+      #else
+        std::cout << "In key-value mode\n";
+      #endif
       printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
     }
 
@@ -138,9 +143,12 @@ namespace backend
         if( use_scmp )
           assignDenseDenseMaskedKernel<true,true,true><<<NB,NT>>>(temp_ind, 
               temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
-              (BinaryOp<Index,Index,Index>*)NULL, 
-              (Index)0, 
-              (Index*)NULL, 
+              (BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
+              A_nrows);
+        else
+          assignDenseDenseMaskedKernel<false,true,true><<<NB,NT>>>(temp_ind, 
+              temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
+              (BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
               A_nrows);
 
         if( desc->debug() )
