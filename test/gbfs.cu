@@ -84,7 +84,9 @@ int main( int argc, char** argv )
   std::vector<float> h_bfs_gpu;
   CHECK( v.extractTuples(&h_bfs_gpu, &nrows) );
   BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
- 
+
+  // Benchmark
+  desc.descriptor_.enable_split_ = true;
   CpuTimer vxm_gpu;
   cudaProfilerStart();
   vxm_gpu.Start();

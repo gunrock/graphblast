@@ -2,6 +2,7 @@
 #define GRB_ALGORITHM_BFS_HPP
 
 #include "graphblas/algorithm/testBfs.hpp"
+#include "graphblas/backend/apspie/util.hpp" // GpuTimer
 
 namespace graphblas
 {
@@ -54,7 +55,7 @@ namespace algorithm
 
     float d    = 0;
     float succ = 0.f;
-    CpuTimer cpu_tight;
+    backend::GpuTimer cpu_tight;
     if( desc->descriptor_.timing_>0 )
       cpu_tight.Start();
     do

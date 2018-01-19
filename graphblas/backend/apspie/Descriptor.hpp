@@ -19,9 +19,9 @@ namespace backend
       GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL, GrB_APSPIELB,GrB_16},
       //d_buffer_(NULL), d_buffer_size_(0), d_temp_(NULL), d_temp_size_(0),
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
-      split_(0), niter_(0), directed_(0), timing_(0), mxvmode_(0), 
-      transpose_(0), verbose_(0), struconly_(0), nthread_(0), ndevice_(0), 
-      debug_(0), memory_(0)
+      split_(0), enable_split_(0), niter_(0), directed_(0), timing_(0), 
+      mxvmode_(0), transpose_(0), verbose_(0), struconly_(0), nthread_(0), 
+      ndevice_(0), debug_(0), memory_(0)
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -49,6 +49,7 @@ namespace backend
 
     // TODO: use this in lieu of GrB_BOOL detector for now
     inline bool struconly() { return struconly_; }
+    inline bool split()     { return split_ && enable_split_; }
 
     private:
     Info resize( size_t target, std::string field );
@@ -71,6 +72,7 @@ namespace backend
     int         tb_;
     std::string mode_;
     bool        split_;
+    bool        enable_split_;
 
     // General params
     int         niter_;
@@ -216,17 +218,41 @@ namespace backend
 		switch( mxvmode_ )
 		{
 			case 0:
-				CHECK( set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHPULL) );
+				CHECK( set(GrB_MXVMODE, GrB_PUSHPULL) );
 				break;
 			case 1:
-				CHECK( set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHONLY) );
+				CHECK( set(GrB_MXVMODE, GrB_PUSHONLY) );
 				break;
 			case 2:
-				CHECK( set(graphblas::GrB_MXVMODE, graphblas::GrB_PULLONLY) );
+				CHECK( set(GrB_MXVMODE, GrB_PULLONLY) );
 				break;
 			default:
 				std::cout << "Error: incorrect mxvmode selection!\n";
 		}
+
+    switch( nthread_ )
+    {
+      case 32:
+        CHECK( set(GrB_NT, GrB_32) );
+        break;
+      case 64:
+        CHECK( set(GrB_NT, GrB_64) );
+        break;
+      case 128:
+        CHECK( set(GrB_NT, GrB_128) );
+        break;
+      case 256:
+        CHECK( set(GrB_NT, GrB_256) );
+        break;
+      case 512:
+        CHECK( set(GrB_NT, GrB_512) );
+        break;
+      case 1024:
+        CHECK( set(GrB_NT, GrB_1024) );
+        break;
+      default:
+        std::cout << "Error: incorrect nthread selection!\n";
+    }
 
     // TODO: Enable ndevice_
     //if( ndevice_!=0 )

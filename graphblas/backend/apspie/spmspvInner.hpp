@@ -213,11 +213,11 @@ namespace backend
       std::cout << "w_nvals: " << *w_nvals << std::endl;
     }
 
-    if( desc->struconly() )
+    /*if( desc->struconly() )
     {
       CUDA( cudaMemset(w_ind, 0, A_nrows*sizeof(Index)) );
       //CUDA( cudaMemsetAsync(w_ind, 0, A_nrows) );
-    }
+    }*/
 
     // No neighbors is one possible stopping condition
     if( *w_nvals==0 )
@@ -270,14 +270,17 @@ namespace backend
 		//Step 5) Sort step
     //  -> d_csrTempInd |E|xGrB_THRESHOLD
     //  -> d_csrTempVal |E|xGrB_THRESHOLD
-    size_t temp_storage_bytes;
+    size_t temp_storage_bytes = 0;
     void* d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     void* d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
 
     if( desc->struconly() )
     {
-      CUDA( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
-          (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals) );
+      if( !desc->split() )
+        CUDA( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
+            (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals) );
+      else
+        temp_storage_bytes = desc->d_temp_size_;
       
       if( desc->debug() )
       {
@@ -296,10 +299,13 @@ namespace backend
     }
     else
     {
-      CUDA( cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes, 
-          (Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
-          (T*)d_csrTempVal, *w_nvals) );
-
+      if( !desc->split() )
+        CUDA( cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes, 
+            (Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
+            (T*)d_csrTempVal, *w_nvals) ); 
+      else
+        temp_storage_bytes = desc->d_temp_size_;
+ 
       if( desc->debug() )
       {
         std::cout << temp_storage_bytes << " bytes required!\n";
@@ -326,20 +332,20 @@ namespace backend
     }
 
 		//Step 6) Segmented Reduce By Key
-    if( desc->struconly() )
+    /*if( desc->struconly() )
     {
       NB.x = (*w_nvals+nt-1)/nt;
       scatter<<<NB,NT>>>(w_ind, (Index*)d_csrTempInd, *w_nvals);
       *w_nvals = A_nrows;
     }
     else
-    {
+    {*/
       Index  w_nvals_t = 0;
       ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrTempVal, *w_nvals, (float)0, 
           add_op, mgpu::equal_to<int>(), w_ind, w_val, 
           &w_nvals_t, (int*)0, *(desc->d_context_) );
       *w_nvals         = w_nvals_t;
-    }
+    //}
 
     return GrB_SUCCESS;
   }

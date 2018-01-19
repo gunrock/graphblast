@@ -27,8 +27,11 @@ namespace backend
     T* d_val = (T*) desc->d_buffer_;
     size_t temp_storage_bytes = 0;
 
-    CUDA( cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, u->d_val_, d_val, 
-        u->nvals_, mgpu::plus<T>(), op->identity()) );
+    if( !desc->split() )
+      CUDA( cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, u->d_val_, 
+          d_val, u->nvals_, mgpu::plus<T>(), op->identity()) );
+    else
+      temp_storage_bytes = desc->d_temp_size_;
 
     CHECK( desc->resize(temp_storage_bytes, "temp") );
     if( desc->debug() )
@@ -60,8 +63,12 @@ namespace backend
       T* d_val = (T*) desc->d_buffer_;
       desc->resize(sizeof(T), "buffer");
       size_t temp_storage_bytes = 0;
-      cub::DeviceReduce::Reduce( NULL, temp_storage_bytes, u->d_val_, d_val, 
-          u->nvals_, mgpu::plus<T>(), op->identity() );
+
+      if( !desc->split() )
+        cub::DeviceReduce::Reduce( NULL, temp_storage_bytes, u->d_val_, d_val, 
+            u->nvals_, mgpu::plus<T>(), op->identity() );
+      else
+        temp_storage_bytes = desc->d_temp_size_;
 
       desc->resize( temp_storage_bytes, "temp" );
       cub::DeviceReduce::Reduce( desc->d_temp_, temp_storage_bytes, u->d_val_, 

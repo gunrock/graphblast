@@ -64,6 +64,28 @@ namespace backend
     for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
     {
       Index ind     = __ldg( u_ind +row );
+      Index flag    = __ldg( d_flag+row );
+      Index scatter = __ldg( d_scan+row );
+
+      if( flag==identity )
+      {
+        w_ind[scatter] = ind;
+      }
+    }
+  }
+  template <typename U>
+  __global__ void streamCompactDenseKernel( Index*       w_ind,
+                                            const Index* d_flag,
+                                            const Index* d_scan,
+                                            U            identity,
+                                            const Index* u_ind,
+                                            Index        u_nvals )
+  {
+    unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
+
+    for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
+    {
+      Index ind     = __ldg( u_ind +row );
       Index scatter = __ldg( d_scan+row );
       Index flag    = __ldg( d_flag+row );
 
