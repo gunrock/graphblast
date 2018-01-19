@@ -117,6 +117,11 @@ namespace backend
         w->need_update_ = true;
         return GrB_SUCCESS;
       }
+      else
+      {
+        if( desc->debug() )
+          std::cout << "temp_nvals: " << temp_nvals << std::endl;
+      }
 
       // Get descriptor parameters for nthreads
       Desc_value nt_mode;
@@ -235,6 +240,7 @@ namespace backend
         {
           printDevice("d_flag", d_flag, temp_nvals);
           printDevice("d_scan", d_scan, temp_nvals);
+          std::cout << "Pre-assign frontier size: " << temp_nvals << std::endl;
           std::cout << "Frontier size: " << w->nvals_ << std::endl;
         }
 

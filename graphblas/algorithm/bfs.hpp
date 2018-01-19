@@ -79,7 +79,7 @@ namespace algorithm
         vxm<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, &q1, A, desc);
       CHECK( desc->toggle(GrB_MASK) );
       CHECK( q2.swap(&q1) );
-      reduce<float,float>(&succ, GrB_NULL, &GrB_FP32Add, &q2, desc);
+      reduce<float,float>(&succ, GrB_NULL, &GrB_FP32Add, &q1, desc);
 
       if( desc->descriptor_.debug() )
         std::cout << "succ: " << succ << " " << (int)succ << std::endl;

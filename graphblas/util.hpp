@@ -328,7 +328,7 @@ int readMtx( const char*                    fname,
              graphblas::Index&              ncols,
              graphblas::Index&              nvals,
              int                            directed,
-             bool                           DEBUG )
+             bool                           mtxinfo )
 {
   int ret_code;
   MM_typecode matcode;
@@ -338,6 +338,7 @@ int readMtx( const char*                    fname,
     printf( "File %s not found\n", fname );
     exit(1);
   }
+  if( mtxinfo ) printf("Reading %s\n", fname );
 
   // Read MTX banner
   if (mm_read_banner(f, &matcode) != 0) {
@@ -366,8 +367,8 @@ int readMtx( const char*                    fname,
     makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
   customSort<T>( row_indices, col_indices, values );
 
-  if( DEBUG ) mm_write_banner(stdout, matcode);
-  if( DEBUG ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
+  if( mtxinfo ) mm_write_banner(stdout, matcode);
+  if( mtxinfo ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
 
   return ret_code; //TODO: parse ret_code
 }

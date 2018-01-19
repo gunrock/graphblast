@@ -215,7 +215,7 @@ namespace backend
 
     if( desc->struconly() )
     {
-      CUDA( cudaMemset(w_ind, 0, A_nrows) );
+      CUDA( cudaMemset(w_ind, 0, A_nrows*sizeof(Index)) );
       //CUDA( cudaMemsetAsync(w_ind, 0, A_nrows) );
     }
 
