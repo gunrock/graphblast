@@ -1,5 +1,3 @@
-
-
 ARCH="GEN_SM45"
 
 echo "data, milliseconds, gflops"
@@ -45,15 +43,12 @@ do
   done
 done
 
-for k in 0 1
+for j in 1 2 0
 do
-  for j in 1 2 0
+  for i in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004 rmat_n22_e64 rmat_n23_e32 rmat_n24_e16 rgg_n24_0.000548 road_usa
   do
-    for i in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004 rmat_n22_e64 rmat_n23_e32 rmat_n24_e16 rgg_n24_0.000548 road_usa
-    do
-      if [ "$ARCH" = "GEN_SM45" ] ; then
-        bin/gbfs --split=true --struconly=true --mxvmode=$j --timing=1 /data-2/topc-datasets/$i.mtx
-      fi
-    done
+    if [ "$ARCH" = "GEN_SM45" ] ; then
+      bin/gbfs --split=true --struconly=true --mxvmode=$j --timing=1 /data-2/topc-datasets/$i.mtx
+    fi
   done
 done

@@ -45,7 +45,6 @@ namespace backend
     bool use_repl = (repl_mode==GrB_REPLACE); //TODO
     bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN);
     bool use_allowdupl; //TODO opt4
-    bool use_struconly; //TODO opt5
 
     if( desc->debug())
     {

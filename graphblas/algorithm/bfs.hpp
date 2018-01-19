@@ -90,9 +90,9 @@ namespace algorithm
     {
       cpu_tight.Stop();
       std::cout << "tight, " << cpu_tight.ElapsedMillis() << ", \n";
-      return tight;
+      return cpu_tight.ElapsedMillis();
     }
-
+    return 0.f;
     //return GrB_SUCCESS;
   }
 

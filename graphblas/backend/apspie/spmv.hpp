@@ -138,49 +138,49 @@ __device__ op_func_t p_mul_func = mul_func;
           {
             case 0:
               spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
-                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
                   op->mul_, op->add_, A_nrows, A->nvals_, 
                   A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
               break;
             case 1:
               spmvDenseMaskedOrKernel<false,false,true><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
                   op->mul_, op->add_, A_nrows, A->nvals_,
                   A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
               break;
             case 2:
               spmvDenseMaskedOrKernel<false, true,false><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
                   op->mul_, op->add_, A_nrows, A->nvals_,
                   A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
               break;
             case 3:
               spmvDenseMaskedOrKernel<false, true, true><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
                   op->mul_, op->add_, A_nrows, A->nvals_,
                   A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
               break;
             case 4:
 						  spmvDenseMaskedOrKernel< true,false,false><<<NB,NT>>>( 
-							  	w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+							  	w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
 								  op->mul_, op->add_, A_nrows, A->nvals_, 
                   A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
               break;
             case 5:
               spmvDenseMaskedOrKernel< true,false, true><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
                   op->mul_, op->add_, A_nrows, A->nvals_,
                   A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
               break;
             case 6:
               spmvDenseMaskedOrKernel<true, true,false><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
                   op->mul_, op->add_, A_nrows, A->nvals_,
                   A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
               break;
             case 7:
               spmvDenseMaskedOrKernel<true, true, true><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
                   op->mul_, op->add_, A_nrows, A->nvals_,
                   A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
               break;
@@ -207,7 +207,7 @@ __device__ op_func_t p_mul_func = mul_func;
 			  std::cout << "Error: Feature not implemented yet!\n";
         /*mgpu::SpmvCsrIndirectBinary( A_csrVal, A_csrColInd, A->nvals_,
             A_csrRowPtr, mask->dense_.d_ind_, A_nrows, u->d_val_, true, 
-            w->d_val_, op->identity(), mgpu::multiplies<a>(), mgpu::plus<a>(),
+            w->d_val_, 0.f, mgpu::multiplies<a>(), mgpu::plus<a>(),
             *(desc->d_context_) );*/
       }
     }
@@ -253,11 +253,11 @@ __device__ op_func_t p_mul_func = mul_func;
       /*size_t temp_storage_bytes = 0;
 			cub::DeviceSpmv::CsrMV(desc->d_temp_, temp_storage_bytes, A->d_csrVal_,
 					A->d_csrRowPtr_, A->d_csrColInd_, u->d_val_, w->d_val_,
-					A->nrows_, A->ncols_, A->nvals_, 1.f, 0.f);
+					A->nrows_, A->ncols_, A->nvals_, 1.f, op->identity());
       desc->resize( temp_storage_bytes, "temp" );
 			cub::DeviceSpmv::CsrMV(desc->d_temp_, desc->d_temp_size_, A->d_csrVal_,
 					A->d_csrRowPtr_, A->d_csrColInd_, u->d_val_, w->d_val_,
-					A->nrows_, A->ncols_, A->nvals_, 1.f, 0.f);*/
+					A->nrows_, A->ncols_, A->nvals_, 1.f, op->identity());*/
     }
     w->need_update_ = true;
     return GrB_SUCCESS;
