@@ -419,11 +419,18 @@ namespace backend
 		}
 
     if( desc->struconly() )
-			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, 
-          (T)identity, dense_.d_val_, nvals);
+			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, (T)identity, 
+          dense_.d_val_, nvals);
     else
 			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, 
           sparse_.d_val_, d_scan, (T)identity, dense_.d_val_, nvals);
+
+    if( desc->debug() )
+    {
+      printDevice("sparse_ind", sparse_.d_ind_, sparse_.nvals_ );
+      if( !desc->struconly() )
+        printDevice("sparse_val", sparse_.d_val_, sparse_.nvals_ );
+    }
 
     vec_type_ = GrB_SPARSE;
     sparse_.need_update_ = true;

@@ -114,7 +114,7 @@ namespace backend
       Index scatter = __ldg( d_scan+row );
       U val         = __ldg( u_val+row );
 
-      if( val==identity )
+      if( val!=identity )
       {
         w_ind[scatter] = row;
         w_val[scatter] = val;
