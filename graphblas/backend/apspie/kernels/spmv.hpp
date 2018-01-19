@@ -14,7 +14,7 @@ namespace graphblas
 namespace backend
 {
 
-  template <bool UseScmp, bool UseAccum, bool UseRepl,
+  template <bool UseScmp, bool UseOpReuse, bool UseEarlyExit, 
             typename W, typename a, typename U, typename M,
             typename AccumOp, typename MulOp, typename AddOp>
   __global__ void spmvDenseMaskedOrKernel( W*           w_val,
@@ -48,15 +48,19 @@ namespace backend
 
         for( ; row_start<row_end; row_start++ )
         {
-          Index col_ind = __ldg( A_csrColInd+row_start );
-          val           = __ldg( mask_val+col_ind );
+          Index col_ind   = __ldg( A_csrColInd+row_start );
+          if( UseOpReuse )
+            val           = __ldg( mask_val+col_ind );
+          else
+            val           = __ldg( u_val+col_ind );
           //printf("%d %d: %d %f\n", threadIdx.x, row_start, col_ind, val);
 
           // Early exit if visited parent is discovered
           if( val!=mask_identity )
           {
             discoverable = true;
-            break;
+            if( UseEarlyExit )
+              break;
           }
         }
       }

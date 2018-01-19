@@ -13,9 +13,6 @@
 // Measured in multiples of |E|
 #define GrB_THRESHOLD 1.0 //0.5
 
-// This controls the switching point between sparse vs. dense
-#define GrB_SWITCHPOINT 0.1
-
 #include <cstddef>
 #include <cstdint>
 

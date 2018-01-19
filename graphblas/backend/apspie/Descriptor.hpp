@@ -20,9 +20,9 @@ namespace backend
       //d_buffer_(NULL), d_buffer_size_(0), d_temp_(NULL), d_temp_size_(0),
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
       split_(0), enable_split_(0), niter_(0), directed_(0), timing_(0), 
-      mxvmode_(0), transpose_(0), mtxinfo_(0), dirinfo_(0), verbose_(0), 
-      struconly_(0), switchpoint_(0), nthread_(0), ndevice_(0), debug_(0), 
-      memory_(0)
+      switchpoint_(0), mxvmode_(0), transpose_(0), mtxinfo_(0), dirinfo_(0), 
+      verbose_(0), struconly_(0), nthread_(0), ndevice_(0), debug_(0), 
+      memory_(0), earlyexit_(0), opreuse_(0)
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -52,6 +52,8 @@ namespace backend
     inline bool struconly()    { return struconly_; }
     inline bool split()        { return split_ && enable_split_; }
     inline bool dirinfo()      { return dirinfo_; }
+    inline bool earlyexit()    { return earlyexit_; }
+    inline bool opreuse()      { return opreuse_; }
     inline float switchpoint() { return switchpoint_; }
 
     private:
@@ -82,12 +84,14 @@ namespace backend
     int         directed_;
     int         mxvmode_;
     int         timing_;
+    float       switchpoint_;
     bool        transpose_;
     bool        mtxinfo_;
     bool        dirinfo_;
     bool        verbose_;
     bool        struconly_;
-    float       switchpoint_;
+    bool        earlyexit_;
+    bool        opreuse_;
 
     // GPU params
     int         nthread_;
@@ -210,13 +214,15 @@ namespace backend
     niter_       = vm["niter"      ].as<int>();
     directed_    = vm["directed"   ].as<int>();
     timing_      = vm["timing"     ].as<int>();
+    switchpoint_ = vm["switchpoint"].as<float>();
     mxvmode_     = vm["mxvmode"    ].as<int>();
     transpose_   = vm["transpose"  ].as<bool>();
     mtxinfo_     = vm["mtxinfo"    ].as<bool>();
     dirinfo_     = vm["dirinfo"    ].as<bool>();
     verbose_     = vm["verbose"    ].as<bool>();
     struconly_   = vm["struconly"  ].as<bool>();
-    switchpoint_ = vm["switchpoint"].as<float>();
+    earlyexit_   = vm["earlyexit"  ].as<bool>();
+    opreuse_     = vm["opreuse"    ].as<bool>();
 
     // GPU params
     nthread_     = vm["nthread"    ].as<int>();

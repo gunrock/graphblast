@@ -90,9 +90,10 @@ int main( int argc, char** argv )
   CpuTimer vxm_gpu;
   cudaProfilerStart();
   vxm_gpu.Start();
+  float tight = 0.f;
   for( int i=0; i<niter; i++ )
   {
-    graphblas::algorithm::bfs(&v, &a, source, &desc, transpose);
+    tight += graphblas::algorithm::bfs(&v, &a, source, &desc, transpose);
   }
   cudaProfilerStop();
   vxm_gpu.Stop();
@@ -102,6 +103,7 @@ int main( int argc, char** argv )
   std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
   float elapsed_vxm = vxm_gpu.ElapsedMillis();
+  std::cout << "tight, " << tight/niter << "\n";
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
   CHECK( v.extractTuples(&h_bfs_gpu, &nrows) );

@@ -61,6 +61,8 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "0: push-pull, 1: push only, 2: pull only")
     ("timing", po::value<int>()->default_value(1),
         "0: final timing, 1: per niter timing, 2: per graphblas algorithm timing")
+    ("switchpoint", po::value<float>()->default_value(0.01),
+        "Percentage of nnz needed in order to switch from sparse to dense when mxvmode=push-pull")
     ("transpose", po::value<bool>()->default_value(false), 
         "True means use transpose graph")
     ("mtxinfo", po::value<bool>()->default_value(true),
@@ -71,8 +73,10 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "0: timing output only, 1: correctness indicator")
     ("struconly", po::value<bool>()->default_value(false),
         "True means use implied nonzeroes, False means key-value operations")
-    ("switchpoint", po::value<float>()->default_value(0.1),
-        "Percentage of nnz needed in order to switch from sparse to dense when mxvmode=push-pull")
+    ("earlyexit", po::value<bool>()->default_value(true),
+        "True means use early exit, False means do not use it")
+    ("opreuse", po::value<bool>()->default_value(true),
+        "True means use operand reuse, False means do not use it")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 

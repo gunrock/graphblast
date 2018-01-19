@@ -9,7 +9,7 @@ namespace graphblas
 namespace algorithm
 {
   // Use float for now for both v and A
-  Info bfs( Vector<float>*       v,
+  float bfs( Vector<float>*       v,
             const Matrix<float>* A, 
             Index                s,
 		        Descriptor*          desc,
@@ -90,9 +90,10 @@ namespace algorithm
     {
       cpu_tight.Stop();
       std::cout << "tight, " << cpu_tight.ElapsedMillis() << ", \n";
+      return tight;
     }
 
-    return GrB_SUCCESS;
+    //return GrB_SUCCESS;
   }
 
   template <typename T, typename a>

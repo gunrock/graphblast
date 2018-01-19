@@ -128,17 +128,65 @@ __device__ op_func_t p_mul_func = mul_func;
 					NB.x = (A_nrows+nt-1)/nt;
 					NB.y = 1;
 					NB.z = 1;
-          if( use_scmp )
-						spmvDenseMaskedOrKernel<true, false,false><<<NB,NT>>>( 
-								w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
-								op->mul_, op->add_, A_nrows, A->nvals_, 
-								A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-          else
-						spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
-								w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
-								op->mul_, op->add_, A_nrows, A->nvals_, 
-								A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
 
+          int variant = 0;
+          variant |= (use_scmp         ) ? 4 : 0;
+          variant |= (desc->earlyexit()) ? 2 : 0;
+          variant |= (desc->opreuse()  ) ? 1 : 0;
+
+          switch( variant )
+          {
+            case 0:
+              spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  op->mul_, op->add_, A_nrows, A->nvals_, 
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 1:
+              spmvDenseMaskedOrKernel<false,false,true><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  op->mul_, op->add_, A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 2:
+              spmvDenseMaskedOrKernel<false, true,false><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  op->mul_, op->add_, A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 3:
+              spmvDenseMaskedOrKernel<false, true, true><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  op->mul_, op->add_, A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 4:
+						  spmvDenseMaskedOrKernel< true,false,false><<<NB,NT>>>( 
+							  	w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+								  op->mul_, op->add_, A_nrows, A->nvals_, 
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 5:
+              spmvDenseMaskedOrKernel< true,false, true><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  op->mul_, op->add_, A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 6:
+              spmvDenseMaskedOrKernel<true, true,false><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  op->mul_, op->add_, A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 7:
+              spmvDenseMaskedOrKernel<true, true, true><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, op->identity(),
+                  op->mul_, op->add_, A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            default:
+              break;
+          }
           if( desc->debug() )
             printDevice("w_val", w->d_val_, A_nrows);
 				}
