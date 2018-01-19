@@ -178,9 +178,6 @@ namespace backend
           std::cout << "Frontier size: " << w->nvals_ << std::endl;
         }
 
-        streamCompactDenseKernel<<<NB,NT>>>(w->d_ind_, d_flag, d_scan, (Index)1,
-            temp_ind, temp_nvals);
-
         streamCompactDenseKernel<<<NB,NT>>>(w->d_ind_, temp_ind, d_scan, (W)0, 
             temp_ind, A_nrows);
 
@@ -226,7 +223,7 @@ namespace backend
 
         updateFlagKernel<<<NB,NT>>>( d_flag, -1, temp_ind, temp_nvals );
         mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 
-            mgpu::plus<Index>(), d_scan+temp_nvals, &w->nvals_, d_scan, 
+            mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
             *(desc->d_context_) );
 
         if( desc->debug() )
@@ -237,8 +234,8 @@ namespace backend
           std::cout << "Frontier size: " << w->nvals_ << std::endl;
         }
 
-        streamCompactKernel<<<NB,NT>>>(w->d_ind_, d_flag, d_scan, (Index)1, 
-            temp_ind, temp_nvals);
+        streamCompactSparseKernel<<<NB,NT>>>(w->d_ind_, d_scan, 
+            (Index)1, temp_ind, d_flag, temp_nvals);
 
         if( desc->debug() )
         {
@@ -285,7 +282,7 @@ namespace backend
 
         updateFlagKernel<<<NB,NT>>>( d_flag, 0.f, temp_val, temp_nvals );
         mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 
-            mgpu::plus<Index>(), d_scan+temp_nvals, &w->nvals_, d_scan, 
+            mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
             *(desc->d_context_) );
 
         if( desc->debug() )
@@ -296,7 +293,7 @@ namespace backend
           std::cout << "Frontier size: " << w->nvals_ << std::endl;
         }
 
-        streamCompactKernel<<<NB,NT>>>(w->d_ind_, w->d_val_, d_scan, (W)0,
+        streamCompactSparseKernel<<<NB,NT>>>(w->d_ind_, w->d_val_, d_scan, (W)0,
             temp_ind, temp_val, temp_nvals);
 
         if( desc->debug() )

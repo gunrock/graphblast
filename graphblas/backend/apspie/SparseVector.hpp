@@ -45,8 +45,8 @@ namespace backend
     Info nnew(  Index nsize );
     Info dup(   const SparseVector* rhs );
     Info clear();
-    Info size(  Index* nsize_t  ) const;
-    Info nvals( Index* nvals_t ) const;
+    inline Info size(  Index* nsize_t  ) const;
+    inline Info nvals( Index* nvals_t ) const;
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
@@ -134,14 +134,14 @@ namespace backend
   }
 
   template <typename T>
-  Info SparseVector<T>::size( Index* nsize_t ) const
+  inline Info SparseVector<T>::size( Index* nsize_t ) const
   {
     *nsize_t = nsize_;
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info SparseVector<T>::nvals( Index* nvals_t ) const
+  inline Info SparseVector<T>::nvals( Index* nvals_t ) const
   {
     *nvals_t = nvals_;
     return GrB_SUCCESS;

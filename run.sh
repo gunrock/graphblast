@@ -29,7 +29,7 @@ done
 for i in ak2010 belgium_osm coAuthorsDBLP delaunay_n13 delaunay_n21 webbase-1M soc-LiveJournal1 kron_g500-logn21
 do
     if [ "$ARCH" = "GEN_SM35" ] ; then
-        bin/gbfs --split=true --struconly=true --mxvmode=1 --timing=1 --transpose=1 --directed=1 /data-2/gunrock_dataset/large/$i/$i.mtx
+        bin/gbfs --split=true --struconly=false --mxvmode=2 --timing=1 --transpose=1 --directed=1 /data-2/gunrock_dataset/large/$i/$i.mtx
     else
         if [ "$ARCH" = "GEN_SM40" ] ; then
             ./test /data/gunrock_dataset/large/kron_g500-logn21/kron_g500-logn21.mtx

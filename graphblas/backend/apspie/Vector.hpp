@@ -12,6 +12,7 @@
 #include "graphblas/util.hpp"
 
 #include "graphblas/backend/apspie/apspie.hpp"
+#include "graphblas/backend/apspie/kernels/util.hpp"
 
 namespace graphblas
 {
@@ -31,10 +32,11 @@ namespace backend
   {
     public:
     Vector() 
-        : nsize_(0), nvals_(0), sparse_(0), dense_(0), vec_type_(GrB_UNKNOWN) {}
+        : nsize_(0), nvals_(0), sparse_(0), dense_(0), vec_type_(GrB_UNKNOWN), 
+          ratio_(0) {}
     Vector( Index nsize )
         : nsize_(nsize), nvals_(0), sparse_(nsize), dense_(nsize), 
-          vec_type_(GrB_UNKNOWN) {}
+          vec_type_(GrB_UNKNOWN), ratio_(0) {}
 
     // Default destructor is good enough for this layer
     ~Vector() {}
@@ -70,9 +72,9 @@ namespace backend
     Info countUnique( Index* count );
     Info setStorage( Storage  vec_type );
     Info getStorage( Storage* vec_type ) const;
-    Info convert( T identity, int tol );
-    Info sparse2dense( T identity );
-    Info dense2sparse( T identity, int tol );
+    Info convert( T identity, T one, Descriptor* desc );
+    Info sparse2dense( T identity, T one, Descriptor* desc );
+    Info dense2sparse( T identity, Descriptor* desc );
     Info swap( Vector* rhs );
 
     private: 
@@ -81,6 +83,8 @@ namespace backend
     SparseVector<T> sparse_;
     DenseVector<T>  dense_;
     Storage         vec_type_;
+
+    float           ratio_;
   };
 
   // nsize_ is not modified, because it only gets modified in size()
@@ -290,10 +294,10 @@ namespace backend
   }
 
   // Check if necessary to convert sparse-to-dense or dense-to-sparse
-	// a) if more elements than GrB_THRESHOLD, convert SpVec->DeVec
-	// b) if less elements than GrB_THRESHOLD, convert DeVec->SpVec
+	// a) if more elements than desc->switchpoint(), convert SpVec->DeVec
+	// b) if less elements than desc->switchpoint(), convert DeVec->SpVec
   template <typename T>
-  Info Vector<T>::convert( T identity, int tol )
+  Info Vector<T>::convert( T identity, T one, Descriptor* desc )
   {
     Index nvals_t;
     Index nsize_t;
@@ -304,42 +308,126 @@ namespace backend
     }
     else if( vec_type_ == GrB_DENSE )
     {
-      CHECK( sparse_.nvals(&nvals_t) );
-      CHECK(  sparse_.size(&nsize_t) );
+      CHECK(   dense_.nnz(&nvals_t) );
+      CHECK( dense_.nvals(&nsize_t) );
     }
     else return GrB_UNINITIALIZED_OBJECT;
 
-    nvals_ = nvals_t;
-    nsize_ = nsize_t;
+    //nvals_ = nvals_t;
+    //nsize_ = nsize_t;
+    float ratio = (float)nvals_t/nsize_t;
+    if( desc->dirinfo() )
+      std::cout << "Nnz ratio: " << ratio << ", " << desc->switchpoint() 
+          << std::endl;
 
-    if( vec_type_ == GrB_SPARSE && nvals_t/nsize_t > GrB_THRESHOLD )
-      CHECK( sparse2dense( identity ) );
-    else if( vec_type_ == GrB_DENSE && nvals_t/nsize_t <= GrB_THRESHOLD )
-      CHECK( dense2sparse( identity, tol ) );
+    if( vec_type_ == GrB_SPARSE )
+    { 
+      if( ratio > desc->switchpoint() && ratio > ratio_ )
+      {
+        CHECK( sparse2dense( identity, one, desc ) );
+      }
+      else
+        ratio_ = ratio;
+    }
+    else if( vec_type_ == GrB_DENSE )
+    {
+      if( ratio <= desc->switchpoint() && ratio < ratio_ )
+        CHECK( dense2sparse( identity, desc ) );
+      else
+        ratio_ = ratio;
+    }
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info Vector<T>::sparse2dense( T identity )
+  Info Vector<T>::sparse2dense( T identity, T one, Descriptor* desc )
   {
     if( vec_type_==GrB_DENSE ) return GrB_INVALID_OBJECT;
+
+    if( desc->dirinfo() )
+      std::cout << "Converting from sparse to dense!\n";
 
     // 1. Initialize memory
     // 2. Call scatter
 
     CHECK( setStorage( GrB_DENSE ) );
+    const int nt    = 128;
+    const int nvals = sparse_.nvals_;
+
+    dim3 NT, NB;
+    NT.x = nt;
+    NT.y = 1;
+    NT.z = 1;
+    NB.x = (nvals+nt-1)/nt;
+    NB.y = 1;
+
+    dense_.fill( identity );
+    if( desc->struconly() )
+    {
+      scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, one, nvals );
+    }
+    else
+    {
+      scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, sparse_.d_val_, 
+          nvals );
+    }
+
+    vec_type_           = GrB_DENSE;
+    dense_.need_update_ = true;
+    dense_.nnz_         = nvals;
+
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info Vector<T>::dense2sparse( T identity, int tol )
+  Info Vector<T>::dense2sparse( T identity, Descriptor* desc )
   {
     if( vec_type_==GrB_SPARSE ) return GrB_INVALID_OBJECT;
 
+    if( desc->dirinfo() )
+      std::cout << "Converting from dense to sparse!\n";
+    
     // 1. Initialize memory
     // 2. Run kernel
 
     CHECK( setStorage(GrB_DENSE) );
+    const int nt    = 128;
+    const int nvals = dense_.nvals_;
+
+    dim3 NT, NB;
+    NT.x = nt;
+    NT.y = 1;
+    NT.z = 1;
+    NB.x = (nvals_+nt-1)/nt;
+    NB.y = 1;
+
+    desc->resize((2*nvals)*max(sizeof(Index),sizeof(T)), "buffer");
+		Index* d_flag = (Index*) desc->d_buffer_+  nvals;
+		Index* d_scan = (Index*) desc->d_buffer_+2*nvals;
+
+		updateFlagKernel<<<NB,NT>>>( d_flag, identity, dense_.d_val_, nvals );
+		mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, nvals, (Index)0,
+				mgpu::plus<Index>(), (Index*)0, &sparse_.nvals_, d_scan,
+				*(desc->d_context_) );
+
+		if( desc->debug() )
+		{
+			printDevice("d_flag", d_flag, nvals);
+			printDevice("d_scan", d_scan, nvals);
+			std::cout << "Dense frontier size: " << nvals << std::endl;
+			std::cout << "Sparse frontier size: " << sparse_.nvals_ << std::endl;
+		}
+
+    if( desc->struconly() )
+			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, 
+          (T)identity, dense_.d_val_, nvals);
+    else
+			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, 
+          sparse_.d_val_, d_scan, (T)identity, dense_.d_val_, nvals);
+
+    vec_type_ = GrB_SPARSE;
+    sparse_.need_update_ = true;
+
     return GrB_SUCCESS;
   }
 
@@ -359,10 +447,13 @@ namespace backend
 
     Index temp_nsize = nsize_;
     Index temp_nvals = nvals_;
+    float temp_ratio = ratio_;
     nsize_ = rhs->nsize_;
     nvals_ = rhs->nvals_;
+    ratio_ = rhs->ratio_;
     rhs->nsize_ = temp_nsize;
     rhs->nvals_ = temp_nvals;
+    rhs->ratio_ = temp_ratio;
 
     return GrB_SUCCESS;
   }

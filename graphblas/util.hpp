@@ -65,10 +65,14 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "True means use transpose graph")
     ("mtxinfo", po::value<bool>()->default_value(true),
         "True means show matrix MTX info")
+    ("dirinfo", po::value<bool>()->default_value(false),
+        "True means show mxvmode direction info, and when switches happen")
     ("verbose", po::value<bool>()->default_value(true),
         "0: timing output only, 1: correctness indicator")
     ("struconly", po::value<bool>()->default_value(false),
         "True means use implied nonzeroes, False means key-value operations")
+    ("switchpoint", po::value<float>()->default_value(0.1),
+        "Percentage of nnz needed in order to switch from sparse to dense when mxvmode=push-pull")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 

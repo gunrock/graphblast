@@ -27,10 +27,11 @@ namespace backend
   class DenseVector
   {
     public:
-    DenseVector() : nvals_(0), h_val_(NULL), d_val_(NULL), need_update_(0) {}
+    DenseVector() 
+        : nvals_(0), nnz_(0), h_val_(NULL), d_val_(NULL), need_update_(0) {}
 
     DenseVector( Index nsize )
-        : nvals_(nsize), h_val_(NULL), d_val_(NULL), need_update_(0)
+        : nvals_(nsize), nnz_(0), h_val_(NULL), d_val_(NULL), need_update_(0)
     {
       allocate();
     }
@@ -42,8 +43,9 @@ namespace backend
     Info nnew(  Index nsize );
     Info dup(   const DenseVector* rhs );
     Info clear();
-    Info size(  Index* nsize_ ) const;
-    Info nvals( Index* nvals_ ) const;
+    inline Info size(  Index* nsize_ ) const;
+    inline Info nvals( Index* nvals_ ) const;
+    inline Info nnz(   Index* nnz_   ) const;
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
@@ -76,6 +78,7 @@ namespace backend
     // Note nsize_ is understood to be the same as nvals_, so it is omitted
     Index nvals_; // 6 ways to set: (1) Vector (2) nnew (3) dup (4) build 
                   //                (5) resize (6) allocate
+    Index nnz_;
     T*    h_val_;
     T*    d_val_;
 
@@ -124,16 +127,23 @@ namespace backend
   }
 
   template <typename T>
-  Info DenseVector<T>::size( Index* nsize_t ) const
+  inline Info DenseVector<T>::size( Index* nsize_t ) const
   {
     *nsize_t = nvals_;
     return GrB_SUCCESS;
   }
 
   template <typename T>
-  Info DenseVector<T>::nvals( Index* nvals_t ) const
+  inline Info DenseVector<T>::nvals( Index* nvals_t ) const
   {
     *nvals_t = nvals_;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  inline Info DenseVector<T>::nnz( Index* nnz_t ) const
+  {
+    *nnz_t = nnz_;
     return GrB_SUCCESS;
   }
 

@@ -91,19 +91,30 @@ namespace backend
     // Conversions:
     Desc_value vxm_mode, tol;
     CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
+
+    // Note: removed tol for now
     CHECK( desc->get( GrB_TOL,     &tol      ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
+
+    // Note here, the 1.f stands for the dense vector one-element (STRUCONLY)
+    // The op->identity() stands for the dense vector zero-element
+    // TODO: Fix this hack
     if( vxm_mode==GrB_PUSHPULL )
-      CHECK( u_t->convert( op->identity(), (int)tol ) );
+      CHECK( u_t->convert( 0.f, 1.f, desc ) );
     else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
-      CHECK( u_t->dense2sparse( op->identity(), (int)tol ) );
+      CHECK( u_t->dense2sparse( 0.f, desc ) );
     else if( vxm_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
-      CHECK( u_t->sparse2dense( op->identity() ) );
+      CHECK( u_t->sparse2dense( 0.f, 1.f, desc ) );
+
+    // Check if vector type was changed due to conversion!
+    CHECK( u->getStorage( &u_vec_type ) );
 
     // Transpose:
     Desc_value inp0_mode;
     CHECK( desc->get(GrB_INP0, &inp0_mode) );
     if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
+
+    // Treat vxm as an mxv with transposed matrix
 	  CHECK( desc->toggle( GrB_INP1 ) );
 
     // Breakdown into 3 cases:
@@ -120,9 +131,9 @@ namespace backend
     {
       CHECK( w->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_SPARSE )
-        CHECK( spmv(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, desc));
+        CHECK(spmv(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, desc));
       else
-        CHECK( gemv( &w->dense_, mask, accum, op, &A->dense_, &u->dense_, desc));
+        CHECK(gemv( &w->dense_, mask, accum, op, &A->dense_, &u->dense_, desc));
     }
 
     // Undo change to desc by toggling again
@@ -157,11 +168,14 @@ namespace backend
     CHECK( desc->get( GrB_TOL,     &tol      ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
     if( mxv_mode==GrB_PUSHPULL )
-      CHECK( u_t->convert( op->identity(), (int)tol ) );
+      CHECK( u_t->convert( 0.f, 1.f, desc ) );
     else if( mxv_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
-      CHECK( u_t->dense2sparse( op->identity(), (int)tol ) );
+      CHECK( u_t->dense2sparse( 0.f, desc ) );
     else if( mxv_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
-      CHECK( u_t->sparse2dense( op->identity() ) );
+      CHECK( u_t->sparse2dense( 0.f, 1.f, desc ) );
+
+    // Check if vector type was changed due to conversion!
+    CHECK( u->getStorage( &u_vec_type ) );
 
     // Transpose:
     Desc_value inp1_mode;

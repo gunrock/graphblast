@@ -44,6 +44,10 @@ namespace backend
         u->d_val_, d_val, u->nvals_, mgpu::plus<T>(), op->identity()) );
     CUDA( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
 
+    // If doing reduce on DenseVector, then we might as well right the nnz
+    // to the internal variable
+    DenseVector<U>* u_t = const_cast<DenseVector<U>*>(u);
+    u_t->nnz_ = *val;
     return GrB_SUCCESS;
   }
 

@@ -8,7 +8,13 @@
 #define GrB_MEMORY    false  // print memory usage info
 //#define GrB_NULL       nullptr
 //#define GrB_NULL       static_cast<int*>(NULL)
+
+// This controls up to how much space temporary buffers ought to hold
+// Measured in multiples of |E|
 #define GrB_THRESHOLD 1.0 //0.5
+
+// This controls the switching point between sparse vs. dense
+#define GrB_SWITCHPOINT 0.1
 
 #include <cstddef>
 #include <cstdint>
