@@ -398,7 +398,7 @@ namespace backend
     NT.x = nt;
     NT.y = 1;
     NT.z = 1;
-    NB.x = (nvals_+nt-1)/nt;
+    NB.x = (nvals+nt-1)/nt;
     NB.y = 1;
 
     desc->resize((2*nvals)*max(sizeof(Index),sizeof(T)), "buffer");
