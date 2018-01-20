@@ -70,7 +70,10 @@ namespace backend
     // temp_ind and temp_val need |V| memory for masked case, so just allocate 
     // this much memory for now. TODO: optimize for memory
     int size          = (float)A->nvals_*desc->memusage()+1;
-    desc->resize((2*A_nrows+4*size)*max(sizeof(Index),sizeof(T)), "buffer");
+    if( desc->struconly() )
+      desc->resize((  A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
+    else
+      desc->resize((2*A_nrows+4*size)*max(sizeof(Index),sizeof(T)), "buffer");
 
     // Only difference between masked and unmasked versions if whether
     // eWiseMult() is called afterwards or not
@@ -217,8 +220,8 @@ namespace backend
 
         // Prune 0.f's from vector
         desc->resize((4*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
-        Index* d_flag = (Index*) desc->d_buffer_+2*A_nrows;
-        Index* d_scan = (Index*) desc->d_buffer_+3*A_nrows;
+        Index* d_flag = (Index*) desc->d_buffer_+  A_nrows;
+        Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
 
         updateFlagKernel<<<NB,NT>>>( d_flag, -1, temp_ind, temp_nvals );
         mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 

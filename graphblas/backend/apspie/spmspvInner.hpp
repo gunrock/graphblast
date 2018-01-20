@@ -237,8 +237,16 @@ namespace backend
     //  -> d_csrSwapInd |E| x desc->memusage()
     //  -> d_csrSwapVal |E| x desc->memusage()
     int    size         = (float)  A_nvals*desc->memusage()+1;
-    void* d_csrSwapInd = desc->d_buffer_+ 2*A_nrows      *sizeof(Index);
-    void* d_csrSwapVal = desc->d_buffer_+(2*A_nrows+size)*sizeof(Index);
+    void* d_csrSwapInd;
+    void* d_csrSwapVal;
+
+    if( desc->struconly() )
+      d_csrSwapInd = desc->d_buffer_+   A_nrows      *sizeof(Index);
+    else
+    {
+      d_csrSwapInd = desc->d_buffer_+ 2*A_nrows      *sizeof(Index);
+      d_csrSwapVal = desc->d_buffer_+(2*A_nrows+size)*sizeof(Index);
+    }
 		/*indirectGather<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
 				*u_nvals );
     printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
@@ -271,11 +279,13 @@ namespace backend
     //  -> d_csrTempInd |E| x desc->memusage()
     //  -> d_csrTempVal |E| x desc->memusage()
     size_t temp_storage_bytes = 0;
-    void* d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
-    void* d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
+    void* d_csrTempInd;
+    void* d_csrTempVal;
 
     if( desc->struconly() )
     {
+      d_csrTempInd = desc->d_buffer_+(A_nrows+size)*sizeof(Index);
+      
       if( !desc->split() )
         CUDA( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
             (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals) );
@@ -299,6 +309,9 @@ namespace backend
     }
     else
     {
+      d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
+      d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
+
       if( !desc->split() )
         CUDA( cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes, 
             (Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
