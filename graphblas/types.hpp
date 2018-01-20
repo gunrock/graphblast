@@ -5,13 +5,9 @@
 #define GrB_ALL       NULL
 // TODO: change GrB_MEMORY into commandline parameter
 // (requires some trickery with templates and singleton idiom)
-#define GrB_MEMORY    falsee  // print memory usage info
+#define GrB_MEMORY    false  // print memory usage info
 //#define GrB_NULL       nullptr
 //#define GrB_NULL       static_cast<int*>(NULL)
-
-// This controls up to how much space temporary buffers ought to hold
-// Measured in multiples of |E|
-#define GrB_THRESHOLD 1.0 //0.5
 
 #include <cstddef>
 #include <cstdint>
