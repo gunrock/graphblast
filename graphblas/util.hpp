@@ -61,7 +61,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "0: push-pull, 1: push only, 2: pull only")
     ("timing", po::value<int>()->default_value(1),
         "0: final timing, 1: per niter timing, 2: per graphblas algorithm timing")
-    ("memusage", po::value<float>()->default_value(0.5),
+    ("memusage", po::value<float>()->default_value(1.0),
         "Multiple of edge used to store temporary neighbor list during push phase")
     ("switchpoint", po::value<float>()->default_value(0.01),
         "Percentage of nnz needed in order to switch from sparse to dense when mxvmode=push-pull")
