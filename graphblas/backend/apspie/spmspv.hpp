@@ -215,11 +215,10 @@ namespace backend
           CUDA( cudaDeviceSynchronize() );
           printDevice("mask", (mask->dense_).d_val_, A_nrows);
           printDevice("temp_ind", temp_ind, temp_nvals);
-          printDevice("temp_val", temp_val, temp_nvals);
         }
 
         // Prune 0.f's from vector
-        desc->resize((4*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
+        desc->resize((3*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
         Index* d_flag = (Index*) desc->d_buffer_+  A_nrows;
         Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
 

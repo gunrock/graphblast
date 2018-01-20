@@ -190,8 +190,13 @@ namespace backend
     //        worst-case. This is a global reduce.
     //  -> d_temp_nvals |V|
     //  -> d_scan       |V|
+    int    size        = (float) A_nvals*desc->memusage()+1;
     void* d_temp_nvals = (void*)w_ind;
     void* d_scan       = (void*)w_val;
+
+    if( desc->struconly() )
+      d_scan = desc->d_buffer_+(A_nrows+size)*sizeof(Index);
+
     if( desc->debug() )
     {
       assert( *u_nvals<A_nrows );
@@ -236,7 +241,6 @@ namespace backend
     //  output: 1) expanded index array 2) expanded value array
     //  -> d_csrSwapInd |E| x desc->memusage()
     //  -> d_csrSwapVal |E| x desc->memusage()
-    int    size         = (float)  A_nvals*desc->memusage()+1;
     void* d_csrSwapInd;
     void* d_csrSwapVal;
 
@@ -345,20 +349,25 @@ namespace backend
     }
 
 		//Step 6) Segmented Reduce By Key
-    /*if( desc->struconly() )
+    if( desc->struconly() )
     {
-      NB.x = (*w_nvals+nt-1)/nt;
-      scatter<<<NB,NT>>>(w_ind, (Index*)d_csrTempInd, *w_nvals);
-      *w_nvals = A_nrows;
+      //NB.x = (*w_nvals+nt-1)/nt;
+      //scatter<<<NB,NT>>>(w_ind, (Index*)d_csrTempInd, *w_nvals);
+      //*w_nvals = A_nrows;
+      Index  w_nvals_t = 0;
+      ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, (float)0, 
+          add_op, mgpu::equal_to<int>(), w_ind, w_val, 
+          &w_nvals_t, (int*)0, *(desc->d_context_) );
+      *w_nvals         = w_nvals_t;
     }
     else
-    {*/
+    {
       Index  w_nvals_t = 0;
       ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrTempVal, *w_nvals, (float)0, 
           add_op, mgpu::equal_to<int>(), w_ind, w_val, 
           &w_nvals_t, (int*)0, *(desc->d_context_) );
       *w_nvals         = w_nvals_t;
-    //}
+    }
 
     return GrB_SUCCESS;
   }
