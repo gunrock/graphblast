@@ -5,7 +5,7 @@
 #define GrB_ALL       NULL
 // TODO: change GrB_MEMORY into commandline parameter
 // (requires some trickery with templates and singleton idiom)
-#define GrB_MEMORY    true  // print memory usage info
+#define GrB_MEMORY    falsee  // print memory usage info
 //#define GrB_NULL       nullptr
 //#define GrB_NULL       static_cast<int*>(NULL)
 
