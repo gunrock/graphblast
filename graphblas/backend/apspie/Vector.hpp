@@ -419,8 +419,8 @@ namespace backend
 		}
 
     if( desc->struconly() )
-			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, (T)identity, 
-          dense_.d_val_, nvals);
+			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, (Index)1, 
+          d_flag, nvals);
     else
 			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, 
           sparse_.d_val_, d_scan, (T)identity, dense_.d_val_, nvals);

@@ -33,7 +33,6 @@ int main( int argc, char** argv )
   int  directed;
   int  niter;
   int  source;
-  int  ndevice;
   po::variables_map vm;
 
   // Read in sparse matrix
@@ -48,12 +47,10 @@ int main( int argc, char** argv )
     directed  = vm["directed" ].as<int>();
     niter     = vm["niter"    ].as<int>();
     source    = vm["source"   ].as<int>();
-    ndevice   = vm["ndevice"  ].as<int>();
 
     // This is an imperfect solution, because this should happen in 
     // desc.loadArgs(vm) instead of application code!
     // TODO: fix this
-    CUDA( cudaSetDevice( ndevice ) );
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
         nvals, directed, mtxinfo );
   }
@@ -77,7 +74,7 @@ int main( int argc, char** argv )
   CpuTimer bfs_cpu;
   graphblas::Index* h_bfs_cpu = (graphblas::Index*)malloc(nrows*
       sizeof(graphblas::Index));
-  int depth = 2000;
+  int depth = 7000;
   bfs_cpu.Start();
   graphblas::algorithm::bfsCpu( source, &a, h_bfs_cpu, depth, transpose );
   bfs_cpu.Stop();

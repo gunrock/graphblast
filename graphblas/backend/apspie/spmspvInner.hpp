@@ -15,20 +15,20 @@ namespace graphblas
 {
 namespace backend
 {
-  // Memory requirements: (4|V|+5|E|)*GrB_THRESHOLD
-  //   -GrB_THRESHOLD is defined in graphblas/types.hpp
+  // Memory requirements: (4|V|+5|E|)*desc->memusage()
+  //   -desc->memusage() is defined in graphblas/types.hpp
   //
-  //  -> d_csrColBad    |V|*GrB_THRESHOLD
-  //  -> d_csrColGood   |V|*GrB_THRESHOLD
-  //  -> d_csrColDiff   |V|*GrB_THRESHOLD
-  //  -> d_index        |V|*GrB_THRESHOLD
-  //  -> d_csrVecInd    |E|*GrB_THRESHOLD (u_ind)
-  //  -> d_csrSwapInd   |E|*GrB_THRESHOLD
-  //  -> d_csrVecVal    |E|*GrB_THRESHOLD
-  //  -> d_csrTempVal   |E|*GrB_THRESHOLD (u_val)
-  //  -> d_csrSwapVal   |E|*GrB_THRESHOLD
-  //  -> w_ind          |E|*GrB_THRESHOLD
-  //  -> w_val          |E|*GrB_THRESHOLD
+  //  -> d_csrColBad    |V|*desc->memusage()
+  //  -> d_csrColGood   |V|*desc->memusage()
+  //  -> d_csrColDiff   |V|*desc->memusage()
+  //  -> d_index        |V|*desc->memusage()
+  //  -> d_csrVecInd    |E|*desc->memusage() (u_ind)
+  //  -> d_csrSwapInd   |E|*desc->memusage()
+  //  -> d_csrVecVal    |E|*desc->memusage()
+  //  -> d_csrTempVal   |E|*desc->memusage() (u_val)
+  //  -> d_csrSwapVal   |E|*desc->memusage()
+  //  -> w_ind          |E|*desc->memusage()
+  //  -> w_val          |E|*desc->memusage()
   //  -> d_temp_storage runtime constant
   template <typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
@@ -140,14 +140,14 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  // Memory requirements: 2|E|*GrB_THRESHOLD
-  //   -GrB_THRESHOLD is defined in graphblas/types.hpp
+  // Memory requirements: 2|E|*desc->memusage()
+  //   -desc->memusage() is defined in graphblas/types.hpp
   // 
-  //  -> d_csrSwapInd   |E|*GrB_THRESHOLD [2*A_nrows: 1*|E|*GrB_THRESHOLD]
-  //  -> d_csrSwapVal   |E|*GrB_THRESHOLD [2*A_nrows+ 2*|E|*GrB_THRESHOLD]
+  //  -> d_csrSwapInd   |E|*desc->memusage() [2*A_nrows: 1*|E|*desc->memusage()]
+  //  -> d_csrSwapVal   |E|*desc->memusage() [2*A_nrows+ 2*|E|*desc->memusage()]
   //  -> d_temp_storage runtime constant
   //
-  // TODO: can lower 2|E|*GrB_THRESHOLD memory requirement further by doing 
+  // TODO: can lower 2|E| * desc->memusage() memory requirement further by doing
   //       external memory sorting
   template <typename W, typename a, typename U,
             typename AccumOp, typename MulOp, typename AddOp>
@@ -234,9 +234,9 @@ namespace backend
 		//Step 1-4) custom kernel method (1 single kernel)
 		//  modify spmvCsrIndirectBinary() to stop after expand phase
     //  output: 1) expanded index array 2) expanded value array
-    //  -> d_csrSwapInd |E|xGrB_THRESHOLD
-    //  -> d_csrSwapVal |E|xGrB_THRESHOLD
-    int    size         = (float)  A_nvals*GrB_THRESHOLD+1;
+    //  -> d_csrSwapInd |E| x desc->memusage()
+    //  -> d_csrSwapVal |E| x desc->memusage()
+    int    size         = (float)  A_nvals*desc->memusage()+1;
     void* d_csrSwapInd = desc->d_buffer_+ 2*A_nrows      *sizeof(Index);
     void* d_csrSwapVal = desc->d_buffer_+(2*A_nrows+size)*sizeof(Index);
 		/*indirectGather<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
@@ -268,8 +268,8 @@ namespace backend
     }
 
 		//Step 5) Sort step
-    //  -> d_csrTempInd |E|xGrB_THRESHOLD
-    //  -> d_csrTempVal |E|xGrB_THRESHOLD
+    //  -> d_csrTempInd |E| x desc->memusage()
+    //  -> d_csrTempVal |E| x desc->memusage()
     size_t temp_storage_bytes = 0;
     void* d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     void* d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
