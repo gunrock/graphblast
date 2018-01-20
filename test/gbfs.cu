@@ -74,7 +74,7 @@ int main( int argc, char** argv )
   CpuTimer bfs_cpu;
   graphblas::Index* h_bfs_cpu = (graphblas::Index*)malloc(nrows*
       sizeof(graphblas::Index));
-  int depth = 7000;
+  int depth = 10000;
   bfs_cpu.Start();
   graphblas::algorithm::bfsCpu( source, &a, h_bfs_cpu, depth, transpose );
   bfs_cpu.Stop();

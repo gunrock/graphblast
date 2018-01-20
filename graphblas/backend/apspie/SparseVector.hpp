@@ -191,6 +191,11 @@ namespace backend
   Info SparseVector<T>::setElement( T     val,
                                     Index index )
   {
+    CHECK( gpuToCpu() );
+    h_ind_[nvals_] = index;
+    h_val_[nvals_] = val;
+    nvals_++;
+    CHECK( cpuToGpu() );
     return GrB_SUCCESS;
   }
 

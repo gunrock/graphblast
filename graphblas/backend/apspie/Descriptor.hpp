@@ -155,7 +155,7 @@ namespace backend
 
     if( target>*d_size )
     {
-      if( memory_ )
+      if( GrB_MEMORY )
       {
         std::cout << "Resizing "+field+" from " << *d_size << " to " << 
             target << "!\n";
@@ -163,7 +163,7 @@ namespace backend
       if( field=="buffer" ) 
       {
         CUDA( cudaMalloc(&d_buffer_, target) );
-        if( memory_ )
+        if( GrB_MEMORY )
         {
           printMemory( "desc_buffer" );
         }
@@ -174,7 +174,7 @@ namespace backend
       else if( field=="temp" ) 
       {
         CUDA( cudaMalloc(&d_temp_, target) );
-        if( memory_ )
+        if( GrB_MEMORY )
         {
           printMemory( "desc_temp" );
         }
