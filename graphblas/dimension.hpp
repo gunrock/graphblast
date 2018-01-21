@@ -10,7 +10,7 @@ namespace graphblas
 {
 
   template <typename U>
-  Info checkDimVecNvals( const Vector<U>*   u,
+  inline Info checkDimVecNvals( const Vector<U>*   u,
                          const std::string& str )
   {
     if( u==NULL ) return GrB_INVALID_OBJECT;
@@ -26,7 +26,7 @@ namespace graphblas
   }
 
   template <typename a, typename b>
-  Info checkDimRowCol( const Matrix<a>* A, 
+  inline Info checkDimRowCol( const Matrix<a>* A, 
                        const Matrix<b>* B, 
                        const std::string& str )
   {
@@ -43,7 +43,7 @@ namespace graphblas
   }
 
   template <typename a, typename b>
-  Info checkDimRowRow( const Matrix<a>* A, 
+  inline Info checkDimRowRow( const Matrix<a>* A, 
                        const Matrix<b>* B, 
                        const std::string& str )
   {
@@ -60,7 +60,7 @@ namespace graphblas
   }
 
   template <typename a, typename b>
-  Info checkDimColCol( const Matrix<a>* A, 
+  inline Info checkDimColCol( const Matrix<a>* A, 
                        const Matrix<b>* B, 
                        const std::string& str )
   {
@@ -77,7 +77,7 @@ namespace graphblas
   }
 
   template <typename a, typename U>
-  Info checkDimRowSize( const Matrix<a>*   A, 
+  inline Info checkDimRowSize( const Matrix<a>*   A, 
                         const Vector<U>*   u, 
                         const std::string& str )
   {
@@ -94,7 +94,7 @@ namespace graphblas
   }
 
   template <typename a, typename U>
-  Info checkDimColSize( const Matrix<a>* A, 
+  inline Info checkDimColSize( const Matrix<a>* A, 
                         const Vector<U>* u, 
                         const std::string& str )
   {
@@ -111,7 +111,7 @@ namespace graphblas
   }
 
   template <typename U, typename W>
-  Info checkDimSizeSize( const Vector<U>* u, 
+  inline Info checkDimSizeSize( const Vector<U>* u, 
                          const Vector<W>* w, 
                          const std::string& str )
   {
