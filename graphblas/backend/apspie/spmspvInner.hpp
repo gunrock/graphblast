@@ -286,13 +286,17 @@ namespace backend
     void* d_csrTempInd;
     void* d_csrTempVal;
 
+    int endbit = sizeof(Index)*8;
+    if( desc->endbit() )
+      endbit = min(endbit, (int)log2((float)A_nrows)+1);
+
     if( desc->struconly() )
     {
       d_csrTempInd = desc->d_buffer_+(A_nrows+size)*sizeof(Index);
       
       if( !desc->split() )
         CUDA( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
-            (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals) );
+            (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals, 0, endbit) );
       else
         temp_storage_bytes = desc->d_temp_size_;
       
@@ -304,7 +308,7 @@ namespace backend
       desc->resize( temp_storage_bytes, "temp" );
 
       CUDA( cub::DeviceRadixSort::SortKeys(desc->d_temp_, temp_storage_bytes,
-          (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals) );
+          (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals, 0, endbit) );
 
       if( desc->debug() )
       {
@@ -319,7 +323,7 @@ namespace backend
       if( !desc->split() )
         CUDA( cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes, 
             (Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
-            (T*)d_csrTempVal, *w_nvals) ); 
+            (T*)d_csrTempVal, *w_nvals, 0, endbit) ); 
       else
         temp_storage_bytes = desc->d_temp_size_;
  
@@ -332,7 +336,7 @@ namespace backend
 
       CUDA( cub::DeviceRadixSort::SortPairs(desc->d_temp_, temp_storage_bytes, 
           (Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
-          (T*)d_csrTempVal, *w_nvals) );
+          (T*)d_csrTempVal, *w_nvals, 0, endbit) );
       //MergesortKeys(d_csrVecInd, total, mgpu::less<int>(), desc->d_context_);
 
       if( desc->debug() )
@@ -344,6 +348,7 @@ namespace backend
 
 		if( desc->debug() )
     {
+      printf("Endbit: %d\n", endbit);
       printf("Current iteration: %d nonzero vector, %d edges\n", *u_nvals, 
         *w_nvals);
     }

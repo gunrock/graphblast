@@ -21,8 +21,8 @@ namespace backend
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
       split_(0), enable_split_(0), niter_(0), directed_(0), timing_(0), 
       memusage_(0), switchpoint_(0), mxvmode_(0), transpose_(0), mtxinfo_(0), 
-      dirinfo_(0), verbose_(0), struconly_(0), nthread_(0), ndevice_(0), 
-      debug_(0), memory_(0), earlyexit_(0), opreuse_(0)
+      dirinfo_(0), verbose_(0), struconly_(0), earlyexit_(0), opreuse_(0), 
+      endbit_(0), nthread_(0), ndevice_(0), debug_(0), memory_(0) 
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -54,6 +54,7 @@ namespace backend
     inline bool dirinfo()      { return dirinfo_; }
     inline bool earlyexit()    { return earlyexit_; }
     inline bool opreuse()      { return opreuse_; }
+    inline bool endbit()       { return endbit_; }
     inline float switchpoint() { return switchpoint_; }
     inline float memusage()    { return memusage_; }
 
@@ -94,6 +95,7 @@ namespace backend
     bool        struconly_;
     bool        earlyexit_;
     bool        opreuse_;
+    bool        endbit_;
 
     // GPU params
     int         nthread_;
@@ -226,6 +228,7 @@ namespace backend
     struconly_   = vm["struconly"  ].as<bool>();
     earlyexit_   = vm["earlyexit"  ].as<bool>();
     opreuse_     = vm["opreuse"    ].as<bool>();
+    endbit_      = vm["endbit"     ].as<bool>();
 
     // GPU params
     nthread_     = vm["nthread"    ].as<int>();
