@@ -11,6 +11,7 @@
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
+#include "graphblas/backend/apspie/util.hpp"  // GpuTimer
 #include "test/test.hpp"
 
 int main( int argc, char** argv )
@@ -51,9 +52,9 @@ int main( int argc, char** argv )
 
   // Vector x
   graphblas::Vector<float> x(nrows);
-  std::vector<graphblas::Index> x_ind = {1,   2,   3};
-  std::vector<float>            x_val = {1.f, 1.f, 1.f};
-  CHECK( x.build(&x_ind, &x_val, 3, GrB_NULL) );
+  std::vector<graphblas::Index> x_ind = {0};
+  std::vector<float>            x_val = {1.f};
+  CHECK( x.build(&x_ind, &x_val, 1, GrB_NULL) );
   CHECK( x.size(&nrows) );
   if( debug ) CHECK( x.print() );
 
@@ -63,7 +64,7 @@ int main( int argc, char** argv )
   // Vector mask
   graphblas::Vector<float> m(nrows);
   CHECK( m.fill(-1.f) );
-  CHECK( m.setElement(0.f, 1) );
+  CHECK( m.setElement(0.f, 0) );
   CHECK( m.size(&nrows) );
 
   // Descriptor
@@ -103,25 +104,39 @@ int main( int argc, char** argv )
   graphblas::vxm<float, float, float>(&y, &m, GrB_NULL, &GrB_FP32AddMul, 
       &x, &a, &desc);
   warmup.Stop();
- 
-  CpuTimer cpu_vxm;
+
+  std::vector<graphblas::Index> index;
+  for( int i=0; i<nrows; i++ )
+    index.push_back(i);
+  std::vector<float> value(nrows,1.f);
+
+  std::vector<float> my_time;
+  graphblas::backend::GpuTimer cpu_vxm;
   //cudaProfilerStart();
   cpu_vxm.Start();
-  for( int i=0; i<niter; i++ )
+  graphblas::vxm<float, float, float>(&y, &m, GrB_NULL, &GrB_FP32AddMul, 
+      &x, &a, &desc);
+  cpu_vxm.Stop();
+  my_time.push_back(cpu_vxm.ElapsedMillis());  
+
+  for( int i=1000; i<nrows; i+=1000 )
   {
+    x.clear();
+    x.build(&index, &value, i, GrB_NULL);
+    cpu_vxm.Start();
     graphblas::vxm<float, float, float>( &y, &m, GrB_NULL, 
         &GrB_FP32AddMul, &x, &a, &desc );
+    cpu_vxm.Stop();
+    my_time.push_back(cpu_vxm.ElapsedMillis());
   }
   //cudaProfilerStop();
-  cpu_vxm.Stop();
 
   float flop = 0;
-  if( debug ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
-    flop/warmup.ElapsedMillis()/1000000.0 << "\n";
-  float elapsed_vxm = cpu_vxm.ElapsedMillis();
-  std::cout << "vxm, " << elapsed_vxm/niter << "\n";
+  std::cout << "warmup, " << warmup.ElapsedMillis() << std::endl;
 
-  if( debug ) y.print();
+  for( int i=0; i<my_time.size(); i++ )
+    std::cout << (i)*1000 << ", " << my_time[i] << std::endl;
+
   /*c.extractTuples( out_denseVal );
   for( int i=0; i<nvals; i++ )
   {
