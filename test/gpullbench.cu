@@ -118,8 +118,9 @@ int main( int argc, char** argv )
 
   for( int i=1000; i<nrows; i+=1000 )
   {
-    m.clear();
+    //m.clear();
     m.build(&value, i);
+    //graphblas::backend::printDevice("m_val", m.vector_.dense_.d_val_);
     cpu_vxm.Start();
     graphblas::vxm<float, float, float>( &y, &m, GrB_NULL, 
         &GrB_FP32AddMul, &x, &a, &desc );

@@ -118,7 +118,7 @@ int main( int argc, char** argv )
 
   for( int i=1000; i<nrows; i+=1000 )
   {
-    m.clear();
+    //m.clear();
     m.build(&value, i);
     cpu_vxm.Start();
     graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, 

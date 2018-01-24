@@ -21,8 +21,9 @@ namespace backend
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
       split_(0), enable_split_(0), niter_(0), directed_(0), timing_(0), 
       memusage_(0), switchpoint_(0), mxvmode_(0), transpose_(0), mtxinfo_(0), 
-      dirinfo_(0), verbose_(0), struconly_(0), earlyexit_(0), opreuse_(0), 
-      endbit_(0), nthread_(0), ndevice_(0), debug_(0), memory_(0) 
+      dirinfo_(0), verbose_(0), struconly_(0), earlyexit_(0), 
+      earlyexitbench_(0), opreuse_(0), endbit_(0), nthread_(0), ndevice_(0), 
+      debug_(0), memory_(0) 
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -49,14 +50,15 @@ namespace backend
     inline bool memory() { return memory_; }
 
     // TODO: use this in lieu of GrB_BOOL detector for now
-    inline bool struconly()    { return struconly_; }
-    inline bool split()        { return split_ && enable_split_; }
-    inline bool dirinfo()      { return dirinfo_; }
-    inline bool earlyexit()    { return earlyexit_; }
-    inline bool opreuse()      { return opreuse_; }
-    inline bool endbit()       { return endbit_; }
-    inline float switchpoint() { return switchpoint_; }
-    inline float memusage()    { return memusage_; }
+    inline bool struconly()      { return struconly_; }
+    inline bool split()          { return split_ && enable_split_; }
+    inline bool dirinfo()        { return dirinfo_; }
+    inline bool earlyexit()      { return earlyexit_; }
+    inline bool earlyexitbench() { return earlyexitbench_; }
+    inline bool opreuse()        { return opreuse_; }
+    inline bool endbit()         { return endbit_; }
+    inline float switchpoint()   { return switchpoint_; }
+    inline float memusage()      { return memusage_; }
 
     private:
     Info resize( size_t target, std::string field );
@@ -94,6 +96,7 @@ namespace backend
     bool        verbose_;
     bool        struconly_;
     bool        earlyexit_;
+    bool        earlyexitbench_;
     bool        opreuse_;
     bool        endbit_;
 
@@ -209,32 +212,36 @@ namespace backend
   Info Descriptor::loadArgs( const po::variables_map& vm )
   {
     // Algorithm specific params
-    ta_          = vm["ta"         ].as<int>();
-    tb_          = vm["tb"         ].as<int>();
-    mode_        = vm["mode"       ].as<std::string>();
-    split_       = vm["split"      ].as<bool>();
+    ta_             = vm["ta"            ].as<int>();
+    tb_             = vm["tb"            ].as<int>();
+    mode_           = vm["mode"          ].as<std::string>();
+    split_          = vm["split"         ].as<bool>();
 
     // General params
-    niter_       = vm["niter"      ].as<int>();
-    directed_    = vm["directed"   ].as<int>();
-    timing_      = vm["timing"     ].as<int>();
-    memusage_    = vm["memusage"   ].as<float>();
-    switchpoint_ = vm["switchpoint"].as<float>();
-    mxvmode_     = vm["mxvmode"    ].as<int>();
-    transpose_   = vm["transpose"  ].as<bool>();
-    mtxinfo_     = vm["mtxinfo"    ].as<bool>();
-    dirinfo_     = vm["dirinfo"    ].as<bool>();
-    verbose_     = vm["verbose"    ].as<bool>();
-    struconly_   = vm["struconly"  ].as<bool>();
-    earlyexit_   = vm["earlyexit"  ].as<bool>();
-    opreuse_     = vm["opreuse"    ].as<bool>();
-    endbit_      = vm["endbit"     ].as<bool>();
+    niter_          = vm["niter"         ].as<int>();
+    directed_       = vm["directed"      ].as<int>();
+    timing_         = vm["timing"        ].as<int>();
+    memusage_       = vm["memusage"      ].as<float>();
+    switchpoint_    = vm["switchpoint"   ].as<float>();
+    mxvmode_        = vm["mxvmode"       ].as<int>();
+    transpose_      = vm["transpose"     ].as<bool>();
+    mtxinfo_        = vm["mtxinfo"       ].as<bool>();
+    dirinfo_        = vm["dirinfo"       ].as<bool>();
+    verbose_        = vm["verbose"       ].as<bool>();
+    struconly_      = vm["struconly"     ].as<bool>();
+    earlyexit_      = vm["earlyexit"     ].as<bool>();
+    earlyexitbench_ = vm["earlyexitbench"].as<bool>();
+    opreuse_        = vm["opreuse"       ].as<bool>();
+    endbit_         = vm["endbit"        ].as<bool>();
 
     // GPU params
-    nthread_     = vm["nthread"    ].as<int>();
-    ndevice_     = vm["ndevice"    ].as<int>();
-    debug_       = vm["debug"      ].as<bool>();
-    memory_      = vm["memory"     ].as<bool>();
+    nthread_        = vm["nthread"       ].as<int>();
+    ndevice_        = vm["ndevice"       ].as<int>();
+    debug_          = vm["debug"         ].as<bool>();
+    memory_         = vm["memory"        ].as<bool>();
+
+    if( earlyexitbench_ )
+      earlyexit_ = true;
 
 		switch( mxvmode_ )
 		{

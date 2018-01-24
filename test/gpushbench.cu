@@ -109,6 +109,7 @@ int main( int argc, char** argv )
   for( int i=0; i<nrows; i++ )
     index.push_back(i);
   std::vector<float> value(nrows,1.f);
+  std::vector<float> mask_value(nrows,0.f);
 
   std::vector<float> my_time;
   graphblas::backend::GpuTimer cpu_vxm;
@@ -123,6 +124,8 @@ int main( int argc, char** argv )
   {
     x.clear();
     x.build(&index, &value, i, GrB_NULL);
+    m.clear();
+    m.build(&mask_value, 2*i/3);
     cpu_vxm.Start();
     graphblas::vxm<float, float, float>( &y, &m, GrB_NULL, 
         &GrB_FP32AddMul, &x, &a, &desc );

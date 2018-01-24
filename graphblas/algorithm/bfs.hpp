@@ -55,6 +55,9 @@ namespace algorithm
 
     float d    = 0;
     float succ = 0.f;
+    Index A_nrows;
+    CHECK( A->nrows(&A_nrows) );
+    Index unvisited = A_nrows;
     backend::GpuTimer cpu_tight;
     if( desc->descriptor_.timing_>0 )
       cpu_tight.Start();
@@ -69,7 +72,9 @@ namespace algorithm
       if( desc->descriptor_.timing_==2 )
       {
         cpu_tight.Stop();
-        std::cout << d-1 << ", " << cpu_tight.ElapsedMillis() << "\n";
+        if( d!=0 )
+          std::cout << d-1 << ", " << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
+        unvisited -= (int)succ;
         cpu_tight.Start();
       }
       assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, desc);
@@ -89,7 +94,7 @@ namespace algorithm
     if( desc->descriptor_.timing_>0 )
     {
       cpu_tight.Stop();
-      std::cout << "tight, " << cpu_tight.ElapsedMillis() << ", \n";
+      std::cout << d-1 << ", " << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
       return cpu_tight.ElapsedMillis();
     }
     return 0.f;
