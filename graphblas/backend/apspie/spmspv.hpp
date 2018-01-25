@@ -71,7 +71,7 @@ namespace backend
     // this much memory for now. TODO: optimize for memory
     int size          = (float)A->nvals_*desc->memusage()+1;
     if( desc->struconly() )
-      desc->resize((  A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
+      desc->resize((2*A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
     else
       desc->resize((2*A_nrows+4*size)*max(sizeof(Index),sizeof(T)), "buffer");
 
@@ -277,13 +277,14 @@ namespace backend
         }
 
         // Prune 0.f's from vector
-        desc->resize((4*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
+        desc->resize((5*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
         Index* d_flag = (Index*) desc->d_buffer_+2*A_nrows;
         Index* d_scan = (Index*) desc->d_buffer_+3*A_nrows;
+        Index* d_temp = (Index*) desc->d_buffer_+4*A_nrows;
 
         updateFlagKernel<<<NB,NT>>>( d_flag, 0.f, temp_val, temp_nvals );
-        mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 
-            mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
+        mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0,
+            mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, d_temp,
             *(desc->d_context_) );
 
         if( desc->debug() )

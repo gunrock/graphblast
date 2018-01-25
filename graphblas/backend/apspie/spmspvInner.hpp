@@ -193,6 +193,7 @@ namespace backend
     int    size        = (float) A_nvals*desc->memusage()+1;
     void* d_temp_nvals = (void*)w_ind;
     void* d_scan       = (void*)w_val;
+    void* d_temp       = desc->d_buffer_+ 2*A_nrows      *sizeof(Index);
 
     if( desc->struconly() )
       d_scan = desc->d_buffer_+(A_nrows+size)*sizeof(Index);
@@ -205,9 +206,9 @@ namespace backend
 
     indirectScanKernel<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
         *u_nvals );
-    mgpu::Scan<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals, 0,
-        mgpu::plus<int>(), (Index*)d_scan+(*u_nvals), w_nvals, (Index*)d_scan, 
-        *(desc->d_context_) );
+    mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals,
+        0, mgpu::plus<int>(), (Index*)d_scan+(*u_nvals), w_nvals, 
+        (Index*)d_scan, (Index*)d_temp, *(desc->d_context_) );
 
     if( desc->debug() )
     {
@@ -245,11 +246,15 @@ namespace backend
     void* d_csrSwapVal;
 
     if( desc->struconly() )
+    {
       d_csrSwapInd = desc->d_buffer_+   A_nrows      *sizeof(Index);
+      d_temp       = desc->d_buffer_+(  A_nrows+size)*sizeof(Index);
+    }
     else
     {
-      d_csrSwapInd = desc->d_buffer_+ 2*A_nrows      *sizeof(Index);
-      d_csrSwapVal = desc->d_buffer_+(2*A_nrows+size)*sizeof(Index);
+      d_csrSwapInd = desc->d_buffer_+ 2*A_nrows        *sizeof(Index);
+      d_csrSwapVal = desc->d_buffer_+(2*A_nrows+  size)*sizeof(Index);
+      d_temp       = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     }
 		/*indirectGather<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
 				*u_nvals );
@@ -260,12 +265,26 @@ namespace backend
         A_csrVal, d_csrSwapVal, *(desc->d_context_) );*/
 
     // TODO: Add element-wise multiplication with frontier
-		IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
-        A_csrColInd, u_ind, (Index*)d_csrSwapInd, *(desc->d_context_) );
-    if( !desc->struconly() )
-		  IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, *u_nvals, 
-          A_csrVal, u_ind, (T*)d_csrSwapVal, *(desc->d_context_) );
-
+    //if( desc->prealloc() )
+    //{
+    /*  IntervalGatherIndirectPrealloc( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
+          *u_nvals, A_csrColInd, u_ind, (Index*)d_csrSwapInd, (Index*)d_temp, 
+          *(desc->d_context_) );
+      if( !desc->struconly() )
+        IntervalGatherIndirectPrealloc( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
+            *u_nvals, A_csrVal, u_ind, (T*)d_csrSwapVal, (Index*)d_temp,
+            *(desc->d_context_) );
+    }
+    else
+    {*/
+      IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
+        *u_nvals, A_csrColInd, u_ind, (Index*)d_csrSwapInd, 
+        *(desc->d_context_) );
+      if( !desc->struconly() )
+        IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
+            *u_nvals, A_csrVal, u_ind, (T*)d_csrSwapVal,
+            *(desc->d_context_) );
+    //}
 		//Step 4) Element-wise multiplication
     //mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, *w_nvals, 
     //    A_csrRowPtr, A_nrows, u_ind, u_val, *u_nvals, false, w_ind, w_val, 
@@ -356,13 +375,21 @@ namespace backend
 		//Step 6) Segmented Reduce By Key
     if( desc->struconly() )
     {
+      d_temp = desc->d_buffer_+(A_nrows+2*size)*sizeof(Index);
+
       //NB.x = (*w_nvals+nt-1)/nt;
       //scatter<<<NB,NT>>>(w_ind, (Index*)d_csrTempInd, *w_nvals);
       //*w_nvals = A_nrows;
       Index  w_nvals_t = 0;
-      ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, (float)0, 
-          add_op, mgpu::equal_to<int>(), w_ind, w_val, 
-          &w_nvals_t, (int*)0, *(desc->d_context_) );
+      /*if( desc->prealloc() )
+        ReduceByKeyPrealloc( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
+            (float)0, add_op, mgpu::equal_to<int>(), w_ind, w_val, 
+            &w_nvals_t, (int*)0, (int*)d_temp, (int*)desc->d_temp_, 
+            *(desc->d_context_) );
+      else*/
+        ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
+            (float)0, add_op, mgpu::equal_to<int>(), w_ind, w_val, 
+            &w_nvals_t, (int*)0, *(desc->d_context_) );
       *w_nvals         = w_nvals_t;
     }
     else
