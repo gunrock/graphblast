@@ -109,7 +109,7 @@ namespace backend
             op->mul_, op->add_, A_nrows, A->nvals_,
             A_csrRowPtr, A_csrColInd, A_csrVal, 
             u->d_ind_, u->d_val_, &u->nvals_, desc );
-      CUDA( cudaDeviceSynchronize() );
+      //CUDA( cudaDeviceSynchronize() );
 
       if( temp_nvals==0 )
       {

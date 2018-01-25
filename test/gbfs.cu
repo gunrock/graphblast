@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <cuda_profiler_api.h>
+//#include <cuda_profiler_api.h>
 
 #include <boost/program_options.hpp>
 
@@ -76,7 +76,8 @@ int main( int argc, char** argv )
       sizeof(graphblas::Index));
   int depth = 10000;
   bfs_cpu.Start();
-  graphblas::algorithm::bfsCpu( source, &a, h_bfs_cpu, depth, transpose );
+  int d = graphblas::algorithm::bfsCpu( source, &a, h_bfs_cpu, depth, 
+      transpose );
   bfs_cpu.Stop();
 
   // Warmup
@@ -92,14 +93,16 @@ int main( int argc, char** argv )
   // Benchmark
   desc.descriptor_.enable_split_ = true;
   CpuTimer vxm_gpu;
-  cudaProfilerStart();
+  //cudaProfilerStart();
   vxm_gpu.Start();
   float tight = 0.f;
-  for( int i=0; i<niter; i++ )
-  {
-    tight += graphblas::algorithm::bfs(&v, &a, source, &desc, transpose);
-  }
-  cudaProfilerStop();
+  if( !desc.descriptor_.reduce() )
+    for( int i=0; i<niter; i++ )
+      tight += graphblas::algorithm::bfs2(&v, &a, source, &desc, d, transpose);
+  else
+    for( int i=0; i<niter; i++ )
+      tight += graphblas::algorithm::bfs(&v, &a, source, &desc, transpose);
+  //cudaProfilerStop();
   vxm_gpu.Stop();
 
   float flop = 0;

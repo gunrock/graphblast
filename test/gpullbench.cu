@@ -42,6 +42,18 @@ int main( int argc, char** argv )
         nvals, directed, debug );
   }
 
+  std::vector<int> v = {};
+  for( int i=0; i<nrows; i++ )
+    v.push_back(i);
+ 
+  std::mt19937 g(0);
+  std::shuffle(v.begin(), v.end(), g);
+  for( int i=0; i<nvals; i++ )
+  {
+    row_indices[i] = v[row_indices[i]];
+    col_indices[i] = v[col_indices[i]];
+  }
+
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
   CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );

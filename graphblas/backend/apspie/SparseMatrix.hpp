@@ -202,7 +202,7 @@ namespace backend
           cudaMemcpyDeviceToDevice ) );
       CUDA( cudaMemcpy( d_cscVal_,    rhs->d_cscVal_,    nvals_*sizeof(T),
           cudaMemcpyDeviceToDevice ) );
-      CUDA( cudaDeviceSynchronize() );
+      //CUDA( cudaDeviceSynchronize() );
     }
 
     need_update_ = true;
@@ -702,7 +702,7 @@ namespace backend
       d_cscVal_    = d_csrVal_;
     }
 
-    CUDA( cudaDeviceSynchronize() );
+    //CUDA( cudaDeviceSynchronize() );
     return GrB_SUCCESS;
   }
 

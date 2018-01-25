@@ -2,15 +2,18 @@
 #define GRB_UTIL_HPP
 
 #include <vector>
-#include <iostream>
+#include <fstream>
+//#include <iostream>
 #include <typeinfo>
 #include <cstdio>
 #include <tuple>
 #include <algorithm>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <string>
 
+// for commandline arguments
 #include <boost/program_options.hpp>
 
 #include "graphblas/mmio.hpp"
@@ -83,6 +86,8 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "True means use operand reuse, False means do not use it")
     ("endbit", po::value<bool>()->default_value(true),
         "True means do not do radix sort on full 32 bits, False means do it on full 32 bits")
+    ("reduce", po::value<bool>()->default_value(false),
+        "True means do the reduce, False means do not do it")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 
@@ -364,25 +369,104 @@ int readMtx( const char*                    fname,
   if ((ret_code = mm_read_mtx_crd_size(f, &nrows, &ncols, &nvals)) !=0)
     exit(1);
 
-  if (mm_is_integer(matcode))
-    readTuples<T, int>( row_indices, col_indices, values, nvals, f );
-  else if (mm_is_real(matcode))
-    readTuples<T, float>( row_indices, col_indices, values, nvals, f );
-  else if (mm_is_pattern(matcode))
-    readTuples<T>( row_indices, col_indices, values, nvals, f );
+/*  char dat_name[100] = "/";
+  char sym[9];
+  if( mm_is_symmetric(matcode) )
+    strcpy(sym, "-sym.dat");
+  else
+    strcpy(sym, "-gen.dat");
 
-  // Directed controls how matrix is interpreted:
-  // 0: If it is marked symmetric, then double the edges. Else do nothing.
-  // 1: Force matrix to be unsymmetric.
-  // 2: Force matrix to be symmetric.
-  if( (mm_is_symmetric(matcode) && directed==0) || directed==2 )
-  // If user wants to treat MTX as a directed graph
-  //if( undirected )
-    makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
-  customSort<T>( row_indices, col_indices, values );
+  const char* next = strchr( fname, '/' );
+  const char* prev = fname;
+  do
+  {
+    if( next!=NULL )
+      prev = next;
+    next = strchr( next+1, '/' );
+  }
+  while( next != NULL );
+  next = strchr( fname, '.' );
+  int len = next-prev-1;
+  int pos = prev-fname+1;
+  memcpy(dat_name, fname, pos);
+  memcpy(dat_name+pos+1, fname+pos, len);
+  dat_name[pos] = '.';
+  dat_name[pos+len+1] = '\0';
 
-  if( mtxinfo ) mm_write_banner(stdout, matcode);
-  if( mtxinfo ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
+  sprintf(dat_name, "%s-%d\0", dat_name, sizeof(graphblas::Index));
+  strcat( dat_name, sym  );
+
+  struct stat dat;
+
+  if( (stat(dat_name, &dat)==0) && (dat.st_size>0) )
+  {  
+    // The size of the file in bytes is in results.st_size
+    // -unserialize vector
+    std::ifstream ifs(dat_name, std::ios::in | std::ios::binary);
+    if (ifs.fail())
+      std::cout << "Error: Unable to open file for reading!\n";
+    else
+    {
+      printf("Reading %s\n", dat_name);
+      graphblas::Index nvals_t;
+      ifs.read( reinterpret_cast<char*>(&nvals_t), sizeof(graphblas::Index) );
+      row_indices.resize(nvals_t);
+      col_indices.resize(nvals_t);
+      values.resize(nvals_t);
+
+      ifs.read( reinterpret_cast<char*>(row_indices.data()), 
+          nvals_t*sizeof(graphblas::Index) );
+
+      ifs.read( reinterpret_cast<char*>(col_indices.data()), 
+          nvals_t*sizeof(graphblas::Index) );
+        
+      ifs.read( reinterpret_cast<char*>(values.data()), 
+          nvals_t*sizeof(graphblas::T) );
+
+      nvals = nvals_t;
+    }
+  }
+  else
+  {*/
+    if (mm_is_integer(matcode))
+      readTuples<T, int>( row_indices, col_indices, values, nvals, f );
+    else if (mm_is_real(matcode))
+      readTuples<T, float>( row_indices, col_indices, values, nvals, f );
+    else if (mm_is_pattern(matcode))
+      readTuples<T>( row_indices, col_indices, values, nvals, f );
+
+    // Directed controls how matrix is interpreted:
+    // 0: If it is marked symmetric, then double the edges. Else do nothing.
+    // 1: Force matrix to be unsymmetric.
+    // 2: Force matrix to be symmetric.
+    if( (mm_is_symmetric(matcode) && directed==0) || directed==2 )
+    // If user wants to treat MTX as a directed graph
+    //if( undirected )
+      makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
+    customSort<T>( row_indices, col_indices, values );
+
+    if( mtxinfo ) mm_write_banner(stdout, matcode);
+    if( mtxinfo ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
+
+    // -serialize vector
+    /*std::ofstream ofs( dat_name, std::ios::out | std::ios::binary );
+    if (ofs.fail())
+      std::cout << "Error: Unable to open file for writing!\n";
+    else
+    {
+      printf("Writing %s\n", dat_name);
+      ofs.write( reinterpret_cast<char*>(&nvals), sizeof(graphblas::Index) );
+    
+      ofs.write( reinterpret_cast<char*>(row_indices.data()), 
+          nvals*sizeof(graphblas::Index) );
+
+      ofs.write( reinterpret_cast<char*>(col_indices.data()), 
+          nvals*sizeof(graphblas::Index) );
+      
+      ofs.write( reinterpret_cast<char*>(values.data()), 
+          nvals*sizeof(graphblas::T) );
+    }
+  }*/
 
   return ret_code; //TODO: parse ret_code
 }

@@ -365,7 +365,7 @@ namespace backend
     {
       CUDA( cudaMemcpy( h_val_, d_val_, nvals_*sizeof(T),
           cudaMemcpyDeviceToHost ) );
-      CUDA( cudaDeviceSynchronize() );
+      //CUDA( cudaDeviceSynchronize() );
     }
     need_update_ = false;
     return GrB_SUCCESS;
