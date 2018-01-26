@@ -273,7 +273,7 @@ namespace backend
     if( vec_type!=vec_type_ )
     {
       vec_type_ = vec_type;
-      if(        vec_type_ == GrB_SPARSE ) {
+      /*if(        vec_type_ == GrB_SPARSE ) {
         //CHECK( sparse_.clear()         );
         CHECK( sparse_.resize(nsize_) );
         CHECK( sparse_.allocate() );
@@ -281,7 +281,7 @@ namespace backend
         //CHECK( dense_.clear()          );
         CHECK( dense_.resize(nsize_) );
         CHECK( dense_.allocate() );
-      }
+      }*/
     }
     return GrB_SUCCESS;
   }
