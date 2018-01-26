@@ -61,7 +61,9 @@ namespace backend
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T,T,T>*    dup );
+                const BinaryOp<T,T,T>*    dup,
+                const char*               fname );
+    Info build( const char*           fname );
     Info build( const std::vector<T>* values,
                 Index nvals );
     Info setElement(     Index row_index,
@@ -243,7 +245,8 @@ namespace backend
                                const std::vector<Index>* col_indices,
                                const std::vector<T>*     values,
                                Index                     nvals,
-                               const BinaryOp<T,T,T>*    dup )
+                               const BinaryOp<T,T,T>*    dup,
+                               const char*               fname )
   {
     nvals_ = nvals;
     CHECK( allocateCpu() );
@@ -274,13 +277,15 @@ namespace backend
       for( Index i=0; i<=nrows; i++ )
         csrRowPtr[i] = 0;
       // Go through all elements to see how many fall in each row
-      for( Index i=0; i<nvals_; i++ ) {
+      for( Index i=0; i<nvals_; i++ )
+      {
         row = (*row_indices_t)[i];
         if( row>=nrows ) return GrB_INDEX_OUT_OF_BOUNDS;
         csrRowPtr[ row ]++;
       }
       // Cumulative sum to obtain rowPtr
-      for( Index i=0; i<nrows; i++ ) {
+      for( Index i=0; i<nrows; i++ )
+      {
         temp = csrRowPtr[i];
         csrRowPtr[i] = cumsum;
         cumsum += temp;
@@ -288,7 +293,8 @@ namespace backend
       csrRowPtr[nrows] = nvals;
 
       // Store colInd and val
-      for( Index i=0; i<nvals_; i++ ) {
+      for( Index i=0; i<nvals_; i++ )
+      {
         row = (*row_indices_t)[i];
         dest= csrRowPtr[row];
         col = (*col_indices_t)[i];
@@ -300,7 +306,8 @@ namespace backend
       cumsum = 0;
       
       // Undo damage done to rowPtr
-      for( Index i=0; i<nrows; i++ ) {
+      for( Index i=0; i<nrows; i++ )
+      {
         temp = csrRowPtr[i];
         csrRowPtr[i] = cumsum;
         cumsum = temp;
@@ -331,9 +338,84 @@ namespace backend
       h_cscColPtr_ = h_csrRowPtr_;
       h_cscRowInd_ = h_csrColInd_;
       h_cscVal_    = h_csrVal_;
+
+      if( fname!=NULL )
+      {
+        char* dat_name = convert(fname);
+
+        if( !exists(dat_name) )
+        {
+          std::ofstream ofs( dat_name, std::ios::out | std::ios::binary );
+          if (ofs.fail())
+            std::cout << "Error: Unable to open file for writing!\n";
+          else
+          {
+            printf("Writing %s\n", dat_name);
+            ofs.write( reinterpret_cast<char*>(&nrows_), sizeof(Index));
+            if( ncols_ != nrows_ )
+              std::cout << "Error: nrows not equal to ncols!\n";
+            ofs.write( reinterpret_cast<char*>(&nvals_), sizeof(Index));
+            ofs.write( reinterpret_cast<char*>(h_csrRowPtr_),
+                (nrows_+1)*sizeof(Index));
+            ofs.write( reinterpret_cast<char*>(h_csrColInd_),
+                nvals_*sizeof(Index));
+          }
+        }
+      }
     }
 
     CHECK( cpuToGpu() );
+
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info SparseMatrix<T>::build( const char* fname )
+  {
+    if( !symmetric_ ) 
+    {
+      std::cout << "Error: This feature does not support non-symmetric!\n";
+      return GrB_SUCCESS;
+    }
+
+		char* dat_name = convert( fname );
+
+    if( exists(dat_name) )
+		{
+			// The size of the file in bytes is in results.st_size
+			// -unserialize vector
+			std::ifstream ifs(dat_name, std::ios::in | std::ios::binary);
+			if (ifs.fail())
+				std::cout << "Error: Unable to open file for reading!\n";
+			else
+			{
+				printf("Reading %s\n", dat_name);
+			  ifs.read( reinterpret_cast<char*>(&nrows_), sizeof(Index));
+        if( ncols_ != nrows_ )
+          std::cout << "Error: nrows not equal to ncols!\n";
+				ifs.read( reinterpret_cast<char*>(&nvals_), sizeof(Index) );
+        CHECK( allocateCpu() );      
+
+				ifs.read( reinterpret_cast<char*>(h_csrRowPtr_),
+						(nrows_+1)*sizeof(Index) );
+
+				ifs.read( reinterpret_cast<char*>(h_csrColInd_),
+						nvals_*sizeof(Index) );
+
+        for( Index i=0; i<nvals_; i++ )
+          h_csrVal_[i] = (T)1;
+
+        symmetric_   = true;
+        h_cscColPtr_ = h_csrRowPtr_;
+        h_cscRowInd_ = h_csrColInd_;
+        h_cscVal_    = h_csrVal_;
+        CHECK( cpuToGpu() );
+			}
+		}
+		else
+      std::cout << "Error: Unable to read file!\n";
+
+    free(dat_name);
 
     return GrB_SUCCESS;
   }
