@@ -127,9 +127,12 @@ int main( int argc, char** argv )
   std::cout << "tight, " << tight/niter << "\n";
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
-  std::vector<float> h_bfs_gpu2;
-  CHECK( y.extractTuples(&h_bfs_gpu2, &nrows) );
-  BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu2, nrows );
+  if( niter )
+  {
+    std::vector<float> h_bfs_gpu2;
+    CHECK( y.extractTuples(&h_bfs_gpu2, &nrows) );
+    BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu2, nrows );
+  }
 
   return 0;
 }

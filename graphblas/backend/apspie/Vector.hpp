@@ -354,22 +354,25 @@ namespace backend
     const int nt    = 128;
     const int nvals = sparse_.nvals_;
 
-    dim3 NT, NB;
-    NT.x = nt;
-    NT.y = 1;
-    NT.z = 1;
-    NB.x = (nvals+nt-1)/nt;
-    NB.y = 1;
+    if( !desc->opreuse() )
+    {
+      dim3 NT, NB;
+      NT.x = nt;
+      NT.y = 1;
+      NT.z = 1;
+      NB.x = (nvals+nt-1)/nt;
+      NB.y = 1;
 
-    dense_.fill( identity );
-    if( desc->struconly() )
-    {
-      scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, one, nvals );
-    }
-    else
-    {
-      scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, sparse_.d_val_, 
-          nvals );
+      dense_.fill( identity );
+      if( desc->struconly() )
+      {
+        scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, one, nvals );
+      }
+      else
+      {
+        scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, sparse_.d_val_, 
+            nvals );
+      }
     }
 
     vec_type_           = GrB_DENSE;
