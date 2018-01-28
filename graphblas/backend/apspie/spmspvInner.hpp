@@ -219,11 +219,11 @@ namespace backend
       std::cout << "w_nvals: " << *w_nvals << std::endl;
     }
 
-    /*if( desc->struconly() )
+    if( desc->struconly() && !desc->sort() )
     {
       CUDA( cudaMemset(w_ind, 0, A_nrows*sizeof(Index)) );
-      //CUDA( cudaMemsetAsync(w_ind, 0, A_nrows) );
-    }*/
+      //CUDA( cudaMemsetAsync(w_ind, 0, A_nrows*sizeof(Index)) );
+    }
 
     // No neighbors is one possible stopping condition
     if( *w_nvals==0 )
@@ -311,27 +311,28 @@ namespace backend
 
     if( desc->struconly() )
     {
-      d_csrTempInd = desc->d_buffer_+(A_nrows+size)*sizeof(Index);
+      if( desc->sort() )
+      {
+        d_csrTempInd = desc->d_buffer_+(A_nrows+size)*sizeof(Index);
       
-      if( !desc->split() )
-        CUDA( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
+        if( !desc->split() )
+          CUDA( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
+              (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals, 0, endbit));
+        else
+          temp_storage_bytes = desc->d_temp_size_;
+        
+        if( desc->debug() )
+        {
+          std::cout << temp_storage_bytes << " bytes required!\n";
+        }
+
+        desc->resize( temp_storage_bytes, "temp" );
+
+        CUDA( cub::DeviceRadixSort::SortKeys(desc->d_temp_, temp_storage_bytes,
             (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals, 0, endbit) );
-      else
-        temp_storage_bytes = desc->d_temp_size_;
-      
-      if( desc->debug() )
-      {
-        std::cout << temp_storage_bytes << " bytes required!\n";
-      }
 
-      desc->resize( temp_storage_bytes, "temp" );
-
-      CUDA( cub::DeviceRadixSort::SortKeys(desc->d_temp_, temp_storage_bytes,
-          (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals, 0, endbit) );
-
-      if( desc->debug() )
-      {
-        printDevice( "TempInd", (Index*)d_csrTempInd, *w_nvals );
+        if( desc->debug() )
+          printDevice( "TempInd", (Index*)d_csrTempInd, *w_nvals );
       }
     }
     else
@@ -375,22 +376,31 @@ namespace backend
 		//Step 6) Segmented Reduce By Key
     if( desc->struconly() )
     {
-      d_temp = desc->d_buffer_+(A_nrows+2*size)*sizeof(Index);
+      if( !desc->sort() )
+      {
+        NB.x = (*w_nvals+nt-1)/nt;
+        scatter<<<NB,NT>>>(w_ind, (Index*)d_csrSwapInd, (Index)1, *w_nvals);
+        *w_nvals = A_nrows;
 
-      //NB.x = (*w_nvals+nt-1)/nt;
-      //scatter<<<NB,NT>>>(w_ind, (Index*)d_csrTempInd, *w_nvals);
-      //*w_nvals = A_nrows;
-      Index  w_nvals_t = 0;
-      /*if( desc->prealloc() )
-        ReduceByKeyPrealloc( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
-            (float)0, add_op, mgpu::equal_to<int>(), w_ind, w_val, 
-            &w_nvals_t, (int*)0, (int*)d_temp, (int*)desc->d_temp_, 
-            *(desc->d_context_) );
-      else*/
-        ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
-            (float)0, add_op, mgpu::equal_to<int>(), w_ind, w_val, 
-            &w_nvals_t, (int*)0, *(desc->d_context_) );
-      *w_nvals         = w_nvals_t;
+        if( desc->debug() )
+          printDevice("scatter", w_ind, *w_nvals);
+      }
+      else
+      {
+        d_temp = desc->d_buffer_+(A_nrows+2*size)*sizeof(Index);
+
+        Index  w_nvals_t = 0;
+        /*if( desc->prealloc() )
+          ReduceByKeyPrealloc( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals,
+              (float)0, add_op, mgpu::equal_to<int>(), w_ind, w_val, 
+              &w_nvals_t, (int*)0, (int*)d_temp, (int*)desc->d_temp_, 
+              *(desc->d_context_) );
+        else*/
+          ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
+              (float)0, add_op, mgpu::equal_to<int>(), w_ind, w_val, 
+              &w_nvals_t, (int*)0, *(desc->d_context_) );
+        *w_nvals         = w_nvals_t;
+      }
     }
     else
     {

@@ -86,10 +86,12 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "True means use operand reuse, False means do not use it")
     ("endbit", po::value<bool>()->default_value(true),
         "True means do not do radix sort on full 32 bits, False means do it on full 32 bits")
-    ("reduce", po::value<bool>()->default_value(false),
+    ("reduce", po::value<bool>()->default_value(true),
         "True means do the reduce, False means do not do it")
     ("prealloc", po::value<bool>()->default_value(true),
         "True means do the prealloc, False means do not do it")
+    ("sort", po::value<bool>()->default_value(true),
+        "True means sort, False means do not sort. (Option is only valid if struconly is true)")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 
