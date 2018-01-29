@@ -1,4 +1,4 @@
-ARCH="GEN_SM45"
+ARCH="GEN_SM55"
 
 if [ "$ARCH" = "GEN_SM20" ] ; then
     ./test ../../dataset/small/test_cc.mtx
@@ -51,10 +51,13 @@ do
     fi
   done
 done
-  
-for i in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004 kron_g500-logn21 rmat_n22_e64 rmat_n23_e32 rmat_n24_e16 rgg_n24_0.000548 road_usa roadNet-CA
+
+for i in Journals G43 ship_003 belgium_osm roadNet-CA delaunay_n24
 do
-  if [ "$ARCH" = "GEN_SM55" ] ; then
-    bin/gbfs --struconly=true --mxvmode=0 --timing=1 /data-2/topc-datasets/$i.mtx
-  fi
+  for j in 1 #0 1 2
+  do
+    if [ "$ARCH" = "GEN_SM55" ] ; then
+      bin/gbfs --sort=0 --struconly=true --mxvmode=$j --timing=1 /data-2/gunrock_dataset/large/benchmark6/$i/$i.mtx
+    fi
+  done
 done

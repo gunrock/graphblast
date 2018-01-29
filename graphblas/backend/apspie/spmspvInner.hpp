@@ -396,9 +396,9 @@ namespace backend
               &w_nvals_t, (int*)0, (int*)d_temp, (int*)desc->d_temp_, 
               *(desc->d_context_) );
         else*/
-          ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
-              (float)0, add_op, mgpu::equal_to<int>(), w_ind, w_val, 
-              &w_nvals_t, (int*)0, *(desc->d_context_) );
+        ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
+            (float)0, add_op, mgpu::equal_to<int>(), w_ind, w_val, 
+            &w_nvals_t, (int*)0, *(desc->d_context_) );
         *w_nvals         = w_nvals_t;
       }
     }

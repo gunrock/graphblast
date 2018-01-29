@@ -61,11 +61,8 @@ int main( int argc, char** argv )
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  if( row_indices.size()>0 )
-    CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
-        argv[argc-1]) );
-  else
-    CHECK( a.build(argv[argc-1]) );
+  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
+      argv[argc-1]) );
   CHECK( a.nrows(&nrows) );
   CHECK( a.ncols(&ncols) );
   CHECK( a.nvals(&nvals) );

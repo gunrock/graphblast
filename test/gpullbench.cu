@@ -24,6 +24,7 @@ int main( int argc, char** argv )
   // Parse arguments
   bool debug;
   bool transpose;
+  bool mtxinfo;
   int  directed;
   int  niter;
   po::variables_map vm;
@@ -36,27 +37,22 @@ int main( int argc, char** argv )
     parseArgs( argc, argv, vm );
     debug     = vm["debug"    ].as<bool>();
     transpose = vm["transpose"].as<bool>();
+    mtxinfo   = vm["mtxinfo"  ].as<bool>();
     directed  = vm["directed" ].as<int>();
     niter     = vm["niter"    ].as<int>();
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, directed, debug );
+        nvals, directed, mtxinfo );
   }
-
-  std::vector<int> v = {};
-  for( int i=0; i<nrows; i++ )
-    v.push_back(i);
- 
-  std::mt19937 g(0);
-  std::shuffle(v.begin(), v.end(), g);
-  for( int i=0; i<nvals; i++ )
-  {
-    row_indices[i] = v[row_indices[i]];
-    col_indices[i] = v[col_indices[i]];
-  }
+  // Descriptor desc
+  graphblas::Descriptor desc;
+  CHECK( desc.loadArgs(vm) );
+  CHECK( desc.set(graphblas::GrB_MASK, graphblas::GrB_SCMP) );
+  CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PULLONLY) );
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
+      argv[argc-1]) );
   CHECK( a.nrows(&nrows) );
   CHECK( a.ncols(&ncols) );
   CHECK( a.nvals(&nvals) );
@@ -78,12 +74,6 @@ int main( int argc, char** argv )
   CHECK( m.fill(1.f) );
   CHECK( m.setElement(-1.f, 0) );
   CHECK( m.size(&nrows) );
-
-  // Descriptor
-  graphblas::Descriptor desc;
-  CHECK( desc.loadArgs(vm) );
-  CHECK( desc.set(graphblas::GrB_MASK, graphblas::GrB_SCMP) );
-  CHECK( desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PULLONLY) );
 
   // Semiring
   graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
