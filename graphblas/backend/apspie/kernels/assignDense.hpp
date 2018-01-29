@@ -14,7 +14,6 @@ namespace backend
   __global__ void assignDenseDenseMaskedKernel( U*               u_val,
                                                 Index            u_nvals,
                                                 const M*         mask_val,
-                                                M                mask_identity,
                                                 const BinaryOp<U,U,U>* accum_op,
                                                 U                val,
                                                 const Index*     indices,
@@ -33,7 +32,7 @@ namespace backend
 					// val passes through if either:
 					// 1) UseScmp is not selected and m_val is zero
 					// 2) UseScmp is selected and m_val is not zero
-          if( UseScmp^(m_val!=mask_identity) )
+          if( UseScmp^((bool) m_val) )
             u_val[row] = val;
         }
 				else

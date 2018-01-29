@@ -151,12 +151,12 @@ namespace backend
         {
           if( use_scmp )
             assignDenseDenseMaskedKernel<true,true,true><<<NB,NT>>>(temp_ind, 
-                temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
-                (BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
+                temp_nvals, (mask->dense_).d_val_, 
+								(BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
                 A_nrows);
           else
             assignDenseDenseMaskedKernel<false,true,true><<<NB,NT>>>(temp_ind, 
-                temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
+                temp_nvals, (mask->dense_).d_val_,
                 (BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
                 A_nrows);
 
@@ -193,16 +193,19 @@ namespace backend
         }
         else
         {
+          // For visited nodes, assign 0.f to vector
+          // For GrB_DENSE mask, need to add parameter for mask_identity to user
+				  // Scott: this is not necessary. Checking castable to (bool)1 is fine
           if( mask_vec_type==GrB_DENSE )
           {
             if( use_scmp )
               assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, 
-                temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
-                (BinaryOp<U,U,U>*)NULL, (Index)-1, (Index*)NULL, A_nrows);
+                temp_nvals, (mask->dense_).d_val_, (BinaryOp<U,U,U>*)NULL, 
+								(Index)-1, (Index*)NULL, A_nrows);
             else
               assignSparseKernel<false,true, true><<<NB,NT>>>(temp_ind,
-                temp_nvals, (mask->dense_).d_val_, (M)-1.f,
-                (BinaryOp<U,U,U>*)NULL, (Index)-1, (Index*)NULL, A_nrows);
+                temp_nvals, (mask->dense_).d_val_, (BinaryOp<U,U,U>*)NULL, 
+								(Index)-1, (Index*)NULL, A_nrows);
           }
           else if( mask_vec_type==GrB_SPARSE )
           {
@@ -253,16 +256,17 @@ namespace backend
       {
         // For visited nodes, assign 0.f to vector
         // For GrB_DENSE mask, need to add parameter for mask_identity to user
+				// Scott: this is not necessary. Checking castable to (bool)1 is enough
         if( mask_vec_type==GrB_DENSE )
         {
           if( use_scmp )
             assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, temp_val, 
-              temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
-              (BinaryOp<U,U,U>*)NULL, (U)0.f, (Index*)NULL, A_nrows);
+              temp_nvals, (mask->dense_).d_val_,  (BinaryOp<U,U,U>*)NULL, 
+							(U)0.f, (Index*)NULL, A_nrows);
           else
             assignSparseKernel<false,true, true><<<NB,NT>>>(temp_ind, temp_val, 
-              temp_nvals, (mask->dense_).d_val_, (M)-1.f,
-              (BinaryOp<U,U,U>*)NULL, (U)0.f, (Index*)NULL, A_nrows);
+              temp_nvals, (mask->dense_).d_val_, (BinaryOp<U,U,U>*)NULL, 
+							(U)0.f, (Index*)NULL, A_nrows);
         }
         else if( mask_vec_type==GrB_SPARSE )
         {

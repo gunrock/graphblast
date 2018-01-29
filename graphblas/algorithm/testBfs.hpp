@@ -22,12 +22,12 @@ namespace algorithm
     //initialize distances
     for (Index i = 0; i < m; ++i)
     {
-      source_path[i] = -1;
+      source_path[i] = 0;
       if (MARK_PREDECESSORS)
         predecessor[i] = -1;
     }
-    source_path[src] = 0;
-    Index search_depth = 0;
+    source_path[src] = 1;
+    Index search_depth = 1;
 
     // Initialize queue for managing previously-discovered nodes
     std::deque<Index> frontier;
@@ -56,7 +56,7 @@ namespace algorithm
       {
         //Lookup neighbor and enqueue if undiscovered
         Index neighbor = h_colIndA[edge];
-        if (source_path[neighbor] == -1) 
+        if (source_path[neighbor] == 0) 
         {
           source_path[neighbor] = neighbor_dist;
           if (MARK_PREDECESSORS) 
