@@ -92,7 +92,6 @@ int main( int argc, char** argv )
   BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
 
   // Benchmark
-  desc.descriptor_.enable_split_ = true;
   graphblas::Vector<float> y(nrows);
   CpuTimer vxm_gpu;
   //cudaProfilerStart();
