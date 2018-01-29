@@ -82,12 +82,12 @@ namespace backend
         // TODO: must allow user to specify identity for dense mask vectors
         if( use_scmp )
           assignDenseDenseMaskedKernel<true, true ,true ><<<NB,NT>>>( w->d_val_,
-              w->nvals_, (mask->dense_).d_val_, (M)0.f, accum, (W)val, 
-              indices_t, nindices );
+              w->nvals_, (mask->dense_).d_val_, accum, (W)val, indices_t, 
+							nindices );
         else
           assignDenseDenseMaskedKernel<false,true ,true ><<<NB,NT>>>( w->d_val_,
-              w->nvals_, (mask->dense_).d_val_, (M)0.f, accum, (W)val, 
-              indices_t, nindices );
+              w->nvals_, (mask->dense_).d_val_, accum, (W)val, indices_t, 
+							nindices );
       }
       else if( mask_vec_type==GrB_SPARSE )
       {
