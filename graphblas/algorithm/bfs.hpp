@@ -149,7 +149,7 @@ namespace algorithm
 		Semiring<float,float,float> GrB_FP32AddMul;
 		GrB_FP32AddMul.nnew( GrB_FP32Add, GrB_TIMES_FP32 );
 
-    CpuTimer cpu_tight;
+    backend::GpuTimer cpu_tight;
     cpu_tight.Start();
     for( int i=0; i<depth; i++ )
     {

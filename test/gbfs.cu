@@ -61,7 +61,8 @@ int main( int argc, char** argv )
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
+      argv[argc-1]) );
   CHECK( a.nrows(&nrows) );
   CHECK( a.ncols(&ncols) );
   CHECK( a.nvals(&nvals) );
@@ -91,17 +92,26 @@ int main( int argc, char** argv )
   BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
 
   // Benchmark
-  desc.descriptor_.enable_split_ = true;
+  graphblas::Vector<float> y(nrows);
   CpuTimer vxm_gpu;
   //cudaProfilerStart();
   vxm_gpu.Start();
   float tight = 0.f;
+  float val;
   if( !desc.descriptor_.reduce() )
     for( int i=0; i<niter; i++ )
-      tight += graphblas::algorithm::bfs2(&v, &a, source, &desc, d, transpose);
+    {
+      val = graphblas::algorithm::bfs2(&y, &a, source, &desc, d, transpose);
+      tight += val;
+      std::cout << val << std::endl;
+    }
   else
     for( int i=0; i<niter; i++ )
-      tight += graphblas::algorithm::bfs(&v, &a, source, &desc, transpose);
+    {
+      val = graphblas::algorithm::bfs(&y, &a, source, &desc, transpose);
+      tight += val;
+      std::cout << val << std::endl;
+    }
   //cudaProfilerStop();
   vxm_gpu.Stop();
 
@@ -113,8 +123,12 @@ int main( int argc, char** argv )
   std::cout << "tight, " << tight/niter << "\n";
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
-  CHECK( v.extractTuples(&h_bfs_gpu, &nrows) );
-  BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
+  if( niter )
+  {
+    std::vector<float> h_bfs_gpu2;
+    CHECK( y.extractTuples(&h_bfs_gpu2, &nrows) );
+    BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu2, nrows );
+  }
 
   return 0;
 }

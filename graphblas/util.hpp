@@ -10,8 +10,8 @@
 #include <algorithm>
 #include <sys/resource.h>
 #include <sys/time.h>
-#include <sys/stat.h>
 #include <string>
+#include <libgen.h>
 
 // for commandline arguments
 #include <boost/program_options.hpp>
@@ -86,10 +86,12 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "True means use operand reuse, False means do not use it")
     ("endbit", po::value<bool>()->default_value(true),
         "True means do not do radix sort on full 32 bits, False means do it on full 32 bits")
-    ("reduce", po::value<bool>()->default_value(false),
+    ("reduce", po::value<bool>()->default_value(true),
         "True means do the reduce, False means do not do it")
     ("prealloc", po::value<bool>()->default_value(true),
         "True means do the prealloc, False means do not do it")
+    ("sort", po::value<bool>()->default_value(true),
+        "True means sort, False means do not sort. (Option is only valid if struconly is true)")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 
@@ -340,6 +342,34 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
   values.resize(nvals);
 }
 
+bool exists(const char *fname)
+{
+  FILE *file;
+  if( file = fopen(fname, "r") )
+  {
+    fclose(file);
+    return 1;
+  }
+  return 0;
+}
+
+char* convert( const char* fname )
+{
+  char* dat_name = (char*)malloc(256);
+
+	// separate the graph path and the file name
+	char *temp1 = strdup(fname);
+	char *temp2 = strdup(fname);
+	char *file_path = dirname (temp1);
+	char *file_name = basename(temp2);
+
+	sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
+	//sprintf(dat_name, "%s/.%s.ud.%d.%sdat", file_path, file_name, 0,
+			((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
+
+  return dat_name;
+}
+
 template<typename T>
 int readMtx( const char*                    fname,
              std::vector<graphblas::Index>& row_indices,
@@ -359,7 +389,6 @@ int readMtx( const char*                    fname,
     printf( "File %s not found\n", fname );
     exit(1);
   }
-  if( mtxinfo ) printf("Reading %s\n", fname );
 
   // Read MTX banner
   if (mm_read_banner(f, &matcode) != 0) {
@@ -371,36 +400,9 @@ int readMtx( const char*                    fname,
   if ((ret_code = mm_read_mtx_crd_size(f, &nrows, &ncols, &nvals)) !=0)
     exit(1);
 
-/*  char dat_name[100] = "/";
-  char sym[9];
-  if( mm_is_symmetric(matcode) )
-    strcpy(sym, "-sym.dat");
-  else
-    strcpy(sym, "-gen.dat");
+  char* dat_name = convert(fname);
 
-  const char* next = strchr( fname, '/' );
-  const char* prev = fname;
-  do
-  {
-    if( next!=NULL )
-      prev = next;
-    next = strchr( next+1, '/' );
-  }
-  while( next != NULL );
-  next = strchr( fname, '.' );
-  int len = next-prev-1;
-  int pos = prev-fname+1;
-  memcpy(dat_name, fname, pos);
-  memcpy(dat_name+pos+1, fname+pos, len);
-  dat_name[pos] = '.';
-  dat_name[pos+len+1] = '\0';
-
-  sprintf(dat_name, "%s-%d\0", dat_name, sizeof(graphblas::Index));
-  strcat( dat_name, sym  );
-
-  struct stat dat;
-
-  if( (stat(dat_name, &dat)==0) && (dat.st_size>0) )
+  if( exists(dat_name) )
   {  
     // The size of the file in bytes is in results.st_size
     // -unserialize vector
@@ -409,27 +411,14 @@ int readMtx( const char*                    fname,
       std::cout << "Error: Unable to open file for reading!\n";
     else
     {
-      printf("Reading %s\n", dat_name);
-      graphblas::Index nvals_t;
-      ifs.read( reinterpret_cast<char*>(&nvals_t), sizeof(graphblas::Index) );
-      row_indices.resize(nvals_t);
-      col_indices.resize(nvals_t);
-      values.resize(nvals_t);
-
-      ifs.read( reinterpret_cast<char*>(row_indices.data()), 
-          nvals_t*sizeof(graphblas::Index) );
-
-      ifs.read( reinterpret_cast<char*>(col_indices.data()), 
-          nvals_t*sizeof(graphblas::Index) );
-        
-      ifs.read( reinterpret_cast<char*>(values.data()), 
-          nvals_t*sizeof(graphblas::T) );
-
-      nvals = nvals_t;
+      row_indices.clear();
+      col_indices.clear();
+      values.clear();
+      //return ret_code;
     }
   }
   else
-  {*/
+  {
     if (mm_is_integer(matcode))
       readTuples<T, int>( row_indices, col_indices, values, nvals, f );
     else if (mm_is_real(matcode))
@@ -467,8 +456,9 @@ int readMtx( const char*                    fname,
       
       ofs.write( reinterpret_cast<char*>(values.data()), 
           nvals*sizeof(graphblas::T) );
-    }
-  }*/
+    }*/
+  }
+  free(dat_name);
 
   return ret_code; //TODO: parse ret_code
 }

@@ -61,7 +61,8 @@ int main( int argc, char** argv )
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL) );
+  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
+      argv[argc-1]) );
   CHECK( a.nrows(&nrows) );
   CHECK( a.ncols(&ncols) );
   CHECK( a.nvals(&nvals) );
@@ -94,7 +95,6 @@ int main( int argc, char** argv )
   std::uniform_int_distribution<> dis(0,nrows-1);
 
   // Benchmark
-  desc.descriptor_.enable_split_ = true;
   CpuTimer vxm_gpu;
   //cudaProfilerStart();
   vxm_gpu.Start();

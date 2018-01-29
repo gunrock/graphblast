@@ -147,100 +147,106 @@ namespace backend
 
       if( desc->struconly() )
       {
-        /*if( use_scmp )
-          assignDenseDenseMaskedKernel<true,true,true><<<NB,NT>>>(temp_ind, 
-              temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
-              (BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
-              A_nrows);
-        else
-          assignDenseDenseMaskedKernel<false,true,true><<<NB,NT>>>(temp_ind, 
-              temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
-              (BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
-              A_nrows);
-
-        if( desc->debug() )
-        {
-          CUDA( cudaDeviceSynchronize() );
-          printDevice("mask", (mask->dense_).d_val_, A_nrows);
-          printDevice("temp_ind", temp_ind, A_nrows);
-        }
-
-        // Turn dense vector into sparse
-        desc->resize((3*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
-        Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
-
-        mgpu::Scan<mgpu::MgpuScanTypeExc>( temp_ind, A_nrows, (Index)0, 
-            mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
-            *(desc->d_context_) );
-
-        if( desc->debug() )
-        {
-          printDevice("d_scan", d_scan, A_nrows);
-          std::cout << "Pre-assign frontier size: " << temp << std::endl;
-          std::cout << "Frontier size: " << w->nvals_ << std::endl;
-        }
-
-        streamCompactDenseKernel<<<NB,NT>>>(w->d_ind_, temp_ind, d_scan, (W)0, 
-            temp_ind, A_nrows);
-
-        if( desc->debug() )
-        {
-          printDevice("w_ind", w->d_ind_, w->nvals_);
-        }
-        */
-
-        if( mask_vec_type==GrB_DENSE )
+        if( !desc->sort() )
         {
           if( use_scmp )
-            assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, 
-              temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
-              (BinaryOp<U,U,U>*)NULL, (Index)-1, (Index*)NULL, A_nrows);
+            assignDenseDenseMaskedKernel<true,true,true><<<NB,NT>>>(temp_ind, 
+                temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
+                (BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
+                A_nrows);
           else
-            assignSparseKernel<false,true, true><<<NB,NT>>>(temp_ind,
-              temp_nvals, (mask->dense_).d_val_, (M)-1.f,
-              (BinaryOp<U,U,U>*)NULL, (Index)-1, (Index*)NULL, A_nrows);
-        }
-        else if( mask_vec_type==GrB_SPARSE )
-        {
-          std::cout << "Spmspv Sparse Mask\n";
-          std::cout << "Error: Feature not implemented yet!\n";
+            assignDenseDenseMaskedKernel<false,true,true><<<NB,NT>>>(temp_ind, 
+                temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
+                (BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
+                A_nrows);
+
+          if( desc->debug() )
+          {
+            CUDA( cudaDeviceSynchronize() );
+            printDevice("mask", (mask->dense_).d_val_, A_nrows);
+            printDevice("temp_ind", temp_ind, A_nrows);
+          }
+
+          // Turn dense vector into sparse
+          desc->resize((4*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
+          Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
+          Index* d_temp = (Index*) desc->d_buffer_+3*A_nrows;
+
+          mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>( temp_ind, A_nrows, 
+              (Index)0, mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
+              d_temp, *(desc->d_context_) );
+
+          if( desc->debug() )
+          {
+            printDevice("d_scan", d_scan, A_nrows);
+            std::cout << "Pre-assign frontier size: " << temp_nvals <<std::endl;
+            std::cout << "Frontier size: " << w->nvals_ << std::endl;
+          }
+
+          streamCompactDenseKernel<<<NB,NT>>>(w->d_ind_, d_scan, (W)1, temp_ind,
+              A_nrows);
+
+          if( desc->debug() )
+          {
+            printDevice("w_ind", w->d_ind_, w->nvals_);
+          }
         }
         else
         {
-          return GrB_UNINITIALIZED_OBJECT;
-        }
+          if( mask_vec_type==GrB_DENSE )
+          {
+            if( use_scmp )
+              assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, 
+                temp_nvals, (mask->dense_).d_val_, (M)-1.f, 
+                (BinaryOp<U,U,U>*)NULL, (Index)-1, (Index*)NULL, A_nrows);
+            else
+              assignSparseKernel<false,true, true><<<NB,NT>>>(temp_ind,
+                temp_nvals, (mask->dense_).d_val_, (M)-1.f,
+                (BinaryOp<U,U,U>*)NULL, (Index)-1, (Index*)NULL, A_nrows);
+          }
+          else if( mask_vec_type==GrB_SPARSE )
+          {
+            std::cout << "Spmspv Sparse Mask\n";
+            std::cout << "Error: Feature not implemented yet!\n";
+          }
+          else
+          {
+            return GrB_UNINITIALIZED_OBJECT;
+          }
 
-        if( desc->debug() )
-        {
-          CUDA( cudaDeviceSynchronize() );
-          printDevice("mask", (mask->dense_).d_val_, A_nrows);
-          printDevice("temp_ind", temp_ind, temp_nvals);
-        }
+          if( desc->debug() )
+          {
+            CUDA( cudaDeviceSynchronize() );
+            printDevice("mask", (mask->dense_).d_val_, A_nrows);
+            printDevice("temp_ind", temp_ind, temp_nvals);
+          }
 
-        // Prune 0.f's from vector
-        desc->resize((3*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
-        Index* d_flag = (Index*) desc->d_buffer_+  A_nrows;
-        Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
+          // Prune 0.f's from vector
+          desc->resize((4*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
+          Index* d_flag = (Index*) desc->d_buffer_+  A_nrows;
+          Index* d_scan = (Index*) desc->d_buffer_+2*A_nrows;
+          Index* d_temp = (Index*) desc->d_buffer_+3*A_nrows;
 
-        updateFlagKernel<<<NB,NT>>>( d_flag, -1, temp_ind, temp_nvals );
-        mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0, 
-            mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
-            *(desc->d_context_) );
+          updateFlagKernel<<<NB,NT>>>( d_flag, -1, temp_ind, temp_nvals );
+          mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, 
+              (Index)0, mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
+              d_temp, *(desc->d_context_) );
 
-        if( desc->debug() )
-        {
-          printDevice("d_flag", d_flag, temp_nvals);
-          printDevice("d_scan", d_scan, temp_nvals);
-          std::cout << "Pre-assign frontier size: " << temp_nvals << std::endl;
-          std::cout << "Frontier size: " << w->nvals_ << std::endl;
-        }
+          if( desc->debug() )
+          {
+            printDevice("d_flag", d_flag, temp_nvals);
+            printDevice("d_scan", d_scan, temp_nvals);
+            std::cout << "Pre-assign frontier size: " << temp_nvals << std::endl;
+            std::cout << "Frontier size: " << w->nvals_ << std::endl;
+          }
 
-        streamCompactSparseKernel<<<NB,NT>>>(w->d_ind_, d_scan, 
-            (Index)1, temp_ind, d_flag, temp_nvals);
+          streamCompactSparseKernel<<<NB,NT>>>(w->d_ind_, d_scan, 
+              (Index)1, temp_ind, d_flag, temp_nvals);
 
-        if( desc->debug() )
-        {
-          printDevice("w_ind", w->d_ind_, w->nvals_);
+          if( desc->debug() )
+          {
+            printDevice("w_ind", w->d_ind_, w->nvals_);
+          }
         }
       }
       else

@@ -70,8 +70,8 @@ namespace backend
     Info fillAscending( Index nvals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
-    Info setStorage( Storage  vec_type );
-    Info getStorage( Storage* vec_type ) const;
+    inline Info setStorage( Storage  vec_type );
+    inline Info getStorage( Storage* vec_type ) const;
     Info convert( T identity, T one, Descriptor* desc );
     Info sparse2dense( T identity, T one, Descriptor* desc );
     Info dense2sparse( T identity, Descriptor* desc );
@@ -268,21 +268,9 @@ namespace backend
 
   // Private method that sets mat_type, and tries to allocate
   template <typename T>
-  Info Vector<T>::setStorage( Storage vec_type )
+  inline Info Vector<T>::setStorage( Storage vec_type )
   {
-    if( vec_type!=vec_type_ )
-    {
-      vec_type_ = vec_type;
-      if(        vec_type_ == GrB_SPARSE ) {
-        //CHECK( sparse_.clear()         );
-        CHECK( sparse_.resize(nsize_) );
-        CHECK( sparse_.allocate() );
-      } else if( vec_type_ == GrB_DENSE ) {
-        //CHECK( dense_.clear()          );
-        CHECK( dense_.resize(nsize_) );
-        CHECK( dense_.allocate() );
-      }
-    }
+    vec_type_ = vec_type;
     return GrB_SUCCESS;
   }
 
@@ -354,22 +342,25 @@ namespace backend
     const int nt    = 128;
     const int nvals = sparse_.nvals_;
 
-    dim3 NT, NB;
-    NT.x = nt;
-    NT.y = 1;
-    NT.z = 1;
-    NB.x = (nvals+nt-1)/nt;
-    NB.y = 1;
+    if( !desc->opreuse() )
+    {
+      dim3 NT, NB;
+      NT.x = nt;
+      NT.y = 1;
+      NT.z = 1;
+      NB.x = (nvals+nt-1)/nt;
+      NB.y = 1;
 
-    dense_.fill( identity );
-    if( desc->struconly() )
-    {
-      scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, one, nvals );
-    }
-    else
-    {
-      scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, sparse_.d_val_, 
-          nvals );
+      dense_.fill( identity );
+      if( desc->struconly() )
+      {
+        scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, one, nvals );
+      }
+      else
+      {
+        scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, sparse_.d_val_, 
+            nvals );
+      }
     }
 
     vec_type_           = GrB_DENSE;

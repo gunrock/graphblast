@@ -93,7 +93,7 @@ namespace backend
     CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
 
     // Note: removed tol for now
-    CHECK( desc->get( GrB_TOL,     &tol      ) );
+    //CHECK( desc->get( GrB_TOL,     &tol      ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
 
     // Note here, the 1.f stands for the dense vector one-element (STRUCONLY)
