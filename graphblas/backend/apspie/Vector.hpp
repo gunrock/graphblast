@@ -72,8 +72,8 @@ namespace backend
     Info countUnique( Index* count );
     inline Info setStorage( Storage  vec_type );
     inline Info getStorage( Storage* vec_type ) const;
-    Info convert( T identity, T one, Descriptor* desc );
-    Info sparse2dense( T identity, T one, Descriptor* desc );
+    Info convert( T identity, Descriptor* desc );
+    Info sparse2dense( T identity, Descriptor* desc );
     Info dense2sparse( T identity, Descriptor* desc );
     Info swap( Vector* rhs );
 
@@ -285,7 +285,7 @@ namespace backend
 	// a) if more elements than desc->switchpoint(), convert SpVec->DeVec
 	// b) if less elements than desc->switchpoint(), convert DeVec->SpVec
   template <typename T>
-  Info Vector<T>::convert( T identity, T one, Descriptor* desc )
+  Info Vector<T>::convert( T identity, Descriptor* desc )
   {
     Index nvals_t;
     Index nsize_t;
@@ -312,7 +312,7 @@ namespace backend
     { 
       if( ratio > desc->switchpoint() && ratio > ratio_ )
       {
-        CHECK( sparse2dense( identity, one, desc ) );
+        CHECK( sparse2dense( identity, desc ) );
       }
       else
         ratio_ = ratio;
@@ -328,7 +328,7 @@ namespace backend
   }
 
   template <typename T>
-  Info Vector<T>::sparse2dense( T identity, T one, Descriptor* desc )
+  Info Vector<T>::sparse2dense( T identity, Descriptor* desc )
   {
     if( vec_type_==GrB_DENSE ) return GrB_INVALID_OBJECT;
 
@@ -354,7 +354,7 @@ namespace backend
       dense_.fill( identity );
       if( desc->struconly() )
       {
-        scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, one, nvals );
+        scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, (T)1, nvals );
       }
       else
       {

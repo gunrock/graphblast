@@ -100,11 +100,11 @@ namespace backend
     // The op->identity() stands for the dense vector zero-element
     // TODO: Fix this hack
     if( vxm_mode==GrB_PUSHPULL )
-      CHECK( u_t->convert( 0.f, 1.f, desc ) );
+      CHECK( u_t->convert( op->identity(), desc ) );
     else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
-      CHECK( u_t->dense2sparse( 0.f, desc ) );
+      CHECK( u_t->dense2sparse( op->identity(), desc ) );
     else if( vxm_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
-      CHECK( u_t->sparse2dense( 0.f, 1.f, desc ) );
+      CHECK( u_t->sparse2dense( op->identity(), desc ) );
 
     // Check if vector type was changed due to conversion!
     CHECK( u->getStorage( &u_vec_type ) );
@@ -168,11 +168,11 @@ namespace backend
     CHECK( desc->get( GrB_TOL,     &tol      ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
     if( mxv_mode==GrB_PUSHPULL )
-      CHECK( u_t->convert( 0.f, 1.f, desc ) );
+      CHECK( u_t->convert( op->identity(), desc ) );
     else if( mxv_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
-      CHECK( u_t->dense2sparse( 0.f, desc ) );
+      CHECK( u_t->dense2sparse( op->identity(), desc ) );
     else if( mxv_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
-      CHECK( u_t->sparse2dense( 0.f, 1.f, desc ) );
+      CHECK( u_t->sparse2dense( op->identity(), desc ) );
 
     // Check if vector type was changed due to conversion!
     CHECK( u->getStorage( &u_vec_type ) );
