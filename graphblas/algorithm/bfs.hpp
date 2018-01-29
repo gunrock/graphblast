@@ -19,7 +19,7 @@ namespace algorithm
     CHECK( A->nrows( &n ) );
 
     // Visited vector (use float for now)
-    CHECK( v->fill(-1.f) );
+    CHECK( v->fill(0.f) );
 
     // Frontier vectors (use float for now)
     Vector<float> q1(n);
@@ -53,7 +53,7 @@ namespace algorithm
 		Semiring<float,float,float> GrB_FP32AddMul;
 		GrB_FP32AddMul.nnew( GrB_FP32Add, GrB_TIMES_FP32 );
 
-    float d    = 0;
+    float d    = 1;
     float succ = 0.f;
     Index A_nrows;
     CHECK( A->nrows(&A_nrows) );

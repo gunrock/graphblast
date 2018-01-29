@@ -28,7 +28,7 @@ void testConvert( const std::vector<int>& rhs_ind,
   desc.descriptor_.debug_ = true;
   desc.descriptor_.switchpoint_ = 0.9;
   vec1.vector_.ratio_ = 1.f;
-  vec1.vector_.convert( 0, 1, &desc.descriptor_ );
+  vec1.vector_.convert( 0, &desc.descriptor_ );
   CHECKVOID( vec1.print() );
 
   graphblas::Index nvals = 1;
