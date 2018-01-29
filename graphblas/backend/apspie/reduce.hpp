@@ -1,88 +1,91 @@
-#ifndef GRB_BACKEND_CUDA_REDUCE_HPP
-#define GRB_BACKEND_CUDA_REDUCE_HPP
+#ifndef GRB_BACKEND_APSPIE_REDUCE_HPP
+#define GRB_BACKEND_APSPIE_REDUCE_HPP
 
 #include <iostream>
-#include <vector>
 
-#include <cub/cub.cuh>
-
-#include "graphblas/types.hpp"
-
-#include "graphblas/backend/apspie/Vector.hpp"
-#include "graphblas/backend/apspie/Matrix.hpp"
+#include "graphblas/backend/apspie/Descriptor.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
+#include "graphblas/backend/apspie/operations.hpp"
+
+#include <cub.cuh>
 
 namespace graphblas
 {
 namespace backend
 {
-  template <typename T>
-  class Matrix;
-
-  template <typename T>
-  class Vector;
-
-  template <typename a, typename b>
-  Info cubReduce( Vector<b>&             B,
-                  const SparseMatrix<a>& A,
-                  void*                  d_buffer,
-                  size_t                 buffer_size );
-
-  // TODO:
-  // Move d_buffer into descriptor
-  template <typename a, typename b>
-  Info reduce( Vector<b>&       B,
-               const Matrix<a>& A,
-               void*            d_buffer,
-               size_t           buffer_size )
+  // Dense vector variant
+  template <typename T, typename U>
+  Info reduceInner( T*                     val,
+									  const BinaryOp<U,U,U>* accum,
+									  const Monoid<U>*       op,
+									  const DenseVector<U>*  u,
+									  Descriptor*            desc )
   {
-    Storage A_storage;
-    A.getStorage( A_storage );
-
-    Info err;
-    if( A_storage == GrB_SPARSE )
-    {
-      err = cubReduce( B, A.sparse_, d_buffer, buffer_size );
-    }
-    return err;
-  }
-
-  template <typename a, typename b>
-  Info cubReduce( Vector<b>&             B,
-                  const SparseMatrix<a>& A,
-                  void*                  d_buffer,
-                  size_t                 buffer_size )
-  {
-    Index A_nrows;
-    Index B_nvals;
-
-    A_nrows = A.nrows_;
-    B_nvals = B.nvals_;
-
-    // Dimension compatibility check
-    if( (A_nrows != B_nvals) )
-    {
-      std::cout << "Dim mismatch reduce" << std::endl;
-      std::cout << A_nrows << " " << B_nvals << std::endl;
-      return GrB_DIMENSION_MISMATCH;
-    }
-
-    /*void *d_temp_storage      = NULL;
+    // Nasty bug! Must point d_val at desc->d_buffer_ only after it gets 
+    // possibly resized!
+    CHECK( desc->resize(sizeof(T), "buffer") );
+    T* d_val = (T*) desc->d_buffer_;
     size_t temp_storage_bytes = 0;
 
-    cub::DeviceSegmentedReduce::Sum(d_temp_storage, temp_storage_bytes,
-        A.d_csrVal_, B.d_val_, A_nrows, A.d_csrRowPtr_, A.d_csrRowPtr_+1 );
-    CUDA( cudaMalloc(&d_temp_storage, temp_storage_bytes) );*/
-    cub::DeviceSegmentedReduce::Sum(d_buffer, buffer_size,
-        A.d_csrVal_, B.d_val_, A.nrows_, A.d_csrRowPtr_, A.d_csrRowPtr_+1 );
-    //CUDA( cudaFree(d_temp_storage) );   
- 
-    B.need_update_ = true;
+    if( !desc->split() )
+      CUDA( cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, u->d_val_, 
+          d_val, u->nvals_, mgpu::plus<T>(), op->identity()) );
+    else
+      temp_storage_bytes = desc->d_temp_size_;
+
+    CHECK( desc->resize(temp_storage_bytes, "temp") );
+    if( desc->debug() )
+    {
+      std::cout << temp_storage_bytes << " <= " << desc->d_temp_size_ << 
+          std::endl;
+    }
+
+    CUDA( cub::DeviceReduce::Reduce(desc->d_temp_, temp_storage_bytes, 
+        u->d_val_, d_val, u->nvals_, mgpu::plus<T>(), op->identity()) );
+    CUDA( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
+
+    // If doing reduce on DenseVector, then we might as well write the nnz
+    // to the internal variable
+    DenseVector<U>* u_t = const_cast<DenseVector<U>*>(u);
+    u_t->nnz_ = *val;
     return GrB_SUCCESS;
   }
 
+  // Sparse vector variant
+  template <typename T, typename U>
+  Info reduceInner( T*                     val,
+									  const BinaryOp<U,U,U>* accum,
+									  const Monoid<U>*       op,
+									  const SparseVector<U>* u,
+									  Descriptor*            desc )
+  {
+    if( desc->struconly() )
+    {
+      *val = u->nvals_;
+    }
+    else
+    {
+      T* d_val = (T*) desc->d_buffer_;
+      desc->resize(sizeof(T), "buffer");
+      size_t temp_storage_bytes = 0;
+
+      if( !desc->split() )
+        cub::DeviceReduce::Reduce( NULL, temp_storage_bytes, u->d_val_, d_val, 
+            u->nvals_, mgpu::plus<T>(), op->identity() );
+      else
+        temp_storage_bytes = desc->d_temp_size_;
+
+      desc->resize( temp_storage_bytes, "temp" );
+      cub::DeviceReduce::Reduce( desc->d_temp_, temp_storage_bytes, u->d_val_, 
+          d_val, u->nvals_, mgpu::plus<T>(), op->identity() );
+
+      CUDA( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
+    }
+
+    return GrB_SUCCESS;
+  }
 }  // backend
 }  // graphblas
 
-#endif  // GRB_BACKEND_CUDA_TRANSPOSE_HPP
+#endif  // GRB_BACKEND_APSPIE_REDUCE_HPP

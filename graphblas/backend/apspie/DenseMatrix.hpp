@@ -7,7 +7,7 @@
 
 #include "graphblas/types.hpp"
 
-#include "graphblas/backend/apspie/Matrix.hpp"
+#include "graphblas/backend/apspie/apspie.hpp"
 
 namespace graphblas
 {
@@ -15,6 +15,9 @@ namespace backend
 {
   template <typename T>
   class SparseMatrix;
+
+  template <typename T1, typename T2, typename T3>
+  class BinaryOp;
 
   template <typename T>
   class DenseMatrix
@@ -27,7 +30,7 @@ namespace backend
         : nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), 
           h_denseVal_(NULL), d_denseVal_(NULL), need_update_(0) {}
 
-    ~DenseMatrix();
+    ~DenseMatrix() {}
 
     // C API Methods
     Info nnew(  Index nrows, Index ncols );
@@ -40,7 +43,7 @@ namespace backend
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp*           dup );
+                const BinaryOp<T,T,T>*    dup );
     Info build( const std::vector<T>* values, 
                 Index                 nvals );
     Info setElement(     Index row_index,
@@ -173,7 +176,7 @@ namespace backend
                               const std::vector<Index>* col_indices,
                               const std::vector<T>*     values,
                               Index                     nvals,
-                              const BinaryOp*           dup )
+                              const BinaryOp<T,T,T>*    dup )
   {
     return GrB_SUCCESS;
   }

@@ -2,7 +2,8 @@
 #define GRB_UTIL_HPP
 
 #include <vector>
-#include <iostream>
+#include <fstream>
+//#include <iostream>
 #include <typeinfo>
 #include <cstdio>
 #include <tuple>
@@ -10,31 +11,97 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <string>
+#include <libgen.h>
 
+// for commandline arguments
 #include <boost/program_options.hpp>
 
 #include "graphblas/mmio.hpp"
 #include "graphblas/types.hpp"
 
+#define CHECK(x) do {                  \
+  graphblas::Info err = x;             \
+  if (err != graphblas::GrB_SUCCESS) { \
+    fprintf(stderr, "Runtime error: %s returned %d at %s:%d\n", #x, err, __FILE__, __LINE__);                          \
+    return err;                        \
+  } } while (0)
+
+#define CHECKVOID(x) do {              \
+  graphblas::Info err = x;             \
+  if (err != graphblas::GrB_SUCCESS) { \
+    fprintf(stderr, "Runtime error: %s returned %d at %s:%d\n", #x, err, __FILE__, __LINE__);                          \
+    return;                        \
+  } } while (0)
+
 // Utility functions
 
 namespace po = boost::program_options;
 
-void parseArgs( int argc, char**argv, po::variables_map& vm ) {
+void parseArgs( int argc, char**argv, po::variables_map& vm ) 
+{
   // Declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
-    ("help", "produce help message")
-    ("ta", po::value<int>()->default_value(32), "threads per A row")
-    ("tb", po::value<int>()->default_value(32), "B slab width")
-    ("nt", po::value<int>()->default_value(128), "threads per block")
+    ("help", 
+        "produce help message")
+    ("ta", po::value<int>()->default_value(32), 
+        "threads per A row")
+    ("tb", po::value<int>()->default_value(32), 
+        "B slab width")
     ("mode", po::value<std::string>()->default_value("fixedrow"), 
-       "row or column")
+        "row or column")
     ("split", po::value<bool>()->default_value(false), 
-       "split spgemm computation")
-    ("iter", po::value<int>()->default_value(10), "number of iterations")
-    ("device", po::value<int>()->default_value(0), "GPU device number")
-    ("debug", po::value<bool>()->default_value(false), "debug on")
+        "True means split spgemm computation")
+
+    // General params
+    ("source", po::value<int>()->default_value(0),
+        "Source node traversal is launched from")
+    ("niter", po::value<int>()->default_value(10), 
+        "Number of iterations to run after warmup")
+    ("directed", po::value<int>()->default_value(0), 
+        "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected")
+    ("mxvmode", po::value<int>()->default_value(1), 
+        "0: push-pull, 1: push only, 2: pull only")
+    ("timing", po::value<int>()->default_value(1),
+        "0: final timing, 1: per niter timing, 2: per graphblas algorithm timing")
+    ("memusage", po::value<float>()->default_value(1.0),
+        "Multiple of edge used to store temporary neighbor list during push phase")
+    ("switchpoint", po::value<float>()->default_value(0.01),
+        "Percentage of nnz needed in order to switch from sparse to dense when mxvmode=push-pull")
+    ("transpose", po::value<bool>()->default_value(false), 
+        "True means use transpose graph")
+    ("mtxinfo", po::value<bool>()->default_value(true),
+        "True means show matrix MTX info")
+    ("dirinfo", po::value<bool>()->default_value(false),
+        "True means show mxvmode direction info, and when switches happen")
+    ("verbose", po::value<bool>()->default_value(true),
+        "0: timing output only, 1: correctness indicator")
+    ("struconly", po::value<bool>()->default_value(false),
+        "True means use implied nonzeroes, False means key-value operations")
+    ("earlyexit", po::value<bool>()->default_value(true),
+        "True means use early exit, False means do not use it")
+    ("earlyexitbench", po::value<bool>()->default_value(false),
+        "True means do early exit benchmarking (will automatically turn earlyexit on as well), False means do not use it")
+    ("opreuse", po::value<bool>()->default_value(true),
+        "True means use operand reuse, False means do not use it")
+    ("endbit", po::value<bool>()->default_value(true),
+        "True means do not do radix sort on full 32 bits, False means do it on full 32 bits")
+    ("reduce", po::value<bool>()->default_value(true),
+        "True means do the reduce, False means do not do it")
+    ("prealloc", po::value<bool>()->default_value(true),
+        "True means do the prealloc, False means do not do it")
+    ("sort", po::value<bool>()->default_value(true),
+        "True means sort, False means do not sort. (Option is only valid if struconly is true)")
+
+    // GPU params
+    ("nthread", po::value<int>()->default_value(128), 
+        "Number of threads per block")
+    ("ndevice", po::value<int>()->default_value(0), 
+        "GPU device number to use")
+    ("debug", po::value<bool>()->default_value(false), 
+        "True means show debug messages")
+    ("memory", po::value<bool>()->default_value(false), 
+        "True means show memory info")
   ;
 
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -115,7 +182,7 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
   // Could add check for edges in diagonal of adjacency matrix
   for( graphblas::Index i=0; i<nvals; i++ ) {
     if( fscanf(f, "%d", &row_ind)==EOF ) {
-      std::cout << "Error: not enough rows in mtx file.\n";
+      std::cout << "Error: Not enough rows in mtx file!\n";
       return;
     } else {
       int u = fscanf(f, "%d", &col_ind);
@@ -172,7 +239,7 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
   // Could add check for edges in diagonal of adjacency matrix
   for( graphblas::Index i=0; i<nvals; i++ ) {
     if( fscanf(f, "%d", &row_ind)==EOF ) {
-      std::cout << "Error: not enough rows in mtx file.\n";
+      std::cout << "Error: Not enough rows in mtx file!\n";
       return;
     } else {
       int u = fscanf(f, "%d", &col_ind);
@@ -275,22 +342,51 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
   values.resize(nvals);
 }
 
+bool exists(const char *fname)
+{
+  FILE *file;
+  if( file = fopen(fname, "r") )
+  {
+    fclose(file);
+    return 1;
+  }
+  return 0;
+}
+
+char* convert( const char* fname )
+{
+  char* dat_name = (char*)malloc(256);
+
+	// separate the graph path and the file name
+	char *temp1 = strdup(fname);
+	char *temp2 = strdup(fname);
+	char *file_path = dirname (temp1);
+	char *file_name = basename(temp2);
+
+	sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
+	//sprintf(dat_name, "%s/.%s.ud.%d.%sdat", file_path, file_name, 0,
+			((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
+
+  return dat_name;
+}
+
 template<typename T>
-int readMtx( const char *fname,
+int readMtx( const char*                    fname,
              std::vector<graphblas::Index>& row_indices,
              std::vector<graphblas::Index>& col_indices,
-             std::vector<T>& values,
-             graphblas::Index& nrows,
-             graphblas::Index& ncols,
-             graphblas::Index& nvals,
-             const bool DEBUG )
+             std::vector<T>&                values,
+             graphblas::Index&              nrows,
+             graphblas::Index&              ncols,
+             graphblas::Index&              nvals,
+             int                            directed,
+             bool                           mtxinfo )
 {
   int ret_code;
   MM_typecode matcode;
   FILE *f;
 
   if ((f = fopen(fname, "r")) == NULL) {
-    printf( "File %s not found", fname );
+    printf( "File %s not found\n", fname );
     exit(1);
   }
 
@@ -304,22 +400,65 @@ int readMtx( const char *fname,
   if ((ret_code = mm_read_mtx_crd_size(f, &nrows, &ncols, &nvals)) !=0)
     exit(1);
 
-  if (mm_is_integer(matcode))
-    readTuples<T, int>( row_indices, col_indices, values, nvals, f );
-  else if (mm_is_real(matcode))
-    readTuples<T, float>( row_indices, col_indices, values, nvals, f );
-  else if (mm_is_pattern(matcode))
-    readTuples<T>( row_indices, col_indices, values, nvals, f );
+  char* dat_name = convert(fname);
 
-  // If graph is symmetric, replicate it out in memory
-  if( mm_is_symmetric(matcode) )
-  // If user wants to treat MTX as a directed graph
-  //if( undirected )
-    makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
-  customSort<T>( row_indices, col_indices, values );
+  if( exists(dat_name) )
+  {  
+    // The size of the file in bytes is in results.st_size
+    // -unserialize vector
+    std::ifstream ifs(dat_name, std::ios::in | std::ios::binary);
+    if (ifs.fail())
+      std::cout << "Error: Unable to open file for reading!\n";
+    else
+    {
+      row_indices.clear();
+      col_indices.clear();
+      values.clear();
+      //return ret_code;
+    }
+  }
+  else
+  {
+    if (mm_is_integer(matcode))
+      readTuples<T, int>( row_indices, col_indices, values, nvals, f );
+    else if (mm_is_real(matcode))
+      readTuples<T, float>( row_indices, col_indices, values, nvals, f );
+    else if (mm_is_pattern(matcode))
+      readTuples<T>( row_indices, col_indices, values, nvals, f );
 
-  if( DEBUG ) mm_write_banner(stdout, matcode);
-  if( DEBUG ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
+    // Directed controls how matrix is interpreted:
+    // 0: If it is marked symmetric, then double the edges. Else do nothing.
+    // 1: Force matrix to be unsymmetric.
+    // 2: Force matrix to be symmetric.
+    if( (mm_is_symmetric(matcode) && directed==0) || directed==2 )
+    // If user wants to treat MTX as a directed graph
+    //if( undirected )
+      makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
+    customSort<T>( row_indices, col_indices, values );
+
+    if( mtxinfo ) mm_write_banner(stdout, matcode);
+    if( mtxinfo ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
+
+    // -serialize vector
+    /*std::ofstream ofs( dat_name, std::ios::out | std::ios::binary );
+    if (ofs.fail())
+      std::cout << "Error: Unable to open file for writing!\n";
+    else
+    {
+      printf("Writing %s\n", dat_name);
+      ofs.write( reinterpret_cast<char*>(&nvals), sizeof(graphblas::Index) );
+    
+      ofs.write( reinterpret_cast<char*>(row_indices.data()), 
+          nvals*sizeof(graphblas::Index) );
+
+      ofs.write( reinterpret_cast<char*>(col_indices.data()), 
+          nvals*sizeof(graphblas::Index) );
+      
+      ofs.write( reinterpret_cast<char*>(values.data()), 
+          nvals*sizeof(graphblas::T) );
+    }*/
+  }
+  free(dat_name);
 
   return ret_code; //TODO: parse ret_code
 }

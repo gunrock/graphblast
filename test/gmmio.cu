@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE( mmio1 )
   graphblas::Index nvals;
 
   // Read in test_cc.mtx
-  char const *argv = "dataset/small/simulated_blockmodel_graph_50_nodes.mtx";
+  char const *argv = "data/small/simulated_blockmodel_graph_50_nodes.mtx";
   readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
 
   int rhs[12] = {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2};
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE( mmio2 )
   graphblas::Index nvals;
 
   // Read in chesapeake.mtx
-  char const *argv = "dataset/small/simulated_blockmodel_graph_100_nodes.mtx";
+  char const *argv = "data/small/simulated_blockmodel_graph_100_nodes.mtx";
   readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
 
   int rhs[12] = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1};

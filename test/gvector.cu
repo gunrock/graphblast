@@ -1,4 +1,5 @@
 #define GRB_USE_APSPIE
+#define private public
 
 #include <vector>
 #include <iostream>
@@ -12,37 +13,28 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/program_options.hpp>
 
-// Tests 1: dup, 2: build, 3: extract, 4: gpuToCpu, 5: constructor
-void testDup( const std::vector<int>& rhs )
+void testConvert( const std::vector<int>& rhs_ind, 
+                  const std::vector<int>& rhs_val, 
+                  int                     rhs_size )
 {
-  graphblas::Vector<int> vec1;
-  graphblas::Index size = rhs.size();
-  std::vector<int> lhs;
-  vec1.build( &rhs, rhs.size() );
-  vec1.extractTuples( &lhs, &size );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  graphblas::Vector<int> vec1(rhs_size);
+  std::vector<int> lhs_ind;
+  std::vector<int> lhs_val;
+  CHECKVOID( vec1.fill(0) );
+  CHECKVOID( vec1.setElement(1, 1) );
+  vec1.print();
+  vec1.vector_.dense_.nnz_ = 1;
+  graphblas::Descriptor desc;
+  desc.descriptor_.debug_ = true;
+  desc.descriptor_.switchpoint_ = 0.9;
+  vec1.vector_.ratio_ = 1.f;
+  vec1.vector_.convert( 0, 1, &desc.descriptor_ );
+  CHECKVOID( vec1.print() );
 
-  graphblas::Vector<int> vec2;
-  vec2.dup( &vec1 );
-
-  size = rhs.size();
-  vec2.extractTuples( &lhs, &size );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
-}
-
-void testResize( const std::vector<int>& rhs, const int nvals )
-{
-  graphblas::Vector<int> vec1;
-  graphblas::Index size = rhs.size();
-  std::vector<int> lhs;
-  vec1.build( &rhs, rhs.size() );
-  vec1.extractTuples( &lhs, &size );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
-
-  vec1.resize( nvals );
-  size = rhs.size();
-  vec1.extractTuples( &lhs, &size );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  graphblas::Index nvals = 1;
+  CHECKVOID( vec1.extractTuples(&lhs_ind, &lhs_val, &nvals) );
+  BOOST_ASSERT_LIST( lhs_ind, rhs_ind, nvals );
+  BOOST_ASSERT_LIST( lhs_val, rhs_val, nvals );
 }
 
 struct TestVector
@@ -57,20 +49,9 @@ BOOST_AUTO_TEST_SUITE( vec_suite )
 
 BOOST_FIXTURE_TEST_CASE( vec1, TestVector )
 {
-  std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  testDup( vec );
-}
-
-BOOST_FIXTURE_TEST_CASE( vec2, TestVector )
-{
-  std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 0, 2};
-  testDup( vec );
-}
-
-BOOST_FIXTURE_TEST_CASE( vec3, TestVector )
-{
-  std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 0, 2};
-  testResize( vec, 15 );
+  std::vector<int> ind = {1};
+  std::vector<int> vec = {1};
+  testConvert( ind, vec, 10 );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

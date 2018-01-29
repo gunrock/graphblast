@@ -8,12 +8,30 @@
 #include <cusparse.h>
 
 #include "graphblas/backend/apspie/apspie.hpp"
+#include "graphblas/backend/apspie/Descriptor.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 
 namespace graphblas
 {
 namespace backend
 {
+
+  class Descriptor;
+
+  template <typename c, typename a, typename b, typename m,
+            typename BinaryOpT,      typename SemiringT>
+  Info spgemm( SparseMatrix<c>*       C, 
+               const Matrix<m>*       mask,
+               const BinaryOpT*       accum, 
+               const SemiringT*       op, 
+               const SparseMatrix<a>* A,
+               const SparseMatrix<b>* B,
+               Descriptor*            desc )
+  {
+    std::cout << "SpGEMM\n";
+    std::cout << "Error: Feature not implemented yet!\n";
+    return GrB_SUCCESS;
+  }
 
   template<typename c, typename a, typename b>
   Info cusparse_spgemm( SparseMatrix<c>&       C,

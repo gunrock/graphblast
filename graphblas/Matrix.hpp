@@ -13,6 +13,9 @@
 
 namespace graphblas
 {
+  template <typename T1, typename T2, typename T3>
+  class BinaryOp;
+
   template <typename T>
   class Matrix
   {
@@ -33,11 +36,13 @@ namespace graphblas
     Info nrows( Index* nrows_ ) const;
     Info ncols( Index* ncols_ ) const;
     Info nvals( Index* nvals_ ) const;
+    //template <typename BinaryOpT>
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp*           dup );
+                const BinaryOp<T,T,T>*    dup,
+                const char*               fname=NULL );
     Info build( const std::vector<T>*     values,
                 Index                     nvals );
     Info setElement(     Index row_index,
@@ -77,23 +82,15 @@ namespace graphblas
     // Data members that are same for all backends
     backend::Matrix<T> matrix_;
 
-    /*template <typename c, typename m, typename a, typename b>
-    friend Info mxm( Matrix<c>&        C,
-                     const Matrix<m>&  mask,
-                     const BinaryOp&   accum,
-                     const Semiring&   op,
-                     const Matrix<a>&  A,
-                     const Matrix<b>&  B,
-                     const Descriptor& desc );
-
-    template <typename c, typename a, typename b>
-    friend Info mxm( Matrix<c>&        C,
-                     const int         mask,
-                     const int         accum,
-                     const Semiring&   op,
-                     const Matrix<a>&  A,
-                     const Matrix<b>&  B,
-                     const Descriptor& desc );*/
+		template <typename c, typename a, typename b, typename m,
+							typename BinaryOpT,     typename SemiringT>
+		friend Info mxm( Matrix<c>*        C,
+										 const Matrix<m>*  mask,
+										 const BinaryOpT*  accum,
+										 const SemiringT*  op,
+										 const Matrix<a>*  A,
+										 const Matrix<b>*  B,
+										 const Descriptor* desc );
 
   };
 
@@ -101,14 +98,14 @@ namespace graphblas
   Info Matrix<T>::nnew( Index nrows, Index ncols )
   {
     if( nrows==0 || ncols==0 ) return GrB_INVALID_VALUE;
-    matrix_.nnew( nrows, ncols );
+    return matrix_.nnew( nrows, ncols );
   }
 
   template <typename T>
   Info Matrix<T>::dup( const Matrix* rhs )
   {
     if( rhs==NULL ) return GrB_NULL_POINTER;
-    return matrix_.dup( rhs->matrix_ );
+    return matrix_.dup( &rhs->matrix_ );
   }
 
   template <typename T>
@@ -121,33 +118,45 @@ namespace graphblas
   Info Matrix<T>::nrows( Index* nrows ) const
   {
     if( nrows==NULL ) return GrB_NULL_POINTER;
-    return matrix_.nrows( nrows );
+    backend::Matrix<T>* matrix_t = const_cast<backend::Matrix<T>*>(&matrix_);
+    return matrix_t->nrows( nrows );
   }
 
   template <typename T>
   Info Matrix<T>::ncols( Index* ncols ) const
   {
     if( ncols==NULL ) return GrB_NULL_POINTER;
-    return matrix_.ncols( ncols );
+    backend::Matrix<T>* matrix_t = const_cast<backend::Matrix<T>*>(&matrix_);
+    return matrix_t->ncols( ncols );
   }
 
   template <typename T>
   Info Matrix<T>::nvals( Index* nvals ) const
   {
     if( nvals==NULL ) return GrB_NULL_POINTER;
-    return matrix_.nvals( nvals );
+    backend::Matrix<T>* matrix_t = const_cast<backend::Matrix<T>*>(&matrix_);
+    return matrix_t->nvals( nvals );
   }
 
   template <typename T>
+  //template <typename BinaryOpT>
   Info Matrix<T>::build( const std::vector<Index>* row_indices,
                          const std::vector<Index>* col_indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp*           dup )
+                         const BinaryOp<T,T,T>*    dup,
+                         const char*               fname )
   {
-    if( row_indices==NULL || col_indices==NULL || values==NULL || dup==NULL )
+    if( row_indices==NULL || col_indices==NULL || values==NULL )
       return GrB_NULL_POINTER;
-    return matrix_.build( row_indices, col_indices, values, nvals, dup );
+    const backend::BinaryOp<T,T,T>* dup_t = (dup==NULL) ? NULL : &dup->op_;
+    //    : &((BinaryOp<T,T,T>*)dup)->op_;
+
+    if( fname==NULL || (*row_indices).size()>0 )
+      return matrix_.build( row_indices, col_indices, values, nvals, dup_t, 
+          fname );
+    else
+      return matrix_.build( fname );
   }
 
   template <typename T>

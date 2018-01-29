@@ -33,7 +33,7 @@ namespace graphblas
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp*           dup );
+                const BinaryOp<T,T,T>*    dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
     Info setElement(     T val, 
@@ -50,23 +50,25 @@ namespace graphblas
     void operator=(      Vector* rhs );
     const T& operator[]( Index ind );
     Info resize(         Index nvals );
-    Info fill(           Index vals );
+    Info fill(           T val );
+    Info fillAscending(  Index nvals );
     Info print(          bool force_update = false );
     Info countUnique(    Index* count );
-    Info setStorage( Storage  vec_type );
-    Info getStorage( Storage* vec_type ) const;
+    Info setStorage(     Storage  vec_type );
+    Info getStorage(     Storage* vec_type ) const;
+    Info swap(           Vector* rhs );
 
     private:
     backend::Vector<T> vector_;
 
-    template <typename m, typename U, typename a, typename BinaryOp, 
+    /*template <typename m, typename U, typename a, typename BinaryOp, 
               typename Semiring>
     friend Info vxm( const Vector<m>*  mask,
                      const BinaryOp*   accum,
                      const Semiring*   op,
                      const Vector<U>*  u,
                      const Matrix<a>*  A,
-                     const Descriptor* desc );
+                     Descriptor*       desc );*/
   };
 
   template <typename T>
@@ -88,28 +90,31 @@ namespace graphblas
   }
 
   template <typename T>
-  Info Vector<T>::size( Index* nsize_ ) const
+  Info Vector<T>::size( Index* nsize_t ) const
   {
-    if( nsize_==NULL ) return GrB_NULL_POINTER;
-    return vector_.size( nsize_ );
+    if( nsize_t==NULL ) return GrB_NULL_POINTER;
+    backend::Vector<T>* vector_t = const_cast<backend::Vector<T>*>(&vector_);
+    return vector_t->size( nsize_t );
   }
 
   template <typename T>
-  Info Vector<T>::nvals( Index* nvals_ ) const
+  Info Vector<T>::nvals( Index* nvals_t ) const
   {
-    if( nvals_==NULL ) return GrB_NULL_POINTER;
-    return vector_.nvals( nvals_ );
+    if( nvals_t==NULL ) return GrB_NULL_POINTER;
+    backend::Vector<T>* vector_t = const_cast<backend::Vector<T>*>(&vector_);
+    return vector_t->nvals( nvals_t );
   }
 
   template <typename T>
   Info Vector<T>::build( const std::vector<Index>* indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp*           dup )
+                         const BinaryOp<T,T,T>*    dup )
   {
-    if( indices==NULL || values==NULL || dup==NULL )
+    if( indices==NULL || values==NULL ) //|| dup==NULL )
       return GrB_NULL_POINTER;
-    return vector_.build( indices, values, nvals, dup );
+    const backend::BinaryOp<T,T,T>* dup_t = (dup==NULL) ? NULL : &dup->op_;
+    return vector_.build( indices, values, nvals, dup_t );
   }
 
   template <typename T>
@@ -171,9 +176,15 @@ namespace graphblas
   }
 
   template <typename T>
-  Info Vector<T>::fill( Index nvals )
+  Info Vector<T>::fill( T val )
   {
-    return vector_.fill( nvals );
+    return vector_.fill( val );
+  }
+
+  template <typename T>
+  Info Vector<T>::fillAscending( Index nvals )
+  {
+    return vector_.fillAscending( nvals );
   }
 
   template <typename T>
@@ -201,6 +212,13 @@ namespace graphblas
   {
     if( vec_type==NULL ) return GrB_NULL_POINTER;
     return vector_.getStorage( vec_type );
+  }
+
+  template <typename T>
+  Info Vector<T>::swap( Vector* rhs )
+  {
+    if( rhs==NULL ) return GrB_NULL_POINTER;
+    return vector_.swap( &rhs->vector_ );
   }
 
 }  // graphblas
