@@ -17,9 +17,6 @@ namespace backend
   template <typename T>
   class DenseMatrix;
 
-  template <typename T1, typename T2, typename T3>
-  class BinaryOp;
-
   template <typename T>
   class Matrix
   {
@@ -44,11 +41,12 @@ namespace backend
     Info nrows( Index* nrows_t );
     Info ncols( Index* ncols_t );
     Info nvals( Index* nvals_t );
+    template <typename BinaryOpT>
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T,T,T>*    dup,
+                BinaryOpT                 dup,
                 const char*               fname );
     Info build( const char*           fname ); 
     Info build( const std::vector<T>* values, 
@@ -175,11 +173,12 @@ namespace backend
 
   // Option: Not const to allow sorting
   template <typename T>
+  template <typename BinaryOpT>
   Info Matrix<T>::build( const std::vector<Index>* row_indices,
                          const std::vector<Index>* col_indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp<T,T,T>*    dup,
+                         BinaryOpT                 dup,
                          const char*               fname )
   {
     mat_type_ = GrB_SPARSE;

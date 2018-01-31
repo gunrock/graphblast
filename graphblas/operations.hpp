@@ -26,7 +26,7 @@ namespace graphblas
             Descriptor*      desc )
   {
     // Null pointer check
-    if( C==NULL || op==NULL || A==NULL || B==NULL || desc==NULL )
+    if( C==NULL || A==NULL || B==NULL || desc==NULL )
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
@@ -58,7 +58,7 @@ namespace graphblas
             Descriptor*      desc )
   {
     // Null pointer check
-    if( w==NULL || op==NULL || u==NULL || A==NULL || desc==NULL )
+    if( w==NULL || u==NULL || A==NULL || desc==NULL )
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
@@ -146,7 +146,7 @@ namespace graphblas
   {
     // Use either op->operator() or op->mul() as the case may be
     // Null pointer check
-    if( w==NULL || op==NULL || u==NULL || v==NULL || desc==NULL )
+    if( w==NULL || u==NULL || v==NULL || desc==NULL )
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check

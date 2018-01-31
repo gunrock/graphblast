@@ -187,19 +187,19 @@ namespace graphblas
 		inline T_out identity() const                                       \
 		{ return ADD_MONOID<T_out>().identity(); }                          \
                                                                         \
-    template<BinaryOp op>                                                   \
+    /*template<BinaryOp op>                                                   \
     inline __host__ __device__ T_out operator()(T_in1 lhs, T_in2 rhs) const \
     {                                                                       \
       if( op==GrB_ADD )                                                     \
         return ADD_MONOID<T_out>()(lhs, rhs);                               \
       else if( op==GrB_MUL )                                                \
         return MULT_BINARYOP<T_in1,T_in2,T_out>()(lhs,rhs);                 \
-    }                                                                       \
-		/*inline __host__ __device__ T_out add_op(T_out lhs, T_out rhs) const \
+    } */                                                                      \
+		inline __host__ __device__ T_out add_op(T_out lhs, T_out rhs) const \
 		{ return ADD_MONOID<T_out>()(lhs, rhs); }                           \
 																																		    \
 		inline __host__ __device__ T_out mul_op(T_in1 lhs, T_in2 rhs) const \
-		{ return MULT_BINARYOP<T_in1,T_in2,T_out>()(lhs, rhs); }            \*/ \
+		{ return MULT_BINARYOP<T_in1,T_in2,T_out>()(lhs, rhs); }            \
   };
 
 namespace graphblas

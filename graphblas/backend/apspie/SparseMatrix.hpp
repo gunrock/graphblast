@@ -25,9 +25,6 @@ namespace backend
   template <typename T>
   class Vector;
 
-  template <typename T1, typename T2, typename T3>
-  class BinaryOp;
-
   template <typename T>
   class SparseMatrix
   {
@@ -57,11 +54,12 @@ namespace backend
     Info nrows( Index* nrows_t ) const;
     Info ncols( Index* ncols_t ) const;
     Info nvals( Index* nvals_t ) const;
+    template <typename BinaryOpT>
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T,T,T>*    dup,
+                BinaryOpT                 dup,
                 const char*               fname );
     Info build( const char*           fname );
     Info build( const std::vector<T>* values,
@@ -241,11 +239,12 @@ namespace backend
   }
 
   template <typename T>
+  template <typename BinaryOpT>
   Info SparseMatrix<T>::build( const std::vector<Index>* row_indices,
                                const std::vector<Index>* col_indices,
                                const std::vector<T>*     values,
                                Index                     nvals,
-                               const BinaryOp<T,T,T>*    dup,
+                               BinaryOpT                 dup,
                                const char*               fname )
   {
     nvals_ = nvals;
