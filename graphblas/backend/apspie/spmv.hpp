@@ -19,39 +19,12 @@ namespace graphblas
 namespace backend
 {
 
-  template <typename MulOp, typename AddOp, typename T>
-  __global__ void kernel( MulOp mul_op, AddOp add_op, T* val )
-  {
-    *val = add_op(*val,*val);
-    *val = mul_op(*val,*val);
-  }
-
-  template <typename MulOp, typename AddOp, typename T>
-  void cpu_kernel( MulOp mul_op, AddOp add_op, T* val )
-  {
-    *val = add_op(*val,*val);
-    *val = mul_op(*val,*val);
-  }
-
-typedef float (*op_func_t) (float, float);
-__device__ float add_func(float x, float y) { return x + y; }
-__device__ float mul_func(float x, float y) { return x * y; }
-__device__ op_func_t p_add_func = add_func;
-__device__ op_func_t p_mul_func = mul_func;
-
-  template <typename MulOp, typename AddOp, typename T>
-  __global__ void gpu_kernel( MulOp mul_op, AddOp add_op, T* val )
-  {
-    *val = (*add_op)(*val,*val);
-    *val = (*mul_op)(*val,*val);
-  }
-
   template <typename W, typename a, typename U, typename M,
             typename BinaryOpT,      typename SemiringT>
   Info spmv( DenseVector<W>*        w,
              const Vector<M>*       mask,
-             const BinaryOpT*       accum,
-             const SemiringT*       op,
+             BinaryOpT              accum,
+             SemiringT              op,
              const SparseMatrix<a>* A,
              const DenseVector<U>*  u,
              Descriptor*            desc )
@@ -145,49 +118,49 @@ __device__ op_func_t p_mul_func = mul_func;
               case 0:
                 spmvDenseMaskedOrKernelBench<false,false,false><<<NB,NT>>>( 
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_, 
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_, 
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 1:
                 spmvDenseMaskedOrKernelBench<false,false,true><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 2:
                 spmvDenseMaskedOrKernelBench<false, true,false><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 3:
                 spmvDenseMaskedOrKernelBench<false, true, true><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 4:
                 spmvDenseMaskedOrKernelBench< true,false,false><<<NB,NT>>>( 
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_, 
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_, 
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 5:
                 spmvDenseMaskedOrKernelBench< true,false, true><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 6:
                 spmvDenseMaskedOrKernelBench<true, true,false><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 7:
                 spmvDenseMaskedOrKernelBench<true, true, true><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               default:
@@ -245,50 +218,50 @@ __device__ op_func_t p_mul_func = mul_func;
             {
               case 0:
                 spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
-                    w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_, 
+                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_, 
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 1:
                 spmvDenseMaskedOrKernel<false,false,true><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 2:
                 spmvDenseMaskedOrKernel<false, true,false><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 3:
                 spmvDenseMaskedOrKernel<false, true, true><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 4:
                 spmvDenseMaskedOrKernel< true,false,false><<<NB,NT>>>( 
-                    w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_, 
+                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_, 
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 5:
                 spmvDenseMaskedOrKernel< true,false, true><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 6:
                 spmvDenseMaskedOrKernel<true, true,false><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 7:
                 spmvDenseMaskedOrKernel<true, true, true><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op->mul_, op->add_, A_nrows, A->nvals_,
+                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               default:
@@ -321,41 +294,9 @@ __device__ op_func_t p_mul_func = mul_func;
     }
     else
     {
-
-      // Testing code - Stephen Jones
-      /*a* d_val;
-      a  h_val = 1.f;
-      CUDA( cudaMalloc( &d_val, sizeof(a) ) );
-      CUDA( cudaMemcpy( d_val, &h_val, sizeof(a), cudaMemcpyHostToDevice ) );
-
-      op_func_t h_add_func;
-      op_func_t h_mul_func;
-      cudaMemcpyFromSymbol( &h_add_func, p_add_func, sizeof( op_func_t ) );
-      cudaMemcpyFromSymbol( &h_mul_func, p_mul_func, sizeof( op_func_t ) );
-      op_func_t d_add_func = h_add_func;
-      op_func_t d_mul_func = h_mul_func;
-
-      //cpu_kernel( graphblas::multiplies<a>(), graphblas::plus<a>(), &h_val);
-      //cpu_kernel( op->mul_, op->add_, &h_val );
-      //kernel<<<1,1>>>( op->mul_, op->add_, d_val );
-      gpu_kernel<<<1,1>>>( d_mul_func, d_add_func, d_val );
-      //kernel<<<1,1>>>( graphblas::multiplies<a>(), graphblas::plus<a>(), d_val );
-      CUDA( cudaMemcpy( &h_val, d_val, sizeof(a), cudaMemcpyDeviceToHost ) );
-      smespace backendtd::cout << h_val << std::endl;
-      std::cout << &op << " " << &u << " " << &w << std::endl;
-      std::cout << &(op->mul_) << " " << &(op->add_) << std::endl;
-      std::cout << &(u->d_val_) << " " << &(w->d_val_) << std::endl;
-      std::cout << &h_add_func << " " << &p_add_func << std::endl;*/
-
-      mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, 
-          A_csrRowPtr, A_nrows, u->d_val_, true, w->d_val_, 
-          op->identity(), mgpu::multiplies<a>(), mgpu::plus<a>(), 
-          *(desc->d_context_) );
-
-      // Does not work
-      /*mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, 
-          A_csrRowPtr, A_nrows, u->d_val_, true, w->d_val_, 
-          op->identity(), op->mul_, op->add_, *(desc->d_context_) );*/
+      mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, A_csrRowPtr, 
+          A_nrows, u->d_val_, true, w->d_val_, op.identity(), op.mul_op(), 
+          op.add_op(), *(desc->d_context_) );
 
       // TODO: add semiring inputs to CUB
       /*size_t temp_storage_bytes = 0;

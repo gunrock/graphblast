@@ -73,14 +73,15 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  template <typename W, typename U, typename a>
+  template <typename W, typename U, typename a,
+            typename BinaryOpT, typename SemiringT>
   Info vxm( Vector<W>*             w,
-            const Vector<U>*       mask,
-            const BinaryOp<a,a,a>* accum,
-            const Semiring<a,a,a>* op,
-            const Vector<U>*       u,
-            const Matrix<a>*       A,
-            Descriptor*            desc )
+            const Vector<U>* mask,
+            BinaryOpT        accum,
+            SemiringT        op,
+            const Vector<U>* u,
+            const Matrix<a>* A,
+            Descriptor*      desc )
   {
     // Get storage:
     Storage u_vec_type;
@@ -146,11 +147,12 @@ namespace backend
   // to transpose A 
   // -this is because w=uA is same as w=A^Tu
   // -i.e. GraphBLAS treats 1xn Vector the same as nx1 Vector
-  template <typename W, typename a, typename U>
+  template <typename W, typename a, typename U,
+            typename BinaryOpT, typename SemiringT>
   Info mxv( Vector<W>*       w,
             const Vector<U>* mask,
-            const BinaryOp<a,a,a>* accum,
-            const Semiring<a,a,a>* op,
+            BinaryOpT        accum,
+            SemiringT        op,
             const Matrix<a>* A,
             const Vector<U>* u,
             Descriptor*      desc )
@@ -443,9 +445,9 @@ namespace backend
   }
 
   template <typename T, typename U,
-            typename MonoidT>
+            typename BinaryOpT, typename MonoidT>
   Info reduce( T*                     val,
-               const BinaryOp<U,U,U>* accum,
+               BinaryOpT              accum,
                MonoidT                op,
                const Vector<U>*       u,
                Descriptor*            desc )

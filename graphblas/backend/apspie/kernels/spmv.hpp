@@ -19,7 +19,6 @@ namespace backend
             typename AccumOp, typename MulOp, typename AddOp>
   __global__ void spmvDenseMaskedOrKernel( W*           w_val,
                                            const M*     mask_val,
-                                           M            mask_identity,
                                            AccumOp      accum_op,
                                            a            identity,
                                            MulOp        mul_op,
@@ -38,7 +37,7 @@ namespace backend
       bool discoverable = false;
 
       M val = __ldg( mask_val+row );
-      if( UseScmp^(val==mask_identity) )
+      if( UseScmp^((bool)val) )
       {
       }
       else
@@ -52,7 +51,7 @@ namespace backend
           if( UseOpReuse )
           {
             val           = __ldg( mask_val+col_ind );
-            if( val!=mask_identity )
+            if( !((bool)val) )
             {
               discoverable = true;
               if( UseEarlyExit )

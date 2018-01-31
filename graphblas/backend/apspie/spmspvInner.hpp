@@ -207,7 +207,7 @@ namespace backend
     indirectScanKernel<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
         *u_nvals );
     mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals,
-        0, mgpu::plus<int>(), (Index*)d_scan+(*u_nvals), w_nvals, 
+        0, add_op, (Index*)d_scan+(*u_nvals), w_nvals, 
         (Index*)d_scan, (Index*)d_temp, *(desc->d_context_) );
 
     if( desc->debug() )
@@ -397,7 +397,7 @@ namespace backend
               *(desc->d_context_) );
         else*/
         ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
-            (float)0, add_op, mgpu::equal_to<int>(), w_ind, w_val, 
+            (T)0, add_op, mgpu::equal_to<T>(), w_ind, w_val, 
             &w_nvals_t, (int*)0, *(desc->d_context_) );
         *w_nvals         = w_nvals_t;
       }
@@ -405,8 +405,8 @@ namespace backend
     else
     {
       Index  w_nvals_t = 0;
-      ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrTempVal, *w_nvals, (float)0, 
-          add_op, mgpu::equal_to<int>(), w_ind, w_val, 
+      ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrTempVal, *w_nvals, (T)0, 
+          add_op, mgpu::equal_to<T>(), w_ind, w_val, 
           &w_nvals_t, (int*)0, *(desc->d_context_) );
       *w_nvals         = w_nvals_t;
     }

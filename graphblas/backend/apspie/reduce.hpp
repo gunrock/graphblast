@@ -16,9 +16,9 @@ namespace backend
 {
   // Dense vector variant
   template <typename T, typename U,
-            typename MonoidT>
+            typename BinaryOpT, typename MonoidT>
   Info reduceInner( T*                     val,
-									  const BinaryOp<U,U,U>* accum,
+									  BinaryOpT              accum,
 									  MonoidT                op,
 									  const DenseVector<U>*  u,
 									  Descriptor*            desc )
@@ -55,9 +55,9 @@ namespace backend
 
   // Sparse vector variant
   template <typename T, typename U,
-            typename MonoidT>
+            typename BinaryOpT, typename MonoidT>
   Info reduceInner( T*                     val,
-									  const BinaryOp<U,U,U>* accum,
+									  BinaryOpT              accum,
 									  MonoidT                op,
 									  const SparseVector<U>* u,
 									  Descriptor*            desc )

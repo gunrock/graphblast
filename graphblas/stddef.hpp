@@ -3,80 +3,136 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 namespace graphblas
 {
+  // Binary Operations
   template <typename T_in1=bool, typename T_in2=bool, typename T_out=bool>
   struct logical_or
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs || rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs || rhs; }
   };
 
   template <typename T_in1=bool, typename T_in2=bool, typename T_out=bool>
   struct logical_and
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs && rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs && rhs; }
   };
 
   template <typename T_in1=bool, typename T_in2=bool, typename T_out=bool>
   struct logical_xor
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs ^ rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs ^ rhs; }
   };
 
   template <typename T_in1, typename T_in2, typename T_out=bool>
   struct equal
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs == rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs == rhs; }
   };
 
-  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=bool>
   struct not_equal_to
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs != rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs != rhs; }
   };
 
-  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=bool>
   struct greater
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs > rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs > rhs; }
   };
 
-  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=bool>
   struct less
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs < rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs < rhs; }
   };
 
-  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=bool>
   struct greater_equal
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs >= rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs >= rhs; }
+  };
+
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=bool>
+  struct less_equal
+  {
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs <= rhs; }
   };
 
   template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
-  struct less_equal
+  struct first
   {
-    inline T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs <= rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs)
+    { return lhs; }
+  };
+
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  struct second
+  {
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs)
+    { return rhs; }
+  };
+
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  struct minimum
+  {
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs)
+    { return min(lhs, rhs); }
+  };
+
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  struct maximum
+  {
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs)
+    { return max(lhs, rhs); }
   };
 
   template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct plus
   {
-    inline __host__ __device__ T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs+rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs + rhs; }
+  };
+
+  template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  struct minus
+  {
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs)
+    { return lhs - rhs; }
   };
 
   template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct multiplies
   {
-    inline __host__ __device__ T_out operator()(T_in1 lhs, T_in2 rhs) { return lhs*rhs; }
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs * rhs; }
   };
 
   template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
+  struct divides
+  {
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
+    { return lhs / rhs; }
+  };
+
+  /*template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1>
   struct PlusMonoid
   {
     inline __host__ __device__ T_out identity() 
     { return static_cast<T_out>(0); }
+
     inline __host__ __device__ T_out operator()(T_in1 lhs, T_in2 rhs)
     { return lhs+rhs; }
   };
@@ -86,88 +142,61 @@ namespace graphblas
   {
     inline __host__ __device__ T_out identity() 
     { return static_cast<T_out>(0); }
+
     inline __host__ __device__ T_out operator()(T_in1 lhs, T_in2 rhs)
     { return lhs*rhs; }
+  };*/
+
+}  // graphblas
+
+// Monoid generator macro provided by Scott McMillan
+#define REGISTER_MONOID(M_NAME, BINARYOP, IDENTITY)                            \
+  template <typename T_out>                                                    \
+  struct M_NAME                                                                \
+  {                                                                            \
+    inline T_out identity() const                                              \
+    {                                                                          \
+      return static_cast<T_out>(IDENTITY);                                     \
+    }                                                                          \
+                                                                               \
+    inline __host__ __device__ T_out operator()(T_out lhs, T_out rhs) const    \
+    {                                                                          \
+      return BINARYOP<T_out>()(lhs, rhs);                                      \
+    }                                                                          \
   };
-}
-
-/*#define GEN_BINARYOP_BOOL( S_NAME, D_NAME )                                    \
-  typedef BinaryOp<bool,bool    ,bool    >( S_NAME<bool    >() ) D_NAME_BOOL;  \
-  typedef BinaryOp<bool,int8_t  ,int8_t  >( S_NAME<int8_t  >() ) D_NAME_INT8;  \
-  typedef BinaryOp<bool,uint8_t ,uint8_t >( S_NAME<uint8_t >() ) D_NAME_UINT8; \
-  typedef BinaryOp<bool,int16_t ,int16_t >( S_NAME<int16_t >() ) D_NAME_INT16; \
-  typedef BinaryOp<bool,uint16_t,uint16_t>( S_NAME<uint16_t>() ) D_NAME_UINT16;\
-  typedef BinaryOp<bool,int32_t ,int32_t >( S_NAME<int32_t >() ) D_NAME_INT32; \
-  typedef BinaryOp<bool,uint32_t,uint32_t>( S_NAME<uint32_t>() ) D_NAME_UINT32;\
-  typedef BinaryOp<bool,float   ,float   >( S_NAME<float   >() ) D_NAME_FP32;  \
-  typedef BinaryOp<bool,double  ,double  >( S_NAME<double  >() ) D_NAME_FP64;
 
 namespace graphblas
 {
-  typedef BinaryOp<bool,bool,bool>( logical_or <bool>() ) GrB_LOR;
-  typedef BinaryOp<bool,bool,bool>( logical_and<bool>() ) GrB_LAND;
-  typedef BinaryOp<bool,bool,bool>( logical_xor<bool>() ) GrB_XOR;
-  GEN_BINARYOP_BOOL( equal,         GrB_EQ );
-  GEN_BINARYOP_BOOL( not_equal_to,  GrB_NE );
-  GEN_BINARYOP_BOOL( greater,       GrB_GT );
-  GEN_BINARYOP_BOOL( less,          GrB_LT );
-  GEN_BINARYOP_BOOL( greater_equal, GrB_GE );
-  GEN_BINARYOP_BOOL( less_equal,    GrB_LE );
-}
+  // Monoids
+  REGISTER_MONOID( PlusMonoid, plus, 0 )
+  REGISTER_MONOID( MultipliesMonoid, multiplies, 1 )
+  REGISTER_MONOID( MinimumMonoid, minimum, std::numeric_limits<T_out>::max() )
+  REGISTER_MONOID( MaximumMonoid, maximum, std::numeric_limits<T_out>::min() )
+  REGISTER_MONOID( LogicalOrMonoid, logical_or, false )
+  REGISTER_MONOID( LogicalAndMonoid, logical_and, false )
+}  // graphblas
 
-#define GEN_BINARYOP_ONE( S_NAME, D_NAME )                                     \
- typedef BinaryOp<bool    ,bool    ,bool    >(S_NAME<bool    >())D_NAME_BOOL;  \
- typedef BinaryOp<int8_t  ,int8_t  ,int8_t  >(S_NAME<int8_t  >())D_NAME_INT8;  \
- typedef BinaryOp<uint8_t ,uint8_t ,uint8_t >(S_NAME<uint8_t >())D_NAME_UINT8; \
- typedef BinaryOp<int16_t ,int16_t ,int16_t >(S_NAME<int16_t >())D_NAME_INT16; \
- typedef BinaryOp<uint16_t,uint16_t,uint16_t>(S_NAME<uint16_t>())D_NAME_UINT16;\
- typedef BinaryOp<int32_t ,int32_t ,int32_t >(S_NAME<int32_t >())D_NAME_INT32; \
- typedef BinaryOp<uint32_t,uint32_t,uint32_t>(S_NAME<uint32_t>())D_NAME_UINT32;\
- typedef BinaryOp<float   ,float   ,float   >(S_NAME<float   >())D_NAME_FP32;  \
- typedef BinaryOp<double  ,double  ,double  >(S_NAME<double  >())D_NAME_FP64;
-
-#define GEN_BINARYOP_ONE( S_NAME, D_NAME )
-  template <typename T>                    \
-  struct D_NAME                            \
-  {                                        \
-    T operator() (T lhs, T rhs)
-    {
+// Semiring generator macro provided by Scott McMillan
+#define REGISTER_SEMIRING(SR_NAME, ADD_MONOID, MULT_BINARYOP)           \
+	template <typename T_in1, typename T_in2=T_in1, typename T_out=T_in1> \
+	struct SR_NAME                                                        \
+	{                                                                     \
+		inline T_out identity() const                                       \
+		{ return ADD_MONOID<T_out>().identity(); }                          \
+                                                                        \
+		inline __host__ __device__ T_out add_op(T_out lhs, T_out rhs) const \
+		{ return ADD_MONOID<T_out>()(lhs, rhs); }                           \
+																																		    \
+		inline __host__ __device__ T_out mul_op(T_in1 lhs, T_in2 rhs) const \
+		{ return MULT_BINARYOP<T_in1,T_in2,T_out>()(lhs, rhs); }            \
+  };
 
 namespace graphblas
 {
-  GEN_BINARYOP_ONE( first,   GrB_FIRST  );
-  GEN_BINARYOP_ONE( second,  GrB_SECOND );
-  GEN_BINARYOP_ONE( min,     GrB_MIN    );
-  GEN_BINARYOP_ONE( max,     GrB_MAX    );
-  GEN_BINARYOP_ONE( plus,    GrB_PLUS   );
-  GEN_BINARYOP_ONE( minus,   GrB_MINUS  );
-  GEN_BINARYOP_ONE( times,   GrB_TIMES  );
-  GEN_BINARYOP_ONE( divides, GrB_DIV    );
+  REGISTER_SEMIRING( LogicalOrAndSemiring, LogicalOrMonoid, logical_and )
+  REGISTER_SEMIRING( PlusMultipliesSemiring, PlusMonoid, multiplies )
+  REGISTER_SEMIRING( MinimumPlusSemiring, MinimumMonoid, plus )
+  REGISTER_SEMIRING( MaximumMultipliesSemiring, MaximumMonoid, multiplies )
 }
-
-namespace graphblas
-{
-  enum Operator {GrB_IDENTITY,           // for UnaryOp
-                 GrB_AINV,
-                 GrB_MINV,
-                 GrB_LNOT,
-                 GrB LOR,                // for BinaryOp
-                 GrB_LAND,
-                 GrB_LXOR,
-                 GrB_EQ,
-                 GrB_NE,
-                 GrB_GT,
-                 GrB_LT,
-                 GrB_GE,
-                 GrB_LE,
-                 GrB_FIRST,
-                 GrB_SECOND,
-                 GrB_MIN,
-                 GrB_MAX,
-                 GrB_PLUS,
-                 GrB_MINUS,
-                 GrB_TIMES,
-                 GrB_DIV};
-}*/
 
 #endif  // GRB_STDDEF_HPP
