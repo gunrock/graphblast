@@ -372,16 +372,17 @@ namespace graphblas
                const Vector<M>* mask,
                const BinaryOpT* accum,
                const MonoidT*   op,
-               const Matrix<a>  A,
+               const Matrix<a>* A,
                Descriptor*      desc )
   {
     // Use op->operator()
   }
 
-  template <typename T, typename U>
+  template <typename T, typename U, 
+            typename MonoidT>
   Info reduce( T*                     val,
                const BinaryOp<U,U,U>* accum,
-               const Monoid<U>*       op,
+               MonoidT                op,
                const Vector<U>*       u,
                Descriptor*            desc )
   {
@@ -392,7 +393,7 @@ namespace graphblas
     auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
-    return backend::reduce( val, accum_t, &op->op_, &u->vector_, desc_t );
+    return backend::reduce( val, accum_t, op, &u->vector_, desc_t );
   }
 
   template <typename T, typename a,

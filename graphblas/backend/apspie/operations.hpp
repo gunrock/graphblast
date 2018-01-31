@@ -442,10 +442,11 @@ namespace backend
     // Use op->operator()
   }
 
-  template <typename T, typename U>
+  template <typename T, typename U,
+            typename MonoidT>
   Info reduce( T*                     val,
                const BinaryOp<U,U,U>* accum,
-               const Monoid<U>*       op,
+               MonoidT                op,
                const Vector<U>*       u,
                Descriptor*            desc )
   {

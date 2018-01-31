@@ -1,5 +1,6 @@
 #define GRB_USE_APSPIE
 //#define GrB_PLUS graphblas::BinaryOp<float,float,float>( std::plus<float>() )
+#define private public
 
 #include <vector>
 #include <iostream>
@@ -51,19 +52,23 @@ void testDup( const std::vector<int>& rhs )
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 }
 
-void testResize( const std::vector<int>& rhs, const int nvals )
+void testReduce( const std::vector<int>& rhs )
 {
   graphblas::Vector<int> vec1(rhs.size());
   graphblas::Index size = rhs.size();
   std::vector<int> lhs;
   vec1.build( &rhs, rhs.size() );
-  vec1.extractTuples( &lhs, &size );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 
-  vec1.resize( nvals );
-  size = rhs.size();
-  vec1.extractTuples( &lhs, &size );
-  BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
+  graphblas::Descriptor desc;
+
+  int val     = 0;
+  int cpu_val = 0;
+  graphblas::reduce<int,int>( &val, GrB_NULL, 
+      graphblas::MultipliesMonoid<int>(), &vec1, &desc );
+  for( int i=0; i<rhs.size(); i++ )
+    cpu_val *= rhs[i];
+
+  BOOST_ASSERT( val==cpu_val );
 }
 
 struct TestVector
@@ -91,7 +96,7 @@ BOOST_FIXTURE_TEST_CASE( vec2, TestVector )
 BOOST_FIXTURE_TEST_CASE( vec3, TestVector )
 {
   std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 0, 2};
-  testResize( vec, 15 );
+  testReduce( vec );
 }
 
 BOOST_AUTO_TEST_SUITE_END()
