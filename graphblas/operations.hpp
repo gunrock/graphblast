@@ -19,8 +19,8 @@ namespace graphblas
             typename BinaryOpT,     typename SemiringT>
   Info mxm( Matrix<c>*       C,
             const Matrix<m>* mask,
-            const BinaryOpT* accum,
-            const SemiringT* op,
+            BinaryOpT        accum,
+            SemiringT        op,
             const Matrix<a>* A,
             const Matrix<b>* B,
             Descriptor*      desc )
@@ -41,21 +41,21 @@ namespace graphblas
     // Case 4: AT*BT
 
     backend::Matrix<m>*  mask_t = (mask==NULL ) ? NULL : &mask->matrix_;
-    auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
-    return backend::mxm( &C->matrix_, mask_t, accum_t, &op->op_, &A->matrix_, 
+    return backend::mxm( &C->matrix_, mask_t, accum, op, &A->matrix_, 
         &B->matrix_, desc_t );
   }
 
-  template <typename W, typename U, typename a>
-  Info vxm( Vector<W>*             w,
-            const Vector<U>*       mask,
-            const BinaryOp<a,a,a>* accum,
-            const Semiring<a,a,a>* op,
-            const Vector<U>*       u,
-            const Matrix<a>*       A,
-            Descriptor*            desc )
+  template <typename W, typename U, typename a,
+            typename BinaryOpT, typename SemiringT>
+  Info vxm( Vector<W>*       w,
+            const Vector<U>* mask,
+            BinaryOpT        accum,
+            SemiringT        op,
+            const Vector<U>* u,
+            const Matrix<a>* A,
+            Descriptor*      desc )
   {
     // Null pointer check
     if( w==NULL || op==NULL || u==NULL || A==NULL || desc==NULL )
@@ -83,27 +83,27 @@ namespace graphblas
 
     const backend::Vector<U>*        mask_t = (mask==NULL ) ? NULL 
         : &mask->vector_;
-    const backend::BinaryOp<a,a,a>* accum_t = (accum==NULL) ? NULL 
-        : &accum->op_;
     backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
         : &desc->descriptor_;
 
     //std::cout << "graphblas: " << (mask_t!=NULL) << std::endl;
-    return backend::vxm<W,U,a>( &w->vector_, mask_t, accum_t, &op->op_, 
+    return backend::vxm<W,U,a>( &w->vector_, mask_t, accum, op, 
         &u->vector_, &A->matrix_, desc_t );
   }
 
-  template <typename W, typename a, typename U>
+  template <typename W, typename a, typename U,
+            typename BinaryOpT, typename SemiringT>
   Info mxv( Vector<W>*       w,
             const Vector<U>* mask,
-            const BinaryOp<a,a,a>* accum,
-            const Semiring<a,a,a>* op,
+            BinaryOpT        accum,
+            SemiringT        op,
             const Matrix<a>* A,
             const Vector<U>* u,
             Descriptor*      desc )
   {
     // Null pointer check
-    if( w==NULL || op==NULL || u==NULL || A==NULL || desc==NULL )
+    // TODO: need way to check op is not empty now that op is no longer pointer
+    if( w==NULL || u==NULL || A==NULL || desc==NULL )
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
@@ -127,12 +127,10 @@ namespace graphblas
 
     const backend::Vector<U>*        mask_t = (mask==NULL ) ? NULL 
         : &mask->vector_;
-    const backend::BinaryOp<a,a,a>* accum_t = (accum==NULL) ? NULL 
-        : &accum->op_;
     backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
         : &desc->descriptor_;
 
-    return backend::mxv( &w->vector_, mask_t, accum_t, &op->op_, &A->matrix_,
+    return backend::mxv( &w->vector_, mask_t, accum, op, &A->matrix_,
         &u->vector_, desc_t );
   }
 
@@ -140,8 +138,8 @@ namespace graphblas
             typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( Vector<W>*       w,
                   const Vector<M>* mask,
-                  const BinaryOpT* accum,
-                  const SemiringT* op,
+                  BinaryOpT        accum,
+                  SemiringT        op,
                   const Vector<U>* u,
                   const Vector<V>* v,
                   Descriptor*      desc )
@@ -169,8 +167,8 @@ namespace graphblas
             typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( Matrix<c>*       C,
                   const Matrix<m>* mask,
-                  const BinaryOpT* accum,
-                  const SemiringT* op,
+                  BinaryOpT        accum,
+                  SemiringT        op,
                   const Matrix<a>* A,
                   const Matrix<b>* B,
                   Descriptor*      desc )
@@ -182,8 +180,8 @@ namespace graphblas
             typename BinaryOpT,     typename SemiringT>
   Info eWiseAdd( Vector<W>*       w,
                  const Vector<M>* mask,
-                 const BinaryOpT* accum,
-                 const SemiringT* op,
+                 BinaryOpT        accum,
+                 SemiringT        op,
                  const Vector<U>* u,
                  const Vector<V>* v,
                  Descriptor*      desc )
@@ -195,8 +193,8 @@ namespace graphblas
             typename BinaryOpT,     typename SemiringT>
   Info eWiseAdd( Matrix<c>*       C,
                  const Matrix<m>* mask,
-                 const BinaryOpT* accum,
-                 const SemiringT* op,
+                 BinaryOpT        accum,
+                 SemiringT        op,
                  const Matrix<a>* A,
                  const Matrix<b>* B,
                  Descriptor*      desc )
@@ -208,7 +206,7 @@ namespace graphblas
             typename BinaryOpT>
   Info extract( Vector<W>*                w,
                 const Vector<M>*          mask,
-                const BinaryOpT*          accum,
+                BinaryOpT                 accum,
                 const Vector<U>*          u,
                 const std::vector<Index>* indices,
                 Index                     nindices,
@@ -221,7 +219,7 @@ namespace graphblas
             typename BinaryOpT>
   Info extract( Matrix<c>*                C,
                 const Matrix<m>*          mask,
-                const BinaryOpT*          accum,
+                BinaryOpT                 accum,
                 const Matrix<a>*          A,
                 const std::vector<Index>* row_indices,
                 Index                     nrows,
@@ -236,7 +234,7 @@ namespace graphblas
             typename BinaryOpT>
   Info extract( Vector<W>*                w,
                 const Vector<M>*          mask,
-                const BinaryOpT*          accum,
+                BinaryOpT                 accum,
                 const Matrix<a>*          A,
                 const std::vector<Index>* row_indices,
                 Index                     nrows,
@@ -250,7 +248,7 @@ namespace graphblas
             typename BinaryOpT>
   Info assign( Vector<W>*                w,
                const Vector<U>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                const Vector<U>*          u,
                const std::vector<Index>* indices,
                Index                     nindices,
@@ -263,7 +261,7 @@ namespace graphblas
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Matrix<m>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                const Matrix<a>*          A,
                const std::vector<Index>* row_indices,
                Index                     nrows,
@@ -278,7 +276,7 @@ namespace graphblas
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Vector<M>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                const Vector<U>*          u,
                const std::vector<Index>* row_indices,
                Index                     nrows,
@@ -292,7 +290,7 @@ namespace graphblas
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Vector<M>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                const Vector<U>*          u,
                Index                     row_index,
                const std::vector<Index>* col_indices,
@@ -302,10 +300,11 @@ namespace graphblas
 
   }
 
-  template <typename W, typename T>
+  template <typename W, typename T,
+            typename BinaryOpT>
   Info assign( Vector<W>*                w,
                const Vector<W>*          mask,
-               const BinaryOp<W,W,W>*    accum,
+               BinaryOpT                 accum,
                T                         val,
                const std::vector<Index>* indices,
                Index                     nindices,
@@ -320,18 +319,18 @@ namespace graphblas
     CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
 
     auto                 mask_t = (mask==NULL ) ? NULL : &mask->vector_;
-    auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
+    //auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
-    return backend::assign( &w->vector_, mask_t, accum_t, val, indices, 
-        nindices, desc_t );
+    return backend::assign( &w->vector_, mask_t, accum, val, indices, nindices, 
+        desc_t );
   }
 
   template <typename c, typename T, typename m,
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Matrix<m>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                T                         val,
                const std::vector<Index>* row_indices,
                Index                     nrows,
@@ -346,8 +345,8 @@ namespace graphblas
             typename BinaryOpT,     typename UnaryOpT>
   Info apply( Vector<W>*       w,
               const Vector<M>* mask,
-              const BinaryOpT* accum,
-              const UnaryOpT*  op,
+              BinaryOpT        accum,
+              UnaryOpT         op,
               const Vector<U>* u,
               Descriptor*      desc )
   {
@@ -358,8 +357,8 @@ namespace graphblas
             typename BinaryOpT,     typename UnaryOpT>
   Info apply( Matrix<c>*       C,
               const Matrix<m>* mask,
-              const BinaryOpT* accum,
-              const UnaryOpT*  op,
+              BinaryOpT        accum,
+              UnaryOpT         op,
               const Matrix<a>* A,
               Descriptor*      desc )
   {
@@ -370,18 +369,19 @@ namespace graphblas
             typename BinaryOpT,     typename MonoidT>
   Info reduce( Vector<W>*       w,
                const Vector<M>* mask,
-               const BinaryOpT* accum,
-               const MonoidT*   op,
-               const Matrix<a>  A,
+               BinaryOpT        accum,
+               MonoidT          op,
+               const Matrix<a>* A,
                Descriptor*      desc )
   {
     // Use op->operator()
   }
 
-  template <typename T, typename U>
+  template <typename T, typename U, 
+            typename BinaryOpT, typename MonoidT>
   Info reduce( T*                     val,
-               const BinaryOp<U,U,U>* accum,
-               const Monoid<U>*       op,
+               BinaryOpT              accum,
+               MonoidT                op,
                const Vector<U>*       u,
                Descriptor*            desc )
   {
@@ -389,17 +389,16 @@ namespace graphblas
     if( val==NULL || u==NULL )
       return GrB_UNINITIALIZED_OBJECT;
 
-    auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
-    return backend::reduce( val, accum_t, &op->op_, &u->vector_, desc_t );
+    return backend::reduce( val, accum, op, &u->vector_, desc_t );
   }
 
   template <typename T, typename a,
             typename BinaryOpT,     typename MonoidT>
   Info reduce( T*               val,
-               const BinaryOpT* accum,
-               const MonoidT*   op,
+               BinaryOpT        accum,
+               MonoidT          op,
                const Matrix<a>* A,
                Descriptor*      desc )
   {
@@ -410,7 +409,7 @@ namespace graphblas
             typename BinaryOpT>
   Info transpose( Matrix<c>*       C,
                   const Matrix<m>* mask,
-                  const BinaryOpT* accum,
+                  BinaryOpT        accum,
                   const Matrix<a>* A,
                   Descriptor*      desc )
   {

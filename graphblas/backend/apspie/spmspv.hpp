@@ -18,11 +18,11 @@ namespace backend
 {
 
   template <typename W, typename a, typename U, typename M,
-            typename SemiringT>
+            typename BinaryOpT, typename SemiringT>
   Info spmspv( SparseVector<W>*       w,
                const Vector<M>*       mask,
-               const BinaryOp<a,a,a>*       accum,
-               const SemiringT*       op,
+               BinaryOpT              accum,
+               SemiringT              op,
                const SparseMatrix<a>* A,
                const SparseVector<U>* u,
                Descriptor*            desc )
@@ -86,29 +86,24 @@ namespace backend
     
       if( spmspv_mode==GrB_APSPIE )
         spmspvApspie(
-            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
-            op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, 
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
+            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
+            &u->nvals_, desc );
       else if( spmspv_mode==GrB_APSPIELB )
         spmspvApspieLB(
-            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
-            //op->mul_, op->add_, A_nrows, A->nvals_,
-            mgpu::multiplies<a>(), mgpu::plus<a>(), A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, 
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
+            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
+            &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )
         spmspvGunrockLB(
-            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
-            op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, 
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
+            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
+            &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKTWC )
         spmspvGunrockTWC(
-            temp_ind, temp_val, &temp_nvals, NULL, op->identity(),
-            op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, 
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
+            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
+            &u->nvals_, desc );
       //CUDA( cudaDeviceSynchronize() );
 
       if( temp_nvals==0 )
@@ -319,27 +314,23 @@ namespace backend
     {
       if( spmspv_mode==GrB_APSPIE )
         spmspvApspie(
-            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
-            op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op.identity(), op.mul_op(), 
+            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
             u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_APSPIELB )
         spmspvApspieLB(
-            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
-            mgpu::multiplies<a>(), mgpu::plus<a>(), A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op.identity(), op.mul_op(),
+            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
             u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )
         spmspvGunrockLB(
-            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
-            op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op.identity(), op.mul_op(), 
+            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
             u->d_ind_, u->d_val_, &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKTWC )
         spmspvGunrockTWC(
-            w->d_ind_, w->d_val_, &w->nvals_, NULL, op->identity(),
-            op->mul_, op->add_, A_nrows, A->nvals_,
-            A_csrRowPtr, A_csrColInd, A_csrVal, 
+            w->d_ind_, w->d_val_, &w->nvals_, NULL, op.identity(), op.mul_op(), 
+            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
             u->d_ind_, u->d_val_, &u->nvals_, desc );
     }
     w->need_update_ = true;

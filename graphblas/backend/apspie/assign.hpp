@@ -15,10 +15,11 @@ namespace graphblas
 namespace backend
 {
 
-  template <typename W, typename T, typename M>
+  template <typename W, typename T, typename M,
+            typename BinaryOpT>
   Info assignDense( DenseVector<W>*           w,
                     const Vector<M>*          mask,
-                    const BinaryOp<W,W,W>*    accum,
+                    BinaryOpT                 accum,
                     T                         val,
                     const std::vector<Index>* indices,
                     Index                     nindices,
@@ -125,10 +126,11 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  template <typename W, typename T, typename M>
+  template <typename W, typename T, typename M,
+            typename BinaryOpT>
   Info assignSparse( SparseVector<W>*          w,
                      const Vector<M>*          mask,
-                     const BinaryOp<W,W,W>*    accum,
+                     BinaryOpT                 accum,
                      T                         val,
                      const std::vector<Index>* indices,
                      Index                     nindices,
