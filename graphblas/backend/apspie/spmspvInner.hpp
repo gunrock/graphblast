@@ -303,12 +303,12 @@ namespace backend
         Index  w_nvals_t = 0;
         /*if( desc->prealloc() )
           ReduceByKeyPrealloc( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals,
-              op.identity(), op<GrB_ADD>(), mgpu::equal_to<int>(), w_ind, w_val,
+              op.identity(), op, mgpu::equal_to<int>(), w_ind, w_val,
               &w_nvals_t, (int*)0, (int*)d_temp, (int*)desc->d_temp_, 
               *(desc->d_context_) );
         else*/
         ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
-            op.identity(), op, mgpu::equal_to<T>(), w_ind, w_val, 
+            op.identity(), op.add_op(), mgpu::equal_to<T>(), w_ind, w_val, 
             &w_nvals_t, (int*)0, *(desc->d_context_) );
         *w_nvals         = w_nvals_t;
       }
@@ -317,7 +317,7 @@ namespace backend
     {
       Index  w_nvals_t = 0;
       ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrTempVal, *w_nvals, 
-          op.identity(), op<T,GrB_ADD>(), mgpu::equal_to<T>(), w_ind, w_val, 
+          op.identity(), op.add_op(), mgpu::equal_to<T>(), w_ind, w_val, 
           &w_nvals_t, (int*)0, *(desc->d_context_) );
       *w_nvals         = w_nvals_t;
     }
