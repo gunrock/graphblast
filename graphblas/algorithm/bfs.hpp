@@ -39,21 +39,7 @@ namespace algorithm
       CHECK( q1.build(&indices, &values, 1, GrB_NULL) );
     }
 
-    // Semiring
-    /*BinaryOp GrB_LOR(  logical_or() );
-    BinaryOp GrB_LAND( logical_and() );
-    Monoid   GrB_Lor( GrB_LOR, false );
-    Semiring GrB_Boolean( GrB_Lor, GrB_LAND );*/
-		BinaryOp<float,float,float> GrB_PLUS_FP32;
-		GrB_PLUS_FP32.nnew( plus<float>() );
-		BinaryOp<float,float,float> GrB_TIMES_FP32;
-		GrB_TIMES_FP32.nnew( multiplies<float>() );
-		Monoid  <float> GrB_FP32Add;
-		GrB_FP32Add.nnew( GrB_PLUS_FP32, 0.f );
-		Semiring<float,float,float> GrB_FP32AddMul;
-		GrB_FP32AddMul.nnew( GrB_FP32Add, GrB_TIMES_FP32 );
-
-    float d    = 1;
+    float d    = 0;
     float succ = 0.f;
     Index A_nrows;
     CHECK( A->nrows(&A_nrows) );
@@ -79,19 +65,21 @@ namespace algorithm
         unvisited -= (int)succ;
         cpu_tight.Start();
       }
+      d++;
       assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, desc);
       CHECK( desc->toggle(GrB_MASK) );
       if( transpose )
-        mxv<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, A, &q1, desc);
+        mxv<float,float,float>(&q2, v, GrB_NULL, 
+            PlusMultipliesSemiring<float>(), A, &q1, desc);
       else
-        vxm<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, &q1, A, desc);
+        vxm<float,float,float>(&q2, v, GrB_NULL, 
+            PlusMultipliesSemiring<float>(), &q1, A, desc);
       CHECK( desc->toggle(GrB_MASK) );
       CHECK( q2.swap(&q1) );
-      reduce<float,float>(&succ, GrB_NULL, &GrB_FP32Add, &q1, desc);
+      reduce<float,float>(&succ, GrB_NULL, PlusMonoid<float>(), &q1, desc);
 
       if( desc->descriptor_.debug() )
         std::cout << "succ: " << succ << " " << (int)succ << std::endl;
-      d++;
     } while( succ>0 );
     if( desc->descriptor_.timing_>0 )
     {
@@ -135,20 +123,6 @@ namespace algorithm
       CHECK( q1.build(&indices, &values, 1, GrB_NULL) );
     }
 
-    // Semiring
-    /*BinaryOp GrB_LOR(  logical_or() );
-    BinaryOp GrB_LAND( logical_and() );
-    Monoid   GrB_Lor( GrB_LOR, false );
-    Semiring GrB_Boolean( GrB_Lor, GrB_LAND );*/
-		BinaryOp<float,float,float> GrB_PLUS_FP32;
-		GrB_PLUS_FP32.nnew( plus<float>() );
-		BinaryOp<float,float,float> GrB_TIMES_FP32;
-		GrB_TIMES_FP32.nnew( multiplies<float>() );
-		Monoid  <float> GrB_FP32Add;
-		GrB_FP32Add.nnew( GrB_PLUS_FP32, 0.f );
-		Semiring<float,float,float> GrB_FP32AddMul;
-		GrB_FP32AddMul.nnew( GrB_FP32Add, GrB_TIMES_FP32 );
-
     backend::GpuTimer cpu_tight;
     cpu_tight.Start();
     for( int i=0; i<depth; i++ )
@@ -156,9 +130,11 @@ namespace algorithm
       assign<float,float>(v, &q1, GrB_NULL, i, GrB_ALL, n, desc);
       CHECK( desc->toggle(GrB_MASK) );
       if( transpose )
-        mxv<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, A, &q1, desc);
+        mxv<float,float,float>(&q2, v, GrB_NULL, 
+            PlusMultipliesSemiring<float>(), A, &q1, desc);
       else
-        vxm<float,float,float>(&q2, v, GrB_NULL, &GrB_FP32AddMul, &q1, A, desc);
+        vxm<float,float,float>(&q2, v, GrB_NULL, 
+            PlusMultipliesSemiring<float>(), &q1, A, desc);
       CHECK( desc->toggle(GrB_MASK) );
       CHECK( q2.swap(&q1) );
     }

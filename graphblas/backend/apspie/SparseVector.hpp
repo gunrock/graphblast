@@ -20,9 +20,6 @@ namespace backend
   template <typename T>
   class DenseVector;
 
-  template <typename T1, typename T2, typename T3>
-  class BinaryOp;
-
   template <typename T>
   class SparseVector
   {
@@ -47,10 +44,11 @@ namespace backend
     Info clear();
     inline Info size(  Index* nsize_t  ) const;
     inline Info nvals( Index* nvals_t ) const;
+    template <typename BinaryOpT>
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T,T,T>*    dup );
+                BinaryOpT                 dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
     Info setElement(     T val,
@@ -148,10 +146,11 @@ namespace backend
   }
 
   template <typename T>
+  template <typename BinaryOpT>
   Info SparseVector<T>::build( const std::vector<Index>* indices,
                                const std::vector<T>*     values,
                                Index                     nvals,
-                               const BinaryOp<T,T,T>*    dup )
+                               BinaryOpT                 dup )
   {
     if( nvals > nsize_ )
     {

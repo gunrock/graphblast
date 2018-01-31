@@ -30,10 +30,11 @@ namespace graphblas
     Info clear();
     Info size(  Index* nsize_ ) const;
     Info nvals( Index* nvals_ ) const;
+    template <typename BinaryOpT>
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T,T,T>*    dup );
+                BinaryOpT                 dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
     Info setElement(     T val, 
@@ -60,15 +61,6 @@ namespace graphblas
 
     private:
     backend::Vector<T> vector_;
-
-    /*template <typename m, typename U, typename a, typename BinaryOp, 
-              typename Semiring>
-    friend Info vxm( const Vector<m>*  mask,
-                     const BinaryOp*   accum,
-                     const Semiring*   op,
-                     const Vector<U>*  u,
-                     const Matrix<a>*  A,
-                     Descriptor*       desc );*/
   };
 
   template <typename T>
@@ -106,15 +98,16 @@ namespace graphblas
   }
 
   template <typename T>
+  template <typename BinaryOpT>
   Info Vector<T>::build( const std::vector<Index>* indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp<T,T,T>*    dup )
+                         BinaryOpT                 dup )
   {
-    if( indices==NULL || values==NULL ) //|| dup==NULL )
+    if( indices==NULL || values==NULL )
       return GrB_NULL_POINTER;
-    const backend::BinaryOp<T,T,T>* dup_t = (dup==NULL) ? NULL : &dup->op_;
-    return vector_.build( indices, values, nvals, dup_t );
+    //const backend::BinaryOp<T,T,T>* dup_t = (dup==NULL) ? NULL : &dup->op_;
+    return vector_.build( indices, values, nvals, dup );
   }
 
   template <typename T>

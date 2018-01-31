@@ -15,10 +15,11 @@ namespace graphblas
 namespace backend
 {
   // Dense vector variant
-  template <typename T, typename U>
+  template <typename T, typename U,
+            typename BinaryOpT, typename MonoidT>
   Info reduceInner( T*                     val,
-									  const BinaryOp<U,U,U>* accum,
-									  const Monoid<U>*       op,
+									  BinaryOpT              accum,
+									  MonoidT                op,
 									  const DenseVector<U>*  u,
 									  Descriptor*            desc )
   {
@@ -30,7 +31,7 @@ namespace backend
 
     if( !desc->split() )
       CUDA( cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, u->d_val_, 
-          d_val, u->nvals_, mgpu::plus<T>(), op->identity()) );
+          d_val, u->nvals_, op, op.identity()) );
     else
       temp_storage_bytes = desc->d_temp_size_;
 
@@ -42,7 +43,7 @@ namespace backend
     }
 
     CUDA( cub::DeviceReduce::Reduce(desc->d_temp_, temp_storage_bytes, 
-        u->d_val_, d_val, u->nvals_, mgpu::plus<T>(), op->identity()) );
+        u->d_val_, d_val, u->nvals_, op, op.identity()) );
     CUDA( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
 
     // If doing reduce on DenseVector, then we might as well write the nnz
@@ -53,10 +54,11 @@ namespace backend
   }
 
   // Sparse vector variant
-  template <typename T, typename U>
+  template <typename T, typename U,
+            typename BinaryOpT, typename MonoidT>
   Info reduceInner( T*                     val,
-									  const BinaryOp<U,U,U>* accum,
-									  const Monoid<U>*       op,
+									  BinaryOpT              accum,
+									  MonoidT                op,
 									  const SparseVector<U>* u,
 									  Descriptor*            desc )
   {
@@ -72,13 +74,13 @@ namespace backend
 
       if( !desc->split() )
         cub::DeviceReduce::Reduce( NULL, temp_storage_bytes, u->d_val_, d_val, 
-            u->nvals_, mgpu::plus<T>(), op->identity() );
+            u->nvals_, op, op.identity() );
       else
         temp_storage_bytes = desc->d_temp_size_;
 
       desc->resize( temp_storage_bytes, "temp" );
       cub::DeviceReduce::Reduce( desc->d_temp_, temp_storage_bytes, u->d_val_, 
-          d_val, u->nvals_, mgpu::plus<T>(), op->identity() );
+          d_val, u->nvals_, op, op.identity() );
 
       CUDA( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
     }
