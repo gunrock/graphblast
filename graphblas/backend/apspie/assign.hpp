@@ -15,10 +15,11 @@ namespace graphblas
 namespace backend
 {
 
-  template <typename W, typename T, typename M>
+  template <typename W, typename T, typename M,
+            typename BinaryOpT>
   Info assignDense( DenseVector<W>*           w,
                     const Vector<M>*          mask,
-                    const BinaryOp<W,W,W>*    accum,
+                    BinaryOpT                 accum,
                     T                         val,
                     const std::vector<Index>* indices,
                     Index                     nindices,
@@ -82,12 +83,12 @@ namespace backend
         // TODO: must allow user to specify identity for dense mask vectors
         if( use_scmp )
           assignDenseDenseMaskedKernel<true, true ,true ><<<NB,NT>>>( w->d_val_,
-              w->nvals_, (mask->dense_).d_val_, (M)0.f, accum, (W)val, 
-              indices_t, nindices );
+              w->nvals_, (mask->dense_).d_val_, accum, (W)val, indices_t, 
+              nindices );
         else
           assignDenseDenseMaskedKernel<false,true ,true ><<<NB,NT>>>( w->d_val_,
-              w->nvals_, (mask->dense_).d_val_, (M)0.f, accum, (W)val, 
-              indices_t, nindices );
+              w->nvals_, (mask->dense_).d_val_, accum, (W)val, indices_t, 
+              nindices );
       }
       else if( mask_vec_type==GrB_SPARSE )
       {
@@ -125,10 +126,11 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  template <typename W, typename T, typename M>
+  template <typename W, typename T, typename M,
+            typename BinaryOpT>
   Info assignSparse( SparseVector<W>*          w,
                      const Vector<M>*          mask,
-                     const BinaryOp<W,W,W>*    accum,
+                     BinaryOpT                 accum,
                      T                         val,
                      const std::vector<Index>* indices,
                      Index                     nindices,

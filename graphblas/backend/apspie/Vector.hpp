@@ -24,9 +24,6 @@ namespace backend
   template <typename T>
   class DenseVector;
   
-  template <typename T1, typename T2, typename T3>
-  class BinaryOp;
-
   template <typename T>
   class Vector
   {
@@ -47,10 +44,11 @@ namespace backend
     Info clear();
     Info size(  Index* nsize_t );
     Info nvals( Index* nvals_t );
+    template <typename BinaryOpT>
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T,T,T>*    dup );
+                BinaryOpT                 dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
     Info setElement(     T val,
@@ -149,10 +147,11 @@ namespace backend
   }
 
   template <typename T>
+  template <typename BinaryOpT>
   Info Vector<T>::build( const std::vector<Index>* indices,
                          const std::vector<T>*     values,
                          Index                     nvals,
-                         const BinaryOp<T,T,T>*    dup )
+                         BinaryOpT                 dup )
   {
     vec_type_ = GrB_SPARSE;
     return sparse_.build( indices, values, nvals, dup );

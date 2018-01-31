@@ -21,21 +21,12 @@ namespace backend
   template <typename T>
   class Matrix;
 
-  template <typename T1, typename T2, typename T3>
-  class BinaryOp;
-  
-  template <typename T>
-  class Monoid;
-
-  template <typename T1, typename T2, typename T3>
-  class Semiring;
-
   template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,     typename SemiringT>
   Info mxm( Matrix<c>*       C,
             const Matrix<m>* mask,
-            const BinaryOpT* accum,
-            const SemiringT* op,
+            BinaryOpT        accum,
+            SemiringT        op,
             const Matrix<a>* A,
             const Matrix<b>* B,
             Descriptor*      desc )
@@ -215,8 +206,8 @@ namespace backend
             typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( Vector<W>*       w,
                   const Vector<M>* mask,
-                  const BinaryOpT* accum,
-                  const SemiringT* op,
+                  BinaryOpT        accum,
+                  SemiringT        op,
                   const Vector<U>* u,
                   const Vector<V>* v,
                   Descriptor*      desc )
@@ -228,8 +219,8 @@ namespace backend
             typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( Matrix<c>*       C,
                   const Matrix<m>* mask,
-                  const BinaryOpT* accum,
-                  const SemiringT* op,
+                  BinaryOpT        accum,
+                  SemiringT        op,
                   const Matrix<a>* A,
                   const Matrix<b>* B,
                   Descriptor*      desc )
@@ -241,8 +232,8 @@ namespace backend
             typename BinaryOpT,     typename SemiringT>
   Info eWiseAdd( Vector<W>*       w,
                  const Vector<M>* mask,
-                 const BinaryOpT* accum,
-                 const SemiringT* op,
+                 BinaryOpT        accum,
+                 SemiringT        op,
                  const Vector<U>* u,
                  const Vector<V>* v,
                  Descriptor*      desc )
@@ -254,8 +245,8 @@ namespace backend
             typename BinaryOpT,     typename SemiringT>
   Info eWiseAdd( Matrix<c>*       C,
                  const Matrix<m>* mask,
-                 const BinaryOpT* accum,
-                 const SemiringT* op,
+                 BinaryOpT        accum,
+                 SemiringT        op,
                  const Matrix<a>* A,
                  const Matrix<b>* B,
                  Descriptor*      desc )
@@ -267,7 +258,7 @@ namespace backend
             typename BinaryOpT>
   Info extract( Vector<W>*                w,
                 const Vector<M>*          mask,
-                const BinaryOpT*          accum,
+                BinaryOpT                 accum,
                 const Vector<U>*          u,
                 const std::vector<Index>* indices,
                 Index                     nindices,
@@ -280,7 +271,7 @@ namespace backend
             typename BinaryOpT>
   Info extract( Matrix<c>*                C,
                 const Matrix<m>*          mask,
-                const BinaryOpT*          accum,
+                BinaryOpT                 accum,
                 const Matrix<a>*          A,
                 const std::vector<Index>* row_indices,
                 Index                     nrows,
@@ -295,7 +286,7 @@ namespace backend
             typename BinaryOpT>
   Info extract( Vector<W>*                w,
                 const Vector<M>*          mask,
-                const BinaryOpT*          accum,
+                BinaryOpT                 accum,
                 const Matrix<a>*          A,
                 const std::vector<Index>* row_indices,
                 Index                     nrows,
@@ -309,7 +300,7 @@ namespace backend
             typename BinaryOpT>
   Info assign( Vector<W>*                w,
                const Vector<M>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                const Vector<U>*          u,
                const std::vector<Index>* indices,
                Index                     nindices,
@@ -322,7 +313,7 @@ namespace backend
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Matrix<m>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                const Matrix<a>*          A,
                const std::vector<Index>* row_indices,
                Index                     nrows,
@@ -337,7 +328,7 @@ namespace backend
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Vector<M>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                const Vector<U>*          u,
                const std::vector<Index>* row_indices,
                Index                     nrows,
@@ -351,7 +342,7 @@ namespace backend
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Vector<M>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                const Vector<U>*          u,
                Index                     row_index,
                const std::vector<Index>* col_indices,
@@ -361,10 +352,11 @@ namespace backend
 
   }
 
-  template <typename W, typename T, typename M>
+  template <typename W, typename T, typename M,
+            typename BinaryOpT>
   Info assign( Vector<W>*                w,
                const Vector<M>*          mask,
-               const BinaryOp<W,W,W>*    accum,
+               BinaryOpT                 accum,
                T                         val,
                const std::vector<Index>* indices,
                Index                     nindices,
@@ -397,7 +389,7 @@ namespace backend
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Matrix<m>*          mask,
-               const BinaryOpT*          accum,
+               BinaryOpT                 accum,
                T                         val,
                const std::vector<Index>* row_indices,
                Index                     nrows,
@@ -412,8 +404,8 @@ namespace backend
             typename BinaryOpT,     typename UnaryOpT>
   Info apply( Vector<W>*       w,
               const Vector<M>* mask,
-              const BinaryOpT* accum,
-              const UnaryOpT*  op,
+              BinaryOpT        accum,
+              UnaryOpT         op,
               const Vector<U>* u,
               Descriptor*      desc )
   {
@@ -424,8 +416,8 @@ namespace backend
             typename BinaryOpT,     typename UnaryOpT>
   Info apply( Matrix<c>*       C,
               const Matrix<m>* mask,
-              const BinaryOpT* accum,
-              const UnaryOpT*  op,
+              BinaryOpT        accum,
+              UnaryOpT         op,
               const Matrix<a>* A,
               Descriptor*      desc )
   {
@@ -436,8 +428,8 @@ namespace backend
             typename BinaryOpT,     typename MonoidT>
   Info reduce( Vector<W>*       w,
                const Vector<M>* mask,
-               const BinaryOpT* accum,
-               const MonoidT*   op,
+               BinaryOpT        accum,
+               MonoidT          op,
                const Matrix<a>  A,
                Descriptor*      desc )
   {
@@ -446,11 +438,11 @@ namespace backend
 
   template <typename T, typename U,
             typename BinaryOpT, typename MonoidT>
-  Info reduce( T*                     val,
-               BinaryOpT              accum,
-               MonoidT                op,
-               const Vector<U>*       u,
-               Descriptor*            desc )
+  Info reduce( T*               val,
+               BinaryOpT        accum,
+               MonoidT          op,
+               const Vector<U>* u,
+               Descriptor*      desc )
   {
     // Get storage:
     Storage vec_type;
@@ -473,22 +465,22 @@ namespace backend
 
   template <typename T, typename a,
             typename BinaryOpT,     typename MonoidT>
-  Info reduce( T*                val,
-               const BinaryOpT*  accum,
-               const MonoidT*    op,
-               const Matrix<a>*  A,
-               Descriptor*       desc )
+  Info reduce( T*               val,
+               BinaryOpT        accum,
+               MonoidT          op,
+               const Matrix<a>* A,
+               Descriptor*      desc )
   {
 
   }
 
   template <typename c, typename a, typename m,
             typename BinaryOpT>
-  Info transpose( Matrix<c>*        C,
-                  const Matrix<m>*  mask,
-                  const BinaryOpT*  accum,
-                  const Matrix<a>*  A,
-                  Descriptor*       desc )
+  Info transpose( Matrix<c>*       C,
+                  const Matrix<m>* mask,
+                  BinaryOpT        accum,
+                  const Matrix<a>* A,
+                  Descriptor*      desc )
   {
 
   }

@@ -86,24 +86,24 @@ namespace backend
     
       if( spmspv_mode==GrB_APSPIE )
         spmspvApspie(
-            temp_ind, temp_val, &temp_nvals, NULL, op.identity(), op.mul_op(), 
-            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
+            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
+            &u->nvals_, desc );
       else if( spmspv_mode==GrB_APSPIELB )
         spmspvApspieLB(
-            temp_ind, temp_val, &temp_nvals, NULL, op.identity(), op.mul_op(), 
-            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
+            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
+            &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKLB )
         spmspvGunrockLB(
-            temp_ind, temp_val, &temp_nvals, NULL, op.identity(), op.mul_op(), 
-            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
+            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
+            &u->nvals_, desc );
       else if( spmspv_mode==GrB_GUNROCKTWC )
         spmspvGunrockTWC(
-            temp_ind, temp_val, &temp_nvals, NULL, op.identity(), op.mul_op(), 
-            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
+            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
+            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
+            &u->nvals_, desc );
       //CUDA( cudaDeviceSynchronize() );
 
       if( temp_nvals==0 )

@@ -10,15 +10,14 @@ namespace backend
 
   // This is the dense mask variant of assignDense
   template <bool UseScmp, bool UseMask, bool UseAll,
-            typename U, typename M>
-  __global__ void assignDenseDenseMaskedKernel( U*               u_val,
-                                                Index            u_nvals,
-                                                const M*         mask_val,
-                                                M                mask_identity,
-                                                const BinaryOp<U,U,U>* accum_op,
-                                                U                val,
-                                                const Index*     indices,
-                                                Index            nindices )
+            typename U, typename M, typename BinaryOpT>
+  __global__ void assignDenseDenseMaskedKernel( U*           u_val,
+                                                Index        u_nvals,
+                                                const M*     mask_val,
+                                                BinaryOpT    accum_op,
+                                                U            val,
+                                                const Index* indices,
+                                                Index        nindices )
   {
     unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -33,7 +32,7 @@ namespace backend
 					// val passes through if either:
 					// 1) UseScmp is not selected and m_val is zero
 					// 2) UseScmp is selected and m_val is not zero
-          if( UseScmp^(m_val!=mask_identity) )
+          if( UseScmp^((bool)m_val) )
             u_val[row] = val;
         }
 				else
@@ -55,15 +54,15 @@ namespace backend
   // This is the sparse mask variant of assignDense
   // Iterating along u_ind and u_val is better
   template <bool UseScmp, bool UseMask, bool UseAll,
-            typename U>
-  __global__ void assignDenseSparseMaskedKernel( U*               u_val,
-                                     Index            u_nvals,
-                                     const Index*     mask_ind,
-                                     Index            mask_nvals,
-                                     const BinaryOp<U,U,U>* accum_op,
-                                     U                val,
-                                     const Index*     indices,
-                                     Index            nindices )
+            typename U, typename BinaryOpT>
+  __global__ void assignDenseSparseMaskedKernel( U*           u_val,
+                                                 Index        u_nvals,
+                                                 const Index* mask_ind,
+                                                 Index        mask_nvals,
+                                                 BinaryOpT    accum_op,
+                                                 U            val,
+                                                 const Index* indices,
+                                                 Index        nindices )
   {
     unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
 

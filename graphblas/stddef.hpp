@@ -174,6 +174,9 @@ namespace graphblas
   REGISTER_MONOID( MaximumMonoid, maximum, std::numeric_limits<T_out>::min() )
   REGISTER_MONOID( LogicalOrMonoid, logical_or, false )
   REGISTER_MONOID( LogicalAndMonoid, logical_and, false )
+
+  enum BinaryOp {GrB_ADD,
+                 GrB_MUL};
 }  // graphblas
 
 // Semiring generator macro provided by Scott McMillan
@@ -184,11 +187,19 @@ namespace graphblas
 		inline T_out identity() const                                       \
 		{ return ADD_MONOID<T_out>().identity(); }                          \
                                                                         \
-		inline __host__ __device__ T_out add_op(T_out lhs, T_out rhs) const \
+    template<BinaryOp op>                                                   \
+    inline __host__ __device__ T_out operator()(T_out lhs, T_out rhs) const \
+    {                                                                       \
+      if( op==GrB_ADD )                                                     \
+        return ADD_MONOID<T_out>()(lhs, rhs);                               \
+      else if( op==GrB_MUL )                                                \
+        return MULT_BINARYOP<T_in1,T_in2,T_out>()(lhs,rhs);                 \
+    }                                                                       \
+		/*inline __host__ __device__ T_out add_op(T_out lhs, T_out rhs) const \
 		{ return ADD_MONOID<T_out>()(lhs, rhs); }                           \
 																																		    \
 		inline __host__ __device__ T_out mul_op(T_in1 lhs, T_in2 rhs) const \
-		{ return MULT_BINARYOP<T_in1,T_in2,T_out>()(lhs, rhs); }            \
+		{ return MULT_BINARYOP<T_in1,T_in2,T_out>()(lhs, rhs); }            \*/ \
   };
 
 namespace graphblas
