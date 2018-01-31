@@ -308,7 +308,7 @@ namespace backend
               *(desc->d_context_) );
         else*/
         ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
-            op.identity(), op.operator()<T,GrB_ADD>, mgpu::equal_to<T>(), w_ind, w_val, 
+            op.identity(), op, mgpu::equal_to<T>(), w_ind, w_val, 
             &w_nvals_t, (int*)0, *(desc->d_context_) );
         *w_nvals         = w_nvals_t;
       }
