@@ -90,11 +90,9 @@ BOOST_AUTO_TEST_SUITE( desc_suite )
 BOOST_FIXTURE_TEST_CASE( desc1, TestDescriptor )
 {
   std::vector<Desc_field> field = { GrB_MASK, GrB_OUTP, GrB_INP0, 
-      GrB_INP1, GrB_MODE, GrB_TA, GrB_TB, GrB_NT, GrB_MXVMODE, GrB_SPMSPVMODE, 
-      GrB_TOL };
+      GrB_INP1, GrB_MODE, GrB_TA, GrB_TB, GrB_NT, GrB_MXVMODE, GrB_TOL };
   std::vector<Desc_value> value = { GrB_SCMP, GrB_REPLACE, GrB_TRAN, 
-      GrB_TRAN, GrB_FIXEDROW, GrB_8, GrB_8, GrB_32, GrB_PUSHONLY, GrB_GUNROCKLB,
-      GrB_16 };
+      GrB_TRAN, GrB_FIXEDROW, GrB_8, GrB_8, GrB_32, GrB_PUSHONLY, GrB_16 };
 
   testSet(    field, value );
   testSetInt( field, value );
@@ -104,11 +102,9 @@ BOOST_FIXTURE_TEST_CASE( desc1, TestDescriptor )
 BOOST_FIXTURE_TEST_CASE( desc2, TestDescriptor )
 {
   std::vector<Desc_field> field = { GrB_MASK, GrB_OUTP, GrB_INP0, 
-      GrB_INP1, GrB_MODE, GrB_TA, GrB_TB, GrB_NT, GrB_MXVMODE, GrB_SPMSPVMODE, 
-      GrB_TOL };
+      GrB_INP1, GrB_MODE, GrB_TA, GrB_TB, GrB_NT, GrB_MXVMODE, GrB_TOL };
   std::vector<Desc_value> value = { GrB_SCMP, GrB_REPLACE, GrB_TRAN, 
-      GrB_TRAN, GrB_FIXEDROW, GrB_8, GrB_8, GrB_32, GrB_PUSHONLY, GrB_GUNROCKLB,
-      GrB_16 };
+      GrB_TRAN, GrB_FIXEDROW, GrB_8, GrB_8, GrB_32, GrB_PUSHONLY, GrB_16 };
 
   testToggle( field, value );
 }

@@ -285,6 +285,7 @@ namespace backend
     }
 
 		//Step 6) Segmented Reduce By Key
+
     if( desc->struconly() )
     {
       if( !desc->sort() )
@@ -308,7 +309,7 @@ namespace backend
               *(desc->d_context_) );
         else*/
         ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
-            op.identity(), op.add_op(), mgpu::equal_to<T>(), w_ind, w_val, 
+            op.identity(), extractAdd(op), mgpu::equal_to<T>(), w_ind, w_val, 
             &w_nvals_t, (int*)0, *(desc->d_context_) );
         *w_nvals         = w_nvals_t;
       }
@@ -317,55 +318,13 @@ namespace backend
     {
       Index  w_nvals_t = 0;
       ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrTempVal, *w_nvals, 
-          op.identity(), op.add_op(), mgpu::equal_to<T>(), w_ind, w_val, 
+          op.identity(), extractAdd(op), mgpu::equal_to<T>(), w_ind, w_val, 
           &w_nvals_t, (int*)0, *(desc->d_context_) );
       *w_nvals         = w_nvals_t;
     }
 
     return GrB_SUCCESS;
   }
-
-  template <typename W, typename a, typename U,
-            typename BinaryOpT, typename SemiringT>
-  Info spmspvGunrockLB( Index*            w_ind,
-                        W*                w_val,
-                        Index*            w_nvals,
-                        BinaryOpT         accum,
-                        SemiringT         op,
-                        Index             A_nrows,
-                        Index             A_nvals,
-                        const Index*      A_csrRowPtr,
-                        const Index*      A_csrColInd,
-                        const a*          A_csrVal,
-                        const Index*      u_ind,
-                        const U*          u_val,
-                        const Index*      u_nvals,
-                        Descriptor*       desc )
-  {
-    return GrB_SUCCESS;
-  }
-
-  template <typename W, typename a, typename U,
-            typename BinaryOpT, typename SemiringT>
-  Info spmspvGunrockTWC( Index*            w_ind,
-                         W*                w_val,
-                         Index*            w_nvals,
-                         BinaryOpT         accum,
-                         SemiringT         op,
-                         Index             A_nrows,
-                         Index             A_nvals,
-                         const Index*      A_csrRowPtr,
-                         const Index*      A_csrColInd,
-                         const a*          A_csrVal,
-                         const Index*      u_ind,
-                         const U*          u_val,
-                         const Index*      u_nvals,
-                         Descriptor*       desc )
-  {
-    return GrB_SUCCESS;
-  }
-
-  //__global__ void filterKernel();
 
 }  // backend
 }  // graphblas

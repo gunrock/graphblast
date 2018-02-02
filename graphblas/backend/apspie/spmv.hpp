@@ -118,49 +118,49 @@ namespace backend
               case 0:
                 spmvDenseMaskedOrKernelBench<false,false,false><<<NB,NT>>>( 
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_, 
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 1:
                 spmvDenseMaskedOrKernelBench<false,false,true><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 2:
                 spmvDenseMaskedOrKernelBench<false, true,false><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 3:
                 spmvDenseMaskedOrKernelBench<false, true, true><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 4:
                 spmvDenseMaskedOrKernelBench< true,false,false><<<NB,NT>>>( 
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_, 
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 5:
                 spmvDenseMaskedOrKernelBench< true,false, true><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 6:
                 spmvDenseMaskedOrKernelBench<true, true,false><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 7:
                 spmvDenseMaskedOrKernelBench<true, true, true><<<NB,NT>>>(
                     w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               default:
@@ -214,59 +214,59 @@ namespace backend
           }
           else
           {
-            switch( variant )
+            /*switch( variant )
             {
-              case 0:
+              case 0:*/
                 spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_, 
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
+              /*  break;
               case 1:
                 spmvDenseMaskedOrKernel<false,false,true><<<NB,NT>>>(
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 2:
                 spmvDenseMaskedOrKernel<false, true,false><<<NB,NT>>>(
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 3:
                 spmvDenseMaskedOrKernel<false, true, true><<<NB,NT>>>(
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 4:
                 spmvDenseMaskedOrKernel< true,false,false><<<NB,NT>>>( 
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_, 
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 5:
                 spmvDenseMaskedOrKernel< true,false, true><<<NB,NT>>>(
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 6:
                 spmvDenseMaskedOrKernel<true, true,false><<<NB,NT>>>(
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               case 7:
                 spmvDenseMaskedOrKernel<true, true, true><<<NB,NT>>>(
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    op.mul_op(), op.add_op(), A_nrows, A->nvals_,
+                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
                 break;
               default:
                 break;
-            }
+            }*/
             if( desc->debug() )
               printDevice("w_val", w->d_val_, A_nrows);
           }
@@ -295,8 +295,8 @@ namespace backend
     else
     {
       mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, A_csrRowPtr, 
-          A_nrows, u->d_val_, true, w->d_val_, op.identity(), op.mul_op(), 
-          op.add_op(), *(desc->d_context_) );
+          A_nrows, u->d_val_, true, w->d_val_, op.identity(), extractMul(op), 
+          extractAdd(op), *(desc->d_context_) );
 
       // TODO: add semiring inputs to CUB
       /*size_t temp_storage_bytes = 0;

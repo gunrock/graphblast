@@ -79,53 +79,65 @@ namespace backend
     Storage A_mat_type;
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
-
-    // Conversions:
-    Desc_value vxm_mode, tol;
-    CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
-
-    // Note: removed tol for now
-    //CHECK( desc->get( GrB_TOL,     &tol      ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
 
-    // Note here, the 1.f stands for the dense vector one-element (STRUCONLY)
-    // The op->identity() stands for the dense vector zero-element
-    // TODO: Fix this hack
-    if( vxm_mode==GrB_PUSHPULL )
-      CHECK( u_t->convert( op.identity(), desc ) );
-    else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
-      CHECK( u_t->dense2sparse( op.identity(), desc ) );
-    else if( vxm_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
-      CHECK( u_t->sparse2dense( op.identity(), desc ) );
-
-    // Check if vector type was changed due to conversion!
-    CHECK( u->getStorage( &u_vec_type ) );
-
-    // Transpose:
-    Desc_value inp0_mode;
-    CHECK( desc->get(GrB_INP0, &inp0_mode) );
-    if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
-
-    // Treat vxm as an mxv with transposed matrix
-	  CHECK( desc->toggle( GrB_INP1 ) );
-
-    // Breakdown into 3 cases:
-    // 1) SpMSpV: SpMat x SpVe
-    // 2) SpMV:   SpMat x DeVec
-    // 3) GeMV:   DeMat x DeVec
-    if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
+    // Simple SpMSpV without any load-balancing
+    if( desc->spmspvmode()==0 )
     {
-      CHECK( w->setStorage( GrB_SPARSE ) );
-      CHECK( spmspv( &w->sparse_, mask, accum, op, &A->sparse_, 
-          &u->sparse_, desc ) );
+      if( u_vec_type==GrB_SPARSE )
+        CHECK( u_t->sparse2dense(op.identity(), desc) );
+      CHECK( w->setStorage(GrB_DENSE) );
+      CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
+          desc) );
     }
     else
     {
-      CHECK( w->setStorage( GrB_DENSE ) );
-      if( A_mat_type==GrB_SPARSE )
-        CHECK(spmv(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, desc));
+      // Conversions:
+      Desc_value vxm_mode, tol;
+      CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
+
+      // Note: removed tol for now
+      //CHECK( desc->get( GrB_TOL,     &tol      ) );
+
+      // Mask identity concept removed 
+      if( vxm_mode==GrB_PUSHPULL )
+        CHECK( u_t->convert( op.identity(), desc ) );
+      else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
+        CHECK( u_t->dense2sparse( op.identity(), desc ) );
+      else if( vxm_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
+        CHECK( u_t->sparse2dense( op.identity(), desc ) );
+
+      // Check if vector type was changed due to conversion!
+      CHECK( u->getStorage( &u_vec_type ) );
+
+      // Transpose:
+      Desc_value inp0_mode;
+      CHECK( desc->get(GrB_INP0, &inp0_mode) );
+      if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
+
+      // Treat vxm as an mxv with transposed matrix
+      CHECK( desc->toggle( GrB_INP1 ) );
+
+      // Breakdown into 3 cases:
+      // 1) SpMSpV: SpMat x SpVe
+      // 2) SpMV:   SpMat x DeVec
+      // 3) GeMV:   DeMat x DeVec
+      if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
+      {
+        CHECK( w->setStorage( GrB_SPARSE ) );
+        CHECK( spmspv( &w->sparse_, mask, accum, op, &A->sparse_, 
+            &u->sparse_, desc ) );
+      }
       else
-        CHECK(gemv( &w->dense_, mask, accum, op, &A->dense_, &u->dense_, desc));
+      {
+        CHECK( w->setStorage( GrB_DENSE ) );
+        if( A_mat_type==GrB_SPARSE )
+          CHECK(spmv(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
+              desc));
+        else
+          CHECK(gemv( &w->dense_, mask, accum, op, &A->dense_, &u->dense_, 
+              desc));
+      }
     }
 
     // Undo change to desc by toggling again
@@ -153,52 +165,68 @@ namespace backend
     Storage A_mat_type;
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
-
-    // Conversions:
-    Desc_value mxv_mode;
-    Desc_value tol;
-    CHECK( desc->get( GrB_MXVMODE, &mxv_mode ) );
-    CHECK( desc->get( GrB_TOL,     &tol      ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
-    if( mxv_mode==GrB_PUSHPULL )
-      CHECK( u_t->convert( op.identity(), desc ) );
-    else if( mxv_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
-      CHECK( u_t->dense2sparse( op.identity(), desc ) );
-    else if( mxv_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
-      CHECK( u_t->sparse2dense( op.identity(), desc ) );
 
-    // Check if vector type was changed due to conversion!
-    CHECK( u->getStorage( &u_vec_type ) );
-
-    // Transpose:
-    Desc_value inp1_mode;
-    CHECK( desc->get(GrB_INP1, &inp1_mode) );
-    if( inp1_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
-
-    // 3 cases:
-    // 1) SpMSpV: SpMat x SpVe
-    // 2) SpMV:   SpMat x DeVec
-    // 3) GeMV:   DeMat x DeVec
-    if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
+    // Simple SpMSpV without any load-balancing
+    if( desc->spmspvmode()==0 )
     {
-      CHECK( w->setStorage( GrB_SPARSE ) );
-      CHECK( spmspv( &w->sparse_, mask, accum, op, &A->sparse_, 
-          &u->sparse_, desc ) );
+      if( u_vec_type==GrB_SPARSE )
+        CHECK( u_t->sparse2dense(op.identity(), desc) );
+      CHECK( w->setStorage(GrB_DENSE) );
+      CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
+          desc) );
     }
     else
     {
-      CHECK( w->setStorage( GrB_DENSE ) );
-      if( A_mat_type==GrB_SPARSE )
+      // Direction-optimizing codepath
+      //
+      // Conversions:
+      Desc_value mxv_mode;
+      Desc_value tol;
+      CHECK( desc->get( GrB_MXVMODE, &mxv_mode ) );
+      CHECK( desc->get( GrB_TOL,     &tol      ) );
+
+      if( mxv_mode==GrB_PUSHPULL )
+        CHECK( u_t->convert( op.identity(), desc ) );
+      else if( mxv_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
+        CHECK( u_t->dense2sparse( op.identity(), desc ) );
+      else if( mxv_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
+        CHECK( u_t->sparse2dense( op.identity(), desc ) );
+
+      // Check if vector type was changed due to conversion!
+      CHECK( u->getStorage( &u_vec_type ) );
+
+      // Transpose:
+      Desc_value inp1_mode;
+      CHECK( desc->get(GrB_INP1, &inp1_mode) );
+      if( inp1_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
+
+      // 3 cases:
+      // 1) SpMSpV: SpMat x SpVe
+      // 2) SpMV:   SpMat x DeVec
+      // 3) GeMV:   DeMat x DeVec
+      if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
       {
-        CHECK( spmv( &w->dense_, mask, accum, op, &A->sparse_, 
-            &u->dense_, desc ) );
+        CHECK( w->setStorage( GrB_SPARSE ) );
+        CHECK( spmspv( &w->sparse_, mask, accum, op, &A->sparse_, 
+            &u->sparse_, desc ) );
       }
       else
       {
-        CHECK( gemv( &w->dense_, mask, accum, op, &A->dense_, 
-            &u->dense_, desc ) );
+        CHECK( w->setStorage( GrB_DENSE ) );
+        if( A_mat_type==GrB_SPARSE )
+        {
+          CHECK( spmv( &w->dense_, mask, accum, op, &A->sparse_, 
+              &u->dense_, desc ) );
+        }
+        else
+        {
+          CHECK( gemv( &w->dense_, mask, accum, op, &A->dense_, 
+              &u->dense_, desc ) );
+        }
       }
     }
+
     return GrB_SUCCESS;
   }
 

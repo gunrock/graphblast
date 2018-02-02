@@ -20,8 +20,8 @@ namespace backend
             typename BinaryOpT,      typename SemiringT>
   Info gemv( DenseVector<W>*        w,
              const Vector<M>*       mask,
-             const BinaryOpT*       accum,
-             const SemiringT*       op,
+             BinaryOpT              accum,
+             SemiringT              op,
              const DenseMatrix<a>*  A,
              const DenseVector<U>*  u,
              Descriptor*            desc )
@@ -35,8 +35,8 @@ namespace backend
             typename BinaryOpT,      typename SemiringT>
   Info gemv( DenseVector<W>*        w,
              const Vector<M>*       mask,
-             const BinaryOpT*       accum,
-             const SemiringT*       op,
+             BinaryOpT              accum,
+             SemiringT              op,
              const DenseMatrix<a>*  A,
              const SparseVector<U>* u,
              Descriptor*            desc )

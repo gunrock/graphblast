@@ -64,6 +64,8 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "0: push-pull, 1: push only, 2: pull only")
     ("timing", po::value<int>()->default_value(1),
         "0: final timing, 1: per niter timing, 2: per graphblas algorithm timing")
+    ("spmspvmode", po::value<int>()->default_value(1),
+        "0: simple, naive traversal that is good for road maps, 1: load-balanced traversal that is good for scale-free graphs")
     ("memusage", po::value<float>()->default_value(1.0),
         "Multiple of edge used to store temporary neighbor list during push phase")
     ("switchpoint", po::value<float>()->default_value(0.01),

@@ -24,26 +24,6 @@ void testDup( const std::vector<int>& rhs )
   CHECKVOID( vec1.extractTuples(&lhs, &size) );
   BOOST_ASSERT_LIST( lhs, rhs, rhs.size() );
 
-  graphblas::BinaryOp<float,float,float> GrB_PLUS_FP32;
-  float a = GrB_PLUS_FP32(3.f,2.f);
-  std::cout << a << std::endl;
-
-  CHECKVOID( GrB_PLUS_FP32.nnew(std::multiplies<float>()) );
-  a = GrB_PLUS_FP32(3.f,2.f);
-  std::cout << a << std::endl;
-
-  a = graphblas::BinaryOp<float,float,float>( std::minus<float>() )(3.f,2.f);
-  std::cout << a << std::endl;
-
-  //a = GrB_PLUS(3.f,2.f);
-  //std::cout << a << std::endl;
-
-  //typedef graphblas::BinaryOp<float,float,float>( std::minus<float>() )::operator() GrB_PLUS_OP;
-  //a = GrB_PLUS_OP(3.f,2.f);
-  //std::cout << a << std::endl;
-
-  typedef graphblas::BinaryOp<float,float,float> GrB_PLUS;
-
   graphblas::Vector<int> vec2(rhs.size());
   CHECKVOID( vec2.dup(&vec1) );
 

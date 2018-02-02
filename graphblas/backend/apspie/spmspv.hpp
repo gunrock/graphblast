@@ -63,10 +63,6 @@ namespace backend
     const Index  A_nrows     = (!use_tran) ? A->ncols_       : A->nrows_;
     const Index* Ah_csrRowPtr= (!use_tran) ? A->h_cscColPtr_ : A->h_csrRowPtr_;
 
-    // Get descriptor parameter on which one to use
-    Desc_value spmspv_mode;
-    CHECK( desc->get(GrB_SPMSPVMODE, &spmspv_mode) );
-
     // temp_ind and temp_val need |V| memory for masked case, so just allocate 
     // this much memory for now. TODO: optimize for memory
     int size          = (float)A->nvals_*desc->memusage()+1;
@@ -84,27 +80,10 @@ namespace backend
       T*     temp_val   = (T*)     desc->d_buffer_+A_nrows;
       Index  temp_nvals = 0;
     
-      if( spmspv_mode==GrB_APSPIE )
-        spmspvApspie(
-            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
-            &u->nvals_, desc );
-      else if( spmspv_mode==GrB_APSPIELB )
-        spmspvApspieLB(
-            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
-            &u->nvals_, desc );
-      else if( spmspv_mode==GrB_GUNROCKLB )
-        spmspvGunrockLB(
-            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
-            &u->nvals_, desc );
-      else if( spmspv_mode==GrB_GUNROCKTWC )
-        spmspvGunrockTWC(
-            temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
-            A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
-            &u->nvals_, desc );
-      //CUDA( cudaDeviceSynchronize() );
+      spmspvApspieLB(
+          temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
+          A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
+          &u->nvals_, desc );
 
       if( temp_nvals==0 )
       {
@@ -312,26 +291,88 @@ namespace backend
     }
     else
     {
-      if( spmspv_mode==GrB_APSPIE )
-        spmspvApspie(
-            w->d_ind_, w->d_val_, &w->nvals_, NULL, op.identity(), op.mul_op(), 
-            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
-      else if( spmspv_mode==GrB_APSPIELB )
-        spmspvApspieLB(
-            w->d_ind_, w->d_val_, &w->nvals_, NULL, op.identity(), op.mul_op(),
-            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
-      else if( spmspv_mode==GrB_GUNROCKLB )
-        spmspvGunrockLB(
-            w->d_ind_, w->d_val_, &w->nvals_, NULL, op.identity(), op.mul_op(), 
-            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
-      else if( spmspv_mode==GrB_GUNROCKTWC )
-        spmspvGunrockTWC(
-            w->d_ind_, w->d_val_, &w->nvals_, NULL, op.identity(), op.mul_op(), 
-            op.add_op(), A_nrows, A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal,
-            u->d_ind_, u->d_val_, &u->nvals_, desc );
+      spmspvApspieLB(
+          w->d_ind_, w->d_val_, &w->nvals_, NULL, op, A_nrows, A->nvals_, 
+          A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, &u->nvals_, 
+          desc );
+    }
+    w->need_update_ = true;
+    return GrB_SUCCESS;
+  }
+
+  template <typename W, typename a, typename U, typename M,
+            typename BinaryOpT, typename SemiringT>
+  Info spmspvSimple( DenseVector<W>*        w,
+                     const Vector<M>*       mask,
+                     BinaryOpT              accum,
+                     SemiringT              op,
+                     const SparseMatrix<a>* A,
+                     const DenseVector<U>*  u,
+                     Descriptor*            desc )
+  {
+    // Get descriptor parameters for SCMP, REPL, TRAN
+    Desc_value scmp_mode, repl_mode, inp0_mode, inp1_mode;
+    CHECK( desc->get(GrB_MASK, &scmp_mode) );
+    CHECK( desc->get(GrB_OUTP, &repl_mode) );
+    CHECK( desc->get(GrB_INP0, &inp0_mode) );
+    CHECK( desc->get(GrB_INP1, &inp1_mode) );
+
+    // TODO: add accum and replace support
+    // -have masked variants as separate kernel
+    // -accum and replace as parts in flow
+    // -special case of inverting GrB_SCMP since we are using it to zero out
+    // values instead of passing them through
+    bool use_mask = (mask!=NULL);
+    bool use_accum= (accum!=NULL);            //TODO
+    bool use_scmp = (scmp_mode!=GrB_SCMP);    //Special case
+    bool use_repl = (repl_mode==GrB_REPLACE); //TODO
+    bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN);
+    bool use_allowdupl; //TODO opt4
+
+    if( desc->debug())
+    {
+      std::cout << "Executing Spmspv\n";
+      if( desc->struconly() )
+        std::cout << "In structure only mode\n";
+      else
+        std::cout << "In key-value mode\n";
+      printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
+    }
+
+    // Transpose (default is CSC):
+    const Index* A_csrRowPtr = (!use_tran) ? A->d_cscColPtr_ : A->d_csrRowPtr_;
+    const Index* A_csrColInd = (!use_tran) ? A->d_cscRowInd_ : A->d_csrColInd_;
+    const T*     A_csrVal    = (!use_tran) ? A->d_cscVal_    : A->d_csrVal_;
+    const Index  A_nrows     = (!use_tran) ? A->ncols_       : A->nrows_;
+    const Index* Ah_csrRowPtr= (!use_tran) ? A->h_cscColPtr_ : A->h_csrRowPtr_;
+
+    // temp_ind and temp_val need |V| memory for masked case, so just allocate 
+    // this much memory for now. TODO: optimize for memory
+    int size          = (float)A->nvals_*desc->memusage()+1;
+    if( desc->struconly() )
+      desc->resize((2*A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
+    else
+      desc->resize((2*A_nrows+4*size)*max(sizeof(Index),sizeof(T)), "buffer");
+
+    // Only difference between masked and unmasked versions if whether
+    // eWiseMult() is called afterwards or not
+    if( use_mask )
+    {
+      // temp_ind and temp_val need |V| memory
+      T*     temp_val   = (T*)     desc->d_buffer_;
+      Index  temp_nvals = 0;
+    
+      //spmspvSimpleKernel<<<NB,NT>>>(
+      //    temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, A_csrRowPtr, 
+      //    A_csrColInd, A_csrVal, u->d_val_, &u->nvals_, desc );
+
+      // Insert filter kernel
+    }
+    else
+    {
+      //spmspvSimpleKernel<<<NB,NT>>>(
+      //    w->d_val_, &w->nvals_, NULL, op, A_nrows, A->nvals_, A_csrRowPtr, 
+      //    A_csrColInd, A_csrVal, u->d_val_, &u->nvals_, desc );
     }
     w->need_update_ = true;
     return GrB_SUCCESS;
