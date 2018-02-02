@@ -58,6 +58,8 @@ int main( int argc, char** argv )
   // Descriptor desc
   graphblas::Descriptor desc;
   CHECK( desc.loadArgs(vm) );
+  if( transpose )
+    CHECK( desc.toggle(GrB_INP1) );
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
@@ -84,7 +86,7 @@ int main( int argc, char** argv )
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::algorithm::bfs(&v, &a, source, &desc, transpose);
+  graphblas::algorithm::bfs(&v, &a, source, &desc);
   warmup.Stop();
 
   std::vector<float> h_bfs_gpu;
@@ -101,16 +103,14 @@ int main( int argc, char** argv )
   if( !desc.descriptor_.reduce() )
     for( int i=0; i<niter; i++ )
     {
-      val = graphblas::algorithm::bfs2(&y, &a, source, &desc, d, transpose);
+      val = graphblas::algorithm::bfs2(&y, &a, source, &desc, d);
       tight += val;
-      std::cout << val << std::endl;
     }
   else
     for( int i=0; i<niter; i++ )
     {
-      val = graphblas::algorithm::bfs(&y, &a, source, &desc, transpose);
+      val = graphblas::algorithm::bfs(&y, &a, source, &desc);
       tight += val;
-      std::cout << val << std::endl;
     }
   //cudaProfilerStop();
   vxm_gpu.Stop();

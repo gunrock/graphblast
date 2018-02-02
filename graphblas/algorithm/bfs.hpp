@@ -12,8 +12,7 @@ namespace algorithm
   float bfs( Vector<float>*       v,
              const Matrix<float>* A, 
              Index                s,
-		         Descriptor*          desc,
-             bool                 transpose=false )
+		         Descriptor*          desc )
   {
     Index n;
     CHECK( A->nrows( &n ) );
@@ -68,12 +67,8 @@ namespace algorithm
       d++;
       assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, desc);
       CHECK( desc->toggle(GrB_MASK) );
-      if( transpose )
-        mxv<float,float,float>(&q2, v, GrB_NULL, 
-            PlusMultipliesSemiring<float>(), A, &q1, desc);
-      else
-        vxm<float,float,float>(&q2, v, GrB_NULL, 
-            PlusMultipliesSemiring<float>(), &q1, A, desc);
+      vxm<float,float,float>(&q2, v, GrB_NULL, 
+          PlusMultipliesSemiring<float>(), &q1, A, desc);
       CHECK( desc->toggle(GrB_MASK) );
       CHECK( q2.swap(&q1) );
       reduce<float,float>(&succ, GrB_NULL, PlusMonoid<float>(), &q1, desc);
@@ -96,14 +91,13 @@ namespace algorithm
              const Matrix<float>* A, 
              Index                s,
 		         Descriptor*          desc,
-             int                  depth,
-             bool                 transpose=false )
+             int                  depth )
   {
     Index n;
     CHECK( A->nrows( &n ) );
 
     // Visited vector (use float for now)
-    CHECK( v->fill(-1.f) );
+    CHECK( v->fill(0.f) );
 
     // Frontier vectors (use float for now)
     Vector<float> q1(n);
@@ -125,16 +119,12 @@ namespace algorithm
 
     backend::GpuTimer cpu_tight;
     cpu_tight.Start();
-    for( int i=0; i<depth; i++ )
+    for( int i=1; i<=depth; i++ )
     {
       assign<float,float>(v, &q1, GrB_NULL, i, GrB_ALL, n, desc);
       CHECK( desc->toggle(GrB_MASK) );
-      if( transpose )
-        mxv<float,float,float>(&q2, v, GrB_NULL, 
-            PlusMultipliesSemiring<float>(), A, &q1, desc);
-      else
-        vxm<float,float,float>(&q2, v, GrB_NULL, 
-            PlusMultipliesSemiring<float>(), &q1, A, desc);
+      vxm<float,float,float>(&q2, v, GrB_NULL, 
+          PlusMultipliesSemiring<float>(), &q1, A, desc);
       CHECK( desc->toggle(GrB_MASK) );
       CHECK( q2.swap(&q1) );
     }

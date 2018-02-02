@@ -125,13 +125,11 @@ namespace backend
         {
           if( use_scmp )
             assignDenseDenseMaskedKernel<true,true,true><<<NB,NT>>>(temp_ind, 
-                temp_nvals, (mask->dense_).d_val_, 
-								(BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
+                temp_nvals, (mask->dense_).d_val_, NULL, (Index)0, (Index*)NULL,
                 A_nrows);
           else
             assignDenseDenseMaskedKernel<false,true,true><<<NB,NT>>>(temp_ind, 
-                temp_nvals, (mask->dense_).d_val_,
-                (BinaryOp<Index,Index,Index>*)NULL, (Index)0, (Index*)NULL, 
+                temp_nvals, (mask->dense_).d_val_, NULL, (Index)0, (Index*)NULL,
                 A_nrows);
 
           if( desc->debug() )
@@ -174,12 +172,12 @@ namespace backend
           {
             if( use_scmp )
               assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, 
-                temp_nvals, (mask->dense_).d_val_, (BinaryOp<U,U,U>*)NULL, 
-								(Index)-1, (Index*)NULL, A_nrows);
+                temp_nvals, (mask->dense_).d_val_, NULL, (Index)-1, 
+                (Index*)NULL, A_nrows);
             else
               assignSparseKernel<false,true, true><<<NB,NT>>>(temp_ind,
-                temp_nvals, (mask->dense_).d_val_, (BinaryOp<U,U,U>*)NULL, 
-								(Index)-1, (Index*)NULL, A_nrows);
+                temp_nvals, (mask->dense_).d_val_, NULL, (Index)-1, 
+                (Index*)NULL, A_nrows);
           }
           else if( mask_vec_type==GrB_SPARSE )
           {
@@ -235,12 +233,12 @@ namespace backend
         {
           if( use_scmp )
             assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, temp_val, 
-              temp_nvals, (mask->dense_).d_val_,  (BinaryOp<U,U,U>*)NULL, 
-							(U)0.f, (Index*)NULL, A_nrows);
+              temp_nvals, (mask->dense_).d_val_, NULL, (U)0.f, (Index*)NULL, 
+              A_nrows);
           else
             assignSparseKernel<false,true, true><<<NB,NT>>>(temp_ind, temp_val, 
-              temp_nvals, (mask->dense_).d_val_, (BinaryOp<U,U,U>*)NULL, 
-							(U)0.f, (Index*)NULL, A_nrows);
+              temp_nvals, (mask->dense_).d_val_, NULL, (U)0.f, (Index*)NULL, 
+              A_nrows);
         }
         else if( mask_vec_type==GrB_SPARSE )
         {
