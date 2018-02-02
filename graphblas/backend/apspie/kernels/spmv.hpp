@@ -73,9 +73,9 @@ namespace backend
       }
 
       if( discoverable )
-        w_val[row] = 1.f;
+        w_val[row] = (W)1;
       else
-        w_val[row] = 0.f;
+        w_val[row] = (W)0;
     }
   }
 
@@ -147,10 +147,10 @@ namespace backend
       }
 
       if( discoverable )
-        w_val[row] = 1.f;
+        w_val[row] = (W)1;
       else
       {
-        w_val[row] = 0.f;
+        w_val[row] = (W)0;
       }
     }
   }

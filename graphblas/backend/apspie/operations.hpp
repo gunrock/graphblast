@@ -90,7 +90,7 @@ namespace backend
     CHECK( desc->toggle( GrB_INP1 ) );
 
     // 1a) Simple SpMSpV without any load-balancing codepath
-    if( desc->spmspvmode()==0 )
+    /*if( desc->spmspvmode()==0 )
     {
       if( u_vec_type==GrB_SPARSE )
         CHECK( u_t->sparse2dense(op.identity(), desc) );
@@ -99,7 +99,7 @@ namespace backend
           desc) );
     }
     else
-    {
+    {*/
       // 1b) Direction-optimizing codepath
       //
       // Conversions:
@@ -141,7 +141,7 @@ namespace backend
           CHECK(gemv( &w->dense_, mask, accum, op, &A->dense_, &u->dense_, 
               desc));
       }
-    }
+    //}
 
     // Undo change to desc by toggling again
 	  CHECK( desc->toggle( GrB_INP1 ) );
