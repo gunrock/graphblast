@@ -352,14 +352,10 @@ namespace backend
 
       dense_.fill( identity );
       if( desc->struconly() )
-      {
         scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, (T)1, nvals );
-      }
       else
-      {
         scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, sparse_.d_val_, 
             nvals );
-      }
     }
 
     vec_type_           = GrB_DENSE;

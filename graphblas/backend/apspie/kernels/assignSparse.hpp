@@ -11,15 +11,15 @@ namespace backend
   // This is the key-value dense mask variant of assignSparse
   // Iterating along u_ind and u_val is better
   template <bool UseScmp, bool UseMask, bool UseAll,
-            typename U, typename M>
-  __global__ void assignSparseKernel( Index*                 u_ind,
-                                      U*                     u_val,
-                                      Index                  u_nvals,
-                                      const M*               mask_val,
-                                      const BinaryOp<U,U,U>* accum_op,
-                                      U                      val,
-                                      Index*                 indices,
-                                      Index                  nindices )
+            typename U, typename M, typename BinaryOpT>
+  __global__ void assignSparseKernel( Index*    u_ind,
+                                      U*        u_val,
+                                      Index     u_nvals,
+                                      const M*  mask_val,
+                                      BinaryOpT accum_op,
+                                      U         val,
+                                      Index*    indices,
+                                      Index     nindices )
   {
     unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -59,14 +59,14 @@ namespace backend
 
   // This is the struconly dense mask variant of assignSparse
   template <bool UseScmp, bool UseMask, bool UseAll,
-            typename U, typename M>
-  __global__ void assignSparseKernel( Index*                 u_ind,
-                                      Index                  u_nvals,
-                                      const M*               mask_val,
-                                      const BinaryOp<U,U,U>* accum_op,
-                                      Index                  val,
-                                      Index*                 indices,
-                                      Index                  nindices )
+            typename M, typename BinaryOpT>
+  __global__ void assignSparseKernel( Index*    u_ind,
+                                      Index     u_nvals,
+                                      const M*  mask_val,
+                                      BinaryOpT accum_op,
+                                      Index     val,
+                                      Index*    indices,
+                                      Index     nindices )
   {
     unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
 

@@ -20,9 +20,6 @@ namespace backend
   template <typename T>
   class SparseVector;
 
-  template <typename T1, typename T2, typename T3>
-  class BinaryOp;
-
   template <typename T>
   class DenseVector
   {
@@ -46,10 +43,11 @@ namespace backend
     inline Info size(  Index* nsize_ ) const;
     inline Info nvals( Index* nvals_ ) const;
     inline Info nnz(   Index* nnz_   ) const;
+    template <typename BinaryOpT>
     Info build( const std::vector<Index>* indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T,T,T>*    dup );
+                BinaryOpT                 dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
     Info setElement(     T val,
@@ -148,10 +146,11 @@ namespace backend
   }
 
   template <typename T>
+  template <typename BinaryOpT>
   Info DenseVector<T>::build( const std::vector<Index>* indices,
                               const std::vector<T>*     values,
                               Index                     nvals,
-                              const BinaryOp<T,T,T>*    dup )
+                              BinaryOpT                 dup )
   {
     std::cout << "DeVec Build Using Sparse Indices\n";
     std::cout << "Error: Feature not implemented yet!\n";

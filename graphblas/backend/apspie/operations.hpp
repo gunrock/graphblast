@@ -81,7 +81,15 @@ namespace backend
     CHECK( A->getStorage( &A_mat_type ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
 
-    // Simple SpMSpV without any load-balancing
+    // Transpose:
+    Desc_value inp0_mode;
+    CHECK( desc->get(GrB_INP0, &inp0_mode) );
+    if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
+
+    // Treat vxm as an mxv with transposed matrix
+    CHECK( desc->toggle( GrB_INP1 ) );
+
+    // 1a) Simple SpMSpV without any load-balancing codepath
     if( desc->spmspvmode()==0 )
     {
       if( u_vec_type==GrB_SPARSE )
@@ -92,12 +100,15 @@ namespace backend
     }
     else
     {
+      // 1b) Direction-optimizing codepath
+      //
       // Conversions:
+      // TODO: add tol
       Desc_value vxm_mode, tol;
       CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
-
-      // Note: removed tol for now
-      //CHECK( desc->get( GrB_TOL,     &tol      ) );
+      CHECK( desc->get( GrB_TOL,     &tol      ) );
+      if( desc->debug() )
+        std::cout << "Identity: " << op.identity() << std::endl;
 
       // Mask identity concept removed 
       if( vxm_mode==GrB_PUSHPULL )
@@ -109,14 +120,6 @@ namespace backend
 
       // Check if vector type was changed due to conversion!
       CHECK( u->getStorage( &u_vec_type ) );
-
-      // Transpose:
-      Desc_value inp0_mode;
-      CHECK( desc->get(GrB_INP0, &inp0_mode) );
-      if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
-
-      // Treat vxm as an mxv with transposed matrix
-      CHECK( desc->toggle( GrB_INP1 ) );
 
       // Breakdown into 3 cases:
       // 1) SpMSpV: SpMat x SpVe
@@ -167,7 +170,12 @@ namespace backend
     CHECK( A->getStorage( &A_mat_type ) );
     Vector<U>* u_t = const_cast<Vector<U>*>(u);
 
-    // Simple SpMSpV without any load-balancing
+    // Transpose:
+    Desc_value inp1_mode;
+    CHECK( desc->get(GrB_INP1, &inp1_mode) );
+    if( inp1_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
+
+    // 1a) Simple SpMSpV without any load-balancing codepath
     if( desc->spmspvmode()==0 )
     {
       if( u_vec_type==GrB_SPARSE )
@@ -178,7 +186,7 @@ namespace backend
     }
     else
     {
-      // Direction-optimizing codepath
+      // 1b) Direction-optimizing codepath
       //
       // Conversions:
       Desc_value mxv_mode;
@@ -195,11 +203,6 @@ namespace backend
 
       // Check if vector type was changed due to conversion!
       CHECK( u->getStorage( &u_vec_type ) );
-
-      // Transpose:
-      Desc_value inp1_mode;
-      CHECK( desc->get(GrB_INP1, &inp1_mode) );
-      if( inp1_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
 
       // 3 cases:
       // 1) SpMSpV: SpMat x SpVe

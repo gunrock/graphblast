@@ -135,8 +135,6 @@ namespace graphblas
   {
     if( row_indices==NULL || col_indices==NULL || values==NULL )
       return GrB_NULL_POINTER;
-    //const backend::BinaryOp<T,T,T>* dup_t = (dup==NULL) ? NULL : &dup->op_;
-    //    : &((BinaryOp<T,T,T>*)dup)->op_;
 
     if( fname==NULL || (*row_indices).size()>0 )
       return matrix_.build( row_indices, col_indices, values, nvals, dup,fname);

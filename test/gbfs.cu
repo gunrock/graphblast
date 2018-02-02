@@ -59,7 +59,7 @@ int main( int argc, char** argv )
   graphblas::Descriptor desc;
   CHECK( desc.loadArgs(vm) );
   if( transpose )
-    CHECK( desc.toggle(GrB_INP1) );
+    CHECK( desc.toggle(graphblas::GrB_INP1) );
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);

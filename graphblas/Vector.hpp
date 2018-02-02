@@ -106,7 +106,6 @@ namespace graphblas
   {
     if( indices==NULL || values==NULL )
       return GrB_NULL_POINTER;
-    //const backend::BinaryOp<T,T,T>* dup_t = (dup==NULL) ? NULL : &dup->op_;
     return vector_.build( indices, values, nvals, dup );
   }
 

@@ -16,9 +16,6 @@ namespace backend
   template <typename T>
   class SparseMatrix;
 
-  template <typename T1, typename T2, typename T3>
-  class BinaryOp;
-
   template <typename T>
   class DenseMatrix
   {
@@ -39,11 +36,12 @@ namespace backend
     Info nrows( Index* nrows_t ) const;
     Info ncols( Index* ncols_t ) const;
     Info nvals( Index* nvals_t ) const;
+    template <typename BinaryOpT>
     Info build( const std::vector<Index>* row_indices,
                 const std::vector<Index>* col_indices,
                 const std::vector<T>*     values,
                 Index                     nvals,
-                const BinaryOp<T,T,T>*    dup );
+                BinaryOpT                 dup );
     Info build( const std::vector<T>* values, 
                 Index                 nvals );
     Info setElement(     Index row_index,
@@ -172,11 +170,12 @@ namespace backend
   }
 
   template <typename T>
+  template <typename BinaryOpT>
   Info DenseMatrix<T>::build( const std::vector<Index>* row_indices,
                               const std::vector<Index>* col_indices,
                               const std::vector<T>*     values,
                               Index                     nvals,
-                              const BinaryOp<T,T,T>*    dup )
+                              BinaryOpT                 dup )
   {
     return GrB_SUCCESS;
   }
