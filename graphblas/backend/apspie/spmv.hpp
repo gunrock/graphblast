@@ -51,6 +51,7 @@ namespace backend
     {
       std::cout << "Executing Spmv\n";
       printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
+      std::cout << "spmspvmode: " << desc->spmspvmode() << std::endl;
     }
 
     // Transpose (default is CSR):
@@ -214,14 +215,14 @@ namespace backend
           }
           else
           {
-            /*switch( variant )
+            switch( variant )
             {
-              case 0:*/
+              case 0:
                 spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
                     extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
                     A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-              /*  break;
+                break;
               case 1:
                 spmvDenseMaskedOrKernel<false,false,true><<<NB,NT>>>(
                     w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
@@ -266,7 +267,7 @@ namespace backend
                 break;
               default:
                 break;
-            }*/
+            }
             if( desc->debug() )
               printDevice("w_val", w->d_val_, A_nrows);
           }

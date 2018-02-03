@@ -121,6 +121,9 @@ namespace backend
       // Check if vector type was changed due to conversion!
       CHECK( u->getStorage( &u_vec_type ) );
 
+      if( desc->debug() )
+        std::cout << "u_vec_type: " << u_vec_type << std::endl;
+
       // Breakdown into 3 cases:
       // 1) SpMSpV: SpMat x SpVe
       // 2) SpMV:   SpMat x DeVec

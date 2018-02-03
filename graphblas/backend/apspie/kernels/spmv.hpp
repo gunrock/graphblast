@@ -37,7 +37,7 @@ namespace backend
       bool discoverable = false;
 
       M val = __ldg( mask_val+row );
-      if( UseScmp^((bool)val) )
+      if( UseScmp^(!(bool)val) )
       {
       }
       else
@@ -51,7 +51,7 @@ namespace backend
           if( UseOpReuse )
           {
             val           = __ldg( mask_val+col_ind );
-            if( !((bool)val) )
+            if( ((bool)val) )
             {
               discoverable = true;
               if( UseEarlyExit )
