@@ -28,7 +28,7 @@ namespace backend
                                    Index            u_nvals,
                                    const V*         v_val )
   {
-    unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
+    Index row = blockIdx.x*blockDim.x + threadIdx.x;
 
     for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
     {

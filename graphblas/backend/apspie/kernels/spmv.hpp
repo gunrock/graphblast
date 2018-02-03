@@ -30,7 +30,7 @@ namespace backend
                                            const a*     A_csrVal,
                                            const U*     u_val )
   {
-    unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
+    Index row = blockIdx.x*blockDim.x + threadIdx.x;
 
     for( ; row<A_nrows; row+=gridDim.x*blockDim.x )
     {
@@ -97,7 +97,7 @@ namespace backend
                                            const a*     A_csrVal,
                                            const U*     u_val )
   {
-    unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
+    Index row = blockIdx.x*blockDim.x + threadIdx.x;
 
     for( ; row<A_nrows; row+=gridDim.x*blockDim.x )
     {

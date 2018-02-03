@@ -341,7 +341,7 @@ namespace backend
     const int nt    = 128;
     const int nvals = sparse_.nvals_;
 
-    if( !desc->opreuse() )
+    if( !desc->opreuse() || desc->spmspvmode()==0 )
     {
       dim3 NT, NB;
       NT.x = nt;

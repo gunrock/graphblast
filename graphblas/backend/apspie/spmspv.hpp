@@ -11,6 +11,7 @@
 #include "graphblas/backend/apspie/kernels/assignSparse.hpp"
 #include "graphblas/backend/apspie/kernels/assignDense.hpp"
 #include "graphblas/backend/apspie/kernels/util.hpp"
+#include "graphblas/backend/apspie/kernels/spmspv.hpp"
 
 namespace graphblas
 {
@@ -38,7 +39,7 @@ namespace backend
     // -have masked variants as separate kernel
     // -accum and replace as parts in flow
     // -special case of inverting GrB_SCMP since we are using it to zero out
-    // values instead of passing them through
+    // values in GrB_assign instead of passing them through
     bool use_mask = (mask!=NULL);
     bool use_accum= (accum!=NULL);            //TODO
     bool use_scmp = (scmp_mode!=GrB_SCMP);    //Special case
@@ -318,11 +319,9 @@ namespace backend
     // TODO: add accum and replace support
     // -have masked variants as separate kernel
     // -accum and replace as parts in flow
-    // -special case of inverting GrB_SCMP since we are using it to zero out
-    // values instead of passing them through
     bool use_mask = (mask!=NULL);
     bool use_accum= (accum!=NULL);            //TODO
-    bool use_scmp = (scmp_mode!=GrB_SCMP);    //Special case
+    bool use_scmp = (scmp_mode==GrB_SCMP);
     bool use_repl = (repl_mode==GrB_REPLACE); //TODO
     bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN);
     bool use_allowdupl; //TODO opt4
@@ -344,34 +343,61 @@ namespace backend
     const Index  A_nrows     = (!use_tran) ? A->ncols_       : A->nrows_;
     const Index* Ah_csrRowPtr= (!use_tran) ? A->h_cscColPtr_ : A->h_csrRowPtr_;
 
-    // temp_ind and temp_val need |V| memory for masked case, so just allocate 
-    // this much memory for now. TODO: optimize for memory
-    int size          = (float)A->nvals_*desc->memusage()+1;
-    if( desc->struconly() )
-      desc->resize((2*A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
-    else
-      desc->resize((2*A_nrows+4*size)*max(sizeof(Index),sizeof(T)), "buffer");
+    // Get descriptor parameters for nthreads
+    Desc_value nt_mode;
+    CHECK( desc->get(GrB_NT, &nt_mode) );
+    const int nt = static_cast<int>(nt_mode);
+    dim3 NT, NB;
+    NT.x = nt;
+    NT.y = 1;
+    NT.z = 1;
+    NB.x = (A_nrows+nt-1)/nt;
+    NB.y = 1;
+    NB.z = 1;
 
-    // Only difference between masked and unmasked versions if whether
-    // eWiseMult() is called afterwards or not
+    if( desc->debug() )
+      printDevice("u_val", u->d_val_, A_nrows);
+    zeroKernel<<<NB,NT>>>( w->d_val_, A_nrows );
+
+    // STRUCONLY and KEY-VALUE are the same for this kernel
+    // TODO: Make operation follow extractMul and extractAdd
+    // -would need to make or, xor, plus, min, etc. map to their atomic 
+    // equivalents and pass them into kernel
     if( use_mask )
     {
-      // temp_ind and temp_val need |V| memory
-      T*     temp_val   = (T*)     desc->d_buffer_;
-      Index  temp_nvals = 0;
-    
-      //spmspvSimpleKernel<<<NB,NT>>>(
-      //    temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, A_csrRowPtr, 
-      //    A_csrColInd, A_csrVal, u->d_val_, &u->nvals_, desc );
+      Storage mask_vec_type;
+      CHECK( mask->getStorage( &mask_vec_type ) );
+      if( mask_vec_type==GrB_SPARSE )
+      {
+        std::cout << "Error: Simple kernel sparse mask not implemented yet!\n";
+        return GrB_INVALID_OBJECT;
+      }
 
-      // Insert filter kernel
+      // Fused mxv and eWiseMult kernel
+      if( use_scmp )
+        spmspvSimpleMaskedKernel< true><<<NB,NT>>>( w->d_val_, 
+            (mask->dense_).d_val_, NULL, op.identity(), extractMul(op), 
+            extractAdd(op), A_nrows, A_csrRowPtr, A_csrColInd, 
+            A_csrVal, u->d_val_ );
+      else
+        spmspvSimpleMaskedKernel<false><<<NB,NT>>>( w->d_val_, 
+            (mask->dense_).d_val_, NULL, op.identity(), extractMul(op), 
+            extractAdd(op), A_nrows, A_csrRowPtr, A_csrColInd, 
+            A_csrVal, u->d_val_ );
     }
     else
     {
-      //spmspvSimpleKernel<<<NB,NT>>>(
-      //    w->d_val_, &w->nvals_, NULL, op, A_nrows, A->nvals_, A_csrRowPtr, 
-      //    A_csrColInd, A_csrVal, u->d_val_, &u->nvals_, desc );
+      // mxv only kernel
+      // TODO: Needs atomics to be useful, so not implemented yet
+      std::cout << "Error: Simple kernel unmasked not implemented yet!\n";
+      /*spmspvSimpleKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(), 
+          extractMul(op), extractAdd(op), A_nrows, A_csrRowPtr, 
+          A_csrColInd, A_csrVal, u->d_val_ );*/
     }
+
+    if( desc->debug() )
+      printDevice("w_val", w->d_val_, A_nrows);
+
     w->need_update_ = true;
     return GrB_SUCCESS;
   }

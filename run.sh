@@ -1,4 +1,4 @@
-ARCH="GEN_SM45"
+ARCH="GEN_SM55"
 
 for i in kron_g500-logn16 kron_g500-logn17 kron_g500-logn18 kron_g500-logn19 kron_g500-logn20 kron_g500-logn21
 do
@@ -33,6 +33,17 @@ do
   do
     if [ "$ARCH" = "GEN_SM50" ] ; then
       bin/gbfs --struconly=true --mxvmode=$j --niter=1 --timing=2 /data-2/topc-datasets/$i.mtx
+    fi
+  done
+done
+
+for j in 0
+do
+  #for i in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004 kron_g500-logn21 roadNet-CA
+  for i in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004 kron_g500-logn21 rmat_n22_e64 rmat_n23_e32 rmat_n24_e16 rgg_n24_0.000548 roadNet-CA road_usa
+  do
+    if [ "$ARCH" = "GEN_SM55" ] ; then
+      bin/gbfs --struconly=true --spmspvmode=$j --timing=1 /data-2/topc-datasets/$i.mtx
     fi
   done
 done

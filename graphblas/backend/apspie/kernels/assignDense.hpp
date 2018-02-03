@@ -19,7 +19,7 @@ namespace backend
                                                 const Index* indices,
                                                 Index        nindices )
   {
-    unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
+    Index row = blockIdx.x*blockDim.x + threadIdx.x;
 
     if( UseAll )
     {
@@ -64,7 +64,7 @@ namespace backend
                                                  const Index* indices,
                                                  Index        nindices )
   {
-    unsigned row = blockIdx.x*blockDim.x + threadIdx.x;
+    Index row = blockIdx.x*blockDim.x + threadIdx.x;
 
     if( UseAll )
     {
