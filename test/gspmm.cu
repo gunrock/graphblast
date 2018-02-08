@@ -13,34 +13,67 @@
 #include "graphblas/util.hpp"
 #include "graphblas/graphblas.hpp"
 
-#define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE spmm_suite
-
-#include <boost/test/included/unit_test.hpp>
 #include <boost/program_options.hpp>
 #include <test/test.hpp>
 
-struct TestSPMM {
-  TestSPMM() :
-    TA(32),
-    TB(8),
-    NT(256),
-    ROW_MAJOR(true),
-    DEBUG(true) {}
-
-  int TA, TB, NT;
-  bool ROW_MAJOR, DEBUG;
-};
-
-BOOST_AUTO_TEST_SUITE(spmm_suite)
-
-BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
+int main( int argc, char** argv )
 {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
   graphblas::Index nrows, ncols, nvals;
 
+  // Parse arguments
+  namespace po = boost::program_options;
+  po::variables_map vm;
+  parseArgs( argc, argv, vm );
+  parseArgs( argc, argv, vm );
+  int TA, TB, NT, NUM_ITER, MAX_NCOLS;
+  bool ROW_MAJOR, DEBUG;
+  std::string mode;
+  if( vm.count("ta") )
+    TA       = vm["ta"].as<int>();
+  if( vm.count("tb") )
+    TB       = vm["tb"].as<int>();
+  if( vm.count("nt") )
+    NT       = vm["nt"].as<int>();
+  if( vm.count("max_ncols") )
+    MAX_NCOLS= vm["max_ncols"].as<int>();
+
+  // default values of TA, TB, NT will be used
+  graphblas::Descriptor desc;
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  desc.set( graphblas::GrB_NT, NT );
+  desc.set( graphblas::GrB_TA, TA );
+  desc.set( graphblas::GrB_TB, TB );
+
+  if( vm.count("debug") )
+    DEBUG    = vm["debug"].as<bool>();
+  if( vm.count("iter") )
+    NUM_ITER = vm["iter"].as<int>();
+  if( vm.count("mode") ) {
+    mode = vm["mode"].as<std::string>();
+  }
+
+  // cuSPARSE (column major)
+  if( mode=="cusparse" ) {
+    ROW_MAJOR = false;
+    desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
+  // fixed # of threads per row (row major)
+  } else if( mode=="fixedrow" ) {
+    ROW_MAJOR = true;
+    desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  // fixed # of threads per column (col major)
+  } else if( mode=="fixedcol" ) {
+    ROW_MAJOR = false;
+    desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDCOL );
+  // variable # of threads per row (row major)
+  } else if( mode=="mergepath" ) {
+    ROW_MAJOR = true;
+    desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  }
+
+  // Info
   if( DEBUG ) {
     std::cout << "ta:    " << TA        << "\n";
     std::cout << "tb:    " << TB        << "\n";
@@ -49,13 +82,14 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
     std::cout << "debug: " << DEBUG     << "\n";
   }
 
-  //char const *argv = "dataset/small/test_bc.mtx";
-  //char const *argv = "/home/ctcyang/GraphBLAS/dataset/small/chesapeake.mtx";
-  //char const *argv = "/data-2/gunrock_dataset/large/delaunay_n10/delaunay_n10.mtx";
-  //char const *argv = "/data-2/gunrock_dataset/large/benchmark2/12month1/12month1.mtx";
-  char const *argv = "/data-2/gunrock_dataset/large/benchmark/ASIC_320k/ASIC_320k.mtx";
-  //char const *argv = "/home/ctcyang/GraphBLAS/dataset/large/ASIC_320k/ASIC_320k.mtx";
-  readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, DEBUG );
+  // Read in sparse matrix
+  if (argc < 2) {
+    fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
+    exit(1);
+  } else {
+    readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols,
+    nvals, DEBUG );
+  }
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
@@ -67,22 +101,13 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
 
   // Matrix B
   graphblas::Index MEM_SIZE = 1000000000;  // 2x4=8GB GPU memory for dense
-  graphblas::Index max_ncols = 64;//std::min( MEM_SIZE/nrows/32*32, ncols );
-  if( ncols%32!=0 && max_ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
-  if( DEBUG && max_ncols!=ncols ) std::cout << "Restricting col to: "
+  graphblas::Index max_ncols = std::min( MEM_SIZE/nrows/32*32, MAX_NCOLS );
+  //if( ncols%32!=0 && max_ncols%32!=0 ) max_ncols = (ncols+31)/32*32;
+  if( DEBUG && max_ncols!=MAX_NCOLS ) std::cout << "Restricting col to: "
       << max_ncols << std::endl;
 
   graphblas::Matrix<float> b(ncols, max_ncols);
   std::vector<float> denseVal;
-
-  // default values of TA, TB, NT will be used
-  graphblas::Descriptor desc;
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
-  //desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
-  //desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
-  desc.set( graphblas::GrB_NT, NT );
-  desc.set( graphblas::GrB_TA, TA );
-  desc.set( graphblas::GrB_TB, TB );
 
   graphblas::Index a_nvals;
   a.nvals( a_nvals );
@@ -149,6 +174,5 @@ BOOST_FIXTURE_TEST_CASE( spmm3, TestSPMM )
     }
   }
   std::cout << "There were " << correct << " errors out of " << count << ".\n";
+  return 0;
 }
-
-BOOST_AUTO_TEST_SUITE_END()
