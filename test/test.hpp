@@ -68,9 +68,8 @@ void BOOST_ASSERT_LIST( const T* lhs,
 			for( size_t j = (i >= 5) ? i - 5 : 0; (j < i + 5) && (j < length); j++ )
 				std::cout << lhs[j] << ", ";
 			std::cout << "...]";
-      flag += 1;
     }
-    if( lhs[i]!=rhs[i] && flag>0 )
+    if( lhs[i]!=rhs[i] )
       flag += 1;
     //BOOST_ASSERT( lhs[i] == rhs[i] );
   }
