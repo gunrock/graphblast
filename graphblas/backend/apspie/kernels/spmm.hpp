@@ -2,7 +2,8 @@
 #define GRB_BACKEND_APSPIE_KERNELS_SPMM_HPP
 
 #include <cuda.h>
-#include <helper_math.h>
+#include <cstdio>
+//#include <helper_math.h>
 
 #include "graphblas/types.hpp"
 
@@ -15,7 +16,7 @@ namespace graphblas
 namespace backend
 {
   // Baseline implementation (row major) based on Bell/Garland 2008
-  template<typename c, int TB>
+  /*template<typename c, int TB>
   __global__ void spmmRowKernel( const Index A_nrows, 
       const Index B_ncols, const Index A_ncols, const Index A_nvals,
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
@@ -65,10 +66,6 @@ namespace backend
             //raws[ii] = __ldg((float4*)(B_denseVal+col*B_ncols+(ii<<2)+slab));
             //printf("row:%d,tid:%d,vals_idx:%d\n",row,thread_id,(ii<<2)+slab);
             //printf("row:%d,col:%d,tid:%d,0:%.0f,1:%.0f,2:%.0f,3:%.0f,idx:%d\n",row,col,thread_id,raws[ii].x,raws[ii].y,raws[ii].z,raws[ii].w, col*B_ncols+(ii<<2)+slab);
-            /*vals[(ii<<2)  ] += val*raws[ii].x;
-            vals[(ii<<2)+1] += val*raws[ii].y;
-            vals[(ii<<2)+2] += val*raws[ii].z;
-            vals[(ii<<2)+3] += val*raws[ii].w;*/
           }
         }
 
@@ -97,14 +94,6 @@ namespace backend
             raws[ii].w += __shfl_xor(raws[ii].w, 2 );
             raws[ii].w += __shfl_xor(raws[ii].w, 1 );
           }
-          /*#pragma unroll
-          for( int ii=0; ii<TB; ii++ ) {
-            vals[ii] += __shfl_xor(vals[ii], 16);
-            vals[ii] += __shfl_xor(vals[ii], 8 );
-            vals[ii] += __shfl_xor(vals[ii], 4 );
-            vals[ii] += __shfl_xor(vals[ii], 2 );
-            vals[ii] += __shfl_xor(vals[ii], 1 );
-          }*/
 
         // first thread writes the result
         if( lane==0 ) {
@@ -118,7 +107,7 @@ namespace backend
         }
       }
     //} // slab
-  } // spmmColKernel
+  } // spmmRowKernel*/
 
   // In paper "Design Principles for Sparse Matrix Multiplication"
   template<typename c, int TB>
@@ -299,7 +288,7 @@ namespace backend
             val = 0.f;
           }
           jj+=32;
-          //if( warp_id==0 ) printf("tid:%d,col:%d,val:%f\n", threadIdx.x, col, val);
+          //if( jj_start<row_start+32*5 && warp_id==0 ) printf("tid:%d,col:%d,val:%f\n", threadIdx.x, col, val);
           for( int kk=0; kk<32; kk+=TB )
           {
               #pragma unroll
@@ -313,10 +302,9 @@ namespace backend
                 else
                   vals[ii]  = 0.f;
                 //vals[   ii] = __ldg(B_offset+col_all[ii]);
+                //if( jj_start<row_start+32*5 && thread_id<2 && warp_id==0 && blockIdx.y==0 )
+                  //printf("row:%d,tid:%d,ii:%d,val:%f\n",row,thread_id, ii, vals[ii]);
               }
-
-              //if( warp_id==0 && blockIdx.y==0 )
-              //  printf("row:%d,tid:%d,col_all:%d,ii:%d,load_id:%d,val:%f\n",row,thread_id,col_all>>6, ii, col_all+lane_id+((blockIdx.y&1)<<5), vals[ii]);
 
               #pragma unroll
               for( int ii=0; ii<TB; ii++ )
@@ -326,16 +314,17 @@ namespace backend
                 sum += vals[ii];
               //  if( threadIdx.x==1 && warp_id==0 && blockIdx.y==0 ) printf("tid:%d,ii:%d,val:%f\n", threadIdx.x, ii, vals[ii]);
               }
-              //if( warp_id==0 && blockIdx.y==0 ) printf("tid:%d,val:%f\n", threadIdx.x, vals[0]);
+              //if( jj_start<row_start+32*5 && warp_id==0 && blockIdx.y==0 ) printf("str tid:%d,val:%f\n", threadIdx.x, sum);
+              //if( jj_start>row_end-32*5 && warp_id==0 && blockIdx.y==0 ) printf("end tid:%d,val:%f\n", threadIdx.x, sum);
           }
         }
         if( lane_id<leftover )
           C_denseVal[C_offset] = sum;
       }
     }
-  } // spmmColKernel
+  } // spmmRowKernel3
+
   // Baseline implementation (col major) based on Bell/Garland 2008
-  //
   template<typename c, int TB>
   __global__ void spmmColKernel( const Index A_nrows, 
       const Index B_ncols, const Index A_ncols, const Index A_nvals,
