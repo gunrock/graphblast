@@ -34,7 +34,7 @@ namespace backend
         h_csrColInd_(NULL), h_csrRowPtr_(NULL), h_csrVal_(NULL),
         d_csrColInd_(NULL), d_csrRowPtr_(NULL), d_csrVal_(NULL) 
 		{
-			allocate();
+			//allocate();
 		}
 
     // C API Methods
@@ -267,7 +267,7 @@ namespace backend
   {
     nrows_ = nrows;
     ncols_ = ncols;
-		allocate();
+		//allocate();
     return GrB_SUCCESS;
   }
 

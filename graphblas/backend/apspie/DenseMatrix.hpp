@@ -32,7 +32,7 @@ namespace backend
         : nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), h_denseVal_(NULL),
           d_denseVal_(NULL), major_type_(GrB_ROWMAJOR), need_update_(false) 
 		{
-			allocate();
+			//allocate();
 		}
 
     // Assignment Constructor
@@ -154,7 +154,7 @@ namespace backend
     nrows_ = nrows;
     ncols_ = ncols;
     nvals_ = nrows_*ncols_;
-		allocate();
+		//allocate();
     return GrB_SUCCESS;
   }
 
@@ -162,21 +162,16 @@ namespace backend
   Info DenseMatrix<T>::allocate()
   {
     // Host alloc
-    if( nvals_>0 && h_denseVal_==NULL )
-    {
+    if( nvals_!=0 && h_denseVal_ == NULL )
       h_denseVal_ = (T*)malloc(nvals_*sizeof(T));
-    }
 
-    // Device alloc
-    if( nvals_>0 && d_denseVal_==NULL )
-      CUDA(cudaMalloc((void**)&d_denseVal_, nvals_*sizeof(T)));
+    for( Index i=0; i<nvals_; i++ )
+      h_denseVal_[i] = (T) 0;
 
-    if( nvals_>0 && h_denseVal_!=NULL && d_denseVal_!=NULL )
-    {
-      for( Index i=0; i<nvals_; i++ )
-        h_denseVal_[i] = (T) 0;
-      CUDA(cudaMemcpy(d_denseVal_, h_denseVal_, nvals_*sizeof(T), 
-          cudaMemcpyHostToDevice));
+    if( nvals_!=0 && d_denseVal_ == NULL )
+		{
+			printMemory( "d_denseVal" );
+      CUDA( cudaMalloc( &d_denseVal_, nvals_*sizeof(T) ) );
     }
 
     return GrB_SUCCESS;
@@ -185,8 +180,8 @@ namespace backend
   template <typename T>
   Info DenseMatrix<T>::clear()
   {
-    if( h_denseVal_ ) free( h_denseVal_ );
-    if( d_denseVal_ ) CUDA(cudaFree( d_denseVal_ ));
+    //if( h_denseVal_ ) free( h_denseVal_ );
+    //if( d_denseVal_ ) CUDA(cudaFree( d_denseVal_ ));
     return GrB_SUCCESS;
   }
 

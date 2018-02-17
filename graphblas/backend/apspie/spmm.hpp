@@ -148,6 +148,74 @@ namespace backend
           break;
         break;
       }
+		else if( mode == GrB_FIXEDROW3 )
+			switch( TB ) {
+        case 1:
+          spmmRowKernel2<c,1,false><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 2:
+          spmmRowKernel2<c,2,false><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 4:
+          spmmRowKernel2<c,4,false><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 8:
+          spmmRowKernel2<c,8,false><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 16:
+          spmmRowKernel2<c,16,false><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 32:
+          spmmRowKernel2<c,32,false><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        break;
+      }
+		else if( mode == GrB_FIXEDROW4 )
+			switch( TB ) {
+        case 1:
+          spmmRowKernel2<c,1,true><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 2:
+          spmmRowKernel2<c,2,true><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 4:
+          spmmRowKernel2<c,4,true><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 8:
+          spmmRowKernel2<c,8,true><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 16:
+          spmmRowKernel2<c,16,true><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        case 32:
+          spmmRowKernel2<c,32,true><<<NB,NT>>>( A_nrows, B_ncols, A_ncols, 
+              A_nvals, A.d_csrRowPtr_, A.d_csrColInd_, A.d_csrVal_,
+              B.d_denseVal_, C.d_denseVal_ );
+          break;
+        break;
+      }
 
 		CUDA( cudaDeviceSynchronize() );
     //spmmColKernel<<<NBLOCKS,NTHREADS>>>( A_nrows, B_ncols, A_ncols, A_nvals,

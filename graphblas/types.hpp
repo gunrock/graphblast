@@ -1,6 +1,7 @@
 #ifndef GRB_TYPES_HPP
-
 #define GRB_TYPES_HPP
+
+#define GrB_MEMORY 0
 
 #include <cstddef>
 //#include <cstdint>
@@ -38,6 +39,8 @@ namespace graphblas
                    GrB_CUSPARSE2,
                    GrB_FIXEDROW,
                    GrB_FIXEDROW2,
+                   GrB_FIXEDROW3,
+                   GrB_FIXEDROW4,
                    GrB_FIXEDCOL,
                    GrB_MERGEPATH,
                    GrB_8   =  8,

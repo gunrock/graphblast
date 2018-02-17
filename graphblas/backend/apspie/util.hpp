@@ -20,6 +20,20 @@ void printArrayDevice( const char* str, const T* array, int length=40 )
 
 namespace graphblas
 {
+namespace backend
+{
+  void printMemory( const char* str )
+  {
+    size_t free, total;
+    if( GrB_MEMORY )
+    {
+      CUDA( cudaMemGetInfo(&free, &total) );
+      std::cout << str << ": " << free << " bytes left out of " << total << 
+          " bytes\n";
+    }
+  }
+}  // backend
+	
 struct GpuTimer
 {
   cudaEvent_t start;

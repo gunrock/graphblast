@@ -153,6 +153,92 @@ namespace backend
     }
   } // spmmRowKernel3
 
+  // In paper "Design Principles for Sparse Matrix Multiplication"
+  template<typename c, int TB, bool TRANS>
+  __global__ void spmmRowKernel2( const Index A_nrows, 
+      const Index B_ncols, const Index A_ncols, const Index A_nvals,
+      const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
+      const c* B_denseVal, c* C_denseVal )
+  {
+    float vals[TB];
+    int   col_all[TB];
+    float val_all[TB];
+
+    int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
+    int warp_id   = thread_id>>5;                      // global warp idx
+    int lane_id   = thread_id & (32 - 1);
+    int row       = warp_id;
+    const c* B_offset = B_denseVal+lane_id+((blockIdx.y&1)<<5);
+    int C_offset;
+	  if( TRANS )
+		  C_offset = (lane_id+(blockIdx.y<<5))*A_nrows+row;
+		else
+		  C_offset = (row*B_ncols)+lane_id+(blockIdx.y<<5);
+
+    //if( threadIdx.x==0 )
+    //  printf("row:%d\n", row);
+
+    if( row < A_nrows )
+    {
+      int row_start = __ldg(A_csrRowPtr+row);
+      int row_end   = __ldg(A_csrRowPtr+row+1);
+
+      int   col = -1;
+      float val = 0.f;
+      float sum = 0.f;
+      int   jj  = row_start+lane_id;
+
+      //TODO: add popc() and ballot to query which to shfl
+      for( int jj_start=row_start; jj_start<row_end; jj_start+=32 )
+      {
+        //#pragma unroll
+        //for( int ii=0; ii<TB; ii++ )
+        //  vals[ii] = 0.f;
+        if( jj<row_end )
+        {
+          col = __ldg(A_csrColInd+jj)<<6;
+          val = __ldg(A_csrVal+jj);
+        }
+        else
+        {
+          col = 0;
+          val = 0.f;
+        }
+        jj+=32;
+        //if( warp_id==0 ) printf("tid:%d,col:%d,val:%f\n", threadIdx.x, col, val);
+        for( int kk=0; kk<32; kk+=TB )
+        {
+          #pragma unroll
+          for( int ii=0; ii<TB; ii++ )
+          {
+            col_all[ii] = __shfl(col, ii+kk);
+            val_all[ii] = __shfl(val, ii+kk);
+            //sum        += val_all[ii]*__ldg(B_offset+col_all[ii]);
+            vals[   ii] = val_all[ii]*__ldg(B_offset+col_all[ii]);
+            //vals[   ii] = __ldg(B_offset+col_all[ii]);
+          }
+
+          //if( warp_id==0 && blockIdx.y==0 )
+          //  printf("row:%d,tid:%d,col_all:%d,ii:%d,load_id:%d,val:%f\n",row,thread_id,col_all>>6, ii, col_all+lane_id+((blockIdx.y&1)<<5), vals[ii]);
+
+          #pragma unroll
+          for( int ii=0; ii<TB; ii++ )
+          {
+            //val_all[ii] = __shfl(val, ii+kk);
+            //sum += val_all[ii]*vals[ii];
+            sum += vals[ii];
+          //  if( threadIdx.x==1 && warp_id==0 && blockIdx.y==0 ) printf("tid:%d,ii:%d,val:%f\n", threadIdx.x, ii, vals[ii]);
+          }
+
+          //if( warp_id==0 && blockIdx.y==0 ) printf("tid:%d,val:%f\n", threadIdx.x, vals[0]);
+        }
+      }
+
+      C_denseVal[C_offset] = sum;
+    }
+  } // spmmRowKernel2
+
+
   // Baseline implementation (col major) based on Bell/Garland 2008
   template<typename c, int TB>
   __global__ void spmmColKernel( const Index A_nrows, 

@@ -69,13 +69,14 @@ namespace backend
         err = cusparse_spmm2( C.dense_, op, A.sparse_, B.dense_ );
         err = C.dense_.setMajor( GrB_COLMAJOR );
       }
-      else if( mode == GrB_FIXEDROW )
+      else if( mode == GrB_FIXEDROW || mode == GrB_FIXEDROW3 )
       {
         //std::cout << "fixedrow\n";
         err = spmm( C.dense_, mask.sparse_, accum, op, A.sparse_, B.dense_, desc );
         err = C.dense_.setMajor( GrB_ROWMAJOR );
       }
-      else if( mode == GrB_FIXEDCOL || mode == GrB_FIXEDROW2 )
+      else if( mode == GrB_FIXEDCOL || mode == GrB_FIXEDROW2 || 
+					mode == GrB_FIXEDROW4)
       {
         //std::cout << "fixedcol\n";
         err = spmm( C.dense_, mask.sparse_, accum, op, A.sparse_, B.dense_, desc );

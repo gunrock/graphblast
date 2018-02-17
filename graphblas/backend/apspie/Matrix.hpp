@@ -201,16 +201,20 @@ namespace backend
   Info Matrix<T>::setStorage( const Storage mat_type )
   {
     Info err;
-    mat_type_ = mat_type;
-    /*if( mat_type_ == GrB_SPARSE ) {
-      //err = sparse_.clear();
-      //err = sparse_.allocate();
-    } else if (mat_type_ == GrB_DENSE ) {
-      //err = dense_.clear();
-      //err = dense_.allocate();
-    } else {
-      return GrB_UNINITIALIZED_OBJECT;
-    }*/
+		//if( mat_type_ != mat_type )
+		//{
+			if( mat_type == GrB_SPARSE ) {
+				err = sparse_.clear();
+				err = sparse_.allocate();
+			  mat_type_ = mat_type;
+			} else if (mat_type == GrB_DENSE ) {
+				err = dense_.clear();
+				err = dense_.allocate();
+			  mat_type_ = mat_type;
+			} else {
+				return GrB_UNINITIALIZED_OBJECT;
+			}
+    //}
     return err;
   }
 

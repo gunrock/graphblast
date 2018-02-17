@@ -161,6 +161,12 @@ int main( int argc, char** argv )
   } else if( mode=="fixedrow2" ) {
     ROW_MAJOR = false;
     desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW2 );
+  } else if( mode=="fixedrow3" ) {
+    ROW_MAJOR = true;
+    desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW3 );
+  } else if( mode=="fixedrow4" ) {
+    ROW_MAJOR = false;
+    desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW4 );
   }
 
   if( DEBUG ) {
@@ -212,6 +218,7 @@ int main( int argc, char** argv )
       if( i==j ) dense_row.push_back(1.0);
       else dense_row.push_back(0.0);
     }
+
   // Column major order
   for( int i=0; i<max_ncols; i++ )
     for( int j=0; j<ncols; j++ ) {
@@ -224,11 +231,11 @@ int main( int argc, char** argv )
   graphblas::Semiring op;
 
   // Test cusparse
-  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
   ROW_MAJOR = false;
-  runTest( "cusparse", c, a, b_col, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
+  runTest( "cusparse", c, a, b_col, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
   
-  // Test cusparse
+  // Test cusparse2
   desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
   ROW_MAJOR = false;
   runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
@@ -247,12 +254,26 @@ int main( int argc, char** argv )
   ROW_MAJOR = false;
   runTest( "row split2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
+  // Test row splitting
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW3 );
+  desc.set( graphblas::GrB_NT, 128 );
+  desc.set( graphblas::GrB_TB, 32 );
+  ROW_MAJOR = true;
+  runTest( "row split3", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+
+  // Test row splitting + transpose
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW4 );
+  desc.set( graphblas::GrB_NT, 128 );
+  desc.set( graphblas::GrB_TB, 32 );
+  ROW_MAJOR = false;
+  runTest( "row split4", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+
   // Test mergepath
-  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
   desc.set( graphblas::GrB_NT, 256 );
   desc.set( graphblas::GrB_TB, 8 );
   ROW_MAJOR = true;
-  runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
+  runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
   if( !DEBUG ) std::cout << "\n";
   if( DEBUG ) c.print();
