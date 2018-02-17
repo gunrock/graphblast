@@ -36,7 +36,8 @@ set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_35 -lineinfo -O3 -use_fast_math
 
 # needed for cudamalloc
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++11" )
+set(CMAKE_CXX_FLAGS "-fpermissive -pg -m64 -std=c++11" )
+#set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++11" )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 #set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
 #set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --verbose")

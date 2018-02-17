@@ -3,7 +3,7 @@
 #define GRB_TYPES_HPP
 
 #include <cstddef>
-#include <cstdint>
+//#include <cstdint>
 
 namespace graphblas
 {
@@ -37,6 +37,7 @@ namespace graphblas
   enum Desc_value {GrB_CUSPARSE,
                    GrB_CUSPARSE2,
                    GrB_FIXEDROW,
+                   GrB_FIXEDROW2,
                    GrB_FIXEDCOL,
                    GrB_MERGEPATH,
                    GrB_8   =  8,

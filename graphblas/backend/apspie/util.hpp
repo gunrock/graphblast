@@ -1,6 +1,9 @@
 #ifndef GRB_BACKEND_APSPIE_UTIL_HPP
 #define GRB_BACKEND_APSPIE_UTIL_HPP
 
+#include <cuda_runtime_api.h>
+#include <cuda.h>
+
 template <typename T>
 void printArrayDevice( const char* str, const T* array, int length=40 )
 {

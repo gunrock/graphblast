@@ -36,11 +36,9 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
   graphblas::GpuTimer warmup;
   if( str=="cusparse2" )
   {
-    cudaProfilerStart();
     warmup.Start();
     graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
     warmup.Stop();
-    cudaProfilerStop();
   }
   else
   { 
@@ -54,7 +52,6 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
   gpu_mxm.Start();
   for( int i=0; i<NUM_ITER; i++ )
     graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
-  CUDA( cudaDeviceSynchronize() );
   gpu_mxm.Stop();
  
   float flop = 2.0*nvals*max_ncols;
@@ -98,7 +95,7 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
           if( val!=out_denseVal[col*nrows+row] )
           {
             std::cout << "FAIL: " << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
-            break;
+            //break;
           //BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
           }
         }
@@ -161,6 +158,9 @@ int main( int argc, char** argv )
   } else if( mode=="mergepath" ) {
     ROW_MAJOR = true;
     desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  } else if( mode=="fixedrow2" ) {
+    ROW_MAJOR = false;
+    desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW2 );
   }
 
   if( DEBUG ) {
@@ -234,20 +234,28 @@ int main( int argc, char** argv )
   runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
   // Test row splitting
-  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
   ROW_MAJOR = true;
   runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
+  // Test row splitting + transpose
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW2 );
+  desc.set( graphblas::GrB_NT, 128 );
+  desc.set( graphblas::GrB_TB, 32 );
+  ROW_MAJOR = false;
+  runTest( "row split2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+
   // Test mergepath
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
+  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
   desc.set( graphblas::GrB_NT, 256 );
   desc.set( graphblas::GrB_TB, 8 );
   ROW_MAJOR = true;
   runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
 
   if( !DEBUG ) std::cout << "\n";
+  if( DEBUG ) c.print();
 
   /*std::vector<float> out_denseVal;
   if( DEBUG ) c.print();

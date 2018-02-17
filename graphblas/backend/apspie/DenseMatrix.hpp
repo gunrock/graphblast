@@ -30,7 +30,10 @@ namespace backend
           major_type_(GrB_ROWMAJOR), need_update_(false) {}
     DenseMatrix( const Index nrows, const Index ncols ) 
         : nrows_(nrows), ncols_(ncols), nvals_(nrows*ncols), h_denseVal_(NULL),
-          d_denseVal_(NULL), major_type_(GrB_ROWMAJOR), need_update_(false) {}
+          d_denseVal_(NULL), major_type_(GrB_ROWMAJOR), need_update_(false) 
+		{
+			allocate();
+		}
 
     // Assignment Constructor
     // // TODO: Replaces dup in C++
@@ -151,6 +154,7 @@ namespace backend
     nrows_ = nrows;
     ncols_ = ncols;
     nvals_ = nrows_*ncols_;
+		allocate();
     return GrB_SUCCESS;
   }
 

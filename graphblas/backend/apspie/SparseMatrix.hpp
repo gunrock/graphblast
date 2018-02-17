@@ -32,7 +32,10 @@ namespace backend
     SparseMatrix( const Index nrows, const Index ncols )
         : nrows_(nrows), ncols_(ncols), nvals_(0),
         h_csrColInd_(NULL), h_csrRowPtr_(NULL), h_csrVal_(NULL),
-        d_csrColInd_(NULL), d_csrRowPtr_(NULL), d_csrVal_(NULL) {}
+        d_csrColInd_(NULL), d_csrRowPtr_(NULL), d_csrVal_(NULL) 
+		{
+			allocate();
+		}
 
     // C API Methods
     Info build( const std::vector<Index>& row_indices,
@@ -264,6 +267,7 @@ namespace backend
   {
     nrows_ = nrows;
     ncols_ = ncols;
+		allocate();
     return GrB_SUCCESS;
   }
 
