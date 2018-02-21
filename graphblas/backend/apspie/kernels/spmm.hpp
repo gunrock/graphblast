@@ -22,9 +22,9 @@ namespace backend
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
       const c* B_denseVal, c* C_denseVal )
   {
-    float vals[TB];
-    int   col_all[TB];
-    float val_all[TB];
+    c   vals[TB];
+    int col_all[TB];
+    c   val_all[TB];
 
     int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
     int warp_id   = thread_id>>5;                      // global warp idx
@@ -45,9 +45,9 @@ namespace backend
       int row_start = __ldg(A_csrRowPtr+row);
       int row_end   = __ldg(A_csrRowPtr+row+1);
 
-      int   col = -1;
-      float val = 0.f;
-      float sum = 0.f;
+      int col = -1;
+      c   val = 0.f;
+      c   sum = 0.f;
       int   jj  = row_start+lane_id;
 
       //TODO: add popc() and ballot to query which to shfl
@@ -160,9 +160,9 @@ namespace backend
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
       const c* B_denseVal, c* C_denseVal )
   {
-    float vals[TB];
-    int   col_all[TB];
-    float val_all[TB];
+    c   vals[TB];
+    int col_all[TB];
+    c   val_all[TB];
 
     int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
     int warp_id   = thread_id>>5;                      // global warp idx
@@ -183,10 +183,10 @@ namespace backend
       int row_start = __ldg(A_csrRowPtr+row);
       int row_end   = __ldg(A_csrRowPtr+row+1);
 
-      int   col = -1;
-      float val = 0.f;
-      float sum = 0.f;
-      int   jj  = row_start+lane_id;
+      int col = -1;
+      c   val = 0.f;
+      c   sum = 0.f;
+      int jj  = row_start+lane_id;
 
       //TODO: add popc() and ballot to query which to shfl
       for( int jj_start=row_start; jj_start<row_end; jj_start+=32 )

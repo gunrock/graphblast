@@ -13,7 +13,19 @@ namespace graphblas
 {
 namespace backend
 {
-    typedef magma_index_t Index;
+  typedef magma_index_t Index;
+
+  /*static __device__ __inline__ double shfl(double var, 
+                                             int srcLane, 
+                                             int width=32)
+  {
+    float lo, hi;
+    asm volatile("mov.b64 {%0,%1}, %2;" : "=f"(lo), "=f"(hi) : "d"(var));
+    hi = __shfl(hi, srcLane, width);
+    lo = __shfl(lo, srcLane, width);
+    asm volatile("mov.b64 %0, {%1,%2};" : "=d"(var) : "f"(lo), "f"(hi));
+    return var;
+  }*/
 
   // In paper "Design Principles for Sparse Matrix Multiplication"
   /*template<typename c, int TB>
@@ -22,9 +34,9 @@ namespace backend
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
       const c* B_denseVal, c* C_denseVal )
   {
-    float vals[TB];
+    c vals[TB];
     int   col_all[TB];
-    float val_all[TB];
+    c val_all[TB];
 
     int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
     int warp_id   = thread_id>>5;                      // global warp idx
@@ -42,8 +54,8 @@ namespace backend
       int row_end   = __ldg(A_csrRowPtr+row+1);
 
       int   col = -1;
-      float val = 0.f;
-      float sum = 0.f;
+      c val = 0.f;
+      c sum = 0.f;
       int   jj  = row_start+lane_id;
 
       //TODO: add popc() and ballot to query which to shfl
@@ -103,9 +115,9 @@ namespace backend
       const Index* A_csrRowPtr, const Index* A_csrColInd, const c* A_csrVal, 
       const c* B_denseVal, c* C_denseVal )
   {
-    float vals[TB];
-    int   col_all[TB];
-    float val_all[TB];
+    c   vals[TB];
+    int col_all[TB];
+    c   val_all[TB];
 
     int thread_id = blockDim.x*blockIdx.x+threadIdx.x; // global thrd idx
     int warp_id   = thread_id>>5;                      // global warp idx
@@ -123,19 +135,19 @@ namespace backend
       int row_start = __ldg(A_csrRowPtr+row);
       int row_end   = __ldg(A_csrRowPtr+row+1);
 
-      int   col = -1;
-      float val = 0.f;
-      float sum = 0.f;
-      int   jj  = row_start+lane_id;
+      int col = -1;
+      c   val = 0.;
+      c   sum = 0.;
+      int jj  = row_start+lane_id;
 
       //TODO: add popc() and ballot to query which to shfl
-      if( blockIdx.y!=gridDim.y-1 )
+      //if( blockIdx.y!=gridDim.y-1 )
       {
         for( int jj_start=row_start; jj_start<row_end; jj_start+=32 )
         {
           //#pragma unroll
           //for( int ii=0; ii<TB; ii++ )
-          //  vals[ii] = 0.f;
+          //  vals[ii] = 0.;
           if( jj<row_end )
           {
             col = __ldg(A_csrColInd+jj)*B_ncols;
@@ -144,7 +156,7 @@ namespace backend
           else
           {
             col = 0;
-            val = 0.f;
+            val = 0.;
           }
           jj+=32;
           //if( warp_id==0 ) printf("tid:%d,col:%d,val:%f\n", threadIdx.x, col, val);
@@ -176,14 +188,14 @@ namespace backend
         }
         C_denseVal[C_offset] = sum;
       }
-      else
+      /*else
       {
         int leftover = B_ncols - (blockIdx.y<<5);
         for( int jj_start=row_start; jj_start<row_end; jj_start+=32 )
         {
           //#pragma unroll
           //for( int ii=0; ii<TB; ii++ )
-          //  vals[ii] = 0.f;
+          //  vals[ii] = 0.;
           if( jj<row_end )
           {
             col = __ldg(A_csrColInd+jj)*B_ncols;
@@ -192,7 +204,7 @@ namespace backend
           else
           {
             col = 0;
-            val = 0.f;
+            val = 0.;
           }
           jj+=32;
           //if( jj_start<row_start+32*5 && warp_id==0 ) printf("tid:%d,col:%d,val:%f\n", threadIdx.x, col, val);
@@ -207,7 +219,7 @@ namespace backend
                 if( lane_id<leftover )
                   vals[ii]  = val_all[ii]*__ldg(B_offset+col_all[ii]);
                 else
-                  vals[ii]  = 0.f;
+                  vals[ii]  = 0.;
                 //vals[   ii] = __ldg(B_offset+col_all[ii]);
                 //if( jj_start<row_start+32*5 && thread_id<2 && warp_id==0 && blockIdx.y==0 )
                   //printf("row:%d,tid:%d,ii:%d,val:%f\n",row,thread_id, ii, vals[ii]);
@@ -227,7 +239,7 @@ namespace backend
         }
         if( lane_id<leftover )
           C_denseVal[C_offset] = sum;
-      }
+      }*/
     }
   } // spmmRowKernel3
 

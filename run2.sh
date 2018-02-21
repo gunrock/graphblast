@@ -1,6 +1,6 @@
-OPTION="5"
+OPTION="9"
 
-if [ "$OPTION" = "2" ] || ["$OPTION" = "3" ] || ["$OPTION" = "4" ] || ["$OPTION" = "5" ] || ["$OPTION" = "6"] ; then
+if [ "$OPTION" = "2" ] || ["$OPTION" = "3" ] || ["$OPTION" = "4" ] || ["$OPTION" = "5" ] || ["$OPTION" = "6"] || ["$OPTION" = "8"] ; then
   cat result/spmm_schema
 fi
 
@@ -10,14 +10,30 @@ do
 	do
 	  if [ "$OPTION" = "7" ] ; then
 			echo "Running $i"
-		  ../magma-2.3.0/build/sparse/testing/testing_ssolver --solver LOBPCG --ev 32 --maxiter 10 --format $i /data-2/ctcyang/euro-dataset/$file.mtx
+		  ../magma-2.3.0/build/sparse/testing/testing_ssolver --solver LOBPCG --ev 64 --maxiter 20 --format $i /data-2/ctcyang/euro-dataset/$file.mtx
 	  fi
 	done
 done
 
+for file in /data-2/ctcyang/euro-dataset/highd/*/
+do
+  if [ "$OPTION" = "9" ] ; then
+    folder=$(basename $file)
+    bin/gbspmm --tb=32 --nt=128 /data-2/ctcyang/euro-dataset/highd/$folder/$folder.mtx
+  fi
+done
+
+for file in /data-2/ctcyang/euro-dataset/lowd/*/
+do
+  if [ "$OPTION" = "8" ] ; then
+    folder=$(basename $file)
+    bin/gbspmm --tb=32 --nt=128 /data-2/ctcyang/euro-dataset/lowd/$folder/$folder.mtx
+  fi
+done
+
 for file in /data-2/gunrock_dataset/large/benchmark4/*/
 do
-  if [ "$OPTION" = "6" ] ; then
+  if [ "$OPTION" = "5" ] ; then
     folder=$(basename $file)
     bin/gbspmm --tb=32 --nt=128 /data-2/gunrock_dataset/large/benchmark4/$folder/$folder.mtx
   fi
@@ -33,7 +49,7 @@ done
 
 for file in /data-2/gunrock_dataset/large/benchmark2/*/
 do
-  if [ "$OPTION" = "5" ] ; then
+  if [ "$OPTION" = "4" ] ; then
     folder=$(basename $file)
     bin/gbspmm --tb=4 --nt=256 /data-2/gunrock_dataset/large/benchmark2/$folder/$folder.mtx
   fi

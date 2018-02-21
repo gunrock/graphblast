@@ -225,6 +225,54 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  template<float, float, float>
+	cusparseStatus_t cusparse_spmm_call( cusparseHandle_t   handle, 
+                                       Index              A_nrows,
+                                       Index              B_ncols,
+                                       Index              A_ncols,
+                                       Index              A_nvals,
+                                       cusparseMatDescr_t descr, 
+                                       const float*       A_csrVal,
+                                       const Index*       A_csrRowPtr,
+                                       const Index*       A_csrColInd,
+                                       const float*       B_denseVal,
+                                       float*             C_denseVal )
+  {
+    float alpha = 1.f;
+    float beta  = 0.f;
+    return cusparseScsrmm( handle,
+        CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
+        &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, 
+        B.d_denseVal_,
+        A_ncols,      // ldb = max(1,k) since op(A) = A
+        &beta, C.d_denseVal_,
+        A_nrows );    // ldc = max(1,m) since op(A) = A
+  }
+
+  template<double, double, double>
+	cusparseStatus_t cusparse_spmm_call( cusparseHandle_t   handle, 
+                                       Index              A_nrows,
+                                       Index              B_ncols,
+                                       Index              A_ncols,
+                                       Index              A_nvals,
+                                       cusparseMatDescr_t descr, 
+                                       const double*      A_csrVal,
+                                       const Index*       A_csrRowPtr,
+                                       const Index*       A_csrColInd,
+                                       const double*      B_denseVal,
+                                       double*            C_denseVal )
+  {
+    double alpha = 1.f;
+    double beta  = 0.f;
+    return cusparseDcsrmm( handle,
+        CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
+        &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, 
+        B.d_denseVal_,
+        A_ncols,      // ldb = max(1,k) since op(A) = A
+        &beta, C.d_denseVal_,
+        A_nrows );    // ldc = max(1,m) since op(A) = A
+  }
+
   template<typename c, typename a, typename b>
   Info cusparse_spmm( DenseMatrix<c>&        C,
                       const Semiring&        op,
@@ -267,14 +315,10 @@ namespace backend
     cusparseSetMatType( descr, CUSPARSE_MATRIX_TYPE_GENERAL );
     cusparseSetMatIndexBase( descr, CUSPARSE_INDEX_BASE_ZERO );
     cusparseStatus_t status;
-    float alpha = 1.0;
-    float beta  = 0.0;
-    status = cusparseScsrmm( handle,
-        CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, B_ncols, A_ncols, A_nvals,
-        &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, A.d_csrColInd_, B.d_denseVal_,
-        A_ncols,      // ldb = max(1,k) since op(A) = A
-        &beta, C.d_denseVal_,
-        A_nrows );    // ldc = max(1,m) since op(A) = A
+
+    cusparse_spmm_call( handle, CUSPARSE_OPERATION_NON_TRANSPOSE, A_nrows, 
+				B_ncols, A_ncols, A_nvals, &alpha, descr, A.d_csrVal_, A.d_csrRowPtr_, 
+				A.d_csrColInd_, B.d_denseVal_, &beta, C.d_denseVal_ );
 
     switch( status ) {
         case CUSPARSE_STATUS_SUCCESS:

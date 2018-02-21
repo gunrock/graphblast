@@ -34,6 +34,7 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
 
   // Warmup
   graphblas::GpuTimer warmup;
+  cudaProfilerStart();
   if( str=="cusparse2" )
   {
     warmup.Start();
@@ -46,6 +47,7 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
     graphblas::mxm<float, float, float>( c, graphblas::GrB_NULL, graphblas::GrB_NULL, op, a, b, desc );
     warmup.Stop();
   }
+  cudaProfilerStop();
  
   // Benchmark
   graphblas::GpuTimer gpu_mxm;
@@ -241,7 +243,7 @@ int main( int argc, char** argv )
   runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
   // Test row splitting
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
   ROW_MAJOR = true;
@@ -252,9 +254,9 @@ int main( int argc, char** argv )
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
   ROW_MAJOR = false;
-  runTest( "row split2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "row split2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
 
-  // Test row splitting
+  // Test row splitting (fixed 64)
   desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW3 );
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
@@ -262,11 +264,11 @@ int main( int argc, char** argv )
   runTest( "row split3", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
   // Test row splitting + transpose
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW4 );
+  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW4 );
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
   ROW_MAJOR = false;
-  runTest( "row split4", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "row split4", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
 
   // Test mergepath
   desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
