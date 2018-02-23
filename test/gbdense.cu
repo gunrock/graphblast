@@ -134,7 +134,7 @@ int main( int argc, char** argv )
 
   // default values of TA, TB, NT will be used
   graphblas::Descriptor desc;
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW3 );
   desc.set( graphblas::GrB_NT, NT );
   desc.set( graphblas::GrB_TA, TA );
   desc.set( graphblas::GrB_TB, TB );
@@ -222,14 +222,14 @@ int main( int argc, char** argv )
   runTest( "cusparse", c, a, b_col, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
   
   // Test cusparse
-  desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
+  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
   ROW_MAJOR = false;
-  runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
 
   // Test row splitting
-  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW3 );
   ROW_MAJOR = true;
-  runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );*/
+  runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
 
   // Test mergepath
   /*desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
