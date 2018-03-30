@@ -23,7 +23,7 @@ namespace backend
       spmspvmode_(0), memusage_(0), switchpoint_(0), mxvmode_(0), transpose_(0),
       mtxinfo_(0), dirinfo_(0), verbose_(0), struconly_(0), earlyexit_(0), 
       earlyexitbench_(0), opreuse_(0), endbit_(0), reduce_(0), prealloc_(0),
-      sort_(0), nthread_(0), ndevice_(0), debug_(0), memory_(0) 
+      sort_(0), mask_(0), nthread_(0), ndevice_(0), debug_(0), memory_(0) 
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -60,6 +60,7 @@ namespace backend
     inline bool reduce()         { return reduce_; }
     inline bool prealloc()       { return prealloc_; }
     inline bool sort()           { return sort_; }
+    inline bool mask()           { return mask_; }
     inline float switchpoint()   { return switchpoint_; }
     inline float memusage()      { return memusage_; }
     inline int spmspvmode()      { return spmspvmode_; }
@@ -107,6 +108,7 @@ namespace backend
     bool        reduce_;
     bool        prealloc_;
     bool        sort_;
+    bool        mask_;
 
     // GPU params
     int         nthread_;
@@ -245,6 +247,7 @@ namespace backend
     reduce_         = vm["reduce"        ].as<bool>();
     prealloc_       = vm["prealloc"      ].as<bool>();
     sort_           = vm["sort"          ].as<bool>();
+    mask_           = vm["mask"          ].as<bool>();
 
     // GPU params
     nthread_        = vm["nthread"       ].as<int>();

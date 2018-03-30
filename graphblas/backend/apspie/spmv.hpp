@@ -81,7 +81,7 @@ namespace backend
     const int tb = static_cast<int>(tb_mode);
     const int nt = static_cast<int>(nt_mode);
 
-    if( use_mask )
+    if( use_mask && desc->mask() )
     {
       // TODO: add if condition here for if( add_ == GrB_LOR )
       if(true)
@@ -298,6 +298,17 @@ namespace backend
       mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, A_csrRowPtr, 
           A_nrows, u->d_val_, true, w->d_val_, op.identity(), extractMul(op), 
           extractAdd(op), *(desc->d_context_) );
+			dim3 NT, NB;
+			NT.x = nt;
+			NT.y = 1;
+			NT.z = 1;
+			NB.x = (A_nrows+nt-1)/nt;
+			NB.y = 1;
+			NB.z = 1;
+			w->nvals_ = u->nvals_;
+      assignDenseDenseMaskedKernel<true, true, true><<<NB,NT>>>(
+					w->d_val_, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
+					op.identity(), (Index*)NULL, A_nrows);
 
       // TODO: add semiring inputs to CUB
       /*size_t temp_storage_bytes = 0;

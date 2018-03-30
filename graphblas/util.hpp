@@ -94,6 +94,8 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "True means do the prealloc, False means do not do it")
     ("sort", po::value<bool>()->default_value(true),
         "True means sort, False means do not sort. (Option is only valid if struconly is true)")
+    ("mask", po::value<bool>()->default_value(true),
+		    "True means use fused mask in pull direction, False means do not do it")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 
