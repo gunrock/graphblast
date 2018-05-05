@@ -1,108 +1,160 @@
-# CMakeLists.txt for unittest
- 
-# required cmakeversion                                                                                                                                                                                   
-cmake_minimum_required(VERSION 2.8)
+# SuiteSparse:GraphBLAS, Timothy A. Davis, (c) 2017-2018, All Rights Reserved.
+# http://suitesparse.com   See GraphBLAS/Doc/License.txt for license.
+#
+# CMakeLists.tx: instructions for cmake to build GraphBLAS.
+# An ANSI C11 compiler is required.
+#
+# To compile the GraphBLAS library and demo programs:
+#
+#   cd build
+#   cmake ..
+#   make
+#
+# If that fails for any reason, make sure your compiler support ANSI C11.  You
+# could try changing your compiler, for example, use one of these commands:
+#
+#   CC=icc cmake ..
+#   CC=xlc cmake ..
+#   CC=gcc cmake ..
+#
+# To run the demos:
+#
+#   cd ../Demo
+#   ./demo
+#
+# To install GraphBLAS in /usr/local/lib and /usr/local/include:
+#
+#   cd build
+#   sudo make install
+#
+# To remove all compiled files and libraries (except installed ones):
+#
+#   cd build
+#   rm -rf *
 
-# packages                                                                                                                                                                                                 
-find_package(CUDA)
-find_package(Boost COMPONENTS program_options REQUIRED)
-#find_package(OpenMP REQUIRED)
+# cmake 3.0 is prefered.
+cmake_minimum_required ( VERSION 2.8.12 )
 
-#set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "." )
-#find_package(MKL REQUIRED)
+project ( graphblas )
 
-set( PROJ_NAME      "/test" )
-set( PROJ_PATH      ${CMAKE_SOURCE_DIR})
-set( PROJ_OUT_PATH  ${CMAKE_BINARY_DIR})
-set( PROJ_HEADERS   "" )
-set( PROJ_LIBRARIES "" )
-set( PROJ_INCLUDES  "./" "ext/moderngpu/include" "ext/cub/cub")
-set( mgpu_SRC_FILES "ext/moderngpu/src/mgpucontext.cu" "ext/moderngpu/src/mgpuutil.cpp")
-set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+include ( GNUInstallDirs )
 
-#set( CUDA_CURAND_LIBRARY "$ENV{CUDA_HOME}/lib64/libcurand.so" )
-#set( CUDA_CUBLAS_LIBRARY "$ENV{CUDA_HOME}/lib64/libcublas.so" )
-set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
+if ( CMAKE_VERSION VERSION_GREATER "3.0" )
+    cmake_policy ( SET CMP0042 NEW )
+endif ( )
 
-#FILE( GLOB_RECURSE PROJ_SOURCES graphblas/*.cu ../graphblas/*.cpp )
-#FILE( GLOB_RECURSE PROJ_LIBRARIES ext/cublas1.1/*.cu )
-FILE( GLOB_RECURSE PROJ_HEADERS graphblas/*.hpp)
+if (NOT CMAKE_BUILD_TYPE )
+    set ( CMAKE_BUILD_TYPE Release )
+endif ( )
 
-# nvcc flags
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_35 -lineinfo -O3 -use_fast_math -Xptxas=-v")
-#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-Xptxas=-v;-dlcm=ca;-maxrregcount=64)
-#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_21)
+# For development only, not for end-users:
+# set ( CMAKE_BUILD_TYPE Debug )
 
-# needed for cudamalloc
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++11" )
-#set(CMAKE_CXX_FLAGS "-fpermissive -pg -m64 -std=c++11" )
-#set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++11 -H" )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-#set(CMAKE_EXE_LINKER_FLAGS "-lpthread")
-#set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --verbose")
+set ( CMAKE_INCLUDE_CURRENT_DIR ON )
 
-# ptx generation
-#include_directories( ${PROJ_INCLUDES} )
-#cuda_compile_ptx( cuda_ptx_files "matrix/main.cu" )
-#add_custom_target( ptx ALL DEPENDS ${cuda_ptx_files} ${PROJ_HEADERS} "matrix/main.cu") #SOURCES main.cu ${PROJ_HEADERS} )
+# include directories for both graphblas and graphblasdemo libraries
+include_directories ( Source/Template Source Source/Generated Include Demo/Include )
 
-# standard compilation
-#include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} ${MKL_INCLUDE_DIR} )
-#add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
-#set_target_properties( grb PROPERTIES LINKER_LANGUAGE CXX )
-#add_executable( benchmark_spgemm${PROJ_NAME} "benchmark_spgemm/main.cu" )
-#target_link_libraries( spgemm${PROJ_NAME} grb "/usr/local/lib/libboost_unit_test_framework.a" "/usr/local/lib/libboost_program_options.a" ${MKL_LIBRARIES} )
-#target_link_libraries( benchmark_spgemm${PROJ_NAME} grb ${Boost_LIBRARIES} ${MKL_LIBRARIES} pthread )
-#set_target_properties( benchmark_spgemm${PROJ_NAME} PROPERTIES LINKER_LANGUAGE CXX )
+# check which compiler is being used.  If you need to make
+# compiler-specific modifications, here is the place to do it.
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+    # cmake 2.8 workaround: gcc needs to be told to do ANSI C11.
+    # cmake 3.0 doesn't have this problem.
+    set (CMAKE_C_FLAGS  "-std=c11 -lm -fopenmp")
+    if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.9)
+        message (FATAL_ERROR "gcc version must be at least 4.9")
+    endif ( )
+elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "Intel")
+    # options for icc: also needs -std=c11
+    set (CMAKE_C_FLAGS  "-std=c11 -fopenmp")
+    if (CMAKE_C_COMPILER_VERSION VERSION_LESS 18.0)
+        message (FATAL_ERROR "icc version must be at least 18.0")
+    endif ( )
+elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+    # options for clang
+    if (CMAKE_C_COMPILER_VERSION VERSION_LESS 3.3)
+        message (FATAL_ERROR "clang version must be at least 3.3")
+    endif ( )
+elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+    # options for MicroSoft Visual Studio
+endif ( )
 
-# standard compilation
-message( ${Boost_INCLUDE_DIRS} )
-message( ${Boost_LIBRARY_DIRS} )
-include_directories( ${PROJ_INCLUDES} ${Boost_INCLUDE_DIRS} )
-cuda_add_library( grb ${PROJ_LIBRARIES} ${PROJ_HEADERS} )
-#cuda_add_executable( gmmio         "test/gmmio.cu" ) x
-#cuda_add_executable( gutil        "test/gutil.cu" ) x
-cuda_add_executable( gspmspv       "test/gspmspv.cu"       ${mgpu_SRC_FILES} )
-cuda_add_executable( gpull         "test/gpull.cu"         ${mgpu_SRC_FILES} )
-cuda_add_executable( gpush         "test/gpush.cu"         ${mgpu_SRC_FILES} )
-cuda_add_executable( gpullbench    "test/gpullbench.cu"    ${mgpu_SRC_FILES} )
-cuda_add_executable( gpushbench    "test/gpushbench.cu"    ${mgpu_SRC_FILES} )
-cuda_add_executable( gspmvbench    "test/gspmvbench.cu"    ${mgpu_SRC_FILES} )
-cuda_add_executable( gspmspvbench  "test/gspmspvbench.cu"  ${mgpu_SRC_FILES} )
-cuda_add_executable( gassign       "test/gassign.cu"       ${mgpu_SRC_FILES} )
-cuda_add_executable( gbfs          "test/gbfs.cu"          ${mgpu_SRC_FILES} )
-cuda_add_executable( grandbfs      "test/grandbfs.cu"      ${mgpu_SRC_FILES} )
-cuda_add_executable( gvector       "test/gvector.cu"       ${mgpu_SRC_FILES} )
-cuda_add_executable( gdensevector  "test/gdensevector.cu"  ${mgpu_SRC_FILES} )
-cuda_add_executable( gsparsevector "test/gsparsevector.cu" ${mgpu_SRC_FILES} )
-cuda_add_executable( gdescriptor   "test/gdescriptor.cu"   ${mgpu_SRC_FILES} )
-cuda_add_executable( gbinaryop     "test/gbinaryop.cu"     ${mgpu_SRC_FILES} ) 
-cuda_add_executable( gsparsematrix "test/gsparsematrix.cu" ${mgpu_SRC_FILES} )
-#cuda_add_executable( gmatrix "test/gmatrix.cu" ) x
-#cuda_add_executable( gspmm   "test/gspmm.cu" ${mgpu_SRC_FILES} ) x
-#cuda_add_executable( gspgemm "test/gspgemm.cu" ) x
-#cuda_add_executable( gbspmm "test/gbspmm.cu" ${mgpu_SRC_FILES} ) x
-#cuda_add_executable( gbspgemm "test/gbspgemm.cu" ) x
-#target_link_libraries( gmmio         grb ${Boost_LIBRARIES} )
-#target_link_libraries( gutil        grb ${Boost_LIBRARIES} )
-target_link_libraries( gspmspv       grb ${Boost_LIBRARIES} )
-target_link_libraries( gpull         grb ${Boost_LIBRARIES} )
-target_link_libraries( gpush         grb ${Boost_LIBRARIES} )
-target_link_libraries( gpullbench    grb ${Boost_LIBRARIES} )
-target_link_libraries( gpushbench    grb ${Boost_LIBRARIES} )
-target_link_libraries( gspmvbench    grb ${Boost_LIBRARIES} )
-target_link_libraries( gspmspvbench  grb ${Boost_LIBRARIES} )
-target_link_libraries( gassign       grb ${Boost_LIBRARIES} )
-target_link_libraries( gbfs          grb ${Boost_LIBRARIES} )
-target_link_libraries( grandbfs      grb ${Boost_LIBRARIES} )
-target_link_libraries( gvector       grb ${Boost_LIBRARIES} )
-target_link_libraries( gdensevector  grb ${Boost_LIBRARIES} )
-target_link_libraries( gsparsevector grb ${Boost_LIBRARIES} )
-target_link_libraries( gdescriptor   grb ${Boost_LIBRARIES} )
-target_link_libraries( gbinaryop     grb ${Boost_LIBRARIES} )
-target_link_libraries( gsparsematrix grb ${Boost_LIBRARIES} )
-#target_link_libraries( gspmm   grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-#target_link_libraries( gspgemm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-#target_link_libraries( gbspmm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-#target_link_libraries( gbspgemm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES})
+# create the dynamic graphblas library.  Requires ANSI C11
+file ( GLOB GRAPHBLAS_SOURCES "Source/*.c" "Source/Generated/*.c" )
+add_library ( graphblas SHARED ${GRAPHBLAS_SOURCES} )
+SET_TARGET_PROPERTIES ( graphblas PROPERTIES VERSION 1.2.0
+    SOVERSION 2
+    C_STANDARD_REQUIRED 11
+    PUBLIC_HEADER "Include/GraphBLAS.h" )
+set_property ( TARGET graphblas PROPERTY C_STANDARD 11 )
+
+# create the static graphblas library.  Requires ANSI C11
+add_library ( graphblas_static STATIC ${GRAPHBLAS_SOURCES} )
+SET_TARGET_PROPERTIES ( graphblas_static PROPERTIES VERSION 1.2.0
+    OUTPUT_NAME graphblas
+    POSITION_INDEPENDENT_CODE OFF
+    SOVERSION 2
+    C_STANDARD_REQUIRED 11
+    PUBLIC_HEADER "Include/GraphBLAS.h" )
+set_property ( TARGET graphblas_static PROPERTY C_STANDARD 11 )
+
+# Notes from Sebastien Villemot (sebastien@debian.org):
+# SOVERSION policy: if a binary compiled against the old version of the shared
+# library needs recompiling in order to work with the new version, then a
+# SO_VERSION increase # is needed. Otherwise not.  Examples of the changes that
+# require a SO_VERSION increase:
+#
+#   - a public function or static variable is removed
+#   - the prototype of a public function changes
+#   - the integer value attached to a public #define or enum changes
+#   - the fields of a public structure are modified
+#
+# Examples of changes that do not require a SO_VERSION increase:
+#
+#   - a new public function or static variable is added
+#   - a private function or static variable is removed or modified
+#   - changes in the internals of a structure that is opaque to the calling
+#       program (i.e. is only a pointer manipulated through public functions of
+#       the library)
+#   - a public enum is extended (by adding a new item at the end, but without
+#       changing the already existing items)
+
+# graphblas installation location
+install ( TARGETS graphblas graphblas_static
+    LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR} )
+
+# Demo library
+file ( GLOB DEMO_SOURCES "Demo/Source/*.c" )
+add_library ( graphblasdemo SHARED ${DEMO_SOURCES} )
+SET_TARGET_PROPERTIES ( graphblasdemo PROPERTIES
+    C_STANDARD_REQUIRED 11 )
+set_property ( TARGET graphblasdemo PROPERTY C_STANDARD 11 )
+
+add_library ( graphblasdemo_static STATIC ${DEMO_SOURCES} )
+SET_TARGET_PROPERTIES ( graphblasdemo_static PROPERTIES
+    C_STANDARD_REQUIRED 11 )
+set_property ( TARGET graphblasdemo_static PROPERTY C_STANDARD 11 )
+
+target_link_libraries ( graphblasdemo         m graphblas )
+target_link_libraries ( graphblasdemo_static  graphblas_static )
+
+# Demo programs
+add_executable ( bfs_demo      "Demo/Program/bfs_demo.c" )
+add_executable ( tri_demo      "Demo/Program/tri_demo.c" )
+add_executable ( mis_demo      "Demo/Program/mis_demo.c" )
+add_executable ( complex_demo  "Demo/Program/complex_demo.c" )
+add_executable ( kron_demo     "Demo/Program/kron_demo.c" )
+add_executable ( simple_demo   "Demo/Program/simple_demo.c" )
+add_executable ( wildtype_demo "Demo/Program/wildtype_demo.c" )
+
+# Libraries required for Demo programs
+target_link_libraries ( bfs_demo      graphblas graphblasdemo )
+target_link_libraries ( tri_demo      graphblas graphblasdemo )
+target_link_libraries ( mis_demo      graphblas graphblasdemo )
+target_link_libraries ( complex_demo  graphblas graphblasdemo )
+target_link_libraries ( kron_demo     graphblas graphblasdemo )
+target_link_libraries ( simple_demo   graphblasdemo )
+target_link_libraries ( wildtype_demo graphblas )
+

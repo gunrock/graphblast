@@ -306,10 +306,25 @@ namespace backend
 			NB.y = 1;
 			NB.z = 1;
 			w->nvals_ = u->nvals_;
-      assignDenseDenseMaskedKernel<true, true, true><<<NB,NT>>>(
-					w->d_val_, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
-					op.identity(), (Index*)NULL, A_nrows);
+			if( desc->debug() )
+			{
+				std::cout << w->nvals_ << " nnz in vector w\n";
+				printDevice("w_val", w->d_val_, A_nrows);
+			}
+		  if( use_mask )
+			{
+				if( use_scmp )
+          assignDenseDenseMaskedKernel<false, true, true><<<NB,NT>>>(
+				    	w->d_val_, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
+					    op.identity(), (Index*)NULL, A_nrows);
+        else
+          assignDenseDenseMaskedKernel< true, true, true><<<NB,NT>>>(
+				    	w->d_val_, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
+					    op.identity(), (Index*)NULL, A_nrows);
+      }
 
+			if( desc->debug() )
+				printDevice("w_val", w->d_val_, A_nrows);
       // TODO: add semiring inputs to CUB
       /*size_t temp_storage_bytes = 0;
 			cub::DeviceSpmv::CsrMV(desc->d_temp_, temp_storage_bytes, A->d_csrVal_,
