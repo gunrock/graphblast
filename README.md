@@ -39,7 +39,7 @@ This software has been tested on the following dependencies:
 
 ### CUDA 8.0
 
-If CUDA 8.0 is not already installed on your system, you will need to ownload CUDA 8.0 
+If CUDA 8.0 is not already installed on your system, you will need to download CUDA 8.0 
 [here](https://developer.nvidia.com/cuda-80-ga2-download-archive). Follow the onscreen instructions and select the operating system and vendor that suits your needs. Download the 1.4GB file. You do not need to download the optional Patch 2.
 
 After generating a download link, the commands I typed were the following:
