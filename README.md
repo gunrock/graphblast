@@ -16,6 +16,8 @@ load-balancing and (ii) row-major coalesced memory access—we demonstrate a 3.6
 state-of-the-art SpMM implementations on real-world datasets.
 
 
+![](http://wwwimages.adobe.com/content/dam/acom/en/legal/images/badges/Adobe_PDF_file_icon_32x32.png) [spmm-europar18-preprint.pdf](https://github.com/owensgroup/GraphBLAS/raw/europar/spmm-europar18-preprint.pdf)
+
 
 ## Getting Started
 
@@ -29,9 +31,7 @@ This software has been tested on the following dependencies:
 * CUDA 8.0
 
 If CUDA 8.0 is not already installed on your system, you will need to ownload CUDA 8.0 
-[here](https://developer.nvidia.com/cuda-80-ga2-download-archive). Follow the onscreen instructions and select the operating 
-system and vendor that suits your needs. (http://example.com). 
-Download the 1.4GB file. You do not need to download the optional Patch 2.
+[here](https://developer.nvidia.com/cuda-80-ga2-download-archive). Follow the onscreen instructions and select the operating system and vendor that suits your needs. Download the 1.4GB file. You do not need to download the optional Patch 2.
 
 After generating a download link, the commands I typed were the following:
 
@@ -162,6 +162,8 @@ sh Figure6.sh
 ## Authors
 
 * **Carl Yang**
+* **Aydin Buluc**
+* **John D. Owens**
 
 ## License
 
