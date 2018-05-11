@@ -29,6 +29,15 @@ purposes.
 This software has been tested on the following dependencies:
 
 * CUDA 8.0
+* Boost 1.58
+* CMake 3.11.1
+* g++ 4.9.3
+* CMake 3.11.1
+* ModernGPU 1.1
+
+---
+
+### CUDA 8.0
 
 If CUDA 8.0 is not already installed on your system, you will need to ownload CUDA 8.0 
 [here](https://developer.nvidia.com/cuda-80-ga2-download-archive). Follow the onscreen instructions and select the operating system and vendor that suits your needs. Download the 1.4GB file. You do not need to download the optional Patch 2.
@@ -74,7 +83,8 @@ export CUDA_HOME=/usr/local/cuda-8.0
 Additional instructions on installing CUDA can be found 
 [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#runfile).
 
-* Boost 1.58
+### Boost 1.58
+
 You will need to install or compile Boost 1.58 program options using the same compiler as you do our software. 
 To only install Boost program options, type:
 
@@ -86,24 +96,27 @@ cd boost_1_58_0
 b2 --with-libraries=program_options
 ```
 
-* CMake 3.11.1
+### CMake 3.11.1
+
 If not already installed, you will need to install CMake by typing:
 
 ```
 sudo apt-get install cmake
 ```
 
-* g++ 4.9.3
+### g++ 4.9.3
+
 You will need g++-4.9. Install by typing:
 
 ```
 sudo apt-get install gcc-4.9 g++-4.9
 ```
 
-* ModernGPU 1.1
+### ModernGPU 1.1
+
 This excellent software by Sean Baxter will be automatically downloaded as a Git submodule.
 
-### Installing
+## Installing
 
 A step by step series of examples that tell you have to get a development env running.
 
