@@ -112,7 +112,7 @@ int main( int argc, char** argv )
   graphblas::Index a_nvals;
   a.nvals( a_nvals );
   int num_blocks = (a_nvals+NT-1)/NT;
-  int num_segreduce = (num_blocks*32 + NT - 1)/NT*(B_ncols + 32 - 1)/32;
+  int num_segreduce = (num_blocks*32 + NT - 1)/NT*(max_ncols + 32 - 1)/32;
   CUDA( cudaMalloc( &desc.descriptor_.d_limits_,
       (num_blocks+1)*sizeof(graphblas::Index) ));
   CUDA( cudaMalloc( &desc.descriptor_.d_carryin_,

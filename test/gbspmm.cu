@@ -10,24 +10,23 @@
 #include <cuda_profiler_api.h>
 
 #include "graphblas/graphblas.hpp"
-#include "../ext/moderngpu/include/constants.h"
 
 #include <boost/program_options.hpp>
 #include <test/test.hpp>
 
 template <typename T>
-void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix<T>& a, graphblas::Matrix<T>& b, graphblas::Semiring& op, graphblas::Descriptor& desc, graphblas::Index max_ncols, graphblas::Index nrows, graphblas::Index nvals, int NUM_ITER, bool DEBUG, bool ROW_MAJOR, std::vector<graphblas::Index>& row_indices, std::vector<graphblas::Index>& col_indices, std::vector<float>& values )
+void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix<T>& a, graphblas::Matrix<T>& b, graphblas::Semiring& op, graphblas::Descriptor& desc, graphblas::Index max_ncols, graphblas::Index nrows, graphblas::Index nvals, int NUM_ITER, bool DEBUG, bool ROW_MAJOR, std::vector<graphblas::Index>& row_indices, std::vector<graphblas::Index>& col_indices, std::vector<float>& values, int NT )
 {
   if( str=="merge path" )
   {
     graphblas::Index a_nvals;
     a.nvals( a_nvals );
-    int num_blocks = (a_nvals+MGPU_NV-1)/MGPU_NV;
-    int num_segreduce = (num_blocks + MGPU_NT - 1)/MGPU_NT;
+    int num_blocks = (a_nvals+NT-1)/NT;
+    int num_segreduce = (num_blocks*32 + NT - 1)/NT*(max_ncols + 32 - 1)/32;
     CUDA( cudaMalloc( &desc.descriptor_.d_limits_,  
         (num_blocks+1)*sizeof(graphblas::Index) ));
     CUDA( cudaMalloc( &desc.descriptor_.d_carryin_, 
-        num_blocks*MGPU_BC*sizeof(T) ));
+        num_blocks*max_ncols*sizeof(T) ));
     CUDA( cudaMalloc( &desc.descriptor_.d_carryout_,
         num_segreduce*sizeof(T)      ));
   }
@@ -60,7 +59,7 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
   {
     std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
         flop/warmup.ElapsedMillis()/1000000.0 << ", " << byte/warmup.ElapsedMillis()/ 1000000.0 << "\n";
-    std::cout << "spmm, " << gpu_mxm.ElapsedMillis()/NUM_ITER << ", " <<
+    std::cout << str << ", " << gpu_mxm.ElapsedMillis()/NUM_ITER << ", " <<
         flop/gpu_mxm.ElapsedMillis()*NUM_ITER/1000000.0 << ", " << byte/gpu_mxm.ElapsedMillis()*NUM_ITER/1000000.0 << "\n";
   }
   else
@@ -70,7 +69,7 @@ void runTest( const std::string& str, graphblas::Matrix<T>& c, graphblas::Matrix
   }
 
   std::vector<float> out_denseVal;
-  if( DEBUG ) 
+  if( DEBUG )
   {
     //c.print();
     c.extractTuples( out_denseVal );
@@ -233,50 +232,50 @@ int main( int argc, char** argv )
   // Test cusparse
   desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
   ROW_MAJOR = false;
-  runTest( "cusparse", c, a, b_col, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "cusparse", c, a, b_col, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );
   
   // Test cusparse2
   desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE2 );
   ROW_MAJOR = false;
-  runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "cusparse2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );
 
   // Test row splitting
   desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW );
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
   ROW_MAJOR = true;
-  runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "row split", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );
 
   // Test row splitting + transpose
   desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW2 );
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
   ROW_MAJOR = false;
-  runTest( "row split2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "row split2", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );
 
   // Test row splitting
   desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW3 );
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
   ROW_MAJOR = true;
-  runTest( "row split3", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "row split3", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );
 
   // Test row splitting + transpose
   desc.set( graphblas::GrB_MODE, graphblas::GrB_FIXEDROW4 );
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
   ROW_MAJOR = false;
-  runTest( "row split4", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "row split4", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );
 
   // Test mergepath
   desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );
   desc.set( graphblas::GrB_NT, 256 );
   desc.set( graphblas::GrB_TB, 8 );
   ROW_MAJOR = true;
-  runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values );
+  runTest( "merge path", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );
 
   if( !DEBUG ) std::cout << "\n";
-  if( DEBUG ) c.print();
+  //if( DEBUG ) c.print();
 
   /*std::vector<float> out_denseVal;
   if( DEBUG ) c.print();
