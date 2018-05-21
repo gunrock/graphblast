@@ -93,7 +93,7 @@ wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.g
 tar -xvzf boost_1_58_0.tar.gz
 cd boost_1_58_0
 ./bootstrap.sh --prefix=path/to/installation/prefix
-b2 --with-libraries=program_options
+./b2 --with-program_options
 ```
 
 ### CMake 3.11.1
