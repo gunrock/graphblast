@@ -32,7 +32,6 @@ This software has been tested on the following dependencies:
 * Boost 1.58
 * CMake 3.11.1
 * g++ 4.9.3
-* CMake 3.11.1
 * ModernGPU 1.1
 
 ---
