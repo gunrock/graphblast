@@ -180,8 +180,8 @@ namespace backend
   template <typename T>
   Info DenseMatrix<T>::clear()
   {
-    //if( h_denseVal_ ) free( h_denseVal_ );
-    //if( d_denseVal_ ) CUDA(cudaFree( d_denseVal_ ));
+    if( h_denseVal_ ) free( h_denseVal_ );
+    if( d_denseVal_ ) CUDA(cudaFree( d_denseVal_ ));
     return GrB_SUCCESS;
   }
 
