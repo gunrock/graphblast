@@ -170,11 +170,11 @@ sh Extract.sh
 cd ../../../
 ```
 
-4. The figures in the paper can be reconstructed by typing:
+5. The figures in the paper can be reconstructed by typing:
 
 ```
-sh Figure1spmmand4.sh
-sh Figure1spmv.sh
+sh Figure1a-spmm-4.sh
+sh Figure1a-spmv.sh
 sh Figure1b.sh
 sh Figure5a.sh
 sh Figure5b.sh
