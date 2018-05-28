@@ -130,14 +130,22 @@ git checkout europar
 cd ../../
 ```
 
-2. Then, we must compile the software.
+2. Also, we must compile a dependency.
+
+```
+cd ext/merge-spmv
+make gpu_spmv sm=350
+cd ../../
+```
+
+3. Then, we must compile the software.
 
 ```
 cmake .
 make -j16
 ```
 
-3. Next, we must download the datasets. In order of increasing size, they are listed below and can be downloaded 
+4. Next, we must download the datasets. In order of increasing size, they are listed below and can be downloaded 
 automatically.
 
 Small - 10 small row length matrices (400MB)
@@ -165,7 +173,8 @@ cd ../../../
 4. The figures in the paper can be reconstructed by typing:
 
 ```
-sh Figure1and4.sh
+sh Figure1spmmand4.sh
+sh Figure1spmv.sh
 sh Figure1b.sh
 sh Figure5a.sh
 sh Figure5b.sh
