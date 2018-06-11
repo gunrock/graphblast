@@ -31,12 +31,12 @@ std::vector<int> pick(int N, int k, int row, std::mt19937& gen)
   // If there is self-loop, find first zero element in row and set it to nnz
   if (elems.find(row) != elems.end())
   {
-		elems.remove(row);
+    elems.erase(row);
     for (unsigned i = 0; i < N; ++i)
     {
       if (i != row && elems.find(i) == elems.end())
-				elems.insert(i);
-		}
+      elems.insert(i);
+    }
   }
 
   std::vector<int> result(elems.begin(), elems.end());
@@ -68,8 +68,8 @@ int main( int argc, char** argv )
   std::random_device rd;
   std::mt19937 gen(0);
 
-  std::cout << "%%MatrixMarket matrix coordinate pattern general";
-	std::cout << n_rows << " " << n_cols << " " << n_nnzs << std::endl;
+  std::cout << "%%MatrixMarket matrix coordinate pattern general\n";
+  std::cout << n_rows << " " << n_cols << " " << n_nnzs*n_rows << std::endl;
 
   for (int i = 0; i < n_rows; ++i)
   {

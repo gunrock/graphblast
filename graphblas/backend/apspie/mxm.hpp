@@ -8,6 +8,7 @@
 #include "graphblas/backend/apspie/Matrix.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
+#include "graphblas/backend/apspie/gemm.hpp"
 #include "graphblas/backend/apspie/spmm.hpp"
 #include "graphblas/backend/apspie/spgemm.hpp"
 #include "graphblas/types.hpp"
@@ -88,6 +89,10 @@ namespace backend
         err = mergepath_spmm( C.dense_, op, A.sparse_, B.dense_, desc );
         err = C.dense_.setMajor( GrB_ROWMAJOR );
       }
+    } else if( A_storage == GrB_DENSE && B_storage == GrB_DENSE ) {
+      if( C_storage == GrB_UNKNOWN )
+        err = C.setStorage( GrB_DENSE );
+      err = gemm( C.dense_, op, A.dense_, B.dense_ );
     }
     return err;
   }
