@@ -230,7 +230,7 @@ int main( int argc, char** argv )
   graphblas::Semiring op;
 
   // Test cusparse
-  /*desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
+  desc.set( graphblas::GrB_MODE, graphblas::GrB_CUSPARSE );
   ROW_MAJOR = false;
   runTest( "cusparse", c, a, b_col, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );
   
@@ -265,7 +265,7 @@ int main( int argc, char** argv )
   desc.set( graphblas::GrB_NT, 128 );
   desc.set( graphblas::GrB_TB, 32 );
   ROW_MAJOR = false;
-  runTest( "row split4", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );*/
+  runTest( "row split4", c, a, b_row, op, desc, max_ncols, nrows, nvals, NUM_ITER, DEBUG, ROW_MAJOR, row_indices, col_indices, values, NT );
 
   // Test mergepath
   desc.set( graphblas::GrB_MODE, graphblas::GrB_MERGEPATH );

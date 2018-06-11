@@ -2,5 +2,5 @@ echo filename, num_rows, num_cols, num_nonzeros, row_length_mean, row_length_std
 for file in /data/ctcyang/GraphBLAS/dataset/europar/lowd/*/
 do
   folder=$(basename $file)
-	chmod 555 /data/ctcyang/GraphBLAS/dataset/europar/lowd/$folder/$folder.mtx
+	bin/gbspmm --tb=32 --nt=128 /data/ctcyang/GraphBLAS/dataset/europar/lowd/$folder/$folder.mtx
 done
