@@ -374,8 +374,14 @@ namespace graphblas
                const Matrix<a>* A,
                Descriptor*      desc )
   {
-    // Use op->operator()
-  }
+    if( w==NULL || A==NULL )
+			return GrB_UNINITIALIZED_OBJECT;
+
+    auto                 mask_t = (mask==NULL ) ? NULL : &mask->vector_;
+    backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+
+    return backend::reduce( &w->vector_, mask_t, accum, op, &A->matrix_, desc_t );
+	}
 
   template <typename T, typename U, 
             typename BinaryOpT, typename MonoidT>
@@ -385,7 +391,6 @@ namespace graphblas
                const Vector<U>*       u,
                Descriptor*            desc )
   {
-    // Null pointer check
     if( val==NULL || u==NULL )
       return GrB_UNINITIALIZED_OBJECT;
 

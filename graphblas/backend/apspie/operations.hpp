@@ -469,7 +469,24 @@ namespace backend
                const Matrix<a>  A,
                Descriptor*      desc )
   {
-    // Use op->operator()
+    // Get storage:
+    Storage mat_type;
+    CHECK( A->getStorage( &mat_type ) );
+		CHECK( w->setStorage( GrB_DENSE ) );
+
+    // 2 cases:
+    // 1) SpMat
+    // 2) DeMat
+    if( mat_type==GrB_SPARSE )
+    {
+      CHECK( reduceInner( &w->dense_, mask, accum, op, &A->sparse_, desc) );
+    }
+    else if( mat_type==GrB_DENSE )
+    {
+      CHECK( reduceInner( &w->dense_, mask, accum, op, &A->dense_, desc) );
+    }
+
+		return GrB_SUCCESS;
   }
 
   template <typename T, typename U,

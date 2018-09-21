@@ -87,6 +87,31 @@ namespace backend
 
     return GrB_SUCCESS;
   }
+
+	// TODO (@ctcyang): Dense matrix variant
+
+  // Sparse matrix variant
+  template <typename W, typename a, typename M,
+            typename BinaryOpT,     typename MonoidT>
+  Info reduceInner( DenseVector<W>*       w,
+                    const Vector<M>*      mask,
+                    BinaryOpT             accum,
+                    MonoidT               op,
+                    const SparseMatrix<a> A,
+                    Descriptor*           desc )
+  {
+    // TODO (@ctcyang): Structure-only optimization uses CSR row pointers
+    if( desc->struconly() )
+    {
+    }
+    else
+    {
+      mgpu::SegReduceCsr( A->d_csrVal_, A->nvals_, A->d_csrRowPtr_, A->n_rows_,
+          true, w->d_val_, op.identity(), op, desc->d_context_ );
+    }
+
+    return GrB_SUCCESS;
+  }
 }  // backend
 }  // graphblas
 
