@@ -21,7 +21,7 @@ namespace algorithm
 
 		// degrees: compute the degree of each node
 		Vector<float> d(n);
-		GrB_reduce<float, float>(d, GrB_NULL, GrB_NULL, PlusMonoid<float>(), A, desc);
+		reduce<float, float>(&d, GrB_NULL, GrB_NULL, PlusMonoid<float>(), A, desc);
 
     // PageRank (v): initialized to 0
     CHECK( v->fill(0.f) );
@@ -52,7 +52,7 @@ namespace algorithm
 	  Vector<float> eps_vector(n);
 		Vector<float> degrees_eps(n);
 		CHECK( eps_vector->fill(eps) );
-		GrB_eWiseMult<float,float>( degrees_eps, GrB_NULL, GrB_NULL, TimesMonoid<float>(), d, eps_vector );
+		ewiseMult<float,float>( degrees_eps, GrB_NULL, GrB_NULL, TimesMonoid<float>(), d, eps_vector );
 
     // frontier vectors (f): portion of r(v) >= d(v) x eps
 		// (use float for now)

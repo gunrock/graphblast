@@ -9,6 +9,7 @@
 #include "graphblas/backend/apspie/operations.hpp"
 
 #include <cub.cuh>
+#include <moderngpu.cuh>
 
 namespace graphblas
 {
@@ -88,26 +89,44 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-	// TODO (@ctcyang): Dense matrix variant
-
-  // Sparse matrix variant
+	// TODO(@ctcyang): Dense matrix variant
   template <typename W, typename a, typename M,
             typename BinaryOpT,     typename MonoidT>
   Info reduceInner( DenseVector<W>*       w,
                     const Vector<M>*      mask,
                     BinaryOpT             accum,
                     MonoidT               op,
-                    const SparseMatrix<a> A,
+                    const DenseMatrix<a>* A,
                     Descriptor*           desc )
   {
-    // TODO (@ctcyang): Structure-only optimization uses CSR row pointers
+    // TODO(@ctcyang): Structure-only optimization uses CSR row pointers
+    if( desc->struconly() )
+    {
+
+		}
+    std::cout << "Error: Dense reduce matrix-to-vector not implemented yet!\n";
+
+		return GrB_SUCCESS;
+	}
+
+  // Sparse matrix variant
+  template <typename W, typename a, typename M,
+            typename BinaryOpT,     typename MonoidT>
+  Info reduceInner( DenseVector<W>*        w,
+                    const Vector<M>*       mask,
+                    BinaryOpT              accum,
+                    MonoidT                op,
+                    const SparseMatrix<a>* A,
+                    Descriptor*            desc )
+  {
+    // TODO(@ctcyang): Structure-only optimization uses CSR row pointers
     if( desc->struconly() )
     {
     }
     else
     {
-      mgpu::SegReduceCsr( A->d_csrVal_, A->nvals_, A->d_csrRowPtr_, A->n_rows_,
-          true, w->d_val_, op.identity(), op, desc->d_context_ );
+      mgpu::SegReduceCsr( A->d_csrVal_, A->d_csrRowPtr_, static_cast<int>(A->nvals_), static_cast<int>(A->nrows_),
+          true, w->d_val_, op.identity(), mgpu::plus<W>(), desc->d_context_ );
     }
 
     return GrB_SUCCESS;

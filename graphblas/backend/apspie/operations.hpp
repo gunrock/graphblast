@@ -66,7 +66,7 @@ namespace backend
 
   template <typename W, typename U, typename a,
             typename BinaryOpT, typename SemiringT>
-  Info vxm( Vector<W>*             w,
+  Info vxm( Vector<W>*       w,
             const Vector<U>* mask,
             BinaryOpT        accum,
             SemiringT        op,
@@ -466,7 +466,7 @@ namespace backend
                const Vector<M>* mask,
                BinaryOpT        accum,
                MonoidT          op,
-               const Matrix<a>  A,
+               const Matrix<a>* A,
                Descriptor*      desc )
   {
     // Get storage:
@@ -474,17 +474,24 @@ namespace backend
     CHECK( A->getStorage( &mat_type ) );
 		CHECK( w->setStorage( GrB_DENSE ) );
 
+		if( mask == NULL )
+		{
     // 2 cases:
     // 1) SpMat
     // 2) DeMat
-    if( mat_type==GrB_SPARSE )
-    {
-      CHECK( reduceInner( &w->dense_, mask, accum, op, &A->sparse_, desc) );
-    }
-    else if( mat_type==GrB_DENSE )
-    {
-      CHECK( reduceInner( &w->dense_, mask, accum, op, &A->dense_, desc) );
-    }
+      if( mat_type==GrB_SPARSE )
+      {
+        CHECK( reduceInner( &w->dense_, mask, accum, op, &A->sparse_, desc) );
+      }
+      else if( mat_type==GrB_DENSE )
+      {
+        CHECK( reduceInner( &w->dense_, mask, accum, op, &A->dense_, desc) );
+      }
+		}
+		else
+		{
+      std::cout << "Error: Masked reduce not implemented yet!\n";
+		}
 
 		return GrB_SUCCESS;
   }

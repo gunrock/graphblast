@@ -1,5 +1,4 @@
 #define GRB_USE_APSPIE
-//#define GrB_PLUS graphblas::BinaryOp<float,float,float>( std::plus<float>() )
 #define private public
 
 #include <vector>

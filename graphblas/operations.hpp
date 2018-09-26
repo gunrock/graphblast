@@ -130,7 +130,7 @@ namespace graphblas
     backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
         : &desc->descriptor_;
 
-    return backend::mxv( &w->vector_, mask_t, accum, op, &A->matrix_,
+    return backend::mxv<W,U,a>( &w->vector_, mask_t, accum, op, &A->matrix_,
         &u->vector_, desc_t );
   }
 
@@ -155,7 +155,7 @@ namespace graphblas
     CHECK( checkDimSizeSize( v, mask, "v.size != mask.size" ) );
     CHECK( checkDimSizeSize( w, mask, "w.size != mask.size" ) );
 
-    backend::Vector<M>*  mask_t = (mask==NULL ) ? NULL : &mask->vector_;
+    const backend::Vector<M>*  mask_t = (mask==NULL ) ? NULL : &mask->vector_;
     auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
@@ -377,7 +377,7 @@ namespace graphblas
     if( w==NULL || A==NULL )
 			return GrB_UNINITIALIZED_OBJECT;
 
-    auto                 mask_t = (mask==NULL ) ? NULL : &mask->vector_;
+		const backend::Vector<W>* mask_t = (mask==NULL ) ? NULL : &mask->vector_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
     return backend::reduce( &w->vector_, mask_t, accum, op, &A->matrix_, desc_t );
