@@ -9,7 +9,6 @@
 #include "graphblas/backend/apspie/operations.hpp"
 
 #include <cub.cuh>
-#include <moderngpu.cuh>
 
 namespace graphblas
 {
@@ -125,8 +124,14 @@ namespace backend
     }
     else
     {
-      mgpu::SegReduceCsr( A->d_csrVal_, A->d_csrRowPtr_, static_cast<int>(A->nvals_), static_cast<int>(A->nrows_),
-          true, w->d_val_, op.identity(), mgpu::plus<W>(), desc->d_context_ );
+			// Cannot use mgpu, because BinaryOps and Monoids do not satisfy
+			// first_argument_type requirement for mgpu ops
+      //mgpu::SegReduceCsr( A->d_csrVal_, A->d_csrRowPtr_, 
+			//		static_cast<int>(A->nvals_), static_cast<int>(A->nrows_),
+      //    true, w->d_val_, op.identity(), op, *desc->d_context_ );
+
+      // Use CUB
+      cub::DeviceSegmentedReduce::Reduce(
     }
 
     return GrB_SUCCESS;
