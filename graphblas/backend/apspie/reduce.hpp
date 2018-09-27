@@ -131,7 +131,7 @@ namespace backend
       //    true, w->d_val_, op.identity(), op, *desc->d_context_ );
 
       // Use CUB
-      cub::DeviceSegmentedReduce::Reduce(
+      //cub::DeviceSegmentedReduce::Reduce(
     }
 
     return GrB_SUCCESS;
