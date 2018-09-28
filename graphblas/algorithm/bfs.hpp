@@ -67,7 +67,7 @@ namespace algorithm
       d++;
       assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, n, desc);
       CHECK( desc->toggle(GrB_MASK) );
-      vxm<float,float,float>(&q2, v, GrB_NULL, 
+      vxm<float,float,float,float>(&q2, v, GrB_NULL, 
           PlusMultipliesSemiring<float>(), &q1, A, desc);
       CHECK( desc->toggle(GrB_MASK) );
       CHECK( q2.swap(&q1) );
@@ -123,7 +123,7 @@ namespace algorithm
     {
       assign<float,float>(v, &q1, GrB_NULL, i, GrB_ALL, n, desc);
       CHECK( desc->toggle(GrB_MASK) );
-      vxm<float,float,float>(&q2, v, GrB_NULL, 
+      vxm<float,float,float,float>(&q2, v, GrB_NULL, 
           PlusMultipliesSemiring<float>(), &q1, A, desc);
       CHECK( desc->toggle(GrB_MASK) );
       CHECK( q2.swap(&q1) );

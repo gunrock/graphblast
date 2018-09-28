@@ -504,10 +504,13 @@ namespace backend
     printArray( "csrRowPtr", h_csrRowPtr_, std::min(nrows_+1,40) );
     printArray( "csrVal",    h_csrVal_,    std::min(nvals_,40) );
     CHECK( printCSR("pretty print") );
-    printArray( "cscRowInd", h_cscRowInd_, std::min(nvals_,40) );
-    printArray( "cscColPtr", h_cscColPtr_, std::min(ncols_+1,40) );
-    printArray( "cscVal",    h_cscVal_,    std::min(nvals_,40) );
-    CHECK( printCSC("pretty print") );
+		if( !symmetric_ )
+	  {
+      printArray( "cscRowInd", h_cscRowInd_, std::min(nvals_,40) );
+      printArray( "cscColPtr", h_cscColPtr_, std::min(ncols_+1,40) );
+      printArray( "cscVal",    h_cscVal_,    std::min(nvals_,40) );
+      CHECK( printCSC("pretty print") );
+		}
     return GrB_SUCCESS;
   }
 
@@ -652,8 +655,10 @@ namespace backend
     if( nvals_>0 && h_cscVal_ == NULL )
       h_cscVal_    = (T*)    malloc(ncapacity_*sizeof(T));
 
-    if( h_csrRowPtr_==NULL || h_csrColInd_==NULL || h_csrVal_==NULL )
-      return GrB_OUT_OF_MEMORY;
+		// TODO(@ctcyang): does not need to be so strict since mxm may need to
+		// only set storage type, but not allocate yet since nvals_ not known
+    //if( h_csrRowPtr_==NULL || h_csrColInd_==NULL || h_csrVal_==NULL )
+    //  return GrB_OUT_OF_MEMORY;
 
     return GrB_SUCCESS;
   }
@@ -692,8 +697,9 @@ namespace backend
       }
     }
 
-    if( d_csrRowPtr_==NULL || d_csrColInd_==NULL || d_csrVal_==NULL )
-      return GrB_OUT_OF_MEMORY;
+		// TODO(@ctcyang): same reason as above for allocateCpu()
+    //if( d_csrRowPtr_==NULL || d_csrColInd_==NULL || d_csrVal_==NULL )
+    //  return GrB_OUT_OF_MEMORY;
 
     return GrB_SUCCESS;
   }

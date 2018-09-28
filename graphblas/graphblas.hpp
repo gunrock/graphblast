@@ -9,7 +9,6 @@
 #include "graphblas/dimension.hpp"
 //#include "graphblas/UnaryOp.hpp"
 //#include "graphblas/BinaryOp.hpp"
-//#include "graphblas/stddef.hpp"
 //#include "graphblas/Monoid.hpp"
 //#include "graphblas/Semiring.hpp"
 #include "graphblas/Descriptor.hpp"

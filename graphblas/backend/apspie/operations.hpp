@@ -1,16 +1,6 @@
 #ifndef GRB_BACKEND_APSPIE_OPERATIONS_HPP
 #define GRB_BACKEND_APSPIE_OPERATIONS_HPP
 
-#include "graphblas/backend/apspie/spgemm.hpp"
-#include "graphblas/backend/apspie/spmm.hpp"
-#include "graphblas/backend/apspie/gemm.hpp"
-#include "graphblas/backend/apspie/spmspv.hpp"
-#include "graphblas/backend/apspie/spmv.hpp"
-#include "graphblas/backend/apspie/gemv.hpp"
-#include "graphblas/backend/apspie/assign.hpp"
-#include "graphblas/backend/apspie/reduce.hpp"
-#include "graphblas/backend/apspie/Descriptor.hpp"
-
 namespace graphblas
 {
 namespace backend
@@ -24,7 +14,7 @@ namespace backend
   template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,     typename SemiringT>
   Info mxm( Matrix<c>*       C,
-            const Matrix<m>* mask,
+            const Matrix<a>* mask,
             BinaryOpT        accum,
             SemiringT        op,
             const Matrix<a>* A,
@@ -39,35 +29,36 @@ namespace backend
     if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_SPARSE )
     {
       CHECK( C->setStorage( GrB_SPARSE ) );
-      CHECK( spgemm( C->getMatrix(), mask, accum, op, A->getMatrix(), 
-          B->getMatrix(), desc ) );
+      CHECK( cusparse_spgemm( &C->sparse_, mask, accum, op, &A->sparse_, 
+          &B->sparse_, desc ) );
     }
     else
     {
-      CHECK( C->setStorage( GrB_DENSE ) );
+			std::cout << "Error: SpMM and GEMM not implemented yet!\n";
+      /*CHECK( C->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
       {
-        CHECK( spmm( C->getMatrix(), mask, accum, op, A->getMatrix(), 
-            B->getMatrix(), desc ) );
+        CHECK( spmm( &C->dense_, mask, accum, op, &A->sparse_, 
+            &B->dense_, desc ) );
       }
       else if( A_mat_type==GrB_DENSE && B_mat_type==GrB_SPARSE )
       {
-        CHECK( spmm( C->getMatrix(), mask, accum, op, A->getMatrix(), 
-            B->getMatrix(), desc ) );
+        CHECK( spmm( &C->dense_, mask, accum, op, &A->dense_, 
+            &B->sparse_, desc ) );
       }
       else
       {
-        CHECK( gemm( C->getMatrix(), mask, accum, op, A->getMatrix(), 
-            B->getMatrix(), desc ) );
-      }
+        CHECK( gemm( &C->dense_, mask, accum, op, &A->dense_, 
+            &B->dense_, desc ) );
+      }*/
     }
     return GrB_SUCCESS;
   }
 
-  template <typename W, typename U, typename a,
+  template <typename W, typename U, typename a, typename M,
             typename BinaryOpT, typename SemiringT>
   Info vxm( Vector<W>*       w,
-            const Vector<U>* mask,
+            const Vector<M>* mask,
             BinaryOpT        accum,
             SemiringT        op,
             const Vector<U>* u,
@@ -158,10 +149,10 @@ namespace backend
   // to transpose A 
   // -this is because w=uA is same as w=A^Tu
   // -i.e. GraphBLAS treats 1xn Vector the same as nx1 Vector
-  template <typename W, typename a, typename U,
+  template <typename W, typename a, typename U, typename M,
             typename BinaryOpT, typename SemiringT>
   Info mxv( Vector<W>*       w,
-            const Vector<U>* mask,
+            const Vector<M>* mask,
             BinaryOpT        accum,
             SemiringT        op,
             const Matrix<a>* A,

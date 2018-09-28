@@ -40,17 +40,17 @@ namespace graphblas
     // Case 3: A *BT
     // Case 4: AT*BT
 
-    backend::Matrix<m>*  mask_t = (mask==NULL ) ? NULL : &mask->matrix_;
+    const backend::Matrix<m>* mask_t = (mask==NULL ) ? NULL : &mask->matrix_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
-    return backend::mxm( &C->matrix_, mask_t, accum, op, &A->matrix_, 
+    return backend::mxm<c,a,b,m>( &C->matrix_, mask_t, accum, op, &A->matrix_, 
         &B->matrix_, desc_t );
   }
 
-  template <typename W, typename U, typename a,
+  template <typename W, typename U, typename a, typename M,
             typename BinaryOpT, typename SemiringT>
   Info vxm( Vector<W>*       w,
-            const Vector<U>* mask,
+            const Vector<M>* mask,
             BinaryOpT        accum,
             SemiringT        op,
             const Vector<U>* u,
@@ -81,20 +81,20 @@ namespace graphblas
 
     // Case 2: u*AT
 
-    const backend::Vector<U>*        mask_t = (mask==NULL ) ? NULL 
+    const backend::Vector<M>*        mask_t = (mask==NULL ) ? NULL 
         : &mask->vector_;
     backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
         : &desc->descriptor_;
 
     //std::cout << "graphblas: " << (mask_t!=NULL) << std::endl;
-    return backend::vxm<W,U,a>( &w->vector_, mask_t, accum, op, 
+    return backend::vxm<W,U,a,M>( &w->vector_, mask_t, accum, op, 
         &u->vector_, &A->matrix_, desc_t );
   }
 
-  template <typename W, typename a, typename U,
+  template <typename W, typename a, typename U, typename M,
             typename BinaryOpT, typename SemiringT>
   Info mxv( Vector<W>*       w,
-            const Vector<U>* mask,
+            const Vector<M>* mask,
             BinaryOpT        accum,
             SemiringT        op,
             const Matrix<a>* A,
@@ -125,12 +125,12 @@ namespace graphblas
 
     // Case 2: AT*u
 
-    const backend::Vector<U>*        mask_t = (mask==NULL ) ? NULL 
+    const backend::Vector<M>*        mask_t = (mask==NULL ) ? NULL 
         : &mask->vector_;
     backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
         : &desc->descriptor_;
 
-    return backend::mxv<W,U,a>( &w->vector_, mask_t, accum, op, &A->matrix_,
+    return backend::mxv<W,U,a,M>( &w->vector_, mask_t, accum, op, &A->matrix_,
         &u->vector_, desc_t );
   }
 

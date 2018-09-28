@@ -11,7 +11,6 @@
 #include "graphblas/types.hpp"
 #include "graphblas/util.hpp"
 
-#include "graphblas/backend/apspie/apspie.hpp"
 #include "graphblas/backend/apspie/kernels/util.hpp"
 
 namespace graphblas
@@ -270,6 +269,10 @@ namespace backend
   inline Info Vector<T>::setStorage( Storage vec_type )
   {
     vec_type_ = vec_type;
+		if( vec_type_ == GrB_SPARSE )
+			CHECK( sparse_.allocate() );
+		else if( vec_type_ == GrB_DENSE )
+			CHECK( dense_.allocate() );
     return GrB_SUCCESS;
   }
 

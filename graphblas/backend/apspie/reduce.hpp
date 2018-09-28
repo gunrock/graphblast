@@ -98,11 +98,6 @@ namespace backend
                     const DenseMatrix<a>* A,
                     Descriptor*           desc )
   {
-    // TODO(@ctcyang): Structure-only optimization uses CSR row pointers
-    if( desc->struconly() )
-    {
-
-		}
     std::cout << "Error: Dense reduce matrix-to-vector not implemented yet!\n";
 
 		return GrB_SUCCESS;
@@ -131,8 +126,21 @@ namespace backend
       //    true, w->d_val_, op.identity(), op, *desc->d_context_ );
 
       // Use CUB
-      //cub::DeviceSegmentedReduce::Reduce(
+      size_t temp_storage_bytes = 0;
+
+      if( !desc->split() )
+        CUDA( cub::DeviceSegmentedReduce::Reduce( NULL, temp_storage_bytes, 
+						A->d_csrVal_, w->d_val_, A->nrows_, A->d_csrRowPtr_, 
+						A->d_csrRowPtr_+1, op, op.identity() ) );
+      else
+        temp_storage_bytes = desc->d_temp_size_;
+      desc->resize( temp_storage_bytes, "temp" );
+      CUDA(cub::DeviceSegmentedReduce::Reduce( desc->d_temp_, 
+					temp_storage_bytes, A->d_csrVal_, w->d_val_, A->nrows_, 
+					A->d_csrRowPtr_, A->d_csrRowPtr_+1, op, op.identity() ));
+      w->nnz_ = A->nrows_;
     }
+    w->need_update_ = true;
 
     return GrB_SUCCESS;
   }

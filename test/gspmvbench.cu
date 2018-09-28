@@ -76,7 +76,7 @@ int main( int argc, char** argv )
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::vxm<float, float, float>(&y, GrB_NULL, GrB_NULL, 
+  graphblas::vxm<float, float, float, float>(&y, GrB_NULL, GrB_NULL, 
       graphblas::PlusMultipliesSemiring<float>(), &m, &a, &desc);
   warmup.Stop();
 
@@ -86,7 +86,7 @@ int main( int argc, char** argv )
   graphblas::backend::GpuTimer cpu_vxm;
   //cudaProfilerStart();
   cpu_vxm.Start();
-  graphblas::vxm<float, float, float>(&y, GrB_NULL, GrB_NULL, 
+  graphblas::vxm<float, float, float, float>(&y, GrB_NULL, GrB_NULL, 
       graphblas::PlusMultipliesSemiring<float>(), &m, &a, &desc);
   cpu_vxm.Stop();
   my_time.push_back(cpu_vxm.ElapsedMillis());  
@@ -96,7 +96,7 @@ int main( int argc, char** argv )
     //m.clear();
     m.build(&value, i);
     cpu_vxm.Start();
-    graphblas::vxm<float, float, float>( &y, GrB_NULL, GrB_NULL, 
+    graphblas::vxm<float, float, float, float>( &y, GrB_NULL, GrB_NULL, 
         graphblas::PlusMultipliesSemiring<float>(), &m, &a, &desc );
     cpu_vxm.Stop();
     my_time.push_back(cpu_vxm.ElapsedMillis());

@@ -72,7 +72,7 @@ cuda_add_executable( gbinaryop     "test/gbinaryop.cu"     ${mgpu_SRC_FILES} )
 cuda_add_executable( gsparsematrix "test/gsparsematrix.cu" ${mgpu_SRC_FILES} )
 #cuda_add_executable( gmatrix "test/gmatrix.cu" ) x
 #cuda_add_executable( gspmm   "test/gspmm.cu" ${mgpu_SRC_FILES} ) x
-#cuda_add_executable( gspgemm "test/gspgemm.cu" ) x
+cuda_add_executable( gspgemm       "test/gspgemm.cu"       ${mgpu_SRC_FILES} )
 #cuda_add_executable( gbspmm "test/gbspmm.cu" ${mgpu_SRC_FILES} ) x
 #cuda_add_executable( gbspgemm "test/gbspgemm.cu" ) x
 #target_link_libraries( gmmio         grb ${Boost_LIBRARIES} )
@@ -95,7 +95,7 @@ target_link_libraries( gdescriptor   grb ${Boost_LIBRARIES} )
 target_link_libraries( gbinaryop     grb ${Boost_LIBRARIES} )
 target_link_libraries( gsparsematrix grb ${Boost_LIBRARIES} )
 #target_link_libraries( gspmm   grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
-#target_link_libraries( gspgemm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
+target_link_libraries( gspgemm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 #target_link_libraries( gbspmm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES} )
 #target_link_libraries( gbspgemm grb ${CUDA_CUSPARSE_LIBRARY} ${Boost_LIBRARIES})
 

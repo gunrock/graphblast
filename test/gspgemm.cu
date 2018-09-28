@@ -1,3 +1,5 @@
+#define GRB_USE_APSPIE
+#define private public
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -12,118 +14,42 @@
 
 int main( int argc, char** argv )
 {
-  std::vector<graphblas::Index> row_indices;
-  std::vector<graphblas::Index> col_indices;
-  std::vector<float> values;
-  graphblas::Index nrows, ncols, nvals;
+   bool DEBUG = true;
 
-  // Parse arguments
-  namespace po = boost::program_options;
-  po::variables_map vm;
-  parseArgs( argc, argv, vm );
-  int TA, TB, NT, NUM_ITER, DEVICE;
-  bool ROW_MAJOR, DEBUG, SPLIT;
-  if( vm.count("ta") )
-    TA       = vm["ta"].as<int>(); // default values of TA, TB, NT will be used
-  if( vm.count("tb") )
-    TB       = vm["tb"].as<int>();
-  if( vm.count("nt") )
-    NT       = vm["nt"].as<int>();
-  if( vm.count("debug") )
-    DEBUG    = vm["debug"].as<bool>();
-  if( vm.count("split") )
-    SPLIT    = vm["split"].as<bool>();
-  if( vm.count("iter") )
-    NUM_ITER = vm["iter"].as<int>();
-  }
-  // ROW_MAJOR == 1: means row major
-  // ROW_MAJOR == 0: means col major
-  // TA == 0 && TB == 0 && NT == 0: means cusparse
-  if( vm.count("major") ) {
-    std::string major = vm["major"].as<std::string>();
-    ROW_MAJOR = (major=="row");
-    if( major=="cusparse" ) {
-      TA = 0; TB = 0; NT = 0;
-    } else if( major=="cusparse2" ) {
-      TA = 0; TB = 0; NT = 1;
-    }
-  }
+   std::vector<graphblas::Index> a_row_indices, b_row_indices;
+   std::vector<graphblas::Index> a_col_indices, b_col_indices;
+   std::vector<float> a_values, b_values;
+   graphblas::Index a_num_rows, a_num_cols, a_num_edges;
+   graphblas::Index b_num_rows, b_num_cols, b_num_edges;
 
-  if( DEBUG ) {
-    std::cout << "ta:    " << TA        << "\n";
-    std::cout << "tb:    " << TB        << "\n";
-    std::cout << "nt:    " << NT        << "\n";
-    std::cout << "row:   " << ROW_MAJOR << "\n";
-    std::cout << "debug: " << DEBUG     << "\n";
-    std::cout << "split: " << SPLIT     << "\n";
-  }
+   // Load A
+   std::cerr << "loading A" << std::endl;
+   readMtx("../data/small/chesapeake.mtx", a_row_indices, a_col_indices, a_values, a_num_rows, a_num_cols, a_num_edges, 0, false);
+   graphblas::Matrix<float> a(a_num_rows, a_num_cols);
+   a.build(&a_row_indices, &a_col_indices, &a_values, a_num_edges, GrB_NULL, "../data/small/chesapeake.mtx");
+   // if(DEBUG) a.print();
 
-  // Read in sparse matrix
-  if (argc < 2) {
-    fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
-    exit(1);
-  } else { 
-    readTsv( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-    nvals, DEBUG );
-  }
+   // Load B
+   std::cerr << "loading B" << std::endl;
+   readMtx("../data/small/chesapeake.mtx", b_row_indices, b_col_indices, b_values, b_num_rows, b_num_cols, b_num_edges, 0, false);
+   graphblas::Matrix<float> b(b_num_rows, b_num_cols);
+   b.build(&b_row_indices, &b_col_indices, &b_values, b_num_edges, GrB_NULL, "../data/small/chesapeake.mtx");
+   // if(DEBUG) b.print();
 
-  // Matrix A
-  graphblas::Matrix<float> a(nrows, ncols);
-  a.build( row_indices, col_indices, values, nvals );
-  a.nrows( nrows );
-  a.ncols( ncols );
-  a.nvals( nvals );
-  if( DEBUG ) a.print();
+   // // Multiply
+   graphblas::Matrix<float> c(a_num_rows, b_num_cols);
+   graphblas::Descriptor desc;
+   graphblas::mxm<float,float,float,float>(
+       &c,
+       GrB_NULL,
+       GrB_NULL,
+       graphblas::PlusMultipliesSemiring<float>(),
+       &a,
+       &b,
+       &desc
+   );
+   if(DEBUG) c.print();
 
-  // Matrix B
-  graphblas::Matrix<float> b(nrows, ncols);
-  b.build( row_indices, col_indices, values, nvals );
-  b.nrows( nrows );
-  b.ncols( ncols );
-  b.nvals( nvals );
 
-  graphblas::Matrix<float> c(nrows, ncols);
-
-  // Warmup
-  CpuTimer warmup;
-  warmup.Start();
-  graphblas::mxm<float, float, float>( c, a, b );
-  warmup.Stop();
- 
-  CpuTimer cpu_mxm;
-  //cudaProfilerStart();
-  cpu_mxm.Start();
-  for( int i=0; i<NUM_ITER; i++ ) {
-    if( SPLIT )
-      graphblas::mxmCompute<float, float, float>( c, a, b );
-    else
-    graphblas::mxm<float, float, float>( c, a, b );
-  }
-  //cudaProfilerStop();
-  cpu_mxm.Stop();
-
-  float flop = 0;
-  if( DEBUG ) std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
-    flop/warmup.ElapsedMillis()/1000000.0 << "\n";
-  float elapsed_mxm = gpu_mxm.ElapsedMillis();
-  std::cout << "spgemm, " << elapsed_mxm/NUM_ITER << "\n"; 
-
-  if( DEBUG ) c.print();
-  /*c.extractTuples( out_denseVal );
-  for( int i=0; i<nvals; i++ ) {
-    graphblas::Index row = row_indices[i];
-    graphblas::Index col = col_indices[i];
-    float            val = values[i];
-    if( col<max_ncols ) {
-      // Row major order
-      if( ROW_MAJOR )
-      //std::cout << row << " " << col << " " << val << " " << out_denseVal[row*max_ncols+col] << std::endl;
-        BOOST_ASSERT( val==out_denseVal[row*max_ncols+col] );
-      else
-      // Column major order
-      //std::cout << row << " " << col << " " << val << " " << out_denseVal[col*nrows+row] << std::endl;
-        BOOST_ASSERT( val==out_denseVal[col*nrows+row] );
-    }
-  }*/
-  return 0;
+   std::cerr << "-- done --" << std::endl;
 }
