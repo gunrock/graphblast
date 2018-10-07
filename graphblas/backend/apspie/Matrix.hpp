@@ -71,6 +71,7 @@ namespace backend
                    Index ncols );
     Info setStorage( Storage  mat_type );
     Info getStorage( Storage* mat_type ) const;
+    Info getFormat( SparseMatrixFormat* format) const;
     template <typename MatrixT>
     MatrixT* getMatrix() const;
 
@@ -309,6 +310,15 @@ namespace backend
   inline Info Matrix<T>::getStorage( Storage* mat_type ) const
   {
     *mat_type = mat_type_;
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  inline Info Matrix<T>::getFormat( SparseMatrixFormat* format ) const
+  {
+    if (mat_type_ == GrB_SPARSE) return sparse_.getFormat(format);
+    else std::cout << 
+        "Error: Sparse matrix format is not defined for dense matrix!\n";
     return GrB_SUCCESS;
   }
 

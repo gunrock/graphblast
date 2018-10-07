@@ -97,19 +97,33 @@ namespace backend
       //
       // Conversions:
       // TODO: add tol
+			SparseMatrixFormat A_format;
+			CHECK( A->getFormat(&A_format) );
+
       Desc_value vxm_mode, tol;
       CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
       CHECK( desc->get( GrB_TOL,     &tol      ) );
       if( desc->debug() )
         std::cout << "Identity: " << op.identity() << std::endl;
 
-      // Mask identity concept removed 
-      if( vxm_mode==GrB_PUSHPULL )
+			// Fallback for lacking CSC storage overrides any mxvmode selections
+			if (A_format == GrB_SPARSE_MATRIX_CSRONLY)
+      {
+        if (u_vec_type == GrB_DENSE)
+          CHECK( u_t->dense2sparse( op.identity(), desc ) );
+      }
+      else if( vxm_mode==GrB_PUSHPULL )
+      {
         CHECK( u_t->convert( op.identity(), desc ) );
+      }
       else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
+      {
         CHECK( u_t->dense2sparse( op.identity(), desc ) );
+      }
       else if( vxm_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
+      {
         CHECK( u_t->sparse2dense( op.identity(), desc ) );
+      }
 
       // Check if vector type was changed due to conversion!
       CHECK( u->getStorage( &u_vec_type ) );
@@ -117,10 +131,14 @@ namespace backend
       if( desc->debug() )
         std::cout << "u_vec_type: " << u_vec_type << std::endl;
 
-      // Breakdown into 3 cases:
-      // 1) SpMSpV: SpMat x SpVe
-      // 2) SpMV:   SpMat x DeVec
-      // 3) GeMV:   DeMat x DeVec
+      // Breakdown into 4 cases:
+      // 1) SpMSpV: SpMat x SpVec
+      // 2) SpMV:   SpMat x DeVec (preferred to 3)
+			// 3) SpMSpV: SpMat x SpVec (fallback if CSC representation not available)
+      // 4) GeMV:   DeMat x DeVec
+			//
+			// Note: differs from mxv, because mxv would say instead:
+			// 3) "... if CSC representation not available ..."
       if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
       {
         CHECK( w->setStorage( GrB_SPARSE ) );
@@ -185,25 +203,40 @@ namespace backend
       // 1b) Direction-optimizing codepath
       //
       // Conversions:
+			SparseMatrixFormat A_format;
+			CHECK( A->getFormat(&A_format) );
       Desc_value mxv_mode;
       Desc_value tol;
       CHECK( desc->get( GrB_MXVMODE, &mxv_mode ) );
       CHECK( desc->get( GrB_TOL,     &tol      ) );
 
-      if( mxv_mode==GrB_PUSHPULL )
+			// Fallback for lacking CSC storage overrides any mxvmode selections
+		  if (A_format == GrB_SPARSE_MATRIX_CSRONLY)
+      {
+        if (u_vec_type == GrB_SPARSE)
+          CHECK( u_t->sparse2dense( op.identity(), desc ) );
+      }
+      else if( mxv_mode==GrB_PUSHPULL )
+      {
         CHECK( u_t->convert( op.identity(), desc ) );
+      }
       else if( mxv_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
+      {
         CHECK( u_t->dense2sparse( op.identity(), desc ) );
+      }
       else if( mxv_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
+      {
         CHECK( u_t->sparse2dense( op.identity(), desc ) );
+      }
 
       // Check if vector type was changed due to conversion!
       CHECK( u->getStorage( &u_vec_type ) );
 
       // 3 cases:
-      // 1) SpMSpV: SpMat x SpVe
+      // 1) SpMSpV: SpMat x SpVec (preferred)
       // 2) SpMV:   SpMat x DeVec
-      // 3) GeMV:   DeMat x DeVec
+			// 3) SpMV:   SpMat x DeVec (fallback if CSC representation not available)
+      // 4) GeMV:   DeMat x DeVec
       if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
       {
         CHECK( w->setStorage( GrB_SPARSE ) );

@@ -18,6 +18,8 @@
      exit(EXIT_FAILURE);                                                \
   } } while (0)
 
+#include <cstdlib>
+
 namespace graphblas
 {
 namespace backend
@@ -74,6 +76,16 @@ namespace backend
     std::cout << "SCMP: " << use_scmp  << std::endl;
     std::cout << "Repl: " << use_repl  << std::endl;
     std::cout << "Tran: " << use_tran  << std::endl;
+  }
+
+  template<typename T>
+  inline T getEnv(const char *key, T default_val) {
+    const char *val = std::getenv(key);
+    if (val == NULL) {
+      return default_val;
+    } else {
+      return static_cast<T>(atoi(val));
+    }
   }
 
   struct GpuTimer

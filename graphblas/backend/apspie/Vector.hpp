@@ -307,7 +307,7 @@ namespace backend
     //nsize_ = nsize_t;
     float ratio = (float)nvals_t/nsize_t;
     if( desc->dirinfo() )
-      std::cout << "Nnz ratio: " << ratio << ", " << desc->switchpoint() 
+      std::cout << "Nnz ratio: " << ratio << " Switch point: " << desc->switchpoint() 
           << std::endl;
 
     if( vec_type_ == GrB_SPARSE )

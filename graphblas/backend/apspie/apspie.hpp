@@ -1,6 +1,7 @@
 #ifndef GRB_BACKEND_APSPIE_APSPIE_HPP
 #define GRB_BACKEND_APSPIE_APSPIE_HPP
 
+#include "graphblas/backend/apspie/types.hpp"
 #include "graphblas/backend/apspie/Vector.hpp"
 #include "graphblas/backend/apspie/Matrix.hpp"
 //#include "graphblas/backend/apspie/transpose.hpp"

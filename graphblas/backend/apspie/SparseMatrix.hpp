@@ -35,7 +35,10 @@ namespace backend
           h_cscColPtr_(NULL), h_cscRowInd_(NULL), h_cscVal_(NULL),
           d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
           d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
-          need_update_(0),    symmetric_(1) {}
+          need_update_(0), symmetric_(1)
+    {
+      format_ = getEnv("GRB_SPARSE_MATRIX_FORMAT", GrB_SPARSE_MATRIX_CSRONLY);
+    }
 
     SparseMatrix( Index nrows, Index ncols )
         : nrows_(nrows), ncols_(ncols), nvals_(0), ncapacity_(0), nempty_(0),
@@ -43,7 +46,10 @@ namespace backend
           h_cscColPtr_(NULL), h_cscRowInd_(NULL), h_cscVal_(NULL),
           d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
           d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
-          need_update_(0),    symmetric_(1) {}
+          need_update_(0), symmetric_(1)
+    {
+      format_ = getEnv("GRB_SPARSE_MATRIX_FORMAT", GrB_SPARSE_MATRIX_CSRONLY);
+    }
 
     ~SparseMatrix();
 
@@ -83,6 +89,7 @@ namespace backend
     Info setNrows( Index nrows );
     Info setNcols( Index ncols );
     Info setNvals( Index nvals );
+    Info getFormat( SparseMatrixFormat* format ) const;
     Info resize(   Index nrows, 
                    Index ncols );
     template <typename U>
@@ -129,15 +136,10 @@ namespace backend
     T*     d_cscVal_;
 
     // GPU variables
-    bool   need_update_;
-    bool   symmetric_;
+    bool need_update_;
+    bool symmetric_;
 
-    /*template <typename a, typename b>
-    friend Info cubReduce( Vector<b>&             B,
-                           const SparseMatrix<a>& A,
-                           void*                  d_buffer,
-                           size_t                 buffer_size );*/
-
+    SparseMatrixFormat format_;
   };
 
   template <typename T>
@@ -150,7 +152,7 @@ namespace backend
     if( d_csrColInd_!=NULL ) CUDA( cudaFree(d_csrColInd_) );
     if( d_csrVal_   !=NULL ) CUDA( cudaFree(d_csrVal_   ) );
 
-    if( !symmetric_ )
+    if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
       if( h_cscColPtr_!=NULL ) free(h_cscColPtr_);
       if( h_cscRowInd_!=NULL ) free(h_cscRowInd_);
@@ -181,6 +183,7 @@ namespace backend
     if( ncols_ != rhs->ncols_ ) return GrB_DIMENSION_MISMATCH;
     nvals_     = rhs->nvals_;
     symmetric_ = rhs->symmetric_;
+    format_    = rhs->format_;
 
     CHECK( allocate() );
 
@@ -194,7 +197,7 @@ namespace backend
     CUDA( cudaMemcpy( d_csrVal_,    rhs->d_csrVal_,    nvals_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
 
-    if( !symmetric_ )
+    if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
       CUDA( cudaMemcpy( d_cscColPtr_, rhs->d_cscColPtr_, (ncols_+1)*
           sizeof(Index), cudaMemcpyDeviceToDevice ) );
@@ -329,7 +332,7 @@ namespace backend
         break;
       }
     }
-    if( symmetric_ )
+    if( symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY )
     {
       free( h_cscColPtr_ );
       free( h_cscRowInd_ );
@@ -405,6 +408,7 @@ namespace backend
           h_csrVal_[i] = (T)1;
 
         symmetric_   = true;
+        
         h_cscColPtr_ = h_csrRowPtr_;
         h_cscRowInd_ = h_csrColInd_;
         h_cscVal_    = h_csrVal_;
@@ -504,7 +508,7 @@ namespace backend
     printArray( "csrRowPtr", h_csrRowPtr_, std::min(nrows_+1,40) );
     printArray( "csrVal",    h_csrVal_,    std::min(nvals_,40) );
     CHECK( printCSR("pretty print") );
-		if( !symmetric_ )
+		if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
 	  {
       printArray( "cscRowInd", h_cscRowInd_, std::min(nvals_,40) );
       printArray( "cscColPtr", h_cscColPtr_, std::min(ncols_+1,40) );
@@ -572,6 +576,12 @@ namespace backend
     return GrB_SUCCESS;
   }
 
+  template <typename T>
+  Info SparseMatrix<T>::getFormat( SparseMatrixFormat* format ) const
+  {
+    *format = format_;
+    return GrB_SUCCESS;
+  }
   // Note: has different meaning from sequential resize
   //      -that one makes SparseMatrix bigger
   //      -this one accounts for smaller nrows
@@ -680,7 +690,7 @@ namespace backend
       CUDA( cudaMalloc( &d_csrVal_, ncapacity_*sizeof(T)) );
       printMemory( "csrVal" );
     }
-    if( !symmetric_ )
+    if( !symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
       if( nrows_>0 && d_cscColPtr_ == NULL )
       {
@@ -773,7 +783,7 @@ namespace backend
     CUDA( cudaMemcpy( d_csrVal_,    h_csrVal_,    nvals_*sizeof(T),
         cudaMemcpyHostToDevice ) );
 
-    if( !symmetric_ )
+    if( !symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
       CUDA( cudaMemcpy( d_cscColPtr_, h_cscColPtr_, (ncols_+1)*sizeof(Index),
           cudaMemcpyHostToDevice ) );
@@ -806,7 +816,7 @@ namespace backend
       CUDA( cudaMemcpy( h_csrVal_,    d_csrVal_,    nvals_*sizeof(T),
           cudaMemcpyDeviceToHost ) );
 
-      if( !symmetric_ )
+      if( !symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC )
       {
         CUDA( cudaMemcpy( h_cscColPtr_, d_cscColPtr_, (ncols_+1)*sizeof(Index),
             cudaMemcpyDeviceToHost ) );

@@ -12,6 +12,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#define __GRB_BACKEND_TYPES_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/types.hpp>
+#include __GRB_BACKEND_TYPES_HEADER
+#undef __GRB_BACKEND_TYPES_HEADER
+
 namespace graphblas
 {
   typedef int           Index;
