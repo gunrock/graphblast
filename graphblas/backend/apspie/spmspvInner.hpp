@@ -97,7 +97,7 @@ namespace backend
     //Step 0) Must compute how many elements are in the selected region in the
     //        worst-case. This is a global reduce.
     //  -> d_temp_nvals |V|
-    //  -> d_scan       |V|
+    //  -> d_scan       |V|+1
     int    size        = (float) A_nvals*desc->memusage()+1;
     void* d_temp_nvals = (void*)w_ind;
     void* d_scan       = (void*)w_val;
@@ -108,21 +108,25 @@ namespace backend
 
     if( desc->debug() )
     {
-      assert( *u_nvals<A_nrows );
-      std::cout << NT.x << " " << NB.x << std::endl;
+      assert( *u_nvals<=A_nrows );
+      std::cout << "NT: " << NT.x << " NB: " << NB.x << std::endl;
     }
 
     indirectScanKernel<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
         *u_nvals );
+		CUDA(cudaDeviceSynchronize());
     // Note: cannot use op.add_op() here
     mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals,
         (Index)0, mgpu::plus<Index>(), (Index*)d_scan+(*u_nvals), w_nvals, 
         (Index*)d_scan, (Index*)d_temp, *(desc->d_context_) );
+		CUDA(cudaDeviceSynchronize());
 
     if( desc->debug() )
     {
       printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
+		  CUDA(cudaDeviceSynchronize());
       printDevice( "d_scan",       (Index*)d_scan,       *u_nvals+1 );
+		  CUDA(cudaDeviceSynchronize());
 
       std::cout << "u_nvals: " << *u_nvals << std::endl;
       std::cout << "w_nvals: " << *w_nvals << std::endl;

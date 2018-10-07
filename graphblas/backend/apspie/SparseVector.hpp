@@ -271,14 +271,14 @@ namespace backend
 
     nsize_ = nsize;
     h_ind_ = (Index*) malloc( nsize_*sizeof(Index) );
-    h_val_ = (T*)     malloc( nsize_*sizeof(T) );
+    h_val_ = (T*)     malloc( (nsize_+1)*sizeof(T) );
     if( h_temp_ind!=NULL )
       memcpy( h_ind_, h_temp_ind, to_copy*sizeof(Index) );
     if( h_temp_val!=NULL )
       memcpy( h_val_, h_temp_val, to_copy*sizeof(T) );
 
     CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
-    CUDA( cudaMalloc( &d_val_, nsize_*sizeof(T)) );
+    CUDA( cudaMalloc( &d_val_, (nsize_+1)*sizeof(T)) );
     printMemory( "SpVec" );
     if( d_temp_ind!=NULL )
       CUDA( cudaMemcpy( d_ind_, d_temp_ind, to_copy*sizeof(Index), 
@@ -343,7 +343,7 @@ namespace backend
     if( nsize_!=0 && h_ind_==NULL && h_val_==NULL )
     {
       h_ind_ = (Index*) malloc(nsize_*sizeof(Index));
-      h_val_ = (T*)     malloc(nsize_*sizeof(T));
+      h_val_ = (T*)     malloc((nsize_+1)*sizeof(T));
     }
     else
     {
@@ -355,7 +355,7 @@ namespace backend
     if( nsize_!=0 && d_ind_==NULL && d_val_==NULL )
     {
       CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
-      CUDA( cudaMalloc( &d_val_, nsize_*sizeof(T)) );
+      CUDA( cudaMalloc( &d_val_, (nsize_+1)*sizeof(T)) );
       printMemory( "d_ind, d_val" );
     }
     else
