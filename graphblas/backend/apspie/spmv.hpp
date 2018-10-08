@@ -51,7 +51,6 @@ namespace backend
     {
       std::cout << "Executing Spmv\n";
       printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
-      std::cout << "spmspvmode: " << desc->spmspvmode() << std::endl;
     }
 
     // Transpose (default is CSR):

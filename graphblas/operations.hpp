@@ -421,6 +421,17 @@ namespace graphblas
 
   }
 
+  template <typename T, typename a, typename b,
+            typename MonoidT>
+  Info trace( T*               val,
+              MonoidT          op,
+              const Matrix<a>* A,
+              const Matrix<b>* B,
+              Descriptor*      desc )
+  {
+
+  }
+
 } // graphblas
 
 #endif  // GRB_OPERATIONS_HPP

@@ -11,6 +11,12 @@ namespace backend
 		GrB_SPARSE_MATRIX_CSRONLY,
 		GrB_SPARSE_MATRIX_CSCONLY
   };
+
+  enum LoadBalanceMode
+  {
+    GrB_LOAD_BALANCE_SIMPLE,
+    GrB_LOAD_BALANCE_LB
+  };
 }  // backend
 }  // graphblas
 

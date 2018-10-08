@@ -75,13 +75,16 @@ namespace backend
     // Transpose:
     Desc_value inp0_mode;
     CHECK( desc->get(GrB_INP0, &inp0_mode) );
-    if( inp0_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
+    if (inp0_mode != GrB_DEFAULT) return GrB_INVALID_VALUE;
 
     // Treat vxm as an mxv with transposed matrix
     CHECK( desc->toggle( GrB_INP1 ) );
 
     // 1a) Simple SpMSpV without any load-balancing codepath
-    if( desc->spmspvmode()==0 )
+    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE", GrB_LOAD_BALANCE_LB);
+    if( desc->debug() )
+      std::cout << "Load balance mode: " << mxv_mode << std::endl;
+    if (mxv_mode == GrB_LOAD_BALANCE_SIMPLE)
     {
       if( desc->debug() )
         std::cout << "u_vec_type: " << u_vec_type << std::endl;
@@ -91,9 +94,9 @@ namespace backend
       CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
           desc) );
     }
-    else
+    else if (mxv_mode == GrB_LOAD_BALANCE_LB)
     {
-      // 1b) Direction-optimizing codepath
+      // 1b) Merge-path and direction-optimizing codepath
       //
       // Conversions:
       // TODO: add tol
@@ -156,6 +159,10 @@ namespace backend
               desc));
       }
     }
+    else
+    {
+      std::cout << "Error: Invalid load-balance algorithm!\n";
+    }
 
     // Undo change to desc by toggling again
 	  CHECK( desc->toggle( GrB_INP1 ) );
@@ -190,7 +197,8 @@ namespace backend
     if( inp1_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
 
     // 1a) Simple SpMSpV without any load-balancing codepath
-    if( desc->spmspvmode()==0 )
+    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE", GrB_LOAD_BALANCE_LB);
+    if (mxv_mode == GrB_LOAD_BALANCE_SIMPLE)
     {
       if( u_vec_type==GrB_SPARSE )
         CHECK( u_t->sparse2dense(op.identity(), desc) );
@@ -198,9 +206,9 @@ namespace backend
       CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
           desc) );
     }
-    else
+    else if (mxv_mode == GrB_LOAD_BALANCE_LB)
     {
-      // 1b) Direction-optimizing codepath
+      // 1b) Merge-path and direction-optimizing codepath
       //
       // Conversions:
 			SparseMatrixFormat A_format;
@@ -257,6 +265,10 @@ namespace backend
               &u->dense_, desc ) );
         }
       }
+    }
+    else
+    {
+      std::cout << "Error: Invalid load-balance algorithm!\n";
     }
 
     return GrB_SUCCESS;
