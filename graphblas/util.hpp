@@ -82,7 +82,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "True means use early exit, False means do not use it")
     ("earlyexitbench", po::value<bool>()->default_value(false),
         "True means do early exit benchmarking (will automatically turn earlyexit on as well), False means do not use it")
-    ("opreuse", po::value<bool>()->default_value(true),
+    ("opreuse", po::value<bool>()->default_value(false),
         "True means use operand reuse, False means do not use it")
     ("endbit", po::value<bool>()->default_value(true),
         "True means do not do radix sort on full 32 bits, False means do it on full 32 bits")

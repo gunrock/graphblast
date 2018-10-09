@@ -16,7 +16,7 @@ namespace backend
     public:
     // Descriptions of these default settings are in "graphblas/types.hpp"
     Descriptor() : desc_{ GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, 
-      GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL, GrB_APSPIELB,GrB_16},
+      GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL, GrB_16},
       //d_buffer_(NULL), d_buffer_size_(0), d_temp_(NULL), d_temp_size_(0),
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
       split_(0), enable_split_(0), niter_(0), directed_(0), timing_(0), 

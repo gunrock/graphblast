@@ -15,6 +15,10 @@ namespace graphblas
   // TODO: make all operations mxm, mxv, etc. follow vxm() and assign() 
   // constant variant 
 
+  // Matrix-matrix product
+  //   C = C + mask .* (A * B)    +: accum
+  //                              *: op
+  //                             .*: Boolean and
   template <typename c, typename a, typename b, typename m, 
             typename BinaryOpT,     typename SemiringT>
   Info mxm( Matrix<c>*       C,
@@ -47,6 +51,10 @@ namespace graphblas
         &B->matrix_, desc_t );
   }
 
+  // Vector-matrix product
+  //   w^T = w^T + mask^T .* (u^T * A)    +: accum
+  //                                      *: op
+  //                                     .*: Boolean and
   template <typename W, typename U, typename a, typename M,
             typename BinaryOpT, typename SemiringT>
   Info vxm( Vector<W>*       w,
@@ -91,6 +99,10 @@ namespace graphblas
         &u->vector_, &A->matrix_, desc_t );
   }
 
+  // Matrix-vector product
+  //   w = w + mask .* (A * u)    +: accum
+  //                              *: op
+  //                             .*: Boolean and
   template <typename W, typename a, typename U, typename M,
             typename BinaryOpT, typename SemiringT>
   Info mxv( Vector<W>*       w,
@@ -134,6 +146,10 @@ namespace graphblas
         &u->vector_, desc_t );
   }
 
+  // Element-wise multiply of two vectors
+  //   w = w + mask .* (u .* v)    +: accum
+  //                 2     1    1).*: op (semiring multiply)
+  //                            2).*: Boolean and
   template <typename W, typename U, typename V, typename M,
             typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( Vector<W>*       w,
@@ -163,6 +179,10 @@ namespace graphblas
         &u->vector_, &v->vector_, desc_t );
   }
 
+  // Element-wise multiply of two matrices
+  //   C = C + mask .* (A .* B)    +: accum
+  //                 2     1    1).*: op (semiring multiply)
+  //                            2).*: Boolean and
   template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( Matrix<c>*       C,
@@ -176,6 +196,10 @@ namespace graphblas
     // Use either op->operator() or op->mul() as the case may be
   }
 
+  // Element-wise addition of two vectors
+  //   w = w + mask .* (u + v)    +: accum
+  //                             .+: op (semiring add)
+  //                             .*: Boolean and
   template <typename W, typename U, typename V, typename M,
             typename BinaryOpT,     typename SemiringT>
   Info eWiseAdd( Vector<W>*       w,
@@ -189,6 +213,10 @@ namespace graphblas
     // Use either op->operator() or op->add() as the case may be
   }
 
+  // Element-wise addition of two matrices
+  //   C = C + mask .* (A .+ B)    +: accum
+  //                              .+: op (semiring add)
+  //                              .*: Boolean and
   template <typename c, typename a, typename b, typename m,
             typename BinaryOpT,     typename SemiringT>
   Info eWiseAdd( Matrix<c>*       C,
@@ -365,6 +393,10 @@ namespace graphblas
 
   }
 
+  // Reduction along matrix rows to form vector
+  //   w(i) = w(i) + mask(i) .* \sum_j A(i,j) for all j    +: accum
+  //                                                     sum: op
+  //                                                      .*: Boolean and
   template <typename W, typename a, typename M,
             typename BinaryOpT,     typename MonoidT>
   Info reduce( Vector<W>*       w,
@@ -383,6 +415,9 @@ namespace graphblas
     return backend::reduce( &w->vector_, mask_t, accum, op, &A->matrix_, desc_t );
 	}
 
+  // Reduction of vector to form scalar
+  //   val = val + \sum_i u(i) for all i    +: accum
+  //                                      sum: op
   template <typename T, typename U, 
             typename BinaryOpT, typename MonoidT>
   Info reduce( T*                     val,
@@ -399,6 +434,9 @@ namespace graphblas
     return backend::reduce( val, accum, op, &u->vector_, desc_t );
   }
 
+  // Reduction of matrix to form scalar
+  //   val = val + \sum_{i,j} A(i,j) for all i,j    +: accum
+  //                                              sum: op
   template <typename T, typename a,
             typename BinaryOpT,     typename MonoidT>
   Info reduce( T*               val,
@@ -410,6 +448,9 @@ namespace graphblas
 
   }
 
+  // Matrix transposition
+  //   C = C + mask .* (A^T)    +: accum
+  //                           .*: Boolean and
   template <typename c, typename a, typename m,
             typename BinaryOpT>
   Info transpose( Matrix<c>*       C,
@@ -421,12 +462,40 @@ namespace graphblas
 
   }
 
+  // Trace of matrix-matrix product
+  //  val = Tr(A * B)    *: op
   template <typename T, typename a, typename b,
             typename MonoidT>
   Info trace( T*               val,
               MonoidT          op,
               const Matrix<a>* A,
               const Matrix<b>* B,
+              Descriptor*      desc )
+  {
+
+  }
+
+  // Multiply matrix by scalar
+  //   B = A * val    *: op
+  template <typename T, typename a, typename b,
+            typename BinaryOpT>
+  Info scale( Matrix<b>*       B,
+              BinaryOpT        op,
+              const Matrix<a>* A,
+              T                val,
+              Descriptor*      desc )
+  {
+
+  }
+
+  // Multiply vector by scalar
+  //   w = u * val    *: op
+  template <typename T, typename U, typename W,
+            typename BinaryOpT>
+  Info scale( Vector<W>*       w,
+              BinaryOpT        op,
+              const Vector<U>* u,
+              T                val,
               Descriptor*      desc )
   {
 

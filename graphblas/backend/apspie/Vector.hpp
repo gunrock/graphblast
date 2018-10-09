@@ -366,7 +366,7 @@ namespace backend
     const int nt    = 128;
     const int nvals = sparse_.nvals_;
 
-    if( !desc->opreuse() || getEnv("GRB_LOAD_BALANCE_MODE", GrB_LOAD_BALANCE_LB) == GrB_LOAD_BALANCE_SIMPLE )
+    if( !desc->opreuse() )
     {
       dim3 NT, NB;
       NT.x = nt;
