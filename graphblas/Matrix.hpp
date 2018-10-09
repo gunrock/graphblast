@@ -42,6 +42,14 @@ namespace graphblas
                 const char*               fname=NULL );
     Info build( const std::vector<T>*     values,
                 Index                     nvals );
+    // These raw pointers must be located on the GPU and allocated
+    // row_ptr: must be nrows+1*sizeof(Index) bytes
+    // col_ind: must be nvals*sizeof(Index) bytes
+    // values: msut be nvals*sizeof(T) bytes
+    Info build( Index* row_ptr,
+                Index* col_ind,
+                T*     values,
+                Index  nvals );
     Info setElement(     Index row_index,
                          Index col_index );
     Info extractElement( T*    val,
@@ -138,14 +146,27 @@ namespace graphblas
 
     if( fname==NULL || (*row_indices).size()>0 )
       return matrix_.build( row_indices, col_indices, values, nvals, dup,fname);
-    else
-      return matrix_.build( fname );
+
+    return matrix_.build( fname );
   }
 
   template <typename T>
   Info Matrix<T>::build( const std::vector<T>* values, Index nvals )
   {
     return matrix_.build( values, nvals );
+  }
+
+  template <typename T>
+  Info Matrix<T>::build( Index* row_ptr,
+                         Index* col_ind,
+                         T*     values,
+                         Index  nvals )
+  {
+    if (row_ptr == NULL || col_ind == NULL || values == NULL)
+      return GrB_NULL_POINTER;
+    if (nvals == 0)
+      return GrB_INVALID_VALUE;
+    return matrix_.build(row_ptr, col_ind, values, nvals);
   }
 
   template <typename T>

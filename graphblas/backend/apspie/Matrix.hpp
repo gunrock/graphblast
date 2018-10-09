@@ -49,6 +49,10 @@ namespace backend
     Info build( const char*           fname ); 
     Info build( const std::vector<T>* values, 
                 Index                 nvals );
+    Info build( Index* row_ptr,
+                Index* col_ind,
+                T*     values,
+                Index  nvals );
     Info setElement(     Index row_index,
                          Index col_index );
     Info extractElement( T*    val,
@@ -196,6 +200,16 @@ namespace backend
   {
     mat_type_ = GrB_DENSE;
     return dense_.build( values, nvals );
+  }
+
+  template <typename T>
+  Info Matrix<T>::build( Index* row_ptr,
+                         Index* col_ind,
+                         T*     values,
+                         Index  nvals )
+  {
+    mat_type_ = GrB_SPARSE;
+    return sparse_.build(row_ptr, col_ind, values, nvals);
   }
 
   template <typename T>

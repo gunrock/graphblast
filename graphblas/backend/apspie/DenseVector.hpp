@@ -50,6 +50,8 @@ namespace backend
                 BinaryOpT                 dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
+    Info build( T*    values,
+                Index nvals );
     Info setElement(     T val,
                          Index index );
     Info extractElement( T*    val,
@@ -67,6 +69,8 @@ namespace backend
     Info fillAscending( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
+    Info allocateCpu();
+    Info allocateGpu();
     Info allocate();  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
@@ -171,6 +175,18 @@ namespace backend
 
     CHECK( cpuToGpu() );
 
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseVector<T>::build( T*    values,
+                              Index nvals )
+  {
+    d_val_       = values;
+    nvals_       = nvals;
+    need_update_ = true;
+
+    CHECK( allocateCpu() );
     return GrB_SUCCESS;
   }
 
@@ -313,12 +329,11 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  // Allocate just enough (different from CPU impl since kcap_ratio=1.)
   template <typename T>
-  Info DenseVector<T>::allocate()
+  Info DenseVector<T>::allocateCpu()
   {
     // Host malloc
-    if( nvals_>0 && h_val_ == NULL )
+    if (nvals_ > 0 && h_val_ == NULL)
       h_val_ = (T*) malloc(nvals_*sizeof(T));
     else
     {
@@ -326,6 +341,18 @@ namespace backend
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
+    if (nvals_ > 0 && h_val_ == NULL)
+    {
+      std::cout << "Error: CPU DeVec Out of memory!\n";
+      //return GrB_OUT_OF_MEMORY;
+    }
+
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info DenseVector<T>::allocateGpu()
+  {
     // GPU malloc
     if( nvals_>0 && d_val_ == NULL )
     {
@@ -338,12 +365,21 @@ namespace backend
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
-    if( nvals_>0 && (h_val_==NULL || d_val_==NULL) )
+    if (nvals_ > 0 && d_val_ == NULL)
     {
       std::cout << "Error: DeVec Out of memory!\n";
       //return GrB_OUT_OF_MEMORY;
     }
 
+    return GrB_SUCCESS;
+  }
+
+  // Allocate just enough (different from CPU impl since kcap_ratio=1.)
+  template <typename T>
+  Info DenseVector<T>::allocate()
+  {
+    CHECK( allocateCpu() );
+    CHECK( allocateGpu() );
     return GrB_SUCCESS;
   }
 

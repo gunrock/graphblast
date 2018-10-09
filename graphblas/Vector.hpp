@@ -37,6 +37,11 @@ namespace graphblas
                 BinaryOpT                 dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
+    Info build( Index* indices,
+                T*     values,
+                Index  nvals );
+    Info build( T*    values,
+                Index nvals );
     Info setElement(     T val, 
                          Index index );
     Info extractElement( T*    val, 
@@ -114,6 +119,25 @@ namespace graphblas
                          Index                 nvals )
   {
     if( values==NULL ) return GrB_NULL_POINTER;
+    return vector_.build( values, nvals );
+  }
+
+  template <typename T>
+  Info Vector<T>::build( Index* indices,
+                         T*     values,
+                         Index  nvals )
+  {
+    if (indices == NULL || values == NULL) return GrB_NULL_POINTER;
+    if (nvals == 0) return GrB_INVALID_VALUE;
+    return vector_.build( indices, values, nvals );
+  }
+
+  template <typename T>
+  Info Vector<T>::build( T*     values,
+                         Index  nvals )
+  {
+    if (values == NULL) return GrB_NULL_POINTER;
+    if (nvals == 0) return GrB_INVALID_VALUE;
     return vector_.build( values, nvals );
   }
 

@@ -51,6 +51,9 @@ namespace backend
                 BinaryOpT                 dup );
     Info build( const std::vector<T>* values,
                 Index                 nvals );
+    Info build( Index* indices,
+                T*     values,
+                Index  nvals );
     Info setElement(     T val,
                          Index index );
     Info extractElement( T*    val,
@@ -67,6 +70,8 @@ namespace backend
     Info fill( Index vals );
     Info print( bool forceUpdate = false );
     Info countUnique( Index* count );
+    Info allocateCpu();  
+    Info allocateGpu();  
     Info allocate();  
     Info cpuToGpu();
     Info gpuToCpu( bool forceUpdate = false );
@@ -183,6 +188,20 @@ namespace backend
   Info SparseVector<T>::build( const std::vector<T>* values,
                                Index                 nvals )
   {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info SparseVector<T>::build( Index* indices,
+                               T*     values,
+                               Index  nvals )
+  {
+    d_ind_ = indices;
+    d_val_ = values;
+    nvals_ = nvals;
+
+    need_update_ = true;
+    CHECK( allocateCpu() );
     return GrB_SUCCESS;
   }
 
@@ -335,12 +354,11 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  // Allocate just enough (different from CPU impl since kcap_ratio=1.)
   template <typename T>
-  Info SparseVector<T>::allocate()
+  Info SparseVector<T>::allocateCpu()
   {
     // Host malloc
-    if( nsize_!=0 && h_ind_==NULL && h_val_==NULL )
+    if (nsize_ != 0 && h_ind_ == NULL && h_val_ == NULL)
     {
       h_ind_ = (Index*) malloc(nsize_*sizeof(Index));
       h_val_ = (T*)     malloc((nsize_+1)*sizeof(T));
@@ -351,8 +369,20 @@ namespace backend
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
+    if (nsize_ != 0 && (h_ind_ == NULL || h_val_ == NULL))
+    {
+      std::cout << "Error: SpVec Out of memory!\n";
+      //return GrB_OUT_OF_MEMORY;
+    }
+
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info SparseVector<T>::allocateGpu()
+  {
     // GPU malloc
-    if( nsize_!=0 && d_ind_==NULL && d_val_==NULL )
+    if (nsize_ != 0 && d_ind_ == NULL && d_val_ == NULL )
     {
       CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
       CUDA( cudaMalloc( &d_val_, (nsize_+1)*sizeof(T)) );
@@ -364,13 +394,21 @@ namespace backend
       //return GrB_UNINITIALIZED_OBJECT;
     }
 
-    if( nsize_!=0 && (h_ind_==NULL || h_val_==NULL || 
-        d_ind_==NULL || d_val_==NULL) )
+    if (nsize_ != 0 && (d_ind_ == NULL || d_val_ == NULL))
     {
       std::cout << "Error: SpVec Out of memory!\n";
       //return GrB_OUT_OF_MEMORY;
     }
 
+    return GrB_SUCCESS;
+  }
+
+  // Allocate just enough (different from CPU impl since kcap_ratio=1.)
+  template <typename T>
+  Info SparseVector<T>::allocate()
+  {
+    CHECK( allocateCpu() );
+    CHECK( allocateGpu() );
     return GrB_SUCCESS;
   }
 

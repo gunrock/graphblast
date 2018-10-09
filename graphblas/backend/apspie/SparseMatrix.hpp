@@ -70,6 +70,10 @@ namespace backend
     Info build( const char*           fname );
     Info build( const std::vector<T>* values,
                 Index nvals );
+    Info build( Index* row_ptr,
+                Index* col_ind,
+                T*     values,
+                Index  nvals );
     Info setElement(     Index row_index,
                          Index col_index );
     Info extractElement( T*    val,
@@ -427,6 +431,25 @@ namespace backend
   Info SparseMatrix<T>::build( const std::vector<T>* values,
                                Index                 nvals )
   {
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  Info SparseMatrix<T>::build( Index* row_ptr,
+                               Index* col_ind,
+                               T*     values,
+                               Index  nvals )
+  {
+    d_csrRowPtr_ = row_ptr;
+    d_csrColInd_ = col_ind;
+    d_csrVal_    = values;
+
+    nvals_       = nvals;
+    need_update_ = true;
+
+    // Don't forget CPU must still be allocated
+    CHECK( allocateCpu() );
+
     return GrB_SUCCESS;
   }
 
