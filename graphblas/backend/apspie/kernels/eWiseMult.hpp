@@ -15,10 +15,10 @@ namespace backend
 {
   // TODO(@ctcyang): add scmp, accum, repl, mask
   //template <bool UseScmp, bool UseAccum, bool UseRepl,
-  template <typename W, typename U, typename V, //typename M,
+  template <typename W, typename U, typename V, typename M,
             typename AccumOp, typename MulOp>
   __global__ void eWiseMultKernel( W*       w_val,
-                                   const U* mask_val,
+                                   const M* mask_val,
                                    AccumOp  accum_op,
                                    U        identity,
                                    MulOp    mul_op,
