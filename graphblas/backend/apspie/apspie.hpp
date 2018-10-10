@@ -15,7 +15,6 @@
 #include "graphblas/backend/apspie/assign.hpp"
 #include "graphblas/backend/apspie/util.hpp"
 #include "graphblas/backend/apspie/Descriptor.hpp"
-//#include "graphblas/backend/apspie/operations.hpp"
 #include "graphblas/backend/apspie/SparseVector.hpp"
 #include "graphblas/backend/apspie/DenseVector.hpp"
 #include "graphblas/backend/apspie/SparseMatrix.hpp"

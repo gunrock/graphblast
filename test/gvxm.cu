@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_SUITE(dup_suite)
 
 BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
 {
-  int argc = 0;
+  int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
   parseArgs( argc, argv, vm );
@@ -87,7 +87,7 @@ BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
 
 BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
 {
-  int argc = 0;
+  int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
   parseArgs( argc, argv, vm );

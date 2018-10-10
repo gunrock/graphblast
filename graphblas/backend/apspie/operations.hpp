@@ -285,6 +285,34 @@ namespace backend
                   Descriptor*      desc )
   {
     // Use either op->operator() or op->mul() as the case may be
+    Storage u_vec_type;
+    Storage v_vec_type;
+    CHECK( u->getStorage( &u_vec_type ) );
+    CHECK( v->getStorage( &v_vec_type ) );
+
+    /* 
+     * \brief 4 cases:
+     * 1) sparse x sparse
+     * 2) dense  x dense
+     * 3) sparse x dense
+     * 4) dense  x sparse
+     */
+    if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE)
+      CHECK( eWiseMult(&w->sparse_, mask, accum, op, &u->sparse_, &v->sparse_, 
+          desc) );
+    else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE)
+      CHECK( eWiseMult(&w->dense_, mask, accum, op, &u->dense_, &v->dense_, 
+          desc) );
+    else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
+      CHECK( eWiseMult(&w->sparse_, mask, accum, op, &u->sparse_, &v->dense_,
+          desc) );
+    else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
+      CHECK( eWiseMult(&w->sparse_, mask, accum, op, &v->sparse_, &u->dense_,
+          desc) );
+    else
+      return GrB_INVALID_OBJECT;
+
+    return GrB_SUCCESS;
   }
 
   template <typename c, typename a, typename b, typename m,

@@ -10,6 +10,7 @@
 #include <cub.cuh>
 
 #include "graphblas/backend/apspie/kernels/util.hpp"
+#include "graphblas/backend/apspie/kernels/eWiseMult.hpp"
 
 namespace graphblas
 {
@@ -169,17 +170,11 @@ namespace backend
       d_csrSwapVal = desc->d_buffer_+(2*A_nrows+  size)*sizeof(Index);
       d_temp       = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     }
-		/*indirectGather<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
-				*u_nvals );
-    printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
-		IntervalGather( *w_nvals, (Index*)d_temp_nvals, (Index*)d_scan, *u_nvals, 
-        A_csrColInd, d_csrSwapInd, *(desc->d_context_) );
-		IntervalGather( *w_nvals, (Index*)d_temp_nvals, (Index*)d_scan, *u_nvals, 
-        A_csrVal, d_csrSwapVal, *(desc->d_context_) );*/
 
     // TODO: Add element-wise multiplication with frontier
     // -uses op.mul_op()
     
+
     //if( desc->prealloc() )
     //{
     /*  IntervalGatherIndirectPrealloc( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
@@ -189,22 +184,46 @@ namespace backend
         IntervalGatherIndirectPrealloc( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
             *u_nvals, A_csrVal, u_ind, (T*)d_csrSwapVal, (Index*)d_temp,
             *(desc->d_context_) );
+    }*/
+    if (!desc->struconly_)
+    {
+    /*
+     * \brief IntervalExpandIndirect is a modification of IntervalExpand, which
+     *        takes a scan of the output, values and expands values into an 
+     *        output specified by the scan.
+     *
+     *        IntervalExpandIndirect differs, because it replaces values by
+     *        *all* values of some array, and indices that we care about that
+     *        are used to index into values. This lets the user in a single
+     *        function call an IntervalGather and an IntervalExpand
+     */
+      IntervalExpandIndirect( *w_nvals, (Index*)d_scan, u_ind, u_val, *u_nvals,
+          (T*)d_temp, *(desc->d_context_) );
+      printDevice( "d_temp", (T*)d_temp, *w_nvals );
     }
-    else
-    {*/
-      IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
+
+    /*
+     * \brief IntervalGatherIndirect is a modification of IntervalGather, which
+     *        takes some interval starts, interval lengths and gathers them into
+     *        a single output.
+     *
+     *        IntervalGatherIndirect differs, because it replaces *some* 
+     *        interval starts with *all* interval starts, and indices that we 
+     *        care about that are used to index into interval starts. This lets
+     *        the user in a single function call do 2 IntervalGather's.
+     */ 
+    IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
         *u_nvals, A_csrColInd, u_ind, (Index*)d_csrSwapInd, 
         *(desc->d_context_) );
-      if( !desc->struconly() )
-        IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
-            *u_nvals, A_csrVal, u_ind, (T*)d_csrSwapVal,
-            *(desc->d_context_) );
-    //}
+    if( !desc->struconly() )
+      IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
+          *u_nvals, A_csrVal, u_ind, (T*)d_csrSwapVal,
+          *(desc->d_context_) );
+
 		//Step 4) Element-wise multiplication
-    //mgpu::SpmspvCsrIndirectBinary(A_csrVal, A_csrColInd, *w_nvals, 
-    //    A_csrRowPtr, A_nrows, u_ind, u_val, *u_nvals, false, w_ind, w_val, 
-    //    w_nvals, (T)identity, mul_op, *(desc->d_context_));
-    //CUDA( cudaDeviceSynchronize() );
+    NB.x = (*w_nvals+nt-1)/nt;
+    eWiseMultKernel<<<NB,NT>>>( (T*)d_csrSwapVal, NULL, NULL, op.identity(), 
+        extractMul(op), (T*)d_csrSwapVal, (T*)d_temp, *w_nvals );
 
     if( desc->debug() )
     {

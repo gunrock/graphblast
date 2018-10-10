@@ -3,10 +3,6 @@
 
 #include <iostream>
 
-#include "graphblas/backend/apspie/Descriptor.hpp"
-#include "graphblas/backend/apspie/SparseMatrix.hpp"
-#include "graphblas/backend/apspie/DenseMatrix.hpp"
-#include "graphblas/backend/apspie/operations.hpp"
 #include "graphblas/backend/apspie/spmspvInner.hpp"
 #include "graphblas/backend/apspie/kernels/assignSparse.hpp"
 #include "graphblas/backend/apspie/kernels/assignDense.hpp"
