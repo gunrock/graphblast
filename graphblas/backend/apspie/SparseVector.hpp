@@ -93,8 +93,8 @@ namespace backend
   {
     if( h_ind_!=NULL ) free(h_ind_);
     if( h_val_!=NULL ) free(h_val_);
-    if( d_ind_!=NULL ) CUDA( cudaFree(d_ind_) );
-    if( d_ind_!=NULL ) CUDA( cudaFree(d_val_) );
+    if( d_ind_!=NULL ) CUDA_CALL( cudaFree(d_ind_) );
+    if( d_ind_!=NULL ) CUDA_CALL( cudaFree(d_val_) );
   }
 
   template <typename T>
@@ -117,9 +117,9 @@ namespace backend
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
 
-    CUDA( cudaMemcpy( d_ind_, rhs->d_ind_, nsize_*sizeof(Index),
+    CUDA_CALL( cudaMemcpy( d_ind_, rhs->d_ind_, nsize_*sizeof(Index),
         cudaMemcpyDeviceToDevice ) );
-    CUDA( cudaMemcpy( d_val_, rhs->d_val_, nsize_*sizeof(T),
+    CUDA_CALL( cudaMemcpy( d_val_, rhs->d_val_, nsize_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
 
     need_update_ = true;
@@ -294,21 +294,21 @@ namespace backend
     if( h_temp_val!=NULL )
       memcpy( h_val_, h_temp_val, to_copy*sizeof(T) );
 
-    CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
-    CUDA( cudaMalloc( &d_val_, (nsize_+1)*sizeof(T)) );
+    CUDA_CALL( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
+    CUDA_CALL( cudaMalloc( &d_val_, (nsize_+1)*sizeof(T)) );
     printMemory( "SpVec" );
     if( d_temp_ind!=NULL )
-      CUDA( cudaMemcpy( d_ind_, d_temp_ind, to_copy*sizeof(Index), 
+      CUDA_CALL( cudaMemcpy( d_ind_, d_temp_ind, to_copy*sizeof(Index), 
           cudaMemcpyDeviceToDevice) );
     if( d_temp_val!=NULL )
-      CUDA( cudaMemcpy( d_val_, d_temp_val, to_copy*sizeof(T), 
+      CUDA_CALL( cudaMemcpy( d_val_, d_temp_val, to_copy*sizeof(T), 
           cudaMemcpyDeviceToDevice) );
     nvals_ = to_copy;
 
     free( h_temp_ind );
     free( h_temp_val );
-    CUDA( cudaFree(d_temp_ind) );
-    CUDA( cudaFree(d_temp_val) );
+    CUDA_CALL( cudaFree(d_temp_ind) );
+    CUDA_CALL( cudaFree(d_temp_val) );
 
     return GrB_SUCCESS;
   }
@@ -326,7 +326,7 @@ namespace backend
   template <typename T>
   Info SparseVector<T>::print( bool forceUpdate )
   {
-    CUDA( cudaDeviceSynchronize() );
+    CUDA_CALL( cudaDeviceSynchronize() );
     CHECK( gpuToCpu(forceUpdate) );
     printArray( "ind", h_ind_, std::min(nvals_,40) );
     printArray( "val", h_val_, std::min(nvals_,40) );
@@ -382,8 +382,8 @@ namespace backend
     // GPU malloc
     if (nsize_ != 0 && d_ind_ == NULL && d_val_ == NULL )
     {
-      CUDA( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
-      CUDA( cudaMalloc( &d_val_, (nsize_+1)*sizeof(T)) );
+      CUDA_CALL( cudaMalloc( &d_ind_, nsize_*sizeof(Index)) );
+      CUDA_CALL( cudaMalloc( &d_val_, (nsize_+1)*sizeof(T)) );
       printMemory( "d_ind, d_val" );
     }
     else
@@ -414,9 +414,9 @@ namespace backend
   template <typename T>
   Info SparseVector<T>::cpuToGpu()
   {
-    CUDA( cudaMemcpy( d_ind_, h_ind_, nvals_*sizeof(Index),
+    CUDA_CALL( cudaMemcpy( d_ind_, h_ind_, nvals_*sizeof(Index),
         cudaMemcpyHostToDevice ) );
-    CUDA( cudaMemcpy( d_val_, h_val_, nvals_*sizeof(T),
+    CUDA_CALL( cudaMemcpy( d_val_, h_val_, nvals_*sizeof(T),
         cudaMemcpyHostToDevice ) );
     return GrB_SUCCESS;
   }
@@ -427,11 +427,11 @@ namespace backend
   {
     if( need_update_ || forceUpdate )
     {
-      CUDA( cudaMemcpy( h_ind_, d_ind_, nvals_*sizeof(Index),
+      CUDA_CALL( cudaMemcpy( h_ind_, d_ind_, nvals_*sizeof(Index),
           cudaMemcpyDeviceToHost ) );
-      CUDA( cudaMemcpy( h_val_, d_val_, nvals_*sizeof(T),
+      CUDA_CALL( cudaMemcpy( h_val_, d_val_, nvals_*sizeof(T),
           cudaMemcpyDeviceToHost ) );
-      //CUDA( cudaDeviceSynchronize() );
+      //CUDA_CALL( cudaDeviceSynchronize() );
     }
     need_update_ = false;
     return GrB_SUCCESS;

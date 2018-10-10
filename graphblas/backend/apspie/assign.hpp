@@ -46,7 +46,7 @@ namespace backend
     {
       desc->resize(nindices*sizeof(Index), "buffer");
       indices_t = (Index*) desc->d_buffer_;
-      CUDA( cudaMemcpy(indices_t, indices, nindices*sizeof(Index), 
+      CUDA_CALL( cudaMemcpy(indices_t, indices, nindices*sizeof(Index), 
           cudaMemcpyHostToDevice) );
     }
 

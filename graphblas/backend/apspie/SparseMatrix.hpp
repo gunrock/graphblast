@@ -150,9 +150,9 @@ namespace backend
     if( h_csrRowPtr_!=NULL ) free(h_csrRowPtr_);
     if( h_csrColInd_!=NULL ) free(h_csrColInd_);
     if( h_csrVal_   !=NULL ) free(h_csrVal_   );
-    if( d_csrRowPtr_!=NULL ) CUDA( cudaFree(d_csrRowPtr_) );
-    if( d_csrColInd_!=NULL ) CUDA( cudaFree(d_csrColInd_) );
-    if( d_csrVal_   !=NULL ) CUDA( cudaFree(d_csrVal_   ) );
+    if( d_csrRowPtr_!=NULL ) CUDA_CALL( cudaFree(d_csrRowPtr_) );
+    if( d_csrColInd_!=NULL ) CUDA_CALL( cudaFree(d_csrColInd_) );
+    if( d_csrVal_   !=NULL ) CUDA_CALL( cudaFree(d_csrVal_   ) );
 
     if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
@@ -160,9 +160,9 @@ namespace backend
       if( h_cscRowInd_!=NULL ) free(h_cscRowInd_);
       if( h_cscVal_   !=NULL ) free(h_cscVal_   );
 
-      if( d_cscColPtr_!=NULL ) CUDA( cudaFree(d_cscColPtr_) );
-      if( d_cscRowInd_!=NULL ) CUDA( cudaFree(d_cscRowInd_) );
-      if( d_cscVal_   !=NULL ) CUDA( cudaFree(d_cscVal_   ) );
+      if( d_cscColPtr_!=NULL ) CUDA_CALL( cudaFree(d_cscColPtr_) );
+      if( d_cscRowInd_!=NULL ) CUDA_CALL( cudaFree(d_cscRowInd_) );
+      if( d_cscVal_   !=NULL ) CUDA_CALL( cudaFree(d_cscVal_   ) );
     }
   }
 
@@ -192,22 +192,22 @@ namespace backend
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
 
-    CUDA( cudaMemcpy( d_csrRowPtr_, rhs->d_csrRowPtr_, (nrows_+1)*
+    CUDA_CALL( cudaMemcpy( d_csrRowPtr_, rhs->d_csrRowPtr_, (nrows_+1)*
         sizeof(Index), cudaMemcpyDeviceToDevice ) );
-    CUDA( cudaMemcpy( d_csrColInd_, rhs->d_csrColInd_, nvals_*sizeof(Index),
+    CUDA_CALL( cudaMemcpy( d_csrColInd_, rhs->d_csrColInd_, nvals_*sizeof(Index),
         cudaMemcpyDeviceToDevice ) );
-    CUDA( cudaMemcpy( d_csrVal_,    rhs->d_csrVal_,    nvals_*sizeof(T),
+    CUDA_CALL( cudaMemcpy( d_csrVal_,    rhs->d_csrVal_,    nvals_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
 
     if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
-      CUDA( cudaMemcpy( d_cscColPtr_, rhs->d_cscColPtr_, (ncols_+1)*
+      CUDA_CALL( cudaMemcpy( d_cscColPtr_, rhs->d_cscColPtr_, (ncols_+1)*
           sizeof(Index), cudaMemcpyDeviceToDevice ) );
-      CUDA( cudaMemcpy( d_cscRowInd_, rhs->d_cscRowInd_, nvals_*sizeof(Index),
+      CUDA_CALL( cudaMemcpy( d_cscRowInd_, rhs->d_cscRowInd_, nvals_*sizeof(Index),
           cudaMemcpyDeviceToDevice ) );
-      CUDA( cudaMemcpy( d_cscVal_,    rhs->d_cscVal_,    nvals_*sizeof(T),
+      CUDA_CALL( cudaMemcpy( d_cscVal_,    rhs->d_cscVal_,    nvals_*sizeof(T),
           cudaMemcpyDeviceToDevice ) );
-      //CUDA( cudaDeviceSynchronize() );
+      //CUDA_CALL( cudaDeviceSynchronize() );
     }
 
     need_update_ = true;
@@ -700,30 +700,30 @@ namespace backend
     // GPU malloc
     if( nrows_>0 && d_csrRowPtr_ == NULL )
     {
-      CUDA( cudaMalloc( &d_csrRowPtr_, (nrows_+1)*sizeof(Index)) );
+      CUDA_CALL( cudaMalloc( &d_csrRowPtr_, (nrows_+1)*sizeof(Index)) );
     }
     if( nvals_>0 && d_csrColInd_ == NULL )
     {
-      CUDA( cudaMalloc( &d_csrColInd_, ncapacity_*sizeof(Index)) );
+      CUDA_CALL( cudaMalloc( &d_csrColInd_, ncapacity_*sizeof(Index)) );
     }
     if( nvals_>0 && d_csrVal_ == NULL )
     {
-      CUDA( cudaMalloc( &d_csrVal_, ncapacity_*sizeof(T)) );
+      CUDA_CALL( cudaMalloc( &d_csrVal_, ncapacity_*sizeof(T)) );
       printMemory( "csrVal" );
     }
     if( !symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
       if( nrows_>0 && d_cscColPtr_ == NULL )
       {
-        CUDA( cudaMalloc( &d_cscColPtr_, (ncols_+1)*sizeof(Index)) );
+        CUDA_CALL( cudaMalloc( &d_cscColPtr_, (ncols_+1)*sizeof(Index)) );
       }
       if( nvals_>0 && d_cscRowInd_ == NULL )
       {
-        CUDA( cudaMalloc( &d_cscRowInd_, ncapacity_*sizeof(Index)) );
+        CUDA_CALL( cudaMalloc( &d_cscRowInd_, ncapacity_*sizeof(Index)) );
       }
       if( nvals_>0 && d_cscVal_ == NULL )
       {
-        CUDA( cudaMalloc( &d_cscVal_, ncapacity_*sizeof(T)) );
+        CUDA_CALL( cudaMalloc( &d_cscVal_, ncapacity_*sizeof(T)) );
         printMemory( "cscVal" );
       }
     }
@@ -797,20 +797,20 @@ namespace backend
   {
     CHECK( allocateGpu() );
 
-    CUDA( cudaMemcpy( d_csrRowPtr_, h_csrRowPtr_, (nrows_+1)*sizeof(Index),
+    CUDA_CALL( cudaMemcpy( d_csrRowPtr_, h_csrRowPtr_, (nrows_+1)*sizeof(Index),
         cudaMemcpyHostToDevice ) );
-    CUDA( cudaMemcpy( d_csrColInd_, h_csrColInd_, nvals_*sizeof(Index),
+    CUDA_CALL( cudaMemcpy( d_csrColInd_, h_csrColInd_, nvals_*sizeof(Index),
         cudaMemcpyHostToDevice ) );
-    CUDA( cudaMemcpy( d_csrVal_,    h_csrVal_,    nvals_*sizeof(T),
+    CUDA_CALL( cudaMemcpy( d_csrVal_,    h_csrVal_,    nvals_*sizeof(T),
         cudaMemcpyHostToDevice ) );
 
     if( !symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
-      CUDA( cudaMemcpy( d_cscColPtr_, h_cscColPtr_, (ncols_+1)*sizeof(Index),
+      CUDA_CALL( cudaMemcpy( d_cscColPtr_, h_cscColPtr_, (ncols_+1)*sizeof(Index),
           cudaMemcpyHostToDevice ) );
-      CUDA( cudaMemcpy( d_cscRowInd_, h_cscRowInd_, nvals_*sizeof(Index),
+      CUDA_CALL( cudaMemcpy( d_cscRowInd_, h_cscRowInd_, nvals_*sizeof(Index),
           cudaMemcpyHostToDevice ) );
-      CUDA( cudaMemcpy( d_cscVal_,    h_cscVal_,    nvals_*sizeof(T),
+      CUDA_CALL( cudaMemcpy( d_cscVal_,    h_cscVal_,    nvals_*sizeof(T),
           cudaMemcpyHostToDevice ) );
     }
     else
@@ -820,7 +820,7 @@ namespace backend
       d_cscVal_    = d_csrVal_;
     }
 
-    //CUDA( cudaDeviceSynchronize() );
+    //CUDA_CALL( cudaDeviceSynchronize() );
     return GrB_SUCCESS;
   }
 
@@ -830,24 +830,24 @@ namespace backend
   {
     if( need_update_ || force_update )
     {
-      CUDA( cudaMemcpy( h_csrRowPtr_, d_csrRowPtr_, (nrows_+1)*sizeof(Index),
+      CUDA_CALL( cudaMemcpy( h_csrRowPtr_, d_csrRowPtr_, (nrows_+1)*sizeof(Index),
           cudaMemcpyDeviceToHost ) );
-      CUDA( cudaMemcpy( h_csrColInd_, d_csrColInd_, nvals_*sizeof(Index),
+      CUDA_CALL( cudaMemcpy( h_csrColInd_, d_csrColInd_, nvals_*sizeof(Index),
           cudaMemcpyDeviceToHost ) );
-      CUDA( cudaMemcpy( h_csrVal_,    d_csrVal_,    nvals_*sizeof(T),
+      CUDA_CALL( cudaMemcpy( h_csrVal_,    d_csrVal_,    nvals_*sizeof(T),
           cudaMemcpyDeviceToHost ) );
 
       if( !symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC )
       {
-        CUDA( cudaMemcpy( h_cscColPtr_, d_cscColPtr_, (ncols_+1)*sizeof(Index),
+        CUDA_CALL( cudaMemcpy( h_cscColPtr_, d_cscColPtr_, (ncols_+1)*sizeof(Index),
             cudaMemcpyDeviceToHost ) );
-        CUDA( cudaMemcpy( h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
+        CUDA_CALL( cudaMemcpy( h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
             cudaMemcpyDeviceToHost ) );
-        CUDA( cudaMemcpy( h_cscVal_,    d_cscVal_,    nvals_*sizeof(T),
+        CUDA_CALL( cudaMemcpy( h_cscVal_,    d_cscVal_,    nvals_*sizeof(T),
             cudaMemcpyDeviceToHost ) );
       }
 
-      CUDA( cudaDeviceSynchronize() );
+      CUDA_CALL( cudaDeviceSynchronize() );
     }
     need_update_ = false;
     return GrB_SUCCESS;

@@ -5,6 +5,8 @@
 
 #include <moderngpu.cuh>
 
+#include "graphblas/backend/apspie/util.hpp"
+
 namespace graphblas
 {
 namespace backend
@@ -25,11 +27,11 @@ namespace backend
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
-      CUDA( cudaMalloc(&d_buffer_, d_buffer_size_) );
+      CUDA_CALL( cudaMalloc(&d_buffer_, d_buffer_size_) );
 
       // Preallocate d_temp_size
       d_temp_size_ = 183551;
-      CUDA( cudaMalloc(&d_temp_, d_temp_size_) );
+      CUDA_CALL( cudaMalloc(&d_temp_, d_temp_size_) );
     }
 
     // Default Destructor
@@ -115,8 +117,8 @@ namespace backend
 
   Descriptor::~Descriptor()
   {
-    if( d_buffer_!=NULL ) CUDA( cudaFree(d_buffer_) );
-    if( d_temp_  !=NULL ) CUDA( cudaFree(d_temp_)   );
+    if( d_buffer_!=NULL ) CUDA_CALL( cudaFree(d_buffer_) );
+    if( d_temp_  !=NULL ) CUDA_CALL( cudaFree(d_temp_)   );
   }
 
   Info Descriptor::set( Desc_field field, Desc_value value )
@@ -173,29 +175,29 @@ namespace backend
       }
       if( field=="buffer" ) 
       {
-        CUDA( cudaMalloc(&d_buffer_, target) );
+        CUDA_CALL( cudaMalloc(&d_buffer_, target) );
         if( GrB_MEMORY )
         {
           printMemory( "desc_buffer" );
         }
         if( d_temp_buffer!=NULL )
-          CUDA( cudaMemcpy(d_buffer_, d_temp_buffer, *d_size, 
+          CUDA_CALL( cudaMemcpy(d_buffer_, d_temp_buffer, *d_size, 
               cudaMemcpyDeviceToDevice) );
       }
       else if( field=="temp" ) 
       {
-        CUDA( cudaMalloc(&d_temp_, target) );
+        CUDA_CALL( cudaMalloc(&d_temp_, target) );
         if( GrB_MEMORY )
         {
           printMemory( "desc_temp" );
         }
         if( d_temp_buffer!=NULL )
-          CUDA( cudaMemcpy(d_temp_, d_temp_buffer, *d_size, 
+          CUDA_CALL( cudaMemcpy(d_temp_, d_temp_buffer, *d_size, 
               cudaMemcpyDeviceToDevice) );
       }
       *d_size = target;
 
-      CUDA( cudaFree(d_temp_buffer) );
+      CUDA_CALL( cudaFree(d_temp_buffer) );
     }
     return GrB_SUCCESS;
   }
@@ -205,11 +207,11 @@ namespace backend
     if( d_buffer_size_>0 )
     { 
       if( field=="buffer" )
-        CUDA( cudaMemset(d_buffer_, 0, d_buffer_size_) );
-        //CUDA( cudaMemsetAsync(d_buffer_, 0, d_buffer_size_) );
+        CUDA_CALL( cudaMemset(d_buffer_, 0, d_buffer_size_) );
+        //CUDA_CALL( cudaMemsetAsync(d_buffer_, 0, d_buffer_size_) );
       else if( field=="temp" )
-        CUDA( cudaMemset(d_temp_,   0, d_temp_size_) );
-        //CUDA( cudaMemsetAsync(d_temp_,   0, d_temp_size_) );
+        CUDA_CALL( cudaMemset(d_temp_,   0, d_temp_size_) );
+        //CUDA_CALL( cudaMemsetAsync(d_temp_,   0, d_temp_size_) );
     }
 
     return GrB_SUCCESS;

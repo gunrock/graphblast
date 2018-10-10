@@ -127,7 +127,7 @@ namespace backend
 
           if( desc->debug() )
           {
-            CUDA( cudaDeviceSynchronize() );
+            CUDA_CALL( cudaDeviceSynchronize() );
             printDevice("mask", (mask->dense_).d_val_, A_nrows);
             printDevice("temp_ind", temp_ind, A_nrows);
           }
@@ -184,7 +184,7 @@ namespace backend
 
           if( desc->debug() )
           {
-            CUDA( cudaDeviceSynchronize() );
+            CUDA_CALL( cudaDeviceSynchronize() );
             printDevice("mask", (mask->dense_).d_val_, A_nrows);
             printDevice("temp_ind", temp_ind, temp_nvals);
           }
@@ -245,7 +245,7 @@ namespace backend
 
         if( desc->debug() )
         {
-          CUDA( cudaDeviceSynchronize() );
+          CUDA_CALL( cudaDeviceSynchronize() );
           printDevice("mask", (mask->dense_).d_val_, A_nrows);
           printDevice("temp_ind", temp_ind, temp_nvals);
           printDevice("temp_val", temp_val, temp_nvals);

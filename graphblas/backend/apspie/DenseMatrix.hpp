@@ -130,9 +130,9 @@ namespace backend
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
 
-    CUDA( cudaMemcpy( d_denseVal_, rhs->d_denseVal_, nvals_*sizeof(T),
+    CUDA_CALL( cudaMemcpy( d_denseVal_, rhs->d_denseVal_, nvals_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
-    CUDA( cudaDeviceSynchronize() );
+    CUDA_CALL( cudaDeviceSynchronize() );
 
     need_update_ = true;
     return err;
@@ -142,7 +142,7 @@ namespace backend
   Info DenseMatrix<T>::clear()
   {
     if( h_denseVal_ ) free(h_denseVal_);
-    if( d_denseVal_ ) CUDA( cudaFree(d_denseVal_) );
+    if( d_denseVal_ ) CUDA_CALL( cudaFree(d_denseVal_) );
     return GrB_SUCCESS;
   }
 
@@ -303,7 +303,7 @@ namespace backend
       h_denseVal_[i] = (T) 0;
 
     if( nvals_!=0 && d_denseVal_ == NULL )
-      CUDA( cudaMalloc( &d_denseVal_, nvals_*sizeof(T) ) );
+      CUDA_CALL( cudaMalloc( &d_denseVal_, nvals_*sizeof(T) ) );
 
     if( h_denseVal_==NULL || d_denseVal_==NULL ) return GrB_OUT_OF_MEMORY;
 
@@ -341,7 +341,7 @@ namespace backend
   template <typename T>
   Info DenseMatrix<T>::cpuToGpu()
   {
-    CUDA( cudaMemcpy( d_denseVal_, h_denseVal_, nvals_*sizeof(T),
+    CUDA_CALL( cudaMemcpy( d_denseVal_, h_denseVal_, nvals_*sizeof(T),
         cudaMemcpyHostToDevice ) );
     return GrB_SUCCESS;
   }
@@ -350,7 +350,7 @@ namespace backend
   Info DenseMatrix<T>::gpuToCpu( bool force_update )
   {
     if( need_update_ || force_update )
-      CUDA( cudaMemcpy( h_denseVal_, d_denseVal_, nvals_*sizeof(T),
+      CUDA_CALL( cudaMemcpy( h_denseVal_, d_denseVal_, nvals_*sizeof(T),
           cudaMemcpyDeviceToHost ) );
     need_update_ = false;
     return GrB_SUCCESS;

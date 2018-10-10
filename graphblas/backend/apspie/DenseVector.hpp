@@ -90,7 +90,7 @@ namespace backend
   DenseVector<T>::~DenseVector()
   {
     if( h_val_!=NULL ) free(h_val_);
-    if( d_val_!=NULL ) CUDA( cudaFree(d_val_) );
+    if( d_val_!=NULL ) CUDA_CALL( cudaFree(d_val_) );
   }
 
   template <typename T>
@@ -112,7 +112,7 @@ namespace backend
     //std::cout << "copying " << nrows_+1 << " rows\n";
     //std::cout << "copying " << nvals_+1 << " rows\n";
 
-    CUDA( cudaMemcpy( d_val_, rhs->d_val_, nvals_*sizeof(T),
+    CUDA_CALL( cudaMemcpy( d_val_, rhs->d_val_, nvals_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
 
     need_update_ = true;
@@ -267,14 +267,14 @@ namespace backend
     if( h_tempVal!=NULL )
       memcpy( h_val_, h_tempVal, to_copy*sizeof(T) );
 
-    CUDA( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
+    CUDA_CALL( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
     if( d_tempVal!=NULL )
-      CUDA( cudaMemcpy( d_val_, d_tempVal, to_copy*sizeof(T), 
+      CUDA_CALL( cudaMemcpy( d_val_, d_tempVal, to_copy*sizeof(T), 
           cudaMemcpyDeviceToDevice) );
     nvals_ = nsize;
 
     free( h_tempVal );
-    CUDA( cudaFree(d_tempVal) );
+    CUDA_CALL( cudaFree(d_tempVal) );
 
     return GrB_SUCCESS;
   }
@@ -302,7 +302,7 @@ namespace backend
   template <typename T>
   Info DenseVector<T>::print( bool forceUpdate )
   {
-    CUDA( cudaDeviceSynchronize() );
+    CUDA_CALL( cudaDeviceSynchronize() );
     CHECK( gpuToCpu(forceUpdate) );
     printArray( "val", h_val_, std::min(nvals_,40) );
     return GrB_SUCCESS;
@@ -354,7 +354,7 @@ namespace backend
     // GPU malloc
     if( nvals_>0 && d_val_ == NULL )
     {
-      CUDA( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
+      CUDA_CALL( cudaMalloc( &d_val_, nvals_*sizeof(T)) );
       printMemory( "DeVec" );
     }
     else
@@ -385,7 +385,7 @@ namespace backend
   template <typename T>
   Info DenseVector<T>::cpuToGpu()
   {
-    CUDA( cudaMemcpy( d_val_, h_val_, nvals_*sizeof(T),
+    CUDA_CALL( cudaMemcpy( d_val_, h_val_, nvals_*sizeof(T),
         cudaMemcpyHostToDevice ) );
     return GrB_SUCCESS;
   }
@@ -396,9 +396,9 @@ namespace backend
   {
     if( need_update_ || forceUpdate )
     {
-      CUDA( cudaMemcpy( h_val_, d_val_, nvals_*sizeof(T),
+      CUDA_CALL( cudaMemcpy( h_val_, d_val_, nvals_*sizeof(T),
           cudaMemcpyDeviceToHost ) );
-      //CUDA( cudaDeviceSynchronize() );
+      //CUDA_CALL( cudaDeviceSynchronize() );
     }
     need_update_ = false;
     return GrB_SUCCESS;

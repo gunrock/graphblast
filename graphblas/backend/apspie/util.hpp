@@ -9,7 +9,7 @@
     exit(EXIT_FAILURE);                                                 \
     } } while (0)
 
-#define CUDA(call) do {                                       \
+#define CUDA_CALL(call) do {                                            \
   CUDA_SAFE_CALL_NO_SYNC(call);                                         \
   cudaError err = cudaThreadSynchronize();                              \
   if( cudaSuccess != err) {                                             \
@@ -29,7 +29,7 @@ namespace backend
     size_t free, total;
     if( GrB_MEMORY )
     {
-      CUDA( cudaMemGetInfo(&free, &total) );
+      CUDA_CALL( cudaMemGetInfo(&free, &total) );
       std::cout << str << ": " << free << " bytes left out of " << total << 
           " bytes\n";
     }
@@ -42,7 +42,7 @@ namespace backend
 
     // Allocate array on host
     T *temp = (T*) malloc(length*sizeof(T));
-    CUDA( cudaMemcpy( temp, array, length*sizeof(T), cudaMemcpyDeviceToHost ));
+    CUDA_CALL( cudaMemcpy( temp, array, length*sizeof(T), cudaMemcpyDeviceToHost ));
     printArray( str, temp, length );
 
     // Cleanup
@@ -54,7 +54,7 @@ namespace backend
   {
     // Allocate array on host
     T *temp = (T*) malloc(length*sizeof(T));
-    CUDA( cudaMemcpy( temp, array, length*sizeof(T), cudaMemcpyDeviceToHost ));
+    CUDA_CALL( cudaMemcpy( temp, array, length*sizeof(T), cudaMemcpyDeviceToHost ));
     
     // Traverse array, printing out move
     // Followed by manual reordering:

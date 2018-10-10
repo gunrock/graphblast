@@ -25,7 +25,7 @@ namespace backend
     size_t temp_storage_bytes = 0;
 
     if( !desc->split() )
-      CUDA( cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, u->d_val_, 
+      CUDA_CALL( cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, u->d_val_, 
           d_val, u->nvals_, op, op.identity()) );
     else
       temp_storage_bytes = desc->d_temp_size_;
@@ -37,9 +37,9 @@ namespace backend
           std::endl;
     }
 
-    CUDA( cub::DeviceReduce::Reduce(desc->d_temp_, temp_storage_bytes, 
+    CUDA_CALL( cub::DeviceReduce::Reduce(desc->d_temp_, temp_storage_bytes, 
         u->d_val_, d_val, u->nvals_, op, op.identity()) );
-    CUDA( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
+    CUDA_CALL( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
 
     // If doing reduce on DenseVector, then we might as well write the nnz
     // to the internal variable
@@ -77,7 +77,7 @@ namespace backend
       cub::DeviceReduce::Reduce( desc->d_temp_, temp_storage_bytes, u->d_val_, 
           d_val, u->nvals_, op, op.identity() );
 
-      CUDA( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
+      CUDA_CALL( cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost) );
     }
 
     return GrB_SUCCESS;
@@ -124,13 +124,13 @@ namespace backend
       size_t temp_storage_bytes = 0;
 
       if( !desc->split() )
-        CUDA( cub::DeviceSegmentedReduce::Reduce( NULL, temp_storage_bytes, 
+        CUDA_CALL( cub::DeviceSegmentedReduce::Reduce( NULL, temp_storage_bytes, 
 						A->d_csrVal_, w->d_val_, A->nrows_, A->d_csrRowPtr_, 
 						A->d_csrRowPtr_+1, op, op.identity() ) );
       else
         temp_storage_bytes = desc->d_temp_size_;
       desc->resize( temp_storage_bytes, "temp" );
-      CUDA(cub::DeviceSegmentedReduce::Reduce( desc->d_temp_, 
+      CUDA_CALL(cub::DeviceSegmentedReduce::Reduce( desc->d_temp_, 
 					temp_storage_bytes, A->d_csrVal_, w->d_val_, A->nrows_, 
 					A->d_csrRowPtr_, A->d_csrRowPtr_+1, op, op.identity() ));
       w->nnz_ = A->nrows_;

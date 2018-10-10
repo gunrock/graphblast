@@ -81,12 +81,12 @@ namespace backend
     int *nnzTotalDevHostPtr = &(C_nvals);
     if( C->d_csrRowPtr_==NULL )
     {
-      CUDA( cudaMalloc( &C->d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
+      CUDA_CALL( cudaMalloc( &C->d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
     }
     /*else
     {
-      CUDA( cudaFree(&C->d_csrRowPtr_) );
-      CUDA( cudaMalloc( &C->d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
+      CUDA_CALL( cudaFree(&C->d_csrRowPtr_) );
+      CUDA_CALL( cudaMalloc( &C->d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
     }*/
 
     if( C->h_csrRowPtr_==NULL )
@@ -134,9 +134,9 @@ namespace backend
     if( nnzTotalDevHostPtr != NULL )
       C_nvals = *nnzTotalDevHostPtr;
     else {
-      CUDA( cudaMemcpy( &(C_nvals), C->d_csrRowPtr_+A_nrows,
+      CUDA_CALL( cudaMemcpy( &(C_nvals), C->d_csrRowPtr_+A_nrows,
           sizeof(Index), cudaMemcpyDeviceToHost ));
-      CUDA( cudaMemcpy( &(baseC), C->d_csrRowPtr_,
+      CUDA_CALL( cudaMemcpy( &(baseC), C->d_csrRowPtr_,
           sizeof(Index), cudaMemcpyDeviceToHost ));
       C_nvals -= baseC;
     }
@@ -146,12 +146,12 @@ namespace backend
       C->ncapacity_ = C_nvals*C->kresize_ratio_;
       if( C->d_csrColInd_ != NULL )
       {
-        CUDA( cudaFree( C->d_csrColInd_ ));
-        CUDA( cudaFree( C->d_csrVal_    ));
+        CUDA_CALL( cudaFree( C->d_csrColInd_ ));
+        CUDA_CALL( cudaFree( C->d_csrVal_    ));
       }
-      CUDA( cudaMalloc( (void**) &C->d_csrColInd_,
+      CUDA_CALL( cudaMalloc( (void**) &C->d_csrColInd_,
           C->ncapacity_*sizeof(Index) ));
-      CUDA( cudaMalloc( (void**) &C->d_csrVal_,
+      CUDA_CALL( cudaMalloc( (void**) &C->d_csrVal_,
           C->ncapacity_*sizeof(c) ));
 
       if( C->h_csrColInd_ != NULL )
@@ -253,12 +253,12 @@ namespace backend
     int *nnzTotalDevHostPtr = &(C_nvals);
     if( C.d_csrRowPtr_==NULL )
     {
-      CUDA( cudaMalloc( &C.d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
+      CUDA_CALL( cudaMalloc( &C.d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
     }
     /*else
     {
-      CUDA( cudaFree(&C.d_csrRowPtr_) );
-      CUDA( cudaMalloc( &C.d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
+      CUDA_CALL( cudaFree(&C.d_csrRowPtr_) );
+      CUDA_CALL( cudaMalloc( &C.d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
     }*/
 
     if( C.h_csrRowPtr_==NULL )
@@ -310,8 +310,8 @@ namespace backend
     {
       std::cout << "Increasing buffer " << C.buffer_size_ << " -> " << bufferSize << std::endl;
       C.buffer_size_ = bufferSize*C.kresize_ratio_;
-      CUDA( cudaFree(C.buffer_) );
-      CUDA( cudaMalloc(&C.buffer_, C.buffer_size_) );
+      CUDA_CALL( cudaFree(C.buffer_) );
+      CUDA_CALL( cudaMalloc(&C.buffer_, C.buffer_size_) );
     }
 
     // Analyze
@@ -351,9 +351,9 @@ namespace backend
     if( nnzTotalDevHostPtr != NULL )
       C_nvals = *nnzTotalDevHostPtr;
     else {
-      CUDA( cudaMemcpy( &(C_nvals), C.d_csrRowPtr_+A_nrows,
+      CUDA_CALL( cudaMemcpy( &(C_nvals), C.d_csrRowPtr_+A_nrows,
           sizeof(Index), cudaMemcpyDeviceToHost ));
-      CUDA( cudaMemcpy( &(baseC), C.d_csrRowPtr_,
+      CUDA_CALL( cudaMemcpy( &(baseC), C.d_csrRowPtr_,
           sizeof(Index), cudaMemcpyDeviceToHost ));
       C_nvals -= baseC;
     }
@@ -362,12 +362,12 @@ namespace backend
       std::cout << "Increasing matrix C: " << C.ncapacity_ << " -> " << C_nvals << std::endl;
       if( C.d_csrColInd_ != NULL )
       {
-        CUDA( cudaFree( C.d_csrColInd_ ));
-        CUDA( cudaFree( C.d_csrVal_    ));
+        CUDA_CALL( cudaFree( C.d_csrColInd_ ));
+        CUDA_CALL( cudaFree( C.d_csrVal_    ));
       }
-      CUDA( cudaMalloc( (void**) &C.d_csrColInd_,
+      CUDA_CALL( cudaMalloc( (void**) &C.d_csrColInd_,
           C_nvals*sizeof(Index) ));
-      CUDA( cudaMalloc( (void**) &C.d_csrVal_,
+      CUDA_CALL( cudaMalloc( (void**) &C.d_csrVal_,
           C_nvals*sizeof(c) ));
 
       if( C.h_csrColInd_ != NULL )

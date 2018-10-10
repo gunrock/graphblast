@@ -107,8 +107,8 @@ namespace backend
           if( desc->earlyexitbench() )
           {
             int* d_stats;
-            CUDA( cudaMalloc(&d_stats, A_nrows*sizeof(int)) );
-            CUDA( cudaMemset(d_stats, 0, A_nrows*sizeof(int)) );
+            CUDA_CALL( cudaMalloc(&d_stats, A_nrows*sizeof(int)) );
+            CUDA_CALL( cudaMemset(d_stats, 0, A_nrows*sizeof(int)) );
 
             switch( variant )
             {
@@ -165,7 +165,7 @@ namespace backend
             }
 
             int* h_stats = (int*)malloc(A_nrows*sizeof(int));
-            CUDA( cudaMemcpy(h_stats, d_stats, A_nrows*sizeof(int),
+            CUDA_CALL( cudaMemcpy(h_stats, d_stats, A_nrows*sizeof(int),
                 cudaMemcpyDeviceToHost) );
 
             // Total:
@@ -206,7 +206,7 @@ namespace backend
             std::cout << "Max: "     << my_max   << std::endl;
             std::cout << "Sum: "     << my_sum   << std::endl;
             std::cout << "Var: "     << my_var   << std::endl;*/
-            CUDA( cudaFree(d_stats) );
+            CUDA_CALL( cudaFree(d_stats) );
             free( h_stats );
           }
           else

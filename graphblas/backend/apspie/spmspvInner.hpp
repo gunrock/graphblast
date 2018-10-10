@@ -114,19 +114,19 @@ namespace backend
 
     indirectScanKernel<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
         *u_nvals );
-		CUDA(cudaDeviceSynchronize());
+		CUDA_CALL(cudaDeviceSynchronize());
     // Note: cannot use op.add_op() here
     mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals,
         (Index)0, mgpu::plus<Index>(), (Index*)d_scan+(*u_nvals), w_nvals, 
         (Index*)d_scan, (Index*)d_temp, *(desc->d_context_) );
-		CUDA(cudaDeviceSynchronize());
+		CUDA_CALL(cudaDeviceSynchronize());
 
     if( desc->debug() )
     {
       printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
-		  CUDA(cudaDeviceSynchronize());
+		  CUDA_CALL(cudaDeviceSynchronize());
       printDevice( "d_scan",       (Index*)d_scan,       *u_nvals+1 );
-		  CUDA(cudaDeviceSynchronize());
+		  CUDA_CALL(cudaDeviceSynchronize());
 
       std::cout << "u_nvals: " << *u_nvals << std::endl;
       std::cout << "w_nvals: " << *w_nvals << std::endl;
@@ -134,8 +134,8 @@ namespace backend
 
     if( desc->struconly() && !desc->sort() )
     {
-      CUDA( cudaMemset(w_ind, 0, A_nrows*sizeof(Index)) );
-      //CUDA( cudaMemsetAsync(w_ind, 0, A_nrows*sizeof(Index)) );
+      CUDA_CALL( cudaMemset(w_ind, 0, A_nrows*sizeof(Index)) );
+      //CUDA_CALL( cudaMemsetAsync(w_ind, 0, A_nrows*sizeof(Index)) );
     }
 
     // No neighbors is one possible stopping condition
@@ -169,10 +169,6 @@ namespace backend
       d_csrSwapVal = desc->d_buffer_+(2*A_nrows+  size)*sizeof(Index);
       d_temp       = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     }
-
-    // TODO: Add element-wise multiplication with frontier
-    // -uses op.mul_op()
-    
 
     //if( desc->prealloc() )
     //{
@@ -221,7 +217,10 @@ namespace backend
 
 		//Step 4) Element-wise multiplication
       NB.x = (*w_nvals+nt-1)/nt;
-      eWiseMultKernel<<<NB,NT>>>( (T*)d_csrSwapVal, NULL, NULL, op.identity(), 
+      eWiseMultKernel<<<NB,NT>>>( (T*)d_csrSwapVal, 
+          static_cast<U*>(NULL), 
+          extractAdd(op),
+          op.identity(), 
           extractMul(op), (T*)d_csrSwapVal, (T*)d_temp, *w_nvals );
     }
 
@@ -250,7 +249,7 @@ namespace backend
         d_csrTempInd = desc->d_buffer_+(A_nrows+size)*sizeof(Index);
       
         if( !desc->split() )
-          CUDA( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
+          CUDA_CALL( cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes, 
               (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals, 0, endbit));
         else
           temp_storage_bytes = desc->d_temp_size_;
@@ -262,7 +261,7 @@ namespace backend
 
         desc->resize( temp_storage_bytes, "temp" );
 
-        CUDA( cub::DeviceRadixSort::SortKeys(desc->d_temp_, temp_storage_bytes,
+        CUDA_CALL( cub::DeviceRadixSort::SortKeys(desc->d_temp_, temp_storage_bytes,
             (Index*)d_csrSwapInd, (Index*)d_csrTempInd, *w_nvals, 0, endbit) );
 
         if( desc->debug() )
@@ -275,7 +274,7 @@ namespace backend
       d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
 
       if( !desc->split() )
-        CUDA( cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes, 
+        CUDA_CALL( cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes, 
             (Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
             (T*)d_csrTempVal, *w_nvals, 0, endbit) ); 
       else
@@ -288,7 +287,7 @@ namespace backend
 
       desc->resize( temp_storage_bytes, "temp" );
 
-      CUDA( cub::DeviceRadixSort::SortPairs(desc->d_temp_, temp_storage_bytes, 
+      CUDA_CALL( cub::DeviceRadixSort::SortPairs(desc->d_temp_, temp_storage_bytes, 
           (Index*)d_csrSwapInd, (Index*)d_csrTempInd, (T*)d_csrSwapVal, 
           (T*)d_csrTempVal, *w_nvals, 0, endbit) );
       //MergesortKeys(d_csrVecInd, total, mgpu::less<int>(), desc->d_context_);
