@@ -3,11 +3,13 @@
 
 #include <string>
 
-#include "graphblas/Matrix.hpp"
-#include "graphblas/Vector.hpp"
-
 namespace graphblas
 {
+  template <typename T>
+  class Vector;
+
+  template <typename T>
+  class Matrix;
 
   template <typename U>
   inline Info checkDimVecNvals( const Vector<U>*   u,

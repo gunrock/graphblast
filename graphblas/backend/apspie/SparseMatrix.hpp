@@ -13,8 +13,6 @@
 
 #include "graphblas/util.hpp"
 
-#include "graphblas/backend/apspie/apspie.hpp"
-
 namespace graphblas
 {
 namespace backend

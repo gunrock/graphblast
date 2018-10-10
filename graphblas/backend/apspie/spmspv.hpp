@@ -3,11 +3,7 @@
 
 #include <iostream>
 
-#include "graphblas/backend/apspie/spmspvInner.hpp"
-#include "graphblas/backend/apspie/kernels/assignSparse.hpp"
-#include "graphblas/backend/apspie/kernels/assignDense.hpp"
-#include "graphblas/backend/apspie/kernels/util.hpp"
-#include "graphblas/backend/apspie/kernels/spmspv.hpp"
+#include "graphblas/backend/apspie/kernels/kernels.hpp"
 
 namespace graphblas
 {

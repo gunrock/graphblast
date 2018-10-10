@@ -6,10 +6,6 @@
 
 #include "graphblas/types.hpp"
 
-#include "graphblas/backend/apspie/Matrix.hpp"
-#include "graphblas/backend/apspie/SparseMatrix.hpp"
-#include "graphblas/backend/apspie/DenseMatrix.hpp"
-
 namespace graphblas
 {
 namespace backend

@@ -3,12 +3,7 @@
 
 #include <iostream>
 
-#include "graphblas/backend/apspie/Descriptor.hpp"
-#include "graphblas/backend/apspie/SparseMatrix.hpp"
-#include "graphblas/backend/apspie/DenseMatrix.hpp"
-#include "graphblas/backend/apspie/operations.hpp"
-#include "graphblas/backend/apspie/kernels/assignDense.hpp"
-#include "graphblas/backend/apspie/kernels/assignSparse.hpp"
+#include "graphblas/backend/apspie/kernels/kernels.hpp"
 
 namespace graphblas
 {

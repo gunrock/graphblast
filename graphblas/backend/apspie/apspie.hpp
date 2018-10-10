@@ -8,6 +8,7 @@
 #include "graphblas/backend/apspie/spgemm.hpp"
 #include "graphblas/backend/apspie/spmm.hpp"
 #include "graphblas/backend/apspie/gemm.hpp"
+#include "graphblas/backend/apspie/spmspvInner.hpp"
 #include "graphblas/backend/apspie/spmspv.hpp"
 #include "graphblas/backend/apspie/spmv.hpp"
 #include "graphblas/backend/apspie/gemv.hpp"
@@ -20,5 +21,6 @@
 #include "graphblas/backend/apspie/SparseMatrix.hpp"
 #include "graphblas/backend/apspie/DenseMatrix.hpp"
 #include "graphblas/backend/apspie/operations.hpp"
+#include "graphblas/backend/apspie/kernels/kernels.hpp"
 
 #endif  // GRB_BACKEND_APSPIE_APSPIE_HPP

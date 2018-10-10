@@ -5,8 +5,6 @@
 
 #include <moderngpu.cuh>
 
-#include "graphblas/backend/apspie/util.hpp"
-
 namespace graphblas
 {
 namespace backend

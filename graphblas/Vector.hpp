@@ -3,9 +3,6 @@
 
 #include <vector>
 
-#include "graphblas/types.hpp"
-#include "graphblas/util.hpp"
-
 // Opaque data members from the right backend
 #define __GRB_BACKEND_VECTOR_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/Vector.hpp>
 #include __GRB_BACKEND_VECTOR_HEADER

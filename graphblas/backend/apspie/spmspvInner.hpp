@@ -9,8 +9,7 @@
 #include <moderngpu.cuh>
 #include <cub.cuh>
 
-#include "graphblas/backend/apspie/kernels/util.hpp"
-#include "graphblas/backend/apspie/kernels/eWiseMult.hpp"
+#include "graphblas/backend/apspie/kernels/kernels.hpp"
 
 namespace graphblas
 {
@@ -215,15 +214,16 @@ namespace backend
     IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
         *u_nvals, A_csrColInd, u_ind, (Index*)d_csrSwapInd, 
         *(desc->d_context_) );
-    if( !desc->struconly() )
+    if( !desc->struconly() ) {
       IntervalGatherIndirect( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
           *u_nvals, A_csrVal, u_ind, (T*)d_csrSwapVal,
           *(desc->d_context_) );
 
 		//Step 4) Element-wise multiplication
-    NB.x = (*w_nvals+nt-1)/nt;
-    eWiseMultKernel<<<NB,NT>>>( (T*)d_csrSwapVal, NULL, NULL, op.identity(), 
-        extractMul(op), (T*)d_csrSwapVal, (T*)d_temp, *w_nvals );
+      NB.x = (*w_nvals+nt-1)/nt;
+      eWiseMultKernel<<<NB,NT>>>( (T*)d_csrSwapVal, NULL, NULL, op.identity(), 
+          extractMul(op), (T*)d_csrSwapVal, (T*)d_temp, *w_nvals );
+    }
 
     if( desc->debug() )
     {

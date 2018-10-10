@@ -11,8 +11,6 @@
 #include "graphblas/types.hpp"
 #include "graphblas/util.hpp"
 
-#include "graphblas/backend/apspie/kernels/util.hpp"
-
 namespace graphblas
 {
 namespace backend

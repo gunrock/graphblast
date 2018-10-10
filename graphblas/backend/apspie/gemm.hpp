@@ -8,9 +8,6 @@
 
 #include <moderngpu.cuh>
 
-#include "graphblas/backend/apspie/SparseMatrix.hpp"
-#include "graphblas/backend/apspie/DenseMatrix.hpp"
-
 namespace graphblas
 {
 namespace backend

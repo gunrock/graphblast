@@ -16,8 +16,10 @@
 // for commandline arguments
 #include <boost/program_options.hpp>
 
-#include "graphblas/mmio.hpp"
-#include "graphblas/types.hpp"
+// Opaque data members from the right backend
+#define __GRB_BACKEND_UTIL_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/util.hpp>
+#include __GRB_BACKEND_UTIL_HEADER
+#undef __GRB_BACKEND_UTIL_HEADER
 
 #define CHECK(x) do {                  \
   graphblas::Info err = x;             \

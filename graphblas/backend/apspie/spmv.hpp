@@ -9,10 +9,7 @@
 #include <moderngpu.cuh>
 #include <cub.cuh>
 
-#include "graphblas/backend/apspie/Descriptor.hpp"
-#include "graphblas/backend/apspie/SparseMatrix.hpp"
-#include "graphblas/backend/apspie/DenseMatrix.hpp"
-#include "graphblas/backend/apspie/kernels/spmv.hpp"
+#include "graphblas/backend/apspie/kernels/kernels.hpp"
 
 namespace graphblas
 {

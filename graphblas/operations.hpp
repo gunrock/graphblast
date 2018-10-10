@@ -5,11 +5,6 @@
 #include __GRB_BACKEND_OPERATIONS_HEADER
 #undef __GRB_BACKEND_OPERATIONS_HEADER
 
-#include "graphblas/types.hpp"
-#include "graphblas/dimension.hpp"
-#include "graphblas/Matrix.hpp"
-#include "graphblas/Descriptor.hpp"
-
 namespace graphblas
 {
   // TODO: make all operations mxm, mxv, etc. follow vxm() and assign() 
