@@ -185,6 +185,8 @@ namespace backend
                          const char*               fname )
   {
     mat_type_ = GrB_SPARSE;
+    if (sparse_.nvals_ > 0)
+      sparse_.clear();
     return sparse_.build( row_indices, col_indices, values, nvals, dup, fname );
   }
 

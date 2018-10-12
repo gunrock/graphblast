@@ -217,8 +217,40 @@ namespace backend
   template <typename T>
   Info SparseMatrix<T>::clear()
   {
-    nvals_ = 0;
+    nvals_     = 0;
+    ncapacity_ = 0;
 
+    if( h_csrRowPtr_!=NULL ) free(h_csrRowPtr_);
+    if( h_csrColInd_!=NULL ) free(h_csrColInd_);
+    if( h_csrVal_   !=NULL ) free(h_csrVal_   );
+    if( d_csrRowPtr_!=NULL ) CUDA_CALL( cudaFree(d_csrRowPtr_) );
+    if( d_csrColInd_!=NULL ) CUDA_CALL( cudaFree(d_csrColInd_) );
+    if( d_csrVal_   !=NULL ) CUDA_CALL( cudaFree(d_csrVal_   ) );
+
+    h_csrRowPtr_ = NULL;
+    h_csrColInd_ = NULL;
+    h_csrVal_    = NULL;
+    d_csrRowPtr_ = NULL;
+    d_csrColInd_ = NULL;
+    d_csrVal_    = NULL;
+
+    std::cout << "h_csrRowPtr_: " << h_csrRowPtr_ << std::endl;
+    std::cout << "h_csrColInd_: " << h_csrColInd_ << std::endl;
+    std::cout << "h_csrVal_   : " << h_csrVal_    << std::endl;
+    std::cout << "d_csrRowPtr_: " << d_csrRowPtr_ << std::endl;
+    std::cout << "d_csrColInd_: " << d_csrColInd_ << std::endl;
+    std::cout << "d_csrVal_   : " << d_csrVal_    << std::endl;
+
+    if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
+    {
+      if( h_cscColPtr_!=NULL ) free(h_cscColPtr_);
+      if( h_cscRowInd_!=NULL ) free(h_cscRowInd_);
+      if( h_cscVal_   !=NULL ) free(h_cscVal_   );
+
+      if( d_cscColPtr_!=NULL ) CUDA_CALL( cudaFree(d_cscColPtr_) );
+      if( d_cscRowInd_!=NULL ) CUDA_CALL( cudaFree(d_cscRowInd_) );
+      if( d_cscVal_   !=NULL ) CUDA_CALL( cudaFree(d_cscVal_   ) );
+    }
     return GrB_SUCCESS;
   }
 
