@@ -142,7 +142,8 @@ namespace backend
     }
 
     if( C_nvals > C->ncapacity_ ) {
-      std::cout << "Increasing matrix C: " << C->ncapacity_ << " -> " << C_nvals << std::endl;
+      if (desc->debug())
+        std::cout << "Increasing matrix C: " << C->ncapacity_ << " -> " << C_nvals << std::endl;
       C->ncapacity_ = C_nvals*C->kresize_ratio_;
       if( C->d_csrColInd_ != NULL )
       {
