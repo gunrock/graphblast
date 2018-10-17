@@ -29,7 +29,7 @@ namespace backend
     if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_SPARSE )
     {
       CHECK( C->setStorage( GrB_SPARSE ) );
-      CHECK( cusparse_spgemm( &C->sparse_, mask, accum, op, &A->sparse_, 
+      CHECK( cusparse_spgemm2( &C->sparse_, mask, accum, op, &A->sparse_, 
           &B->sparse_, desc ) );
     }
     else
