@@ -234,13 +234,6 @@ namespace backend
     d_csrColInd_ = NULL;
     d_csrVal_    = NULL;
 
-    std::cout << "h_csrRowPtr_: " << h_csrRowPtr_ << std::endl;
-    std::cout << "h_csrColInd_: " << h_csrColInd_ << std::endl;
-    std::cout << "h_csrVal_   : " << h_csrVal_    << std::endl;
-    std::cout << "d_csrRowPtr_: " << d_csrRowPtr_ << std::endl;
-    std::cout << "d_csrColInd_: " << d_csrColInd_ << std::endl;
-    std::cout << "d_csrVal_   : " << d_csrVal_    << std::endl;
-
     if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
       if( h_cscColPtr_!=NULL ) free(h_cscColPtr_);

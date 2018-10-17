@@ -194,7 +194,8 @@ namespace backend
      */
       IntervalExpandIndirect( *w_nvals, (Index*)d_scan, u_ind, u_val, *u_nvals,
           (T*)d_temp, *(desc->d_context_) );
-      printDevice( "d_temp", (T*)d_temp, *w_nvals );
+      if( desc->debug() )
+        printDevice( "d_temp", (T*)d_temp, *w_nvals );
     }
 
     /*
