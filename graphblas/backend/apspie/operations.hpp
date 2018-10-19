@@ -609,6 +609,37 @@ namespace backend
 
   }
 
+  template <typename T, typename a, typename b,
+            typename SemiringT>
+  Info trace( T*               val,
+              SemiringT        op,
+              const Matrix<a>* A,
+              const Matrix<b>* B,
+              Descriptor*      desc )
+  {
+    // Get storage:
+    Storage A_mat_type;
+    Storage B_mat_type;
+    CHECK( A->getStorage(&A_mat_type) );
+    CHECK( B->getStorage(&B_mat_type) );
+
+    // 4 cases:
+    // 1) SpMat x SpMat
+    // 2) DeMat x DeMat
+    // 3) SpMat x DeMat
+    // 4) DeMat x SpMat
+    if (A_mat_type == GrB_SPARSE && B_mat_type == GrB_SPARSE)
+    {
+      CHECK( traceInner(val, op, &A->sparse_, &B->sparse_, desc) );
+    }
+    else
+    {
+      std::cout << "Error: Trace operator not implemented!\n";
+    }
+
+    return GrB_SUCCESS;
+  }
+
 }  // backend
 }  // graphblas
 

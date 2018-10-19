@@ -114,6 +114,16 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
 }
 
 template<typename T>
+inline T getEnv(const char *key, T default_val) {
+  const char *val = std::getenv(key);
+  if (val == NULL) {
+    return default_val;
+  } else {
+    return static_cast<T>(atoi(val));
+  }
+}
+
+template<typename T>
 bool compare(const std::tuple<graphblas::Index,
                               graphblas::Index,
                               T,
@@ -278,9 +288,11 @@ template<typename T>
 void makeSymmetric( std::vector<graphblas::Index>& row_indices, 
                     std::vector<graphblas::Index>& col_indices,
                     std::vector<T>& values, 
-                    graphblas::Index& nvals,
-                    bool remove_self_loops=true ) {
+                    graphblas::Index& nvals )
+{
   //std::cout << nvals << std::endl;
+
+  bool remove_self_loops = getEnv("GRB_UTIL_REMOVE_SELFLOOP", true);
 
   for( graphblas::Index i=0; i<nvals; i++ ) {
     if( col_indices[i] != row_indices[i] ) {
@@ -432,7 +444,7 @@ int readMtx( const char*                    fname,
     if( (mm_is_symmetric(matcode) && directed==0) || directed==2 )
     // If user wants to treat MTX as a directed graph
     //if( undirected )
-      makeSymmetric<T>( row_indices, col_indices, values, nvals, f );
+      makeSymmetric<T>( row_indices, col_indices, values, nvals );
     customSort<T>( row_indices, col_indices, values );
 
     if( mtxinfo ) mm_write_banner(stdout, matcode);

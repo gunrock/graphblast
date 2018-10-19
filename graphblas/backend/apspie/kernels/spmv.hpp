@@ -3,12 +3,6 @@
 
 #include <iostream>
 
-#include <cuda.h>
-#include <cusparse.h>
-
-#include <moderngpu.cuh>
-#include <cub.cuh>
-
 namespace graphblas
 {
 namespace backend

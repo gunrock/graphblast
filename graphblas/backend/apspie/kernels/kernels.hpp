@@ -7,5 +7,6 @@
 #include "graphblas/backend/apspie/kernels/spmv.hpp"
 #include "graphblas/backend/apspie/kernels/spmspv.hpp"
 #include "graphblas/backend/apspie/kernels/eWiseMult.hpp"
+#include "graphblas/backend/apspie/kernels/trace.hpp"
 
 #endif  // GRB_BACKEND_APSPIE_KERNELS_KERNELS_HPP
