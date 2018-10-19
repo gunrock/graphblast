@@ -14,8 +14,6 @@
 #include "graphblas/graphblas.hpp"
 #include "test/test.hpp"
 
-#include "../csgm/src/utils.cu"
-
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE dup_suite
 
@@ -40,19 +38,11 @@ void testTrace( const std::vector<graphblas::Index>& row_ind,
   std::cout << nrows << " " << ncols << " " << nvals << std::endl;
 
   float trace_val;
-  err = graphblas::trace<float,float,float>( &trace_val, graphblas::PlusMultipliesSemiring<float>(), &adj, &adj, &desc );
+  err = graphblas::traceMxmTranspose<float,float,float>( &trace_val, 
+      graphblas::PlusMultipliesSemiring<float>(), &adj, &adj, &desc );
   std::cout << trace_val << " = " << correct << std::endl;
 
-  float trace_val2 = compute_trace(&adj, &adj, &desc);
-  std::cout << trace_val2 << " = " << correct << std::endl;
-
-  graphblas::Matrix<float> product(nrows, ncols);
-  err = graphblas::mxm<float,float,float,float>(&product, GrB_NULL, GrB_NULL,
-      graphblas::PlusMultipliesSemiring<float>(), &adj, &adj, &desc);
-  product.print();
-
   BOOST_ASSERT( trace_val == correct );
-  BOOST_ASSERT( trace_val2 == correct );
 }
 
 void testTraceMtx( char const* mtx, float correct )
@@ -74,7 +64,8 @@ void testTraceMtx( char const* mtx, float correct )
   std::cout << nrows << " " << ncols << " " << nvals << std::endl;
 
   float trace_val;
-  err = graphblas::trace<float,float,float>( &trace_val, graphblas::PlusMultipliesSemiring<float>(), &adj, &adj, &desc );
+  err = graphblas::traceMxmTranspose<float,float,float>( &trace_val,
+      graphblas::PlusMultipliesSemiring<float>(), &adj, &adj, &desc );
   std::cout << trace_val << " = " << correct << std::endl;
 
   BOOST_ASSERT( trace_val == correct );

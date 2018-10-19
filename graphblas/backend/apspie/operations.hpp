@@ -611,11 +611,11 @@ namespace backend
 
   template <typename T, typename a, typename b,
             typename SemiringT>
-  Info trace( T*               val,
-              SemiringT        op,
-              const Matrix<a>* A,
-              const Matrix<b>* B,
-              Descriptor*      desc )
+  Info traceMxmTranspose( T*               val,
+                          SemiringT        op,
+                          const Matrix<a>* A,
+                          const Matrix<b>* B,
+                          Descriptor*      desc )
   {
     // Get storage:
     Storage A_mat_type;
@@ -630,7 +630,7 @@ namespace backend
     // 4) DeMat x SpMat
     if (A_mat_type == GrB_SPARSE && B_mat_type == GrB_SPARSE)
     {
-      CHECK( traceInner(val, op, &A->sparse_, &B->sparse_, desc) );
+      CHECK( traceMxmTransposeInner(val, op, &A->sparse_, &B->sparse_, desc) );
     }
     else
     {

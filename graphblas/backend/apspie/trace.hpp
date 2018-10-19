@@ -12,11 +12,11 @@ namespace backend
   // Sparse-sparse variant
   template <typename T, typename a, typename b,
             typename SemiringT>
-  Info traceInner( T*                     val,
-                   SemiringT              op,
-                   const SparseMatrix<a>* A,
-                   const SparseMatrix<b>* B,
-                   Descriptor*            desc )
+  Info traceMxmTransposeInner( T*                     val,
+                               SemiringT              op,
+                               const SparseMatrix<a>* A,
+                               const SparseMatrix<b>* B,
+                               Descriptor*            desc )
   {
     // Assume A and B are square
     const Index A_nrows = A->nrows_;

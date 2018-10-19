@@ -462,18 +462,18 @@ namespace graphblas
   // A and B are assumed to be square matrices
   template <typename T, typename a, typename b,
             typename SemiringT>
-  Info trace( T*               val,
-              SemiringT        op,
-              const Matrix<a>* A,
-              const Matrix<b>* B,
-              Descriptor*      desc )
+  Info traceMxmTranspose( T*               val,
+                          SemiringT        op,
+                          const Matrix<a>* A,
+                          const Matrix<b>* B,
+                          Descriptor*      desc )
   {
     if (val == NULL || A == NULL || B == NULL)
       return GrB_UNINITIALIZED_OBJECT;
 
     backend::Descriptor* desc_t = (desc == NULL ) ? NULL : &desc->descriptor_;
 
-    return backend::trace(val, op, &A->matrix_, &B->matrix_, desc_t);
+    return backend::traceMxmTranspose(val, op, &A->matrix_, &B->matrix_,desc_t);
   }
 
   // Multiply matrix by scalar
