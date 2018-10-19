@@ -96,4 +96,16 @@ BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
   testVxm( "data/small/test_cc.mtx", vec, correct, vm );
 }
 
+BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
+{
+  int argc = 3;
+  char* argv[] = {"app", "--debug", "1"};
+  po::variables_map vm;
+  parseArgs( argc, argv, vm );
+  std::vector<float>     vec{0, 13,7, 0, 1, 0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0, 0, 4, 4, 5, 4};
+  std::vector<float> correct{0, 13,7, 0, 1, 0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0, 0, 4, 4, 5, 4};
+  testVxm( "data/small/test_sgm.mtx", vec, correct, vm );
+}
 BOOST_AUTO_TEST_SUITE_END()

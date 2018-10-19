@@ -183,17 +183,19 @@ namespace backend
     if (!desc->struconly_)
     {
     /*
-     * \brief IntervalExpandIndirect is a modification of IntervalExpand, which
-     *        takes a scan of the output, values and expands values into an 
-     *        output specified by the scan.
+     * \brief IntervalExpand, which takes a scan of the output, values and 
+     *        expands values into an output specified by the scan.
      *
-     *        IntervalExpandIndirect differs, because it replaces values by
-     *        *all* values of some array, and indices that we care about that
-     *        are used to index into values. This lets the user in a single
-     *        function call an IntervalGather and an IntervalExpand
+     *        IntervalExpand:
+     *        values  =  0,  1,  2,  3,  4,  5,  6,  7,  8
+     *        counts  =  1,  2,  1,  0,  4,  2,  3,  0,  2
+     *        d_scan  =  0,  1,  3,  4,  4,  8, 10, 13, 13 (moveCount = 15).
+     * Expand values[i] by counts[i]:
+     * d_temp  =  0, 1, 1, 2, 4, 4, 4, 4, 5, 5, 6, 6, 6, 8, 8
+     *
      */
-      IntervalExpandIndirect( *w_nvals, (Index*)d_scan, u_ind, u_val, *u_nvals,
-          (T*)d_temp, *(desc->d_context_) );
+      IntervalExpand( *w_nvals, (Index*)d_scan, u_val, *u_nvals, (T*)d_temp, 
+          *(desc->d_context_) );
       if( desc->debug() )
         printDevice( "d_temp", (T*)d_temp, *w_nvals );
     }
