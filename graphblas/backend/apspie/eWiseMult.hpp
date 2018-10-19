@@ -19,7 +19,7 @@ namespace backend
 
   // Sparse x sparse vector
   template <typename W, typename U, typename V, typename M,
-            typename BinaryOpT,      typename SemiringT>
+            typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( SparseVector<W>*       w,
                   const Vector<M>*       mask,
                   BinaryOpT              accum,
@@ -34,7 +34,7 @@ namespace backend
 
   // Dense x dense vector
   template <typename W, typename U, typename V, typename M,
-            typename BinaryOpT,      typename SemiringT>
+            typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( DenseVector<W>*       w,
                   const Vector<M>*      mask,
                   BinaryOpT             accum,
@@ -49,7 +49,7 @@ namespace backend
 
   // Sparse x dense vector
   template <typename W, typename U, typename V, typename M,
-            typename BinaryOpT,      typename SemiringT>
+            typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( SparseVector<W>*       w,
                   const Vector<M>*       mask,
                   BinaryOpT              accum,

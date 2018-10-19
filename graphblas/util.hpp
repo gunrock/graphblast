@@ -475,9 +475,10 @@ int readMtx( const char*                    fname,
 }
 
 template<typename T>
-void printArray( const char* str, const T *array, int length=40 )
+void printArray( const char* str, const T *array, int length=40, 
+                 bool limit=true )
 {
-  if( length>40 ) length=40;
+  if (limit && length > 40) length=40;
   std::cout << str << ":\n";
   for( int i=0;i<length;i++ )
     std::cout << "[" << i << "]:" << array[i] << " ";
@@ -485,9 +486,10 @@ void printArray( const char* str, const T *array, int length=40 )
 }
 
 template<typename T>
-void printArray( const char* str, std::vector<T>& array, int length=40 )
+void printArray( const char* str, std::vector<T>& array, int length=40,
+                 bool limit=true )
 {
-  if( length>40 ) length=40;
+  if (limit && length > 40) length=40;
   std::cout << str << ":\n";
   for( int i=0;i<length;i++ )
     std::cout << "[" << i << "]:" << array[i] << " ";

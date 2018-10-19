@@ -36,14 +36,15 @@ namespace backend
   }
 
   template <typename T>
-  void printDevice( const char* str, const T* array, int length=40 )
+  void printDevice( const char* str, const T* array, int length=40, 
+                    bool limit=true )
   {
-    //if( length>40 ) length=40;
+    if (limit && length > 40) length = 40;
 
     // Allocate array on host
     T *temp = (T*) malloc(length*sizeof(T));
     CUDA_CALL( cudaMemcpy( temp, array, length*sizeof(T), cudaMemcpyDeviceToHost ));
-    printArray( str, temp, length );
+    printArray( str, temp, length, limit );
 
     // Cleanup
     if( temp ) free( temp );

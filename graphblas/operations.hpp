@@ -458,7 +458,7 @@ namespace graphblas
   }
 
   // Trace of matrix-matrix product
-  //  val = Tr(A * B)    *: op
+  //  val = Tr(A * B^T)    *: op
   // A and B are assumed to be square matrices
   template <typename T, typename a, typename b,
             typename SemiringT>
