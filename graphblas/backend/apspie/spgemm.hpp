@@ -245,7 +245,7 @@ namespace backend
     //void *buffer = NULL;
     // nnzTotalDevHostPtr points to host memory
     c alpha = 1.0;
-    c beta  = 0.0;
+    c* beta = NULL;
     cusparseSetPointerMode( handle, CUSPARSE_POINTER_MODE_HOST );
 
     cusparseMatDescr_t descr;
@@ -283,7 +283,7 @@ namespace backend
         A_nrows, B_ncols, A_ncols, &alpha,
         descr, A_nvals, A->d_csrRowPtr_, A->d_csrColInd_,
         descr, B_nvals, B->d_csrRowPtr_, B->d_csrColInd_,
-        &beta,
+        beta,
         descr, B_nvals, B->d_csrRowPtr_, B->d_csrColInd_,
         info, &bufferSize );
     switch( status ) {
@@ -389,7 +389,7 @@ namespace backend
         A_nrows, B_ncols, A_ncols, &alpha,
         descr, A_nvals, A->d_csrVal_, A->d_csrRowPtr_, A->d_csrColInd_,
         descr, B_nvals, B->d_csrVal_, B->d_csrRowPtr_, B->d_csrColInd_,
-        &beta,
+        beta,
         descr, B_nvals, B->d_csrVal_, B->d_csrRowPtr_, B->d_csrColInd_,
         descr,          C->d_csrVal_, C->d_csrRowPtr_, C->d_csrColInd_,
         info,  desc->d_buffer_ );
