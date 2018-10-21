@@ -151,7 +151,6 @@ namespace algorithm
           A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_, 
           h_bfs_cpu, reference_check_preds, source, depth);
 
-		//print_array(h_bfsResultCPU, m);
 		return max_depth; 
 	}
 

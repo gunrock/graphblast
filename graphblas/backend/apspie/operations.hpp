@@ -298,17 +298,17 @@ namespace backend
      * 4) dense  x sparse
      */
     if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE)
-      CHECK( eWiseMult(&w->sparse_, mask, accum, op, &u->sparse_, &v->sparse_, 
-          desc) );
+      CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
+          &v->sparse_, desc) );
     else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE)
-      CHECK( eWiseMult(&w->dense_, mask, accum, op, &u->dense_, &v->dense_, 
-          desc) );
+      CHECK( eWiseMultInner(&w->dense_, mask, accum, op, &u->dense_,
+          &v->dense_, desc) );
     else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
-      CHECK( eWiseMult(&w->sparse_, mask, accum, op, &u->sparse_, &v->dense_,
-          desc) );
+      CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
+          &v->dense_, desc) );
     else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
-      CHECK( eWiseMult(&w->sparse_, mask, accum, op, &v->sparse_, &u->dense_,
-          desc) );
+      CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &v->sparse_,
+          &u->dense_, desc) );
     else
       return GrB_INVALID_OBJECT;
 

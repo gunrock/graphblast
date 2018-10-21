@@ -7,26 +7,6 @@ namespace graphblas
 {
 namespace backend
 {
-  __device__ Index binarySearch( const Index* array,
-                                 Index        target, 
-                                 Index        begin, 
-                                 Index        end )
-  {
-    while (begin < end)
-    {
-      int mid  = begin + (end - begin) / 2;
-      int item = array[mid];
-      if (item == target)
-        return mid;
-      bool larger = (item > target);
-      if (larger)
-        end = mid;
-      else
-        begin = mid + 1;
-    }
-    return -1;
-  }
-
   template <typename T, typename a, typename b,
             typename MulOp, typename AddOp>
   __global__ void traceKernel( T*           val,

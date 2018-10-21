@@ -18,8 +18,8 @@
 
 namespace graphblas
 {
-  typedef int           Index;
-  typedef float         T;
+  typedef int   Index;
+  typedef float T;
 
   enum Storage {GrB_UNKNOWN,
                 GrB_SPARSE,

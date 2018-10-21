@@ -157,7 +157,7 @@ namespace graphblas
   {
     // Use either op->operator() or op->mul() as the case may be
     // Null pointer check
-    if( w==NULL || u==NULL || v==NULL || desc==NULL )
+    if (w == NULL || u == NULL || v == NULL || desc == NULL)
       return GrB_UNINITIALIZED_OBJECT;
 
     // Dimension check
@@ -166,12 +166,11 @@ namespace graphblas
     CHECK( checkDimSizeSize( v, mask, "v.size != mask.size" ) );
     CHECK( checkDimSizeSize( w, mask, "w.size != mask.size" ) );
 
-    const backend::Vector<M>*  mask_t = (mask==NULL ) ? NULL : &mask->vector_;
-    auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
+    const backend::Vector<M>*  mask_t = (mask==NULL) ? NULL : &mask->vector_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
-    return backend::eWiseMult( &w->vector_, mask_t, accum_t, &op->op_, 
-        &u->vector_, &v->vector_, desc_t );
+    return backend::eWiseMult( &w->vector_, mask_t, accum, op, &u->vector_, 
+        &v->vector_, desc_t );
   }
 
   // Element-wise multiply of two matrices
@@ -342,7 +341,6 @@ namespace graphblas
     CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
 
     auto                 mask_t = (mask==NULL ) ? NULL : &mask->vector_;
-    //auto                accum_t = (accum==NULL) ? NULL : &accum->op_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
     return backend::assign( &w->vector_, mask_t, accum, val, indices, nindices, 
