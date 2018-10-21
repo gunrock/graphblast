@@ -27,13 +27,14 @@ namespace backend
     CHECK( desc->get(GrB_INP0, &inp0_mode) );
     CHECK( desc->get(GrB_INP1, &inp1_mode) );
 
+    std::string accum_type = typeid(accum).name();
     // TODO: add accum and replace support
     // -have masked variants as separate kernel
     // -accum and replace as parts in flow
     // -special case of inverting GrB_SCMP since we are using it to zero out
     // values in GrB_assign instead of passing them through
     bool use_mask = (mask!=NULL);
-    bool use_accum= (accum!=NULL);            //TODO
+    bool use_accum= (accum_type.size() > 1);  //TODO
     bool use_scmp = (scmp_mode!=GrB_SCMP);    //Special case
     bool use_repl = (repl_mode==GrB_REPLACE); //TODO
     bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN);
@@ -308,14 +309,15 @@ namespace backend
     CHECK( desc->get(GrB_INP0, &inp0_mode) );
     CHECK( desc->get(GrB_INP1, &inp1_mode) );
 
+    std::string accum_type = typeid(accum).name();
     // TODO: add accum and replace support
     // -have masked variants as separate kernel
     // -accum and replace as parts in flow
-    bool use_mask = (mask!=NULL);
-    bool use_accum= (accum!=NULL);            //TODO
-    bool use_scmp = (scmp_mode==GrB_SCMP);
-    bool use_repl = (repl_mode==GrB_REPLACE); //TODO
-    bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN);
+    bool use_mask  = (mask != NULL);
+    bool use_accum = (accum_type.size() > 1);            //TODO
+    bool use_scmp  = (scmp_mode==GrB_SCMP);
+    bool use_repl  = (repl_mode==GrB_REPLACE); //TODO
+    bool use_tran  = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN);
     bool use_allowdupl; //TODO opt4
 
     if( desc->debug())

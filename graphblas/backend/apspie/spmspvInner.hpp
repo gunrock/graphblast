@@ -220,11 +220,9 @@ namespace backend
 
 		//Step 4) Element-wise multiplication
       NB.x = (*w_nvals+nt-1)/nt;
-      eWiseMultKernel<<<NB,NT>>>( (T*)d_csrSwapVal, 
-          static_cast<U*>(NULL), 
-          extractAdd(op),
-          op.identity(), 
-          extractMul(op), (T*)d_csrSwapVal, (T*)d_temp, *w_nvals );
+      eWiseMultKernel<<<NB, NT>>>((T*)d_csrSwapVal, extractAdd(op),
+          op.identity(), extractMul(op), (T*)d_csrSwapVal, (T*)d_temp, 
+          *w_nvals);
     }
 
     if( desc->debug() )

@@ -33,16 +33,16 @@ namespace backend
     CHECK( desc->get(GrB_INP0, &inp0_mode) );
     CHECK( desc->get(GrB_INP1, &inp1_mode) );
 
+    std::string accum_type = typeid(accum).name();
     // TODO: add accum and replace support
     // -have masked variants as separate kernel
     // -have scmp as template parameter 
     // -accum and replace as parts in flow
-    bool use_mask = (mask==NULL )            ? false : true;
-    bool use_accum= (accum==NULL)            ? false : true;
-    bool use_scmp = (scmp_mode==GrB_SCMP)    ? true : false;
-    bool use_repl = (repl_mode==GrB_REPLACE) ? true : false;
-    bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN) ?
-        true : false;
+    bool use_mask  = (mask != NULL);
+    bool use_accum = (accum_type.size() > 1);
+    bool use_scmp  = (scmp_mode != GrB_SCMP);
+    bool use_repl  = (repl_mode == GrB_REPLACE);
+    bool use_tran = (inp0_mode == GrB_TRAN || inp1_mode == GrB_TRAN);
 
     if( desc->debug() )
     {

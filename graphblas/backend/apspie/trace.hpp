@@ -41,8 +41,8 @@ namespace backend
     *val = 0.f;
     CUDA_CALL( cudaMemcpy(d_val, val, sizeof(T), cudaMemcpyHostToDevice) );
 
-    traceKernel<<<NB,NT>>>(d_val, op.identity(), extractMul(op), extractAdd(op),
-        A_nrows, 
+    traceKernel<<<NB, NT>>>(d_val, op.identity(), extractMul(op), 
+        extractAdd(op),  A_nrows, 
         A->d_csrRowPtr_, A->d_csrColInd_, A->d_csrVal_, 
         B->d_csrRowPtr_, B->d_csrColInd_, B->d_csrVal_);
 

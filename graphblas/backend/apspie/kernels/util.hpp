@@ -7,6 +7,25 @@ namespace graphblas
 {
 namespace backend
 {
+  __device__ Index binarySearch( const Index* array,
+                                 Index        target,
+                                 Index        begin,
+                                 Index        end )
+  {
+    while (begin < end)
+    {
+      int mid  = begin + (end - begin) / 2;
+      int item = array[mid];
+      if (item == target)
+        return mid;
+      bool larger = (item > target);
+      if (larger)
+        end = mid;
+      else
+        begin = mid + 1;
+    }
+    return -1;
+  }
 
   template <typename U>
   __global__ void zeroKernel( U* u_val, Index u_nvals )

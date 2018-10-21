@@ -3,22 +3,16 @@
 
 #include <iostream>
 
-#include <cuda.h>
-#include <cusparse.h>
-
-#include <moderngpu.cuh>
-#include <cub.cuh>
-
 namespace graphblas
 {
 namespace backend
 {
+  // dense-dense dense no mask vector variant
   // TODO(@ctcyang): add scmp, accum, repl, mask
   //template <bool UseScmp, bool UseAccum, bool UseRepl,
-  template <typename W, typename U, typename V, typename M,
+  template <typename W, typename U, typename V,
             typename AccumOp, typename MulOp>
   __global__ void eWiseMultKernel( W*       w_val,
-                                   const M* mask_val,
                                    AccumOp  accum_op,
                                    U        identity,
                                    MulOp    mul_op,
@@ -35,9 +29,83 @@ namespace backend
         w_val[row] = identity;
       else
         w_val[row] = mul_op(u_val_t, v_val_t);
+      __syncwarp();
     }
   }
 
+  // sparse-dense dense mask vector variant
+  // TODO(@ctcyang): add scmp, accum, repl, mask
+  //template <bool UseScmp, bool UseAccum, bool UseRepl,
+  template <typename W, typename U, typename V, typename M,
+            typename AccumOp, typename MulOp>
+  __global__ void eWiseMultKernel( Index*       w_ind,
+                                   W*           w_val,
+                                   const Index* mask_ind,
+                                   const M*     mask_val,
+                                   Index        mask_nvals,
+                                   AccumOp      accum_op,
+                                   U            identity,
+                                   MulOp        mul_op,
+                                   const Index* u_ind,
+                                   const U*     u_val,
+                                   Index        u_nvals,
+                                   const V*     v_val )
+  {
+    Index row = blockIdx.x * blockDim.x + threadIdx.x;
+    for (; row < mask_nvals; row += blockDim.x * gridDim.x)
+    {
+      Index ind = mask_ind[row];
+      V     v_t = __ldg(v_val + ind);
+
+      if (v_t != identity)
+      {
+        Index u_found = binarySearch(u_ind, ind, 0, u_nvals);
+        U     u_t  = __ldg(u_val + u_found);
+        w_val[row] = mul_op(u_t, v_t);
+      }
+      else
+      {
+        w_val[row] = 0;
+      }
+      w_ind[row] = ind;
+      __syncwarp();
+    }
+  }
+
+  // sparse-dense dense no mask vector variant
+  // TODO(@ctcyang): add scmp, accum, repl, mask
+  //template <bool UseScmp, bool UseAccum, bool UseRepl,
+  template <typename W, typename U, typename V,
+            typename AccumOp, typename MulOp>
+  __global__ void eWiseMultKernel( Index*       w_ind,
+                                   W*           w_val,
+                                   AccumOp      accum_op,
+                                   U            identity,
+                                   MulOp        mul_op,
+                                   const Index* u_ind,
+                                   const U*     u_val,
+                                   Index        u_nvals,
+                                   const V*     v_val )
+  {
+    Index row = blockIdx.x * blockDim.x + threadIdx.x;
+    for (; row < u_nvals; row += blockDim.x * gridDim.x)
+    {
+      Index ind = __ldg(u_ind + row);
+      U     u_t = __ldg(u_val + row);
+
+      if (u_t != identity)
+      {
+        V      v_t = __ldg(v_val + ind);
+        w_val[row] = mul_op(u_t, v_t);
+      }
+      else
+      {
+        w_val[row] = 0;
+      }
+      w_ind[row] = ind;
+      __syncwarp();
+    }
+  }
   /*template <bool UseScmp, bool UseAccum, bool UseRepl,
             typename W, typename U, typename V, typename M,
             typename BinaryOpT, typename MulOp>
