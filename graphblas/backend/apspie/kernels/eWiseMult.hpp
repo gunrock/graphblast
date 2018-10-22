@@ -1,8 +1,6 @@
 #ifndef GRB_BACKEND_APSPIE_KERNELS_EWISEMULT_HPP
 #define GRB_BACKEND_APSPIE_KERNELS_EWISEMULT_HPP
 
-#include <iostream>
-
 namespace graphblas
 {
 namespace backend
@@ -33,7 +31,7 @@ namespace backend
     }
   }
 
-  // sparse-dense dense mask vector variant
+  // dense-dense sparse mask vector variant
   // TODO(@ctcyang): add scmp, accum, repl, mask
   //template <bool UseScmp, bool UseAccum, bool UseRepl,
   template <typename W, typename U, typename V, typename M,
@@ -46,28 +44,23 @@ namespace backend
                                    AccumOp      accum_op,
                                    U            identity,
                                    MulOp        mul_op,
-                                   const Index* u_ind,
                                    const U*     u_val,
-                                   Index        u_nvals,
                                    const V*     v_val )
   {
     Index row = blockIdx.x * blockDim.x + threadIdx.x;
     for (; row < mask_nvals; row += blockDim.x * gridDim.x)
     {
       Index ind = mask_ind[row];
-      V     v_t = __ldg(v_val + ind);
-
-      if (v_t != identity)
+      M     m_t = mask_val[row];
+      W     w_t = 0;
+      if (m_t != 0)
       {
-        Index u_found = binarySearch(u_ind, ind, 0, u_nvals);
-        U     u_t  = __ldg(u_val + u_found);
-        w_val[row] = mul_op(u_t, v_t);
-      }
-      else
-      {
-        w_val[row] = 0;
+        U      u_t = __ldg(u_val + ind);
+        V      v_t = __ldg(v_val + ind);
+        w_t        = mul_op(u_t, v_t);
       }
       w_ind[row] = ind;
+      w_val[row] = w_t;
       __syncwarp();
     }
   }
@@ -106,6 +99,52 @@ namespace backend
       __syncwarp();
     }
   }
+
+  // sparse-dense dense mask vector variant
+  // TODO(@ctcyang): add scmp, accum, repl, mask
+  //template <bool UseScmp, bool UseAccum, bool UseRepl,
+  template <typename W, typename U, typename V, typename M,
+            typename AccumOp, typename MulOp>
+  __global__ void eWiseMultKernel( Index*       w_ind,
+                                   W*           w_val,
+                                   const Index* mask_ind,
+                                   const M*     mask_val,
+                                   Index        mask_nvals,
+                                   AccumOp      accum_op,
+                                   U            identity,
+                                   MulOp        mul_op,
+                                   const Index* u_ind,
+                                   const U*     u_val,
+                                   Index        u_nvals,
+                                   const V*     v_val )
+  {
+    Index row = blockIdx.x * blockDim.x + threadIdx.x;
+    for (; row < mask_nvals; row += blockDim.x * gridDim.x)
+    {
+      Index ind = mask_ind[row];
+      M     m_t = mask_val[row];
+      W     w_t = 0;
+
+      if (m_t != 0)
+      {
+        V     v_t = __ldg(v_val + ind);
+
+        if (v_t != identity)
+        {
+          Index u_found = binarySearch(u_ind, ind, 0, u_nvals);
+          if (u_found != -1)
+          {
+            U u_t = __ldg(u_val + u_found);
+            w_t   = mul_op(u_t, v_t);
+          }
+        }
+      }
+      w_ind[row] = ind;
+      w_val[row] = w_t;
+      __syncwarp();
+    }
+  }
+
   /*template <bool UseScmp, bool UseAccum, bool UseRepl,
             typename W, typename U, typename V, typename M,
             typename BinaryOpT, typename MulOp>

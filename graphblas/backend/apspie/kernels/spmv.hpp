@@ -1,8 +1,6 @@
 #ifndef GRB_BACKEND_APSPIE_KERNELS_SPMV_HPP
 #define GRB_BACKEND_APSPIE_KERNELS_SPMV_HPP
 
-#include <iostream>
-
 namespace graphblas
 {
 namespace backend

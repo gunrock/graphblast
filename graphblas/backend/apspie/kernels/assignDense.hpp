@@ -1,8 +1,6 @@
 #ifndef GRB_BACKEND_APSPIE_KERNELS_ASSIGNDENSE_HPP
 #define GRB_BACKEND_APSPIE_KERNELS_ASSIGNDENSE_HPP
 
-#include <cuda.h>
-
 namespace graphblas
 {
 namespace backend

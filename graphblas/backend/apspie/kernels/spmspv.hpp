@@ -1,14 +1,6 @@
 #ifndef GRB_BACKEND_APSPIE_KERNELS_SPMSPV_HPP
 #define GRB_BACKEND_APSPIE_KERNELS_SPMSPV_HPP
 
-#include <iostream>
-
-#include <cuda.h>
-#include <cusparse.h>
-
-#include <moderngpu.cuh>
-#include <cub.cuh>
-
 namespace graphblas
 {
 namespace backend

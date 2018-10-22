@@ -54,6 +54,7 @@ namespace algorithm
 		CHECK( eps_vector.fill(eps) );
 		eWiseMult<float, float, float, float>( &degrees_eps, GrB_NULL, GrB_NULL,
         PlusMultipliesSemiring<float>(), &degrees, &eps_vector, desc );
+    degrees_eps.print();
 
     // frontier (f): portion of r(v) >= degrees(v) x eps
 		// (use float for now)
@@ -77,6 +78,7 @@ namespace algorithm
     do
     {
       iter++;
+      std::cout << "Begin iteration " << iter << std::endl;
 
       // p = p + alpha * r .* f
       CHECK( desc->toggle(GrB_MASK) );
@@ -103,8 +105,10 @@ namespace algorithm
           PlusMultipliesSemiring<float>(), A, &r2, desc);
 
       // f = {v | r(v) >= d* eps}
+      //eWiseAdd<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
+      //    greater<float>(), &r, &degrees_eps, desc);
       eWiseAdd<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
-          greater<float>(), &r, &degrees_eps, desc);
+          GreaterPlusSemiring<float>(), &r, &degrees_eps, desc);
 
       //CHECK( q2.swap(&q1) );
       // Update frontier size
@@ -112,7 +116,7 @@ namespace algorithm
 
       if (desc->descriptor_.debug())
       {
-        std::cout << "succ: " << succ << " " << (int)succ << std::endl;
+        std::cout << "succ: " << succ << std::endl;
         CHECK( f.print() );
         CHECK( r.print() );
         CHECK( p->print() );

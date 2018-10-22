@@ -159,6 +159,7 @@ namespace graphblas
 
   // New monoids
   REGISTER_MONOID( DividesMonoid, divides, 0 )
+  REGISTER_MONOID( GreaterMonoid, greater, 0 )
 }  // graphblas
 
 // Semiring generator macro provided by Scott McMillan
@@ -197,6 +198,7 @@ namespace graphblas
 
   // New semirings
   REGISTER_SEMIRING( DividesPlusSemiring, DividesMonoid, plus )
+  REGISTER_SEMIRING( GreaterPlusSemiring, GreaterMonoid, plus )
 
   // AddOp and MulOp extraction provided by Peter Zhang
 	template <typename SemiringT>

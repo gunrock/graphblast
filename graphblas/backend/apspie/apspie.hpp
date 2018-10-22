@@ -15,6 +15,7 @@
 #include "graphblas/backend/apspie/gemv.hpp"
 #include "graphblas/backend/apspie/reduce.hpp"
 #include "graphblas/backend/apspie/eWiseMult.hpp"
+#include "graphblas/backend/apspie/eWiseAdd.hpp"
 #include "graphblas/backend/apspie/trace.hpp"
 #include "graphblas/backend/apspie/assign.hpp"
 #include "graphblas/backend/apspie/Descriptor.hpp"

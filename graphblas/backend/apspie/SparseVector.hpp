@@ -330,6 +330,8 @@ namespace backend
     CHECK( gpuToCpu(forceUpdate) );
     printArray( "ind", h_ind_, std::min(nvals_,40) );
     printArray( "val", h_val_, std::min(nvals_,40) );
+    if (nvals_ == 0)
+      std::cout << "Error: SparseVector is empty!\n";
     return GrB_SUCCESS;
   }
 

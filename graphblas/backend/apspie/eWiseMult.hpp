@@ -29,7 +29,7 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-  // Dense x dense vector
+  // Dense x dense vector (no mask)
   template <typename W, typename U, typename V, typename M,
             typename BinaryOpT,     typename SemiringT>
   Info eWiseMultInner( DenseVector<W>*       w,
@@ -57,7 +57,7 @@ namespace backend
 
     if( desc->debug() )
     {
-      std::cout << "Executing eWiseMult dense-dense\n";
+      std::cout << "Executing eWiseMult dense-dense (no mask)\n";
       printState( use_mask, use_accum, use_scmp, use_repl, 0 );
     }
 
@@ -75,7 +75,7 @@ namespace backend
 
     if( use_mask && desc->mask() )
     {
-      std::cout << "Error: Masked eWiseMult dense-dense not implemented yet!\n";
+      std::cout << "Error: Masked eWiseMult dense-dense with mask should not generate dense output!\n";
     }
     else
     {
@@ -90,6 +90,76 @@ namespace backend
       eWiseMultKernel<<<NB, NT>>>(w->d_val_, NULL, op.identity(),
           extractMul(op), u_t->d_val_, v_t->d_val_, u_nvals);
     }
+    w->need_update_ = true;
+
+    return GrB_SUCCESS;
+  }
+
+  // Dense x dense vector (sparse mask)
+  template <typename W, typename U, typename V, typename M,
+            typename BinaryOpT,     typename SemiringT>
+  Info eWiseMultInner( SparseVector<W>*       w,
+                       const SparseVector<M>* mask,
+                       BinaryOpT              accum,
+                       SemiringT              op,
+                       const DenseVector<U>*  u,
+                       const DenseVector<V>*  v,
+                       Descriptor*            desc )
+  {
+    // Get descriptor parameters for SCMP, REPL, TRAN
+    Desc_value scmp_mode, repl_mode, inp0_mode, inp1_mode;
+    CHECK( desc->get(GrB_MASK, &scmp_mode) );
+    CHECK( desc->get(GrB_OUTP, &repl_mode) );
+
+    std::string accum_type = typeid(accum).name();
+    // TODO: add accum and replace support
+    // -have masked variants as separate kernel
+    // -have scmp as template parameter
+    // -accum and replace as parts in flow
+    bool use_mask  = (mask != NULL);
+    bool use_accum = (accum_type.size() > 1);
+    bool use_scmp  = (scmp_mode != GrB_SCMP);
+    bool use_repl  = (repl_mode == GrB_REPLACE);
+
+    if( desc->debug() )
+    {
+      std::cout << "Executing eWiseMult dense-dense (sparse mask)\n";
+      printState( use_mask, use_accum, use_scmp, use_repl, 0 );
+    }
+
+    // Get descriptor parameters for nthreads
+    Desc_value nt_mode;
+    CHECK( desc->get(GrB_NT, &nt_mode) );
+    const int nt = static_cast<int>(nt_mode);
+
+    // Get number of elements
+    Index u_nvals;
+    u->nvals(&u_nvals);
+
+    if( use_mask && desc->mask() )
+    {
+      Index mask_nvals;
+      mask->nvals(&mask_nvals);
+
+      dim3 NT, NB;
+      NT.x = nt;
+      NT.y = 1;
+      NT.z = 1;
+      NB.x = (mask_nvals + nt - 1) / nt;
+      NB.y = 1;
+      NB.z = 1;
+
+      eWiseMultKernel<<<NB, NT>>>(w->d_ind_, w->d_val_, mask->d_ind_,
+            mask->d_val_, mask_nvals, NULL, op.identity(), extractMul(op),
+            u->d_val_, v->d_val_);
+
+      w->nvals_ = mask_nvals;
+    }
+    else
+    {
+      std::cout << "Error: Unmasked eWiseMult dense-dense should not generate sparse vector output!\n";
+    }
+    w->need_update_ = true;
 
     return GrB_SUCCESS;
   }

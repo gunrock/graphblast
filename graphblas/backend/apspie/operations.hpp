@@ -284,7 +284,6 @@ namespace backend
                   const Vector<V>* v,
                   Descriptor*      desc )
   {
-    // Use either op->operator() or op->mul() as the case may be
     Storage u_vec_type;
     Storage v_vec_type;
     CHECK( u->getStorage( &u_vec_type ) );
@@ -298,19 +297,50 @@ namespace backend
      * 4) dense  x sparse
      */
     if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE)
+    {
+      CHECK( w->setStorage(GrB_SPARSE) );
       CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
           &v->sparse_, desc) );
+    }
     else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE)
-      CHECK( eWiseMultInner(&w->dense_, mask, accum, op, &u->dense_,
-          &v->dense_, desc) );
+    {
+      // depending on whether sparse mask is present or not
+      if (mask != NULL)
+      {
+        Storage mask_type;
+        CHECK( mask->getStorage(&mask_type) );
+        if (mask_type == GrB_DENSE)
+        {
+          std::cout << "Error: Masked eWiseMult dense-dense with dense mask doesnot make sense!\n";
+          return GrB_INVALID_OBJECT;
+        }
+        CHECK( w->setStorage(GrB_SPARSE) );
+        CHECK( eWiseMultInner(&w->sparse_, &mask->sparse_, accum, op,
+            &v->dense_, &u->dense_, desc) );
+      }
+      else
+      {
+        CHECK( w->setStorage(GrB_DENSE) );
+        CHECK( eWiseMultInner(&w->dense_, mask, accum, op, &v->dense_,
+            &u->dense_, desc) );
+      }
+    }
     else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
+    {
+      CHECK( w->setStorage(GrB_SPARSE) );
       CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
           &v->dense_, desc) );
+    }
     else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
-      CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &v->sparse_,
+    {
+      CHECK( w->setStorage(GrB_SPARSE) );
+      CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &v->sparse_, 
           &u->dense_, desc) );
+    }
     else
+    {
       return GrB_INVALID_OBJECT;
+    }
 
     return GrB_SUCCESS;
   }
@@ -338,7 +368,45 @@ namespace backend
                  const Vector<V>* v,
                  Descriptor*      desc )
   {
-    // Use either op->operator() or op->add() as the case may be
+    Storage u_vec_type;
+    Storage v_vec_type;
+    CHECK( u->getStorage( &u_vec_type ) );
+    CHECK( v->getStorage( &v_vec_type ) );
+
+    /* 
+     * \brief 4 cases:
+     * 1) sparse x sparse
+     * 2) dense  x dense
+     * 3) sparse x dense
+     * 4) dense  x sparse
+     */
+    CHECK( w->setStorage(GrB_DENSE) );
+    if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE)
+    {
+      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
+          &v->sparse_, desc) );
+    }
+    else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE)
+    {
+      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->dense_,
+          &u->dense_, desc) );
+    }
+    else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
+    {
+      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
+          &v->dense_, desc) );
+    }
+    else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
+    {
+      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->sparse_, 
+          &u->dense_, desc) );
+    }
+    else
+    {
+      return GrB_INVALID_OBJECT;
+    }
+
+    return GrB_SUCCESS;
   }
 
   template <typename c, typename a, typename b, typename m,

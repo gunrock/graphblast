@@ -155,7 +155,6 @@ namespace graphblas
                   const Vector<V>* v,
                   Descriptor*      desc )
   {
-    // Use either op->operator() or op->mul() as the case may be
     // Null pointer check
     if (w == NULL || u == NULL || v == NULL || desc == NULL)
       return GrB_UNINITIALIZED_OBJECT;
@@ -188,6 +187,7 @@ namespace graphblas
                   Descriptor*      desc )
   {
     // Use either op->operator() or op->mul() as the case may be
+    std::cout << "Error: eWiseMult matrix variant not implemented yet!\n";
   }
 
   // Element-wise addition of two vectors
@@ -204,7 +204,21 @@ namespace graphblas
                  const Vector<V>* v,
                  Descriptor*      desc )
   {
-    // Use either op->operator() or op->add() as the case may be
+    // Null pointer check
+    if (w == NULL || u == NULL || v == NULL || desc == NULL)
+      return GrB_UNINITIALIZED_OBJECT;
+
+    // Dimension check
+    CHECK( checkDimSizeSize( u, v,    "u.size != v.size"    ) );
+    CHECK( checkDimSizeSize( u, mask, "u.size != mask.size" ) );
+    CHECK( checkDimSizeSize( v, mask, "v.size != mask.size" ) );
+    CHECK( checkDimSizeSize( w, mask, "w.size != mask.size" ) );
+
+    const backend::Vector<M>*  mask_t = (mask==NULL) ? NULL : &mask->vector_;
+    backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+
+    return backend::eWiseAdd( &w->vector_, mask_t, accum, op, &u->vector_, 
+        &v->vector_, desc_t );
   }
 
   // Element-wise addition of two matrices
@@ -222,6 +236,7 @@ namespace graphblas
                  Descriptor*      desc )
   {
     // Use either op->operator() or op->add() as the case may be
+    std::cout << "Error: eWiseAdd matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename U, typename M,
@@ -234,7 +249,7 @@ namespace graphblas
                 Index                     nindices,
                 Descriptor*               desc )
   {
-
+    std::cout << "Error: extract vector variant not implemented yet!\n";
   }
 
   template <typename c, typename a, typename m,
@@ -249,7 +264,7 @@ namespace graphblas
                 Index                     ncols,
                 Descriptor*               desc )
   {
-
+    std::cout << "Error: extract matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename a, typename M,
@@ -263,7 +278,7 @@ namespace graphblas
                 Index                     col_index,
                 Descriptor*               desc )
   {
-
+    std::cout << "Error: extract matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename U, typename M,
@@ -276,7 +291,7 @@ namespace graphblas
                Index                     nindices,
                Descriptor*               desc )
   {
-
+    std::cout << "Error: assign vector variant not implemented yet!\n";
   }
 
   template <typename c, typename a, typename m,
@@ -291,7 +306,7 @@ namespace graphblas
                Index                     ncols,
                Descriptor*               desc )
   {
-
+    std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
   template <typename c, typename U, typename M,
@@ -305,7 +320,7 @@ namespace graphblas
                Index                     col_index,
                Descriptor*               desc )
   {
-
+    std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
   template <typename c, typename U, typename M,
@@ -319,7 +334,7 @@ namespace graphblas
                Index                     ncols,
                Descriptor*               desc )
   {
-
+    std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename T,
@@ -359,7 +374,7 @@ namespace graphblas
                Index                     ncols,
                Descriptor*               desc )
   {
-
+    std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename U, typename M,
@@ -371,7 +386,7 @@ namespace graphblas
               const Vector<U>* u,
               Descriptor*      desc )
   {
-
+    std::cout << "Error: apply vector variant not implemented yet!\n";
   }
 
   template <typename c, typename a, typename m,
@@ -383,7 +398,7 @@ namespace graphblas
               const Matrix<a>* A,
               Descriptor*      desc )
   {
-
+    std::cout << "Error: apply matrix variant not implemented yet!\n";
   }
 
   // Reduction along matrix rows to form vector
@@ -438,7 +453,7 @@ namespace graphblas
                const Matrix<a>* A,
                Descriptor*      desc )
   {
-
+    std::cout << "Error: reduce matrix to scalar variant not implemented yet!\n";
   }
 
   // Matrix transposition
@@ -452,7 +467,7 @@ namespace graphblas
                   const Matrix<a>* A,
                   Descriptor*      desc )
   {
-
+    std::cout << "Error: transpose not implemented yet!\n";
   }
 
   // Trace of matrix-matrix product
@@ -484,7 +499,7 @@ namespace graphblas
               T                val,
               Descriptor*      desc )
   {
-
+    std::cout << "Error: scale not implemented yet!\n";
   }
 
   // Multiply vector by scalar
@@ -497,7 +512,7 @@ namespace graphblas
               T                val,
               Descriptor*      desc )
   {
-
+    std::cout << "Error: scale not implemented yet!\n";
   }
 
 } // graphblas
