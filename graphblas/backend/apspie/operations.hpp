@@ -311,12 +311,18 @@ namespace backend
         CHECK( mask->getStorage(&mask_type) );
         if (mask_type == GrB_DENSE)
         {
-          std::cout << "Error: Masked eWiseMult dense-dense with dense mask doesnot make sense!\n";
-          return GrB_INVALID_OBJECT;
+          CHECK( w->setStorage(GrB_DENSE) );
+          CHECK( eWiseMultInner(&w->dense_, mask, accum, op, &v->dense_,
+              &u->dense_, desc) );
         }
-        CHECK( w->setStorage(GrB_SPARSE) );
-        CHECK( eWiseMultInner(&w->sparse_, &mask->sparse_, accum, op,
-            &v->dense_, &u->dense_, desc) );
+        else if (mask_type == GrB_SPARSE)
+        {
+          CHECK( w->setStorage(GrB_SPARSE) );
+          CHECK( eWiseMultInner(&w->sparse_, &mask->sparse_, accum, op,
+              &v->dense_, &u->dense_, desc) );
+        }
+        else
+          return GrB_INVALID_OBJECT;
       }
       else
       {

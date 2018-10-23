@@ -107,7 +107,7 @@ namespace algorithm
       // f = {v | r(v) >= d* eps}
       //eWiseAdd<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
       //    greater<float>(), &r, &degrees_eps, desc);
-      eWiseAdd<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
+      eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
           GreaterPlusSemiring<float>(), &r, &degrees_eps, desc);
 
       //CHECK( q2.swap(&q1) );
@@ -121,7 +121,7 @@ namespace algorithm
         CHECK( r.print() );
         CHECK( p->print() );
       }
-      if (iter > 5)
+      if (iter > desc->descriptor_.max_niter_)
         break;
     } while (succ > 0);
     if( desc->descriptor_.timing_>0 )

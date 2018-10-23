@@ -54,7 +54,9 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
     ("source", po::value<int>()->default_value(0),
         "Source node traversal is launched from")
     ("niter", po::value<int>()->default_value(10), 
-        "Number of iterations to run after warmup")
+        "Number of iterations to run outer loop after warmup")
+    ("max_niter", po::value<int>()->default_value(10), 
+        "Number of iterations to run inner loop to convergence to")
     ("directed", po::value<int>()->default_value(0), 
         "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected")
     ("mxvmode", po::value<int>()->default_value(1), 
@@ -204,34 +206,7 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       value = (T) raw_value;
 
       values.push_back(value);
-      //std::cout << value << std::endl;
-      //std::cout << "The first row is " << row_ind-1 << " " <<  col_ind-1
-      //<< std::endl;
-
-      // Finds max csr row.
-      /*int csr_max = 0;
-      int csr_current = 0;
-      int csr_row = 0;
-      int csr_first = 0;
-
-      if( i!=0 ) {
-        if( col_ind-1==0 ) csr_first++;
-        if( col_ind-1==col_indices[i-1] )
-          csr_current++;
-        else {
-          csr_current++;
-          if( csr_current > csr_max ) {
-            csr_max = csr_current;
-            csr_current = 0;
-            //csr_row = row_indices[i-1];
-          } else
-            csr_current = 0;
-        }
-      }*/
   }}
-  //std::cout << "The biggest row was " << csr_row << " with " << csr_max << 
-  //" elements.\n";
-  //std::cout << "The first row has " << csr_first << " elements.\n";
 }
 
 template<typename T>
@@ -257,31 +232,7 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       row_indices.push_back(row_ind-1);
       col_indices.push_back(col_ind-1);
       values.push_back(value);
-
-      // Finds max csr row.
-      /*int csr_max = 0;
-      int csr_current = 0;
-      int csr_row = 0;
-      int csr_first = 0;
-
-      if( i!=0 ) {
-        if( col_ind-1==0 ) csr_first++;
-        if( col_ind-1==col_indices[i-1] )
-          csr_current++;
-        else {
-          csr_current++;
-          if( csr_current > csr_max ) {
-            csr_max = csr_current;
-            csr_current = 0;
-            csr_row = row_indices[i-1];
-          } else
-            csr_current = 0;
-        }
-      }*/
   }}
-  //std::cout << "The biggest row was " << csr_row << " with " << csr_max << 
-  //" elements.\n";
-  //std::cout << "The first row has " << csr_first << " elements.\n";
 }
 
 template<typename T>
@@ -290,8 +241,6 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
                     std::vector<T>& values, 
                     graphblas::Index& nvals )
 {
-  //std::cout << nvals << std::endl;
-
   bool remove_self_loops = getEnv("GRB_UTIL_REMOVE_SELFLOOP", true);
 
   for( graphblas::Index i=0; i<nvals; i++ ) {
@@ -326,8 +275,6 @@ void makeSymmetric( std::vector<graphblas::Index>& row_indices,
 
   // Duplicates
     if( curr == last && curr_row == last_row ) {
-      //printf("Curr: %d, Last: %d, Curr_row: %d, Last_row: %d\n", curr, last, 
-    //  curr_row, last_row );
       col_indices[i] = -1;
   }}
 
@@ -375,7 +322,6 @@ char* convert( const char* fname )
 	char *file_name = basename(temp2);
 
 	sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
-	//sprintf(dat_name, "%s/.%s.ud.%d.%sdat", file_path, file_name, 0,
 			((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
 
   return dat_name;
@@ -425,7 +371,6 @@ int readMtx( const char*                    fname,
       row_indices.clear();
       col_indices.clear();
       values.clear();
-      //return ret_code;
     }
   }
   else
@@ -449,25 +394,6 @@ int readMtx( const char*                    fname,
 
     if( mtxinfo ) mm_write_banner(stdout, matcode);
     if( mtxinfo ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
-
-    // -serialize vector
-    /*std::ofstream ofs( dat_name, std::ios::out | std::ios::binary );
-    if (ofs.fail())
-      std::cout << "Error: Unable to open file for writing!\n";
-    else
-    {
-      printf("Writing %s\n", dat_name);
-      ofs.write( reinterpret_cast<char*>(&nvals), sizeof(graphblas::Index) );
-    
-      ofs.write( reinterpret_cast<char*>(row_indices.data()), 
-          nvals*sizeof(graphblas::Index) );
-
-      ofs.write( reinterpret_cast<char*>(col_indices.data()), 
-          nvals*sizeof(graphblas::Index) );
-      
-      ofs.write( reinterpret_cast<char*>(values.data()), 
-          nvals*sizeof(graphblas::T) );
-    }*/
   }
   free(dat_name);
 

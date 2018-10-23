@@ -102,7 +102,7 @@ int main( int argc, char** argv )
   vxm_gpu.Start();
   float tight = 0.f;
   float val;
-  for( int i=0; i<niter; i++ )
+  for (int i = 0; i < niter; i++)
   {
     val = graphblas::algorithm::lgc(&v, &a, source, alpha, eps, &desc);
     tight += val;

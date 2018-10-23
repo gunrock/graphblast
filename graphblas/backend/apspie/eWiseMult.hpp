@@ -52,12 +52,12 @@ namespace backend
     // -accum and replace as parts in flow
     bool use_mask  = (mask != NULL);
     bool use_accum = (accum_type.size() > 1);
-    bool use_scmp  = (scmp_mode != GrB_SCMP);
+    bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
     if( desc->debug() )
     {
-      std::cout << "Executing eWiseMult dense-dense (no mask)\n";
+      std::cout << "Executing eWiseMult dense-dense\n";
       printState( use_mask, use_accum, use_scmp, use_repl, 0 );
     }
 
@@ -75,7 +75,23 @@ namespace backend
 
     if( use_mask && desc->mask() )
     {
-      std::cout << "Error: Masked eWiseMult dense-dense with mask should not generate dense output!\n";
+      Storage mask_type;
+      CHECK( mask->getStorage(&mask_type) );
+      if (mask_type != GrB_DENSE)
+        return GrB_INVALID_OBJECT;
+
+      const DenseVector<M>* mask_dense = &mask->dense_;
+
+      dim3 NT, NB;
+      NT.x = nt;
+      NT.y = 1;
+      NT.z = 1;
+      NB.x = (u_nvals + nt - 1) / nt;
+      NB.y = 1;
+      NB.z = 1;
+
+      eWiseMultKernel<<<NB, NT>>>(w->d_val_, NULL, mask_dense->d_val_, 
+          op.identity(), extractMul(op), u_t->d_val_, v_t->d_val_, u_nvals);
     }
     else
     {
@@ -118,7 +134,7 @@ namespace backend
     // -accum and replace as parts in flow
     bool use_mask  = (mask != NULL);
     bool use_accum = (accum_type.size() > 1);
-    bool use_scmp  = (scmp_mode != GrB_SCMP);
+    bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
     if( desc->debug() )
@@ -187,7 +203,7 @@ namespace backend
     // -accum and replace as parts in flow
     bool use_mask  = (mask != NULL);
     bool use_accum = (accum_type.size() > 1);
-    bool use_scmp  = (scmp_mode != GrB_SCMP);
+    bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
     if( desc->debug() )

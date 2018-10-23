@@ -65,6 +65,36 @@ namespace backend
     }
   }
 
+  // dense-dense dense mask vector variant
+  // TODO(@ctcyang): add scmp, accum, repl, mask
+  //template <bool UseScmp, bool UseAccum, bool UseRepl,
+  template <typename W, typename U, typename V, typename M,
+            typename AccumOp, typename MulOp>
+  __global__ void eWiseMultKernel( W*       w_val,
+                                   AccumOp  accum_op,
+                                   const M* mask_val,
+                                   U        identity,
+                                   MulOp    mul_op,
+                                   U*       u_val,
+                                   V*       v_val,
+                                   Index    u_nvals )
+  {
+    Index row = blockIdx.x * blockDim.x + threadIdx.x;
+    for (; row < u_nvals; row += blockDim.x * gridDim.x)
+    {
+      U u_val_t    = u_val[row];
+      V v_val_t    = v_val[row];
+      M mask_val_t = mask_val[row];
+
+      if (mask_val_t == 0 | u_val_t == identity || v_val_t == identity)
+        w_val[row] = identity;
+      else
+        w_val[row] = mul_op(u_val_t, v_val_t);
+      __syncwarp();
+    }
+  }
+
+  // dense-dense sparse mask vector variant
   // sparse-dense dense no mask vector variant
   // TODO(@ctcyang): add scmp, accum, repl, mask
   //template <bool UseScmp, bool UseAccum, bool UseRepl,

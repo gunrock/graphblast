@@ -52,7 +52,7 @@ namespace backend
     // -accum and replace as parts in flow
     bool use_mask  = (mask != NULL);
     bool use_accum = (accum_type.size() > 1);
-    bool use_scmp  = (scmp_mode != GrB_SCMP);
+    bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
     if( desc->debug() )
@@ -118,7 +118,7 @@ namespace backend
     // -accum and replace as parts in flow
     bool use_mask  = (mask != NULL);
     bool use_accum = (accum_type.size() > 1);
-    bool use_scmp  = (scmp_mode != GrB_SCMP);
+    bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
     if( desc->debug() )
