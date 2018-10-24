@@ -87,8 +87,8 @@ namespace backend
       NB.y = 1;
       NB.z = 1;
 
-      eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, op.identity(), extractAdd(op),
-          u_t->d_val_, v_t->d_val_, u_nvals);
+      eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op), u_t->d_val_,
+          v_t->d_val_, u_nvals);
     }
     w->need_update_ = true;
 
@@ -153,8 +153,8 @@ namespace backend
       NB.y = 1;
       NB.z = 1;
 
-      eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, op.identity(), extractAdd(op),
-          u->d_ind_, u->d_val_, u_nvals);
+      eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op), u->d_ind_,
+          u->d_val_, u_nvals);
     }
     w->need_update_ = true;
     return GrB_SUCCESS;

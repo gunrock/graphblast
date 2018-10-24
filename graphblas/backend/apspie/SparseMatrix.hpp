@@ -370,7 +370,7 @@ namespace backend
 
       if( fname!=NULL )
       {
-        char* dat_name = convert(fname);
+        char* dat_name = convert(fname, true);
 
         if( !exists(dat_name) )
         {
@@ -407,7 +407,7 @@ namespace backend
       return GrB_SUCCESS;
     }
 
-		char* dat_name = convert( fname );
+		char* dat_name = convert(fname);
 
     if( exists(dat_name) )
 		{

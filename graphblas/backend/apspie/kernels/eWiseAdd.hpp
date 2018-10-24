@@ -12,7 +12,6 @@ namespace backend
             typename AccumOp, typename AddOp>
   __global__ void eWiseAddKernel( W*       w_val,
                                   AccumOp  accum_op,
-                                  U        identity,
                                   AddOp    add_op,
                                   U*       u_val,
                                   V*       v_val,
@@ -23,12 +22,7 @@ namespace backend
     {
       U u_val_t = u_val[row];
       V v_val_t = v_val[row];
-      if (u_val_t == identity)
-        w_val[row] = v_val_t;
-      else if (v_val_t == identity)
-        w_val[row] = u_val_t;
-      else
-        w_val[row] = add_op(u_val_t, v_val_t);
+      w_val[row] = add_op(u_val_t, v_val_t);
       __syncwarp();
     }
   }
@@ -40,7 +34,6 @@ namespace backend
             typename AccumOp, typename AddOp>
   __global__ void eWiseAddKernel( W*           w_val,
                                   AccumOp      accum_op,
-                                  U            identity,
                                   AddOp        add_op,
                                   const Index* u_ind,
                                   const U*     u_val,
@@ -53,10 +46,8 @@ namespace backend
       U     u_t = u_val[row];
 
       W     w_t = w_val[ind];
-      if (w_t == identity)
-        w_val[ind] = u_t;
-      else if (u_t != identity)
-        w_val[ind] = add_op(u_t, w_t);
+      w_val[ind] = add_op(u_t, w_t);
+      printf("tid:%d, u_t:%f, v_t:%f, w_t:%f\n", row, u_t, w_t, w_val[ind]);
       __syncwarp();
     }
   }

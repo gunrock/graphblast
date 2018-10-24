@@ -209,6 +209,44 @@ void testeWiseMultVectorSparsemaskSparseDense(
   BOOST_ASSERT_LIST( values, correct_val, mask_nvals );
 }
 
+void testeWiseMultVectorNomaskDenseDenseGreater(
+    const std::vector<float>& u_val,
+    const std::vector<float>& v_val,
+    po::variables_map&        vm )
+{
+  std::vector<float> values;
+  graphblas::Index nvals = u_val.size();
+  graphblas::Info err;
+  graphblas::Descriptor desc;
+  desc.loadArgs(vm);
+
+  std::vector<float> correct(nvals);
+  for (int i = 0; i < nvals; ++i) {
+    if (u_val[i] == 0 || v_val[i] == 0)
+      correct[i] = 0;
+    else
+      correct[i] = u_val[i] > v_val[i];
+  }
+  printArray("correct", correct, nvals);
+
+  graphblas::Vector<float> u(nvals);
+  err = u.build(&u_val, nvals);
+
+  graphblas::Vector<float> v(nvals);
+  err = v.build(&v_val, nvals);
+
+  graphblas::Vector<float> vec(nvals);
+
+  err = graphblas::eWiseMult<float, float, float, float>( &vec, GrB_NULL, 
+      GrB_NULL, graphblas::PlusGreaterSemiring<float>(), &u, &v, &desc );
+
+  graphblas::Index nvals_t = nvals;
+  err = vec.print();
+  err = vec.extractTuples( &values, &nvals_t );
+  BOOST_ASSERT( nvals == nvals_t );
+  BOOST_ASSERT_LIST( values, correct, nvals );
+}
+
 struct TestMatrix
 {
   TestMatrix() :
@@ -244,7 +282,7 @@ BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
     u_val[i] = static_cast<float>(i);
     v_val[i] = (i % 2 == 0) ? 0.f : static_cast<float>(i);
   }
-  for (int i = 0; i < n/2; ++i)
+  for (int i = n/2; i < n; ++i)
   {
     u_val[i] = (i % 2 == 0) ? 0.f : static_cast<float>(i);
     v_val[i] = static_cast<float>(i);
@@ -290,6 +328,40 @@ BOOST_FIXTURE_TEST_CASE( dup7, TestMatrix )
   std::vector<float>            v_val   { 3., 2., 2., 3., 0., 0., 0., 2., 2.};
   testeWiseMultVectorSparsemaskSparseDense(mask_ind, mask_val, u_ind, u_val,
       v_val, vm);
+}
+
+BOOST_FIXTURE_TEST_CASE( dup11, TestMatrix )
+{
+  int argc = 3;
+  char* argv[] = {"app", "--debug", "1"};
+  po::variables_map vm;
+  parseArgs( argc, argv, vm );
+  std::vector<float> u_val{ 1., 1., 3., 2., 2., 0., 3., 0., 1., 0., 2. };
+  std::vector<float> v_val{ 1., 0., 3., 2., 2., 3., 0., 0., 1., 2., 2. };
+  testeWiseMultVectorNomaskDenseDenseGreater(u_val, v_val, vm);
+}
+
+BOOST_FIXTURE_TEST_CASE( dup12, TestMatrix )
+{
+  int argc = 3;
+  char* argv[] = {"app", "--debug", "1"};
+  po::variables_map vm;
+  parseArgs( argc, argv, vm );
+  int n = 1;
+  //int n = 10000;
+  std::vector<float> u_val(n, 0.f);
+  std::vector<float> v_val(n, 0.f);
+  for (int i = 0; i < n/2; ++i)
+  {
+    u_val[i] = 1.;
+    v_val[i] = 0.;
+  }
+  for (int i = n/2; i < n; ++i)
+  {
+    u_val[i] = 0.;
+    v_val[i] = 1.;
+  }
+  testeWiseMultVectorNomaskDenseDenseGreater(u_val, v_val, vm);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

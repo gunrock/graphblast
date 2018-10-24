@@ -298,7 +298,7 @@ BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
     u_val[i] = static_cast<float>(i);
     v_val[i] = (i % 2 == 0) ? 0.f : static_cast<float>(i);
   }
-  for (int i = 0; i < n/2; ++i)
+  for (int i = n/2; i < n; ++i)
   {
     u_val[i] = (i % 2 == 0) ? 0.f : static_cast<float>(i);
     v_val[i] = static_cast<float>(i);

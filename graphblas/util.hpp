@@ -311,7 +311,7 @@ bool exists(const char *fname)
   return 0;
 }
 
-char* convert( const char* fname )
+char* convert( const char* fname, bool is_directed=true )
 {
   char* dat_name = (char*)malloc(256);
 
@@ -321,12 +321,20 @@ char* convert( const char* fname )
 	char *file_path = dirname (temp1);
 	char *file_name = basename(temp2);
 
-	sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
-			((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
+  if (is_directed)
+	  sprintf(dat_name, "%s/.%s.d.%d.%sbin", file_path, file_name, 0,
+		  	((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
+  else
+	  sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
+		  	((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
 
   return dat_name;
 }
 
+// Directed controls how matrix is interpreted:
+// 0: If it is marked symmetric, then double the edges. Else do nothing.
+// 1: Force matrix to be unsymmetric.
+// 2: Force matrix to be symmetric.
 template<typename T>
 int readMtx( const char*                    fname,
              std::vector<graphblas::Index>& row_indices,
@@ -357,7 +365,8 @@ int readMtx( const char*                    fname,
   if ((ret_code = mm_read_mtx_crd_size(f, &nrows, &ncols, &nvals)) !=0)
     exit(1);
 
-  char* dat_name = convert(fname);
+  bool is_directed = (mm_is_symmetric(matcode) && directed==0) || directed==2;
+  char* dat_name = convert(fname, is_directed);
 
   if( exists(dat_name) )
   {  
@@ -382,13 +391,7 @@ int readMtx( const char*                    fname,
     else if (mm_is_pattern(matcode))
       readTuples<T>( row_indices, col_indices, values, nvals, f );
 
-    // Directed controls how matrix is interpreted:
-    // 0: If it is marked symmetric, then double the edges. Else do nothing.
-    // 1: Force matrix to be unsymmetric.
-    // 2: Force matrix to be symmetric.
-    if( (mm_is_symmetric(matcode) && directed==0) || directed==2 )
-    // If user wants to treat MTX as a directed graph
-    //if( undirected )
+    if (is_directed)
       makeSymmetric<T>( row_indices, col_indices, values, nvals );
     customSort<T>( row_indices, col_indices, values );
 

@@ -150,6 +150,8 @@ namespace backend
       }
       else
       {
+        // TODO(@ctcyang): Some performance left on table, sparse2dense should 
+        // only convert rather than setStorage if accum is being used
         //CHECK( w->setStorage( GrB_DENSE ) );
         CHECK( w->sparse2dense(op.identity(), desc) );
         if( A_mat_type==GrB_SPARSE )
@@ -314,8 +316,8 @@ namespace backend
         if (mask_type == GrB_DENSE)
         {
           CHECK( w->setStorage(GrB_DENSE) );
-          CHECK( eWiseMultInner(&w->dense_, mask, accum, op, &v->dense_,
-              &u->dense_, desc) );
+          CHECK( eWiseMultInner(&w->dense_, mask, accum, op, &u->dense_,
+              &v->dense_, desc) );
         }
         else if (mask_type == GrB_SPARSE)
         {
@@ -323,7 +325,7 @@ namespace backend
             std::cout << "Error: eWiseMult dense-dense sparse mask dense vector inplace not implemented yet!\n";
           CHECK( w->setStorage(GrB_SPARSE) );
           CHECK( eWiseMultInner(&w->sparse_, &mask->sparse_, accum, op,
-              &v->dense_, &u->dense_, desc) );
+              &u->dense_, &v->dense_, desc) );
         }
         else
           return GrB_INVALID_OBJECT;
@@ -331,8 +333,8 @@ namespace backend
       else
       {
         CHECK( w->setStorage(GrB_DENSE) );
-        CHECK( eWiseMultInner(&w->dense_, mask, accum, op, &v->dense_,
-            &u->dense_, desc) );
+        CHECK( eWiseMultInner(&w->dense_, mask, accum, op, &u->dense_,
+            &v->dense_, desc) );
       }
     }
     else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
@@ -345,6 +347,7 @@ namespace backend
     }
     else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
     {
+      // TODO(@ctcyang): Fix for non-commutative ops
       if (u == w)
         std::cout << "Error: eWiseMult sparse-dense dense vector inplace not implemented yet!\n";
       CHECK( w->setStorage(GrB_SPARSE) );
@@ -408,8 +411,8 @@ namespace backend
       }
       else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE)
       {
-        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->dense_,
-            &u->dense_, desc) );
+        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->dense_,
+            &v->dense_, desc) );
       }
       else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
       {
@@ -418,6 +421,7 @@ namespace backend
       }
       else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
       {
+        // TODO(@ctcyang): Fix for non-commutative ops
         CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->sparse_, 
             &u->dense_, desc) );
       }

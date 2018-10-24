@@ -72,7 +72,9 @@ int main( int argc, char** argv )
 
   // Vector v
   graphblas::Vector<float> v(nrows);
-  float alpha = 0.01;
+  float phi   = 0.5;
+  //float alpha = 0.01;
+  float alpha = pow(phi, 2) / (225.0 * log(100.0 * sqrt(nvals)));
   float eps   = 0.0000001;
 
   // Cpu LGC

@@ -76,6 +76,10 @@ namespace algorithm
     CHECK( r.print() );
     std::cout << "pagerank (p): " << std::endl;
     CHECK( p->print() );
+    std::cout << "degrees (d): " << std::endl;
+    CHECK( degrees.print() );
+    std::cout << "degrees_eps (d x eps): " << std::endl;
+    CHECK( degrees_eps.print() );
 
     Index iter = 0;
     float succ;
@@ -110,34 +114,32 @@ namespace algorithm
       //eWiseMult<float, float, float, float>(&r2, &f, GrB_NULL, divides<float>(),
       //    &r, &degrees, desc);
       eWiseMult<float, float, float, float>(&r2, &f, GrB_NULL, 
-          DividesPlusSemiring<float>(), &r, &degrees, desc);
+          PlusDividesSemiring<float>(), &r, &degrees, desc);
       CHECK( desc->toggle(GrB_MASK) );
+      std::cout << "residual2 (r2): " << std::endl;
+      CHECK( r2.print() );
 
       // r = r + A^T * r2
       mxv<float, float, float, float>(&r, GrB_NULL, PlusMonoid<float>(), 
           PlusMultipliesSemiring<float>(), A, &r2, desc);
 
       // f = {v | r(v) >= d* eps}
-      //eWiseAdd<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
-      //    greater<float>(), &r, &degrees_eps, desc);
-      eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
+      eWiseAdd<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
           GreaterPlusSemiring<float>(), &r, &degrees_eps, desc);
+      //eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
+      //    PlusGreaterSemiring<float>(), &r, &degrees_eps, desc);
 
-      //CHECK( q2.swap(&q1) );
       // Update frontier size
       reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &f, desc);
 
-      if (desc->descriptor_.debug())
-      {
-        std::cout << "succ: " << succ << std::endl;
-        std::cout << "frontier (f): " << std::endl;
-        CHECK( f.print() );
-        std::cout << "residual (r): " << std::endl;
-        CHECK( r.print() );
-        std::cout << "pagerank (p): " << std::endl;
-        CHECK( p->print() );
-      }
-      if (iter > desc->descriptor_.max_niter_)
+      std::cout << "succ: " << succ << std::endl;
+      std::cout << "frontier (f): " << std::endl;
+      CHECK( f.print() );
+      std::cout << "residual (r): " << std::endl;
+      CHECK( r.print() );
+      std::cout << "pagerank (p): " << std::endl;
+      CHECK( p->print() );
+      if (iter >= desc->descriptor_.max_niter_)
         break;
     } while (succ > 0);
     if( desc->descriptor_.timing_>0 )
