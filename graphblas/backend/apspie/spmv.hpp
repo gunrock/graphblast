@@ -291,8 +291,20 @@ namespace backend
     }
     else
     {
+      Index* w_ind;
+      W*     w_val;
+
+      if (use_accum)
+      {
+        CHECK( desc->resize(A_nrows*sizeof(W), "buffer") );
+        w_val = (W*)     desc->d_buffer_+A_nrows;
+      }
+      else
+      {
+        w_val = w->d_val_;
+      }
       mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, A_csrRowPtr, 
-          A_nrows, u->d_val_, true, w->d_val_, op.identity(), extractMul(op), 
+          A_nrows, u->d_val_, true, w_val, op.identity(), extractMul(op), 
           extractAdd(op), *(desc->d_context_) );
 			dim3 NT, NB;
 			NT.x = nt;
@@ -305,18 +317,25 @@ namespace backend
 			if( desc->debug() )
 			{
 				std::cout << w->nvals_ << " nnz in vector w\n";
-				printDevice("w_val", w->d_val_, A_nrows);
+				printDevice("w_val", w_val, A_nrows);
 			}
 		  if( use_mask )
 			{
 				if( use_scmp )
           assignDenseDenseMaskedKernel<false, true, true><<<NB,NT>>>(
-				    	w->d_val_, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
+				    	w_val, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
 					    op.identity(), (Index*)NULL, A_nrows);
         else
           assignDenseDenseMaskedKernel< true, true, true><<<NB,NT>>>(
-				    	w->d_val_, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
+				    	w_val, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
 					    op.identity(), (Index*)NULL, A_nrows);
+      }
+      if (use_accum)
+      {
+        std::cout << "Doing eWiseAdd accumulate:\n";
+				printDevice("w_val", w->d_val_, A_nrows);
+        eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, op.identity(),
+            extractAdd(op), w->d_val_, w_val, A_nrows);
       }
 
 			if( desc->debug() )

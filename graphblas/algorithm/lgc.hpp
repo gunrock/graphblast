@@ -102,6 +102,8 @@ namespace algorithm
       // r = (1 - alpha)/2 * r
       eWiseMult<float, float, float, float>(&r, GrB_NULL, GrB_NULL,
           PlusMultipliesSemiring<float>(), &r, &alpha_vector2, desc);
+      std::cout << "residual (r): " << std::endl;
+      CHECK( r.print() );
 
       // r2 = r/d .* f
       CHECK( desc->toggle(GrB_MASK) );
@@ -112,7 +114,7 @@ namespace algorithm
       CHECK( desc->toggle(GrB_MASK) );
 
       // r = r + A^T * r2
-      mxv<float, float, float, float>(&r, GrB_NULL, plus<float>(), 
+      mxv<float, float, float, float>(&r, GrB_NULL, PlusMonoid<float>(), 
           PlusMultipliesSemiring<float>(), A, &r2, desc);
 
       // f = {v | r(v) >= d* eps}

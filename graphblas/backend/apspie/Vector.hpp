@@ -353,9 +353,15 @@ namespace backend
   template <typename T>
   Info Vector<T>::sparse2dense( T identity, Descriptor* desc )
   {
-    if( vec_type_==GrB_DENSE ) return GrB_INVALID_OBJECT;
+    if (vec_type_ == GrB_DENSE)
+      return GrB_SUCCESS;
+    if (vec_type_ == GrB_UNKNOWN)
+    {
+      CHECK( setStorage(GrB_DENSE) );
+      return GrB_SUCCESS;
+    }
 
-    if( desc->dirinfo() )
+    if (desc->dirinfo())
       std::cout << "Converting from sparse to dense!\n";
 
     // 1. Initialize memory

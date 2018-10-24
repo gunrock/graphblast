@@ -150,7 +150,8 @@ namespace backend
       }
       else
       {
-        CHECK( w->setStorage( GrB_DENSE ) );
+        //CHECK( w->setStorage( GrB_DENSE ) );
+        CHECK( w->sparse2dense(op.identity(), desc) );
         if( A_mat_type==GrB_SPARSE )
           CHECK(spmv(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
               desc));
@@ -253,7 +254,8 @@ namespace backend
       }
       else
       {
-        CHECK( w->setStorage( GrB_DENSE ) );
+        //CHECK( w->setStorage( GrB_DENSE ) );
+        CHECK( w->sparse2dense(op.identity(), desc) );
         if( A_mat_type==GrB_SPARSE )
         {
           CHECK( spmv( &w->dense_, mask, accum, op, &A->sparse_, 
