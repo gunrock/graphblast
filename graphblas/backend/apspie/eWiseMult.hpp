@@ -40,8 +40,8 @@ namespace backend
                        const DenseVector<V>* v,
                        Descriptor*           desc )
   {
-    // Get descriptor parameters for SCMP, REPL, TRAN
-    Desc_value scmp_mode, repl_mode, inp0_mode, inp1_mode;
+    // Get descriptor parameters for SCMP, REPL
+    Desc_value scmp_mode, repl_mode;
     CHECK( desc->get(GrB_MASK, &scmp_mode) );
     CHECK( desc->get(GrB_OUTP, &repl_mode) );
 
@@ -122,8 +122,8 @@ namespace backend
                        const DenseVector<V>*  v,
                        Descriptor*            desc )
   {
-    // Get descriptor parameters for SCMP, REPL, TRAN
-    Desc_value scmp_mode, repl_mode, inp0_mode, inp1_mode;
+    // Get descriptor parameters for SCMP, REPL
+    Desc_value scmp_mode, repl_mode;
     CHECK( desc->get(GrB_MASK, &scmp_mode) );
     CHECK( desc->get(GrB_OUTP, &repl_mode) );
 
@@ -191,8 +191,8 @@ namespace backend
                        const DenseVector<V>*  v,
                        Descriptor*            desc )
   {
-    // Get descriptor parameters for SCMP, REPL, TRAN
-    Desc_value scmp_mode, repl_mode, inp0_mode, inp1_mode;
+    // Get descriptor parameters for SCMP, REPL
+    Desc_value scmp_mode, repl_mode;
     CHECK( desc->get(GrB_MASK, &scmp_mode) );
     CHECK( desc->get(GrB_OUTP, &repl_mode) );
 
@@ -251,6 +251,21 @@ namespace backend
     }
     else
     {
+      Index* w_ind;
+      W*     w_val;
+      if (u == w)
+      {
+        CHECK( desc->resize(u_nvals*sizeof(Index) + u_nvals*sizeof(W), 
+            "buffer") );
+        w_ind = (Index*) desc->d_buffer_;
+        w_val = (W*)     desc->d_buffer_+u_nvals;
+      }
+      else
+      {
+        w_ind = w->d_ind_;
+        w_val = w->d_val_;
+      }
+
       dim3 NT, NB;
       NT.x = nt;
       NT.y = 1;
@@ -259,11 +274,18 @@ namespace backend
       NB.y = 1;
       NB.z = 1;
 
-      eWiseMultKernel<<<NB, NT>>>(w->d_ind_, w->d_val_, NULL, op.identity(), 
+      eWiseMultKernel<<<NB, NT>>>(w_ind, w_val, NULL, op.identity(), 
           extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_);
 
       // u size is upper bound on output memory allocation
       w->nvals_ = u_nvals;
+      if (u == w)
+      {
+        CUDA_CALL( cudaMemcpy(u->d_ind_, w_ind, u_nvals*sizeof(Index), 
+            cudaMemcpyDeviceToDevice) );
+        CUDA_CALL( cudaMemcpy(u->d_val_, w_val, u_nvals*sizeof(W), 
+            cudaMemcpyDeviceToDevice) );
+      }
     }
     w->need_update_ = true;
     return GrB_SUCCESS;

@@ -70,6 +70,13 @@ namespace algorithm
     Index nvals;
     CHECK( f.nvals(&nvals) );
 
+    std::cout << "frontier (f): " << std::endl;
+    CHECK( f.print() );
+    std::cout << "residual (r): " << std::endl;
+    CHECK( r.print() );
+    std::cout << "pagerank (p): " << std::endl;
+    CHECK( p->print() );
+
     Index iter = 0;
     float succ;
     backend::GpuTimer cpu_tight;
@@ -78,15 +85,19 @@ namespace algorithm
     do
     {
       iter++;
-      std::cout << "Begin iteration " << iter << std::endl;
+      std::cout << "=====Begin iteration " << iter << "=====\n";
 
       // p = p + alpha * r .* f
       CHECK( desc->toggle(GrB_MASK) );
       eWiseMult<float, float, float, float>(&r2, &f, GrB_NULL, 
           PlusMultipliesSemiring<float>(), &r, &alpha_vector, desc);
       CHECK( desc->toggle(GrB_MASK) );
+      std::cout << "residual2 (r2): " << std::endl;
+      CHECK( r2.print() );
       eWiseAdd<float, float, float, float>(p, GrB_NULL, GrB_NULL, 
-          PlusMultipliesSemiring<float>(), p, &r2, GrB_NULL);
+          PlusMultipliesSemiring<float>(), p, &r2, desc);
+      std::cout << "pagerank (p): " << std::endl;
+      CHECK( p->print() );
 
       // r = (1 - alpha)/2 * r
       eWiseMult<float, float, float, float>(&r, GrB_NULL, GrB_NULL,
@@ -117,8 +128,11 @@ namespace algorithm
       if (desc->descriptor_.debug())
       {
         std::cout << "succ: " << succ << std::endl;
+        std::cout << "frontier (f): " << std::endl;
         CHECK( f.print() );
+        std::cout << "residual (r): " << std::endl;
         CHECK( r.print() );
+        std::cout << "pagerank (p): " << std::endl;
         CHECK( p->print() );
       }
       if (iter > desc->descriptor_.max_niter_)

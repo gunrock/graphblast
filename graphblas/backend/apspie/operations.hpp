@@ -317,6 +317,8 @@ namespace backend
         }
         else if (mask_type == GrB_SPARSE)
         {
+          if (u == w || v == w)
+            std::cout << "Error: eWiseMult dense-dense sparse mask dense vector inplace not implemented yet!\n";
           CHECK( w->setStorage(GrB_SPARSE) );
           CHECK( eWiseMultInner(&w->sparse_, &mask->sparse_, accum, op,
               &v->dense_, &u->dense_, desc) );
@@ -333,12 +335,16 @@ namespace backend
     }
     else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
     {
+      if (v == w)
+        std::cout << "Error: eWiseMult sparse-dense dense vector inplace not implemented yet!\n";
       CHECK( w->setStorage(GrB_SPARSE) );
       CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
           &v->dense_, desc) );
     }
     else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
     {
+      if (u == w)
+        std::cout << "Error: eWiseMult sparse-dense dense vector inplace not implemented yet!\n";
       CHECK( w->setStorage(GrB_SPARSE) );
       CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &v->sparse_, 
           &u->dense_, desc) );
@@ -386,30 +392,38 @@ namespace backend
      * 3) sparse x dense
      * 4) dense  x sparse
      */
-    CHECK( w->setStorage(GrB_DENSE) );
-    if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE)
+    if ((u == w && u_vec_type == GrB_SPARSE) || (v == w && v_vec_type == GrB_SPARSE))
     {
-      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
-          &v->sparse_, desc) );
-    }
-    else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE)
-    {
-      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->dense_,
-          &u->dense_, desc) );
-    }
-    else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
-    {
-      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
-          &v->dense_, desc) );
-    }
-    else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
-    {
-      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->sparse_, 
-          &u->dense_, desc) );
+      std::cout << "Error: eWiseAdd sparse vector inplace not implemented yet!\n";
     }
     else
     {
-      return GrB_INVALID_OBJECT;
+      CHECK( w->setStorage(GrB_DENSE) );
+      if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE)
+      {
+        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
+            &v->sparse_, desc) );
+      }
+      else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE)
+      {
+        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->dense_,
+            &u->dense_, desc) );
+      }
+      else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
+      {
+        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
+            &v->dense_, desc) );
+      }
+      else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
+      {
+        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->sparse_, 
+            &u->dense_, desc) );
+      }
+      else
+      {
+        std::cout << "Error: eWiseAdd backend invalid choice!\n";
+        return GrB_INVALID_OBJECT;
+      }
     }
 
     return GrB_SUCCESS;

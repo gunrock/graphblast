@@ -40,8 +40,8 @@ namespace backend
                       const DenseVector<V>* v,
                       Descriptor*           desc )
   {
-    // Get descriptor parameters for SCMP, REPL, TRAN
-    Desc_value scmp_mode, repl_mode, inp0_mode, inp1_mode;
+    // Get descriptor parameters for SCMP, REPL
+    Desc_value scmp_mode, repl_mode;
     CHECK( desc->get(GrB_MASK, &scmp_mode) );
     CHECK( desc->get(GrB_OUTP, &repl_mode) );
 
@@ -106,8 +106,8 @@ namespace backend
                       const DenseVector<V>*  v,
                       Descriptor*            desc )
   {
-    // Get descriptor parameters for SCMP, REPL, TRAN
-    Desc_value scmp_mode, repl_mode, inp0_mode, inp1_mode;
+    // Get descriptor parameters for SCMP, REPL
+    Desc_value scmp_mode, repl_mode;
     CHECK( desc->get(GrB_MASK, &scmp_mode) );
     CHECK( desc->get(GrB_OUTP, &repl_mode) );
 
@@ -123,7 +123,7 @@ namespace backend
 
     if( desc->debug() )
     {
-      std::cout << "Executing eWiseMult sparse-dense\n";
+      std::cout << "Executing eWiseAdd sparse-dense\n";
       printState( use_mask, use_accum, use_scmp, use_repl, 0 );
     }
 
@@ -153,7 +153,7 @@ namespace backend
       NB.y = 1;
       NB.z = 1;
 
-      eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, op.identity(), extractMul(op),
+      eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, op.identity(), extractAdd(op),
           u->d_ind_, u->d_val_, u_nvals);
     }
     w->need_update_ = true;
