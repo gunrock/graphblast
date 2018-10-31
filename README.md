@@ -6,6 +6,7 @@ Our project seeks to combine the elegance of the GraphBLAS interface with the st
 
 - The first high-performance GPU implementation of GraphBLAS
 - A graph algorithm library containing commonly used graph algorithms implemented with the GraphBLAS primitive operations
+- Capable of direction-optimization in general as first demonstrated by [Ligra](https://www.cs.cmu.edu/~jshun/ligra.pdf)
 
 ## Prerequisites
 
@@ -16,7 +17,7 @@ This software has been tested on the following dependencies:
 * CMake 3.11.1
 * g++ 4.9.3, 5.4.0
 
-## Installation
+## Install
 
 A step by step series of instructions that tell you have to get a development env running.
 
@@ -36,10 +37,35 @@ cmake ..
 make -j$(nproc)
 ```
 
+## Concepts
+
+This library is based on the concept that a graph traversal can be formulated as a sparse matrix-vector multiplication. GraphBLAS core principles are based on linear algebra operations, which describe the memory access pattern common to most graph algorithms:
+
+- `mxv` (matrix-vector multiply)
+- `mxm` (matrix-matrix multiply)
+- `eWiseAdd` (elementwise addition)
+- `eWiseMult` (elementwise multiplication)
+
+As well, the other GraphBLAS core principle is the concept of generalized semirings, which means replacing the standard (+, x) of matrix multiplication with a different operation. These represent operations on vertices and edges of a graph. Together these two concepts---operation and semiring---can be used to implement many graph algorithms.
+
+## Usage
+
+```
+TODO(@ctcyang):
+```
+
 ## Publications
 
-Carl Yang, Aydın Buluç, and John D. Owens. Design Principles for Sparse Matrix Multiplication on the GPU. In Proceedings of the 24th International European Conference on Parallel and Distributed Computing, Euro-Par, pages 672-687, August 2018. Distinguished Paper and Best Artifact Award. [[DOI](http://dx.doi.org/10.1007/978-3-319-96983-1_48) | [http](https://escholarship.org/uc/item/5h35w3b7)]
+1. Carl Yang, Aydın Buluç, and John D. Owens. **Design Principles for Sparse Matrix Multiplication on the GPU**. In *Proceedings of the 24th International European Conference on Parallel and Distributed Computing*, Euro-Par, pages 672-687, August 2018. Distinguished Paper and Best Artifact Award. [[DOI](http://dx.doi.org/10.1007/978-3-319-96983-1_48) | [http](https://escholarship.org/uc/item/5h35w3b7)]
 
-Carl Yang, Aydın Buluç, John D. Owens. **Implementing Push-Pull Efficiently in GraphBLAS**. In *International Conference on Parallel Processing*, ICPP, pages 89:1-89:11, August 2018. [[DOI](http://dx.doi.org/10.1145/3225058.3225122) | [http](https://escholarship.org/uc/item/021076bn)]
+2. Carl Yang, Aydın Buluç, John D. Owens. **Implementing Push-Pull Efficiently in GraphBLAS**. In *Proceedings of the International Conference on Parallel Processing*, ICPP, pages 89:1-89:11, August 2018. [[DOI](http://dx.doi.org/10.1145/3225058.3225122) | [http](https://escholarship.org/uc/item/021076bn)]
 
-Carl Yang, Yangzihao Wang, and John D. Owens. **Fast Sparse Matrix and Sparse Vector Multiplication Algorithm on the GPU. In Graph Algorithms Building Blocks**, *Graph Algorithm Building Blocks*, GABB, pages 841–847, May 2015. [[DOI](http://dx.doi.org/10.1109/IPDPSW.2015.77) | [http](http://www.escholarship.org/uc/item/1rq9t3j3)]
+3. Carl Yang, Yangzihao Wang, and John D. Owens. **Fast Sparse Matrix and Sparse Vector Multiplication Algorithm on the GPU. In Graph Algorithms Building Blocks**, In *Graph Algorithm Building Blocks*, GABB, pages 841–847, May 2015. [[DOI](http://dx.doi.org/10.1109/IPDPSW.2015.77) | [http](http://www.escholarship.org/uc/item/1rq9t3j3)]
+
+## Acknowledgments
+
+* We would like to thank the following people: [Yangzihao Wang](https://yzhwang.github.io) for teaching me the basics of graph frameworks, [Yuechao Pan's](https://sites.google.com/site/panyuechao/home) for his valuable insights into BFS optimizations without which this library would not have been possible, [Scott McMillan](https://github.com/sei-smcmillan) for [his library](https://github.com/cmu-sei/gbtl) which inspired our code organization, and [Ben Johnson](https://github.com/bkj) for helping me catch many bugs.
+
+## Copyright and Software License
+
+GunrockGrB is copyright under the Regents of the University of California, 2013–2018. The library, examples, and all source code are released under [Apache 2.0](LICENSE.md).
