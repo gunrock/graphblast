@@ -12,28 +12,28 @@ namespace algorithm
   float lgc( Vector<float>*       p,      // PageRank result
              const Matrix<float>* A,      // graph
              Index                s,      // source vertex
-						 double               alpha,  // teleportation constant in (0,1]
-						 double               eps,    // tolerance
-		         Descriptor*          desc )
+             double               alpha,  // teleportation constant in (0,1]
+             double               eps,    // tolerance
+             Descriptor*          desc )
   {
     Index n;
     CHECK( A->nrows( &n ) );
 
-		// degrees: compute the degree of each node
-		Vector<float> degrees(n);
-		reduce<float, float, float>(&degrees, GrB_NULL, GrB_NULL, 
+    // degrees: compute the degree of each node
+    Vector<float> degrees(n);
+    reduce<float, float, float>(&degrees, GrB_NULL, GrB_NULL, 
         PlusMonoid<float>(), A, desc);
 
     // pagerank (p): initialized to 0
     CHECK( p->fill(0.f) );
 
-		// residual (r): initialized to 0 except source to 1
+    // residual (r): initialized to 0 except source to 1
     Vector<float> r(n);
-		std::vector<Index> indices(1, s);
-		std::vector<float> values(1, 1.f);
+    std::vector<Index> indices(1, s);
+    std::vector<float> values(1, 1.f);
 
     // residual2 (r2)
-		Vector<float> r2(n);
+    Vector<float> r2(n);
     CHECK( r2.fill(0.f) );
 
     Desc_value desc_value;
@@ -48,24 +48,24 @@ namespace algorithm
       CHECK( r.build(&indices, &values, 1, GrB_NULL) );
     }
 
-		// degrees_eps (d x eps): precompute degree of each node times eps
-	  Vector<float> eps_vector(n);
-		Vector<float> degrees_eps(n);
-		CHECK( eps_vector.fill(eps) );
-		eWiseMult<float, float, float, float>( &degrees_eps, GrB_NULL, GrB_NULL,
+    // degrees_eps (d x eps): precompute degree of each node times eps
+    Vector<float> eps_vector(n);
+    Vector<float> degrees_eps(n);
+    CHECK( eps_vector.fill(eps) );
+    eWiseMult<float, float, float, float>( &degrees_eps, GrB_NULL, GrB_NULL,
         PlusMultipliesSemiring<float>(), &degrees, &eps_vector, desc );
     //degrees_eps.print();
 
     // frontier (f): portion of r(v) >= degrees(v) x eps
-		// (use float for now)
-		Vector<float> f(n);
+    // (use float for now)
+    Vector<float> f(n);
     CHECK( f.build(&indices, &values, 1, GrB_NULL) );
 
-		// alpha: TODO(@ctcyang): introduce vector-constant eWiseMult
-		Vector<float> alpha_vector(n);
-		CHECK( alpha_vector.fill(alpha) );
+    // alpha: TODO(@ctcyang): introduce vector-constant eWiseMult
+    Vector<float> alpha_vector(n);
+    CHECK( alpha_vector.fill(alpha) );
     Vector<float> alpha_vector2(n);
-		CHECK( alpha_vector2.fill((1.-alpha)/2.) );
+    CHECK( alpha_vector2.fill((1.-alpha)/2.) );
 
     Index nvals;
     CHECK( f.nvals(&nvals) );
@@ -162,14 +162,14 @@ namespace algorithm
                bool             transpose=false )
   {
     if( transpose )
-		  SimpleReferenceLgc<T>( A->matrix_.nrows_, A->matrix_.sparse_.h_cscColPtr_,
+      SimpleReferenceLgc<T>( A->matrix_.nrows_, A->matrix_.sparse_.h_cscColPtr_,
           A->matrix_.sparse_.h_cscRowInd_, A->matrix_.sparse_.h_cscVal_, 
           h_lgc_cpu, s, alpha, eps, max_niter );
     else
-		  SimpleReferenceLgc<T>( A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+      SimpleReferenceLgc<T>( A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
           A->matrix_.sparse_.h_csrColInd_, A->matrix_.sparse_.h_csrVal_,
           h_lgc_cpu, s, alpha, eps, max_niter );
-	}
+  }
 
 }  // algorithm
 }  // graphblas
