@@ -124,7 +124,7 @@ namespace backend
       size_t temp_storage_bytes = 0;
 
       if( !desc->split() )
-        CUDA_CALL( cub::DeviceSegmentedReduce::Reduce( NULL, temp_storage_bytes, 
+        CUDA_CALL( cub::DeviceSegmentedReduce::Reduce( NULL, temp_storage_bytes,
 						A->d_csrVal_, w->d_val_, A->nrows_, A->d_csrRowPtr_, 
 						A->d_csrRowPtr_+1, op, op.identity() ) );
       else

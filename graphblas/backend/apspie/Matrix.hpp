@@ -45,8 +45,8 @@ namespace backend
                 const std::vector<T>*     values,
                 Index                     nvals,
                 BinaryOpT                 dup,
-                const char*               fname );
-    Info build( const char*           fname ); 
+                char*                     dat_name );
+    Info build( char*                     dat_name ); 
     Info build( const std::vector<T>* values, 
                 Index                 nvals );
     Info build( Index* row_ptr,
@@ -182,19 +182,20 @@ namespace backend
                          const std::vector<T>*     values,
                          Index                     nvals,
                          BinaryOpT                 dup,
-                         const char*               fname )
+                         char*                     dat_name )
   {
     mat_type_ = GrB_SPARSE;
     if (sparse_.nvals_ > 0)
       sparse_.clear();
-    return sparse_.build( row_indices, col_indices, values, nvals, dup, fname );
+    return sparse_.build( row_indices, col_indices, values, nvals, dup, 
+        dat_name );
   }
 
   template <typename T>
-  Info Matrix<T>::build( const char* fname )
+  Info Matrix<T>::build( char* dat_name )
   {
     mat_type_ = GrB_SPARSE;
-    return sparse_.build( fname );
+    return sparse_.build( dat_name );
   }
 
   template <typename T>

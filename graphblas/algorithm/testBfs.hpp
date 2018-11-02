@@ -11,7 +11,7 @@ namespace algorithm
 {
   // A simple CPU-based reference BFS ranking implementation
   template <typename T>
-  int SimpleReferenceBfs( Index        m, 
+  int SimpleReferenceBfs( Index        nrows, 
                           const Index* h_rowPtrA, 
                           const Index* h_colIndA,
                           T*           source_path,
@@ -20,7 +20,7 @@ namespace algorithm
                           Index        stop)
   {
     //initialize distances
-    for (Index i = 0; i < m; ++i)
+    for (Index i = 0; i < nrows; ++i)
     {
       source_path[i] = 0;
       if (MARK_PREDECESSORS)

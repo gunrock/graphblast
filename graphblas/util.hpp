@@ -311,7 +311,7 @@ bool exists(const char *fname)
   return 0;
 }
 
-char* convert( const char* fname, bool is_directed=true )
+char* convert( const char* fname, bool is_undirected=true )
 {
   char* dat_name = (char*)malloc(256);
 
@@ -320,12 +320,13 @@ char* convert( const char* fname, bool is_directed=true )
 	char *temp2 = strdup(fname);
 	char *file_path = dirname (temp1);
 	char *file_name = basename(temp2);
+  printf("Undirected inner: %d\n", is_undirected);
 
-  if (is_directed)
-	  sprintf(dat_name, "%s/.%s.d.%d.%sbin", file_path, file_name, 0,
+  if (is_undirected)
+	  sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
 		  	((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
   else
-	  sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
+	  sprintf(dat_name, "%s/.%s.d.%d.%sbin", file_path, file_name, 0,
 		  	((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
 
   return dat_name;
@@ -344,7 +345,8 @@ int readMtx( const char*                    fname,
              graphblas::Index&              ncols,
              graphblas::Index&              nvals,
              int                            directed,
-             bool                           mtxinfo )
+             bool                           mtxinfo,
+             char**                         dat_name )
 {
   int ret_code;
   MM_typecode matcode;
@@ -365,18 +367,23 @@ int readMtx( const char*                    fname,
   if ((ret_code = mm_read_mtx_crd_size(f, &nrows, &ncols, &nvals)) !=0)
     exit(1);
 
-  bool is_directed = (mm_is_symmetric(matcode) && directed==0) || directed==2;
-  char* dat_name = convert(fname, is_directed);
+  printf("Undirected due to mtx: %d\n", mm_is_symmetric(matcode) && directed==0);
+  printf("Undirected due to cmd: %d\n", directed==2);
+  bool is_undirected = (mm_is_symmetric(matcode) && directed==0) || directed==2;
+  printf("Undirected: %d\n", is_undirected);
+  *dat_name = convert(fname, is_undirected);
+  printf("%s %p\n", *dat_name, *dat_name);
 
-  if( exists(dat_name) )
+  if( exists(*dat_name) )
   {  
     // The size of the file in bytes is in results.st_size
     // -unserialize vector
-    std::ifstream ifs(dat_name, std::ios::in | std::ios::binary);
+    std::ifstream ifs(*dat_name, std::ios::in | std::ios::binary);
     if (ifs.fail())
       std::cout << "Error: Unable to open file for reading!\n";
     else
     {
+    // Empty arrays indicate to Matrix::build that binary file exists
       row_indices.clear();
       col_indices.clear();
       values.clear();
@@ -391,14 +398,14 @@ int readMtx( const char*                    fname,
     else if (mm_is_pattern(matcode))
       readTuples<T>( row_indices, col_indices, values, nvals, f );
 
-    if (is_directed)
+    if (is_undirected)
       makeSymmetric<T>( row_indices, col_indices, values, nvals );
     customSort<T>( row_indices, col_indices, values );
 
     if( mtxinfo ) mm_write_banner(stdout, matcode);
     if( mtxinfo ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
   }
-  free(dat_name);
+  printf("%s %p\n", *dat_name, *dat_name);
 
   return ret_code; //TODO: parse ret_code
 }

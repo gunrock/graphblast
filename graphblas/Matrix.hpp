@@ -36,7 +36,7 @@ namespace graphblas
                 const std::vector<T>*     values,
                 Index                     nvals,
                 BinaryOpT                 dup,
-                const char*               fname=NULL );
+                char*                     dat_name=NULL );
     Info build( const std::vector<T>*     values,
                 Index                     nvals );
     // These raw pointers must be located on the GPU and allocated
@@ -136,15 +136,19 @@ namespace graphblas
                          const std::vector<T>*     values,
                          Index                     nvals,
                          BinaryOpT                 dup,
-                         const char*               fname )
+                         char*                     dat_name )
   {
     if( row_indices==NULL || col_indices==NULL || values==NULL )
       return GrB_NULL_POINTER;
 
-    if( fname==NULL || (*row_indices).size()>0 )
-      return matrix_.build( row_indices, col_indices, values, nvals, dup,fname);
+    printf("dat_name is null: %d\n", dat_name == NULL);
+    printf("row_indices > 0:  %d\n", (*row_indices).size()>0);
 
-    return matrix_.build( fname );
+    if( dat_name==NULL || (*row_indices).size()>0 )
+      return matrix_.build(row_indices, col_indices, values, nvals, dup, 
+          dat_name);
+
+    return matrix_.build(dat_name);
   }
 
   template <typename T>

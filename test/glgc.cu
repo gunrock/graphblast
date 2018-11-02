@@ -32,7 +32,9 @@ int main( int argc, char** argv )
   bool mtxinfo;
   int  directed;
   int  niter;
+  int  max_niter;
   int  source;
+  char* dat_name;
   po::variables_map vm;
 
   // Read in sparse matrix
@@ -46,13 +48,15 @@ int main( int argc, char** argv )
     mtxinfo   = vm["mtxinfo"  ].as<bool>();
     directed  = vm["directed" ].as<int>();
     niter     = vm["niter"    ].as<int>();
+    max_niter = vm["max_niter"].as<int>();
     source    = vm["source"   ].as<int>();
 
     // This is an imperfect solution, because this should happen in 
     // desc.loadArgs(vm) instead of application code!
     // TODO: fix this
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, directed, mtxinfo );
+        nvals, directed, mtxinfo, &dat_name );
+    printf("%s %p\n", dat_name, dat_name);
   }
 
   // Descriptor desc
@@ -62,9 +66,12 @@ int main( int argc, char** argv )
     CHECK( desc.toggle(graphblas::GrB_INP1) );
 
   // Matrix A
+  printf("%s %p\n", dat_name, dat_name);
   graphblas::Matrix<float> a(nrows, ncols);
+  values.clear();
+  values.insert(values.begin(), nvals, 1.f);
   CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
-      argv[argc-1]) );
+      dat_name) );
   CHECK( a.nrows(&nrows) );
   CHECK( a.ncols(&ncols) );
   CHECK( a.nvals(&nvals) );
@@ -79,12 +86,10 @@ int main( int argc, char** argv )
 
   // Cpu LGC
   CpuTimer lgc_cpu;
-  /*graphblas::Index* h_bfs_cpu = (graphblas::Index*)malloc(nrows*
-      sizeof(graphblas::Index));
-  int depth = 10000;*/
+  float* h_lgc_cpu = (float*)malloc(nrows*sizeof(float));
   lgc_cpu.Start();
-  /*int d = graphblas::algorithm::bfsCpu( source, &a, h_bfs_cpu, depth, 
-      transpose );*/
+  graphblas::algorithm::lgcCpu( h_lgc_cpu, &a, source, alpha, eps, max_niter,
+      transpose );
   lgc_cpu.Stop();
 
   // Warmup
@@ -93,9 +98,9 @@ int main( int argc, char** argv )
   graphblas::algorithm::lgc(&v, &a, source, alpha, eps, &desc);
   warmup.Stop();
 
-  std::vector<float> h_bfs_gpu;
-  CHECK( v.extractTuples(&h_bfs_gpu, &nrows) );
-  //BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu, nrows );
+  std::vector<float> h_lgc_gpu;
+  CHECK( v.extractTuples(&h_lgc_gpu, &nrows) );
+  BOOST_ASSERT_LIST_FLOAT( h_lgc_cpu, h_lgc_gpu, nrows );
 
   // Benchmark
   graphblas::Vector<float> y(nrows);
@@ -106,7 +111,7 @@ int main( int argc, char** argv )
   float val;
   for (int i = 0; i < niter; i++)
   {
-    val = graphblas::algorithm::lgc(&v, &a, source, alpha, eps, &desc);
+    val = graphblas::algorithm::lgc(&y, &a, source, alpha, eps, &desc);
     tight += val;
   }
   //cudaProfilerStop();
@@ -122,9 +127,9 @@ int main( int argc, char** argv )
 
   if( niter )
   {
-    std::vector<float> h_bfs_gpu2;
-    CHECK( y.extractTuples(&h_bfs_gpu2, &nrows) );
-    //BOOST_ASSERT_LIST( h_bfs_cpu, h_bfs_gpu2, nrows );
+    std::vector<float> h_lgc_gpu2;
+    CHECK( y.extractTuples(&h_lgc_gpu2, &nrows) );
+    //BOOST_ASSERT_LIST_FLOAT( h_lgc_cpu, h_lgc_gpu2, nrows );
   }
 
   return 0;

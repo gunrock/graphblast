@@ -64,8 +64,8 @@ namespace backend
                 const std::vector<T>*     values,
                 Index                     nvals,
                 BinaryOpT                 dup,
-                const char*               fname );
-    Info build( const char*           fname );
+                char*                     dat_name );
+    Info build( char*                     dat_name );
     Info build( const std::vector<T>* values,
                 Index nvals );
     Info build( Index* row_ptr,
@@ -275,7 +275,7 @@ namespace backend
                                const std::vector<T>*     values,
                                Index                     nvals,
                                BinaryOpT                 dup,
-                               const char*               fname )
+                               char*                     dat_name )
   {
     nvals_ = nvals;
     CHECK( allocateCpu() );
@@ -359,6 +359,7 @@ namespace backend
         break;
       }
     }
+
     if( symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY )
     {
       free( h_cscColPtr_ );
@@ -368,10 +369,8 @@ namespace backend
       h_cscRowInd_ = h_csrColInd_;
       h_cscVal_    = h_csrVal_;
 
-      if( fname!=NULL )
+      if (dat_name != NULL)
       {
-        char* dat_name = convert(fname, true);
-
         if( !exists(dat_name) )
         {
           std::ofstream ofs( dat_name, std::ios::out | std::ios::binary );
@@ -388,8 +387,10 @@ namespace backend
                 (nrows_+1)*sizeof(Index));
             ofs.write( reinterpret_cast<char*>(h_csrColInd_),
                 nvals_*sizeof(Index));
+            ofs.close();
           }
         }
+        free(dat_name);
       }
     }
 
@@ -399,7 +400,7 @@ namespace backend
   }
 
   template <typename T>
-  Info SparseMatrix<T>::build( const char* fname )
+  Info SparseMatrix<T>::build( char* dat_name )
   {
     if( !symmetric_ ) 
     {
@@ -407,9 +408,9 @@ namespace backend
       return GrB_SUCCESS;
     }
 
-		char* dat_name = convert(fname);
+    printf("%s\n", dat_name);
 
-    if( exists(dat_name) )
+    if( dat_name != NULL && exists(dat_name) )
 		{
 			// The size of the file in bytes is in results.st_size
 			// -unserialize vector
@@ -441,11 +442,10 @@ namespace backend
         h_cscVal_    = h_csrVal_;
         CHECK( cpuToGpu() );
 			}
+      free(dat_name);
 		}
 		else
       std::cout << "Error: Unable to read file!\n";
-
-    free(dat_name);
 
     return GrB_SUCCESS;
   }

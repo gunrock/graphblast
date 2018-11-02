@@ -9,10 +9,25 @@ void BOOST_ASSERT_FLOAT( const T lhs,
                          const T rhs,
                          const T tol=0.001 )
 {
-  if( rhs==0 || lhs==0 )
+  if (rhs==0)
     BOOST_ASSERT( fabs(lhs)<tol );
+  else if (lhs == 0)
+    BOOST_ASSERT( fabs(rhs)<tol );
   else
     BOOST_ASSERT( fabs(lhs-rhs)<tol*fabs(rhs) );
+}
+
+template <typename T>
+bool assert_float( T lhs,
+                   T rhs,
+                   T tol = 0.001 )
+{
+  if (rhs==0)
+    return fabs(lhs)<tol;
+  else if (lhs == 0)
+    return fabs(rhs)<tol;
+  else
+    return fabs(lhs-rhs)<tol*fabs(rhs);
 }
 
 template <typename T, typename S, typename L>
@@ -70,6 +85,39 @@ void BOOST_ASSERT_LIST( const T* lhs,
 			std::cout << "...]";
     }
     if( lhs[i]!=rhs[i] )
+      flag += 1;
+    //BOOST_ASSERT( lhs[i] == rhs[i] );
+  }
+  std::cout << "\n";
+  if( flag==0 )
+	  std::cout << "CORRECT\n";
+  else
+    std::cout << flag << " errors occured.\n";
+}
+
+template <typename T, typename S, typename L>
+void BOOST_ASSERT_LIST_FLOAT( const T* lhs, 
+                              const std::vector<S>& rhs,
+                              L length=5 )
+{
+  int flag = 0;
+	//length = rhs.size();
+  for( L i=0; i<length; i++ )
+  {
+    if( !assert_float(lhs[i], rhs[i]) && flag==0 )
+    {
+			printf("\nINCORRECT: [%lu]: ", (unsigned long) i);
+			std::cout << rhs[i] << " != " << lhs[i] << "\nresult[...";
+
+			for( size_t j = (i >= 5) ? i - 5 : 0; (j < i + 5) && (j < length); j++ )
+			  std::cout << rhs[j] << ", ";
+			std::cout << "...]\nlhs[...";
+
+			for( size_t j = (i >= 5) ? i - 5 : 0; (j < i + 5) && (j < length); j++ )
+				std::cout << lhs[j] << ", ";
+			std::cout << "...]";
+    }
+    if( !assert_float(lhs[i], rhs[i]) )
       flag += 1;
     //BOOST_ASSERT( lhs[i] == rhs[i] );
   }

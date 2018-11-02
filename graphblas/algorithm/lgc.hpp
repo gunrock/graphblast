@@ -1,7 +1,7 @@
 #ifndef GRB_ALGORITHM_LGC_HPP
 #define GRB_ALGORITHM_LGC_HPP
 
-//#include "graphblas/algorithm/testLgc.hpp"
+#include "graphblas/algorithm/testLgc.hpp"
 #include "graphblas/backend/apspie/util.hpp" // GpuTimer
 
 namespace graphblas
@@ -153,26 +153,22 @@ namespace algorithm
   }
 
   template <typename T, typename a>
-  int lgcCpu( Index        source,
-               Matrix<a>*   A,
-               T*           h_lgc_cpu,
-							 Index        depth,
-               bool         transpose=false )
+  void lgcCpu( T*               h_lgc_cpu,
+               const Matrix<a>* A,
+               Index            s,
+               double           alpha,
+               double           eps,
+               int              max_niter,
+               bool             transpose=false )
   {
-		Index* reference_check_preds = NULL;
-    int max_depth;
-
-    /*if( transpose )
-		  max_depth = SimpleReferenceLgc<T>( A->matrix_.nrows_, 
-          A->matrix_.sparse_.h_cscColPtr_, A->matrix_.sparse_.h_cscRowInd_, 
-          h_lgc_cpu, reference_check_preds, source, depth);
+    if( transpose )
+		  SimpleReferenceLgc<T>( A->matrix_.nrows_, A->matrix_.sparse_.h_cscColPtr_,
+          A->matrix_.sparse_.h_cscRowInd_, A->matrix_.sparse_.h_cscVal_, 
+          h_lgc_cpu, s, alpha, eps, max_niter );
     else
-		  max_depth = SimpleReferenceLgc<T>( A->matrix_.nrows_, 
-          A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_, 
-          h_lgc_cpu, reference_check_preds, source, depth);
-
-		printArray(h_lgcResultCPU, m);*/
-		return max_depth; 
+		  SimpleReferenceLgc<T>( A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+          A->matrix_.sparse_.h_csrColInd_, A->matrix_.sparse_.h_csrVal_,
+          h_lgc_cpu, s, alpha, eps, max_niter );
 	}
 
 }  // algorithm
