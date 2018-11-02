@@ -71,8 +71,8 @@ namespace algorithm
         }
       }
       residual = residual2;
-      printArray("pagerank", pagerank, nrows);
-      printArray("residual", residual, nrows);
+      //printArray("pagerank", pagerank, nrows);
+      //printArray("residual", residual, nrows);
 
       /*// r = (1 - alpha)*r/2
       for (int v = 0; v < nrows; ++v)

@@ -320,7 +320,6 @@ char* convert( const char* fname, bool is_undirected=true )
 	char *temp2 = strdup(fname);
 	char *file_path = dirname (temp1);
 	char *file_name = basename(temp2);
-  printf("Undirected inner: %d\n", is_undirected);
 
   if (is_undirected)
 	  sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,

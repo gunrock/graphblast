@@ -54,7 +54,7 @@ namespace algorithm
 		CHECK( eps_vector.fill(eps) );
 		eWiseMult<float, float, float, float>( &degrees_eps, GrB_NULL, GrB_NULL,
         PlusMultipliesSemiring<float>(), &degrees, &eps_vector, desc );
-    degrees_eps.print();
+    //degrees_eps.print();
 
     // frontier (f): portion of r(v) >= degrees(v) x eps
 		// (use float for now)
@@ -89,25 +89,25 @@ namespace algorithm
     do
     {
       iter++;
-      std::cout << "=====Begin iteration " << iter << "=====\n";
+      //std::cout << "=====Begin iteration " << iter << "=====\n";
 
       // p = p + alpha * r .* f
       CHECK( desc->toggle(GrB_MASK) );
       eWiseMult<float, float, float, float>(&r2, &f, GrB_NULL, 
           PlusMultipliesSemiring<float>(), &r, &alpha_vector, desc);
       CHECK( desc->toggle(GrB_MASK) );
-      std::cout << "residual2 (r2): " << std::endl;
-      CHECK( r2.print() );
+      //std::cout << "residual2 (r2): " << std::endl;
+      //CHECK( r2.print() );
       eWiseAdd<float, float, float, float>(p, GrB_NULL, GrB_NULL, 
           PlusMultipliesSemiring<float>(), p, &r2, desc);
-      std::cout << "pagerank (p): " << std::endl;
-      CHECK( p->print() );
+      //std::cout << "pagerank (p): " << std::endl;
+      //CHECK( p->print() );
 
       // r = (1 - alpha)/2 * r
       eWiseMult<float, float, float, float>(&r, GrB_NULL, GrB_NULL,
           PlusMultipliesSemiring<float>(), &r, &alpha_vector2, desc);
-      std::cout << "residual (r): " << std::endl;
-      CHECK( r.print() );
+      //std::cout << "residual (r): " << std::endl;
+      //CHECK( r.print() );
 
       // r2 = r/d .* f
       CHECK( desc->toggle(GrB_MASK) );
@@ -116,8 +116,8 @@ namespace algorithm
       eWiseMult<float, float, float, float>(&r2, &f, GrB_NULL, 
           PlusDividesSemiring<float>(), &r, &degrees, desc);
       CHECK( desc->toggle(GrB_MASK) );
-      std::cout << "residual2 (r2): " << std::endl;
-      CHECK( r2.print() );
+      //std::cout << "residual2 (r2): " << std::endl;
+      //CHECK( r2.print() );
 
       // r = r + A^T * r2
       mxv<float, float, float, float>(&r, GrB_NULL, PlusMonoid<float>(), 
@@ -132,13 +132,13 @@ namespace algorithm
       // Update frontier size
       reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &f, desc);
 
-      std::cout << "succ: " << succ << std::endl;
+      /*std::cout << "succ: " << succ << std::endl;
       std::cout << "frontier (f): " << std::endl;
       CHECK( f.print() );
       std::cout << "residual (r): " << std::endl;
       CHECK( r.print() );
       std::cout << "pagerank (p): " << std::endl;
-      CHECK( p->print() );
+      CHECK( p->print() );*/
       if (iter >= desc->descriptor_.max_niter_)
         break;
     } while (succ > 0);
