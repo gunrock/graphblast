@@ -345,7 +345,7 @@ int readMtx( const char*                    fname,
              graphblas::Index&              nvals,
              int                            directed,
              bool                           mtxinfo,
-             char**                         dat_name )
+             char**                         dat_name=NULL )
 {
   int ret_code;
   MM_typecode matcode;
@@ -370,10 +370,10 @@ int readMtx( const char*                    fname,
   printf("Undirected due to cmd: %d\n", directed==2);
   bool is_undirected = (mm_is_symmetric(matcode) && directed==0) || directed==2;
   printf("Undirected: %d\n", is_undirected);
-  *dat_name = convert(fname, is_undirected);
-  printf("%s %p\n", *dat_name, *dat_name);
+  if (dat_name != NULL)
+    *dat_name = convert(fname, is_undirected);
 
-  if( exists(*dat_name) )
+  if( dat_name != NULL && exists(*dat_name) )
   {  
     // The size of the file in bytes is in results.st_size
     // -unserialize vector
@@ -404,7 +404,6 @@ int readMtx( const char*                    fname,
     if( mtxinfo ) mm_write_banner(stdout, matcode);
     if( mtxinfo ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
   }
-  printf("%s %p\n", *dat_name, *dat_name);
 
   return ret_code; //TODO: parse ret_code
 }

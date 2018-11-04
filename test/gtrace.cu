@@ -29,10 +29,11 @@ void testTrace( const std::vector<graphblas::Index>& row_ind,
   graphblas::Index nvals = row_ind.size();
   graphblas::Info err;
   graphblas::Descriptor desc;
+  char* dat_name;
 
   // Read in sparse matrix
   graphblas::Matrix<float> adj(nrows, ncols);
-  err = adj.build( &row_ind, &col_ind, &values, nvals, GrB_NULL );
+  err = adj.build(&row_ind, &col_ind, &values, nvals, GrB_NULL, dat_name);
   adj.print();
 
   std::cout << nrows << " " << ncols << " " << nvals << std::endl;

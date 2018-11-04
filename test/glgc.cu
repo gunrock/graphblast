@@ -56,7 +56,6 @@ int main( int argc, char** argv )
     // TODO: fix this
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
         nvals, directed, mtxinfo, &dat_name );
-    printf("%s %p\n", dat_name, dat_name);
   }
 
   // Descriptor desc
@@ -66,7 +65,6 @@ int main( int argc, char** argv )
     CHECK( desc.toggle(graphblas::GrB_INP1) );
 
   // Matrix A
-  printf("%s %p\n", dat_name, dat_name);
   graphblas::Matrix<float> a(nrows, ncols);
   values.clear();
   values.insert(values.begin(), nvals, 1.f);

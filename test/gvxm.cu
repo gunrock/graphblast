@@ -26,14 +26,15 @@ void testVxm( char const*               mtx,
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
   graphblas::Index nrows, ncols, nvals;
+  char* dat_name;
 
   // Read in sparse matrix
-  readMtx( mtx, row_indices, col_indices, values, nrows, ncols, 
-      nvals, 0, false );
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, 
+      nvals, 0, false, &dat_name);
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL);
+  a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, dat_name);
   a.nrows(&nrows);
   a.ncols(&ncols);
   a.nvals(&nvals);

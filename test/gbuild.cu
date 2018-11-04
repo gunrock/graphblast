@@ -28,13 +28,15 @@ void testMatrixBuild( char const* mtx )
   graphblas::Index nrows, ncols, nvals;
   graphblas::Info err;
   graphblas::Descriptor desc;
+  char* dat_name;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
+  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false,
+      &dat_name);
 
   // Initialize sparse matrix A
   graphblas::Matrix<float> A(nrows, ncols);
-  err = A.build( &row_indices, &col_indices, &values, nvals, GrB_NULL );
+  err = A.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, dat_name);
 
   // Make a copy of GPU arrays from A
   int* d_csrRowPtr, *d_csrColInd;

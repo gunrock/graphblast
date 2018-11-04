@@ -33,6 +33,7 @@ int main( int argc, char** argv )
   int  directed;
   int  niter;
   int  source;
+  char* dat_name;
   po::variables_map vm;
 
   // Read in sparse matrix
@@ -52,7 +53,7 @@ int main( int argc, char** argv )
     // desc.loadArgs(vm) instead of application code!
     // TODO: fix this
     readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, directed, mtxinfo );
+        nvals, directed, mtxinfo, &dat_name );
   }
 
   // Descriptor desc
@@ -64,7 +65,7 @@ int main( int argc, char** argv )
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
   CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
-      argv[argc-1]) );
+      dat_name) );
   CHECK( a.nrows(&nrows) );
   CHECK( a.ncols(&ncols) );
   CHECK( a.nvals(&nvals) );
