@@ -22,8 +22,8 @@ namespace backend
       split_(0), enable_split_(0), niter_(0), max_niter_(0), directed_(0), 
       timing_(0), memusage_(0), switchpoint_(0), mxvmode_(0), transpose_(0),
       mtxinfo_(0), dirinfo_(0), verbose_(0), struconly_(0), earlyexit_(0), 
-      earlyexitbench_(0), opreuse_(0), endbit_(0), sort_(0), mask_(0),
-      nthread_(0), ndevice_(0), debug_(0), memory_(0) 
+      opreuse_(0), endbit_(0), sort_(0), mask_(0), nthread_(0), ndevice_(0),
+      debug_(0), memory_(0) 
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -54,7 +54,6 @@ namespace backend
     inline bool split()          { return split_ && enable_split_; }
     inline bool dirinfo()        { return dirinfo_; }
     inline bool earlyexit()      { return earlyexit_; }
-    inline bool earlyexitbench() { return earlyexitbench_; }
     inline bool opreuse()        { return opreuse_; }
     inline bool endbit()         { return endbit_; }
     inline bool sort()           { return sort_; }
@@ -99,7 +98,6 @@ namespace backend
     bool        verbose_;
     bool        struconly_;
     bool        earlyexit_;
-    bool        earlyexitbench_;
     bool        opreuse_;
     bool        endbit_;
     bool        sort_;
@@ -236,7 +234,6 @@ namespace backend
     verbose_        = vm["verbose"       ].as<bool>();
     struconly_      = vm["struconly"     ].as<bool>();
     earlyexit_      = vm["earlyexit"     ].as<bool>();
-    earlyexitbench_ = vm["earlyexitbench"].as<bool>();
     opreuse_        = vm["opreuse"       ].as<bool>();
     endbit_         = vm["endbit"        ].as<bool>();
     sort_           = vm["sort"          ].as<bool>();
@@ -247,9 +244,6 @@ namespace backend
     ndevice_        = vm["ndevice"       ].as<int>();
     debug_          = vm["debug"         ].as<bool>();
     memory_         = vm["memory"        ].as<bool>();
-
-    if( earlyexitbench_ )
-      earlyexit_ = true;
 
 		switch( mxvmode_ )
 		{
