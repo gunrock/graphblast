@@ -132,13 +132,16 @@ namespace algorithm
       // Update frontier size
       reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &f, desc);
 
-      /*std::cout << "succ: " << succ << std::endl;
-      std::cout << "frontier (f): " << std::endl;
-      CHECK( f.print() );
-      std::cout << "residual (r): " << std::endl;
-      CHECK( r.print() );
-      std::cout << "pagerank (p): " << std::endl;
-      CHECK( p->print() );*/
+      if (desc->descriptor_.debug_)
+      {
+        std::cout << "succ: " << succ << std::endl;
+        std::cout << "frontier (f): " << std::endl;
+        CHECK( f.print() );
+        std::cout << "residual (r): " << std::endl;
+        CHECK( r.print() );
+        std::cout << "pagerank (p): " << std::endl;
+        CHECK( p->print() );
+      }
       if (iter >= desc->descriptor_.max_niter_)
         break;
     } while (succ > 0);

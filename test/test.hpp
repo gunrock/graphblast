@@ -14,7 +14,7 @@ void BOOST_ASSERT_FLOAT( const T lhs,
   else if (lhs == 0)
     BOOST_ASSERT( fabs(rhs)<tol );
   else
-    BOOST_ASSERT( fabs(lhs-rhs)<tol*fabs(rhs) );
+    BOOST_ASSERT( fabs(lhs-rhs)<tol );
 }
 
 template <typename T>
@@ -27,7 +27,7 @@ bool assert_float( T lhs,
   else if (lhs == 0)
     return fabs(rhs)<tol;
   else
-    return fabs(lhs-rhs)<tol*fabs(rhs);
+    return fabs(lhs-rhs)<tol;
 }
 
 template <typename T, typename S, typename L>
