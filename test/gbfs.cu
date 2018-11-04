@@ -101,18 +101,11 @@ int main( int argc, char** argv )
   vxm_gpu.Start();
   float tight = 0.f;
   float val;
-  if( !desc.descriptor_.reduce() )
-    for( int i=0; i<niter; i++ )
-    {
-      val = graphblas::algorithm::bfs2(&y, &a, source, &desc, d);
-      tight += val;
-    }
-  else
-    for( int i=0; i<niter; i++ )
-    {
-      val = graphblas::algorithm::bfs(&y, &a, source, &desc);
-      tight += val;
-    }
+  for( int i=0; i<niter; i++ )
+  {
+    val = graphblas::algorithm::bfs(&y, &a, source, &desc);
+    tight += val;
+  }
   //cudaProfilerStop();
   vxm_gpu.Stop();
 

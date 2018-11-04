@@ -22,8 +22,8 @@ namespace backend
       split_(0), enable_split_(0), niter_(0), max_niter_(0), directed_(0), 
       timing_(0), memusage_(0), switchpoint_(0), mxvmode_(0), transpose_(0),
       mtxinfo_(0), dirinfo_(0), verbose_(0), struconly_(0), earlyexit_(0), 
-      earlyexitbench_(0), opreuse_(0), endbit_(0), reduce_(0), prealloc_(0),
-      sort_(0), mask_(0), nthread_(0), ndevice_(0), debug_(0), memory_(0) 
+      earlyexitbench_(0), opreuse_(0), endbit_(0), sort_(0), mask_(0),
+      nthread_(0), ndevice_(0), debug_(0), memory_(0) 
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -57,8 +57,6 @@ namespace backend
     inline bool earlyexitbench() { return earlyexitbench_; }
     inline bool opreuse()        { return opreuse_; }
     inline bool endbit()         { return endbit_; }
-    inline bool reduce()         { return reduce_; }
-    inline bool prealloc()       { return prealloc_; }
     inline bool sort()           { return sort_; }
     inline bool mask()           { return mask_; }
     inline float switchpoint()   { return switchpoint_; }
@@ -104,8 +102,6 @@ namespace backend
     bool        earlyexitbench_;
     bool        opreuse_;
     bool        endbit_;
-    bool        reduce_;
-    bool        prealloc_;
     bool        sort_;
     bool        mask_;
 
@@ -243,8 +239,6 @@ namespace backend
     earlyexitbench_ = vm["earlyexitbench"].as<bool>();
     opreuse_        = vm["opreuse"       ].as<bool>();
     endbit_         = vm["endbit"        ].as<bool>();
-    reduce_         = vm["reduce"        ].as<bool>();
-    prealloc_       = vm["prealloc"      ].as<bool>();
     sort_           = vm["sort"          ].as<bool>();
     mask_           = vm["mask"          ].as<bool>();
 

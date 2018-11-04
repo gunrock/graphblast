@@ -170,16 +170,6 @@ namespace backend
       d_temp       = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
     }
 
-    //if( desc->prealloc() )
-    //{
-    /*  IntervalGatherIndirectPrealloc( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
-          *u_nvals, A_csrColInd, u_ind, (Index*)d_csrSwapInd, (Index*)d_temp, 
-          *(desc->d_context_) );
-      if( !desc->struconly() )
-        IntervalGatherIndirectPrealloc( *w_nvals, A_csrRowPtr, (Index*)d_scan, 
-            *u_nvals, A_csrVal, u_ind, (T*)d_csrSwapVal, (Index*)d_temp,
-            *(desc->d_context_) );
-    }*/
     if (!desc->struconly_)
     {
     /*
@@ -325,12 +315,6 @@ namespace backend
         d_temp = desc->d_buffer_+(A_nrows+2*size)*sizeof(Index);
 
         Index  w_nvals_t = 0;
-        /*if( desc->prealloc() )
-          ReduceByKeyPrealloc( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals,
-              op.identity(), op, mgpu::equal_to<int>(), w_ind, w_val,
-              &w_nvals_t, (int*)0, (int*)d_temp, (int*)desc->d_temp_, 
-              *(desc->d_context_) );
-        else*/
         ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
             op.identity(), extractAdd(op), mgpu::equal_to<T>(), w_ind, w_val, 
             &w_nvals_t, (int*)0, *(desc->d_context_) );
