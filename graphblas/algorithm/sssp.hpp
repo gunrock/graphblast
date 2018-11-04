@@ -49,11 +49,7 @@ namespace algorithm
     do
     {
       if( desc->descriptor_.debug() )
-      {
         std::cout << "Iteration " << iter << ":\n";
-        std::cout << "v:\n";
-        v->print();
-      }
       iter++;
       // TODO(@ctcyang): add inplace + accumulate version
       vxm<float,float,float,float>(&w, GrB_NULL, GrB_NULL,

@@ -21,7 +21,6 @@ namespace algorithm
   {
     typedef std::pair<T, Index> DistanceIndex;
     
-    std::vector<int> hops(nrows, 0);
     std::vector<bool> processed(nrows, false);
 
     //initialize distances
@@ -46,39 +45,39 @@ namespace algorithm
     cpu_timer.Start();
     while (!frontier.empty())
     {
-      // Dequeue node from frontier
-      DistanceIndex dequeued_node = frontier.top();
-      T distance = dequeued_node.first;
-      Index node = dequeued_node.second;
-      frontier.pop();
-      processed[node] = true;
-      Index neighbor_dist = hops[node] + 1;
-      if( neighbor_dist > stop )
-        break;
-
-      // Locate adjacency list
-      int edges_begin = h_rowPtr[node];
-      int edges_end   = h_rowPtr[node + 1];
-
-      for (int edge = edges_begin; edge < edges_end; ++edge) 
+      Index frontier_size = frontier.size();
+      for (int i = 0; i < frontier_size; ++i)
       {
-        // Lookup neighbor and enqueue if undiscovered
-        Index neighbor = h_colInd[edge];
-        T distance_to_neighbor = h_val[edge];
-        if (!processed[neighbor] && 
-            distance_to_neighbor != std::numeric_limits<T>::max()) 
+        // Dequeue node from frontier
+        DistanceIndex dequeued_node = frontier.top();
+        T distance = dequeued_node.first;
+        Index node = dequeued_node.second;
+        frontier.pop();
+        processed[node] = true;
+
+        // Locate adjacency list
+        int edges_begin = h_rowPtr[node];
+        int edges_end   = h_rowPtr[node + 1];
+
+        for (int edge = edges_begin; edge < edges_end; ++edge) 
         {
-          T new_distance = distance + distance_to_neighbor;
-          if (new_distance < source_path[neighbor])
+          // Lookup neighbor and enqueue if undiscovered
+          Index neighbor = h_colInd[edge];
+          T distance_to_neighbor = h_val[edge];
+          if (!processed[neighbor] && 
+              distance_to_neighbor != std::numeric_limits<T>::max()) 
           {
-            source_path[neighbor] = new_distance;
-            frontier.push(std::make_pair<T, Index>(static_cast<T>(new_distance),
-                static_cast<Index>(neighbor)));
+            T new_distance = distance + distance_to_neighbor;
+            if (new_distance < source_path[neighbor])
+            {
+              source_path[neighbor] = new_distance;
+              frontier.push(std::make_pair<T, Index>(
+                  static_cast<T>(new_distance), static_cast<Index>(neighbor)));
+            }
           }
-          if (search_depth < neighbor_dist)
-            search_depth = neighbor_dist;
         }
       }
+      search_depth++;
     }
 
     cpu_timer.Stop();

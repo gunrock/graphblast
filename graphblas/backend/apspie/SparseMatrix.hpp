@@ -154,7 +154,7 @@ namespace backend
     if( d_csrColInd_!=NULL ) CUDA_CALL( cudaFree(d_csrColInd_) );
     if( d_csrVal_   !=NULL ) CUDA_CALL( cudaFree(d_csrVal_   ) );
 
-    if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
+    if( !symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
       if( h_cscColPtr_!=NULL ) free(h_cscColPtr_);
       if( h_cscRowInd_!=NULL ) free(h_cscRowInd_);
@@ -199,7 +199,7 @@ namespace backend
     CUDA_CALL( cudaMemcpy( d_csrVal_,    rhs->d_csrVal_,    nvals_*sizeof(T),
         cudaMemcpyDeviceToDevice ) );
 
-    if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
+    if( !symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
       CUDA_CALL( cudaMemcpy( d_cscColPtr_, rhs->d_cscColPtr_, (ncols_+1)*
           sizeof(Index), cudaMemcpyDeviceToDevice ) );
@@ -234,7 +234,7 @@ namespace backend
     d_csrColInd_ = NULL;
     d_csrVal_    = NULL;
 
-    if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
+    if( !symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC )
     {
       if( h_cscColPtr_!=NULL ) free(h_cscColPtr_);
       if( h_cscRowInd_!=NULL ) free(h_cscRowInd_);
