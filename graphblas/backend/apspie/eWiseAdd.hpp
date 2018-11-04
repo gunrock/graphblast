@@ -72,6 +72,8 @@ namespace backend
 
     DenseVector<U>* u_t = const_cast<DenseVector<U>*>(u);
     DenseVector<V>* v_t = const_cast<DenseVector<V>*>(v);
+    u_t->print(true);
+    v_t->print(true);
 
     if( use_mask && desc->mask() )
     {
@@ -87,10 +89,11 @@ namespace backend
       NB.y = 1;
       NB.z = 1;
 
-      eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op), u_t->d_val_,
-          v_t->d_val_, u_nvals);
+      eWiseAddDenseDenseKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op),
+          u_t->d_val_, v_t->d_val_, u_nvals);
     }
     w->need_update_ = true;
+    w->print(true);
 
     return GrB_SUCCESS;
   }
@@ -153,8 +156,8 @@ namespace backend
       NB.y = 1;
       NB.z = 1;
 
-      eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op), u->d_ind_,
-          u->d_val_, u_nvals);
+      eWiseAddSparseDenseKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op),
+          u->d_ind_, u->d_val_, u_nvals);
     }
     w->need_update_ = true;
     return GrB_SUCCESS;

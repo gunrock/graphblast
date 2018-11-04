@@ -337,8 +337,8 @@ namespace backend
           std::cout << "Doing eWiseAdd accumulate:\n";
 				  printDevice("w_val", w->d_val_, A_nrows);
         }
-        eWiseAddKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op), w->d_val_,
-            w_val, A_nrows);
+        eWiseAddDenseDenseKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op),
+            w->d_val_, w_val, A_nrows);
       }
 
 			if( desc->debug() )

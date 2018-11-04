@@ -74,7 +74,7 @@ namespace backend
     inline Info setStorage( Storage  vec_type );
     inline Info getStorage( Storage* vec_type ) const;
     Info convert( T identity, Descriptor* desc );
-    Info sparse2dense( T identity, Descriptor* desc );
+    Info sparse2dense( T identity, Descriptor* desc=NULL );
     Info dense2sparse( T identity, Descriptor* desc );
     Info swap( Vector* rhs );
 
@@ -210,9 +210,9 @@ namespace backend
 											           std::vector<T>*     values,
 											           Index*              n )
   {
-    if( vec_type_ == GrB_SPARSE )
+    if (vec_type_ == GrB_SPARSE)
       return sparse_.extractTuples( indices, values, n );
-    else if( vec_type_ == GrB_DENSE )
+    else if (vec_type_ == GrB_DENSE)
       return dense_.extractTuples( indices, values, n );
     else return GrB_UNINITIALIZED_OBJECT;
   }
@@ -221,9 +221,12 @@ namespace backend
 	Info Vector<T>::extractTuples( std::vector<T>* values,
 											           Index*          n )
   {
-    if( vec_type_ == GrB_SPARSE )
-      return sparse_.extractTuples( values, n );
-    else if( vec_type_ == GrB_DENSE )
+    if (vec_type_ == GrB_SPARSE)
+    {
+      sparse2dense(0.f);
+      return dense_.extractTuples( values, n );
+    }
+    else if (vec_type_ == GrB_DENSE)
       return dense_.extractTuples( values, n );
     else return GrB_UNINITIALIZED_OBJECT;
   }
@@ -361,7 +364,7 @@ namespace backend
       return GrB_SUCCESS;
     }
 
-    if (desc->dirinfo())
+    if (desc != NULL && desc->dirinfo())
       std::cout << "Converting from sparse to dense!\n";
 
     // 1. Initialize memory
@@ -371,7 +374,7 @@ namespace backend
     const int nt    = 128;
     const int nvals = sparse_.nvals_;
 
-    if( !desc->opreuse() )
+    if (desc == NULL || !desc->opreuse())
     {
       dim3 NT, NB;
       NT.x = nt;
@@ -381,7 +384,7 @@ namespace backend
       NB.y = 1;
 
       dense_.fill( identity );
-      if( desc->struconly() )
+      if (desc != NULL && desc->struconly())
         scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, (T)1, nvals );
       else
         scatter<<<NB,NT>>>( dense_.d_val_, sparse_.d_ind_, sparse_.d_val_, 

@@ -22,6 +22,7 @@ namespace algorithm
     typedef std::pair<T, Index> DistanceIndex;
     
     std::vector<int> hops(nrows, 0);
+    std::vector<bool> processed(nrows, false);
 
     //initialize distances
     for (Index i = 0; i < nrows; ++i)
@@ -50,6 +51,7 @@ namespace algorithm
       T distance = dequeued_node.first;
       Index node = dequeued_node.second;
       frontier.pop();
+      processed[node] = true;
       Index neighbor_dist = hops[node] + 1;
       if( neighbor_dist > stop )
         break;
@@ -63,7 +65,8 @@ namespace algorithm
         // Lookup neighbor and enqueue if undiscovered
         Index neighbor = h_colInd[edge];
         T distance_to_neighbor = h_val[edge];
-        if (distance_to_neighbor != std::numeric_limits<T>::max()) 
+        if (!processed[neighbor] && 
+            distance_to_neighbor != std::numeric_limits<T>::max()) 
         {
           T new_distance = distance + distance_to_neighbor;
           if (new_distance < source_path[neighbor])
@@ -72,6 +75,8 @@ namespace algorithm
             frontier.push(std::make_pair<T, Index>(static_cast<T>(new_distance),
                 static_cast<Index>(neighbor)));
           }
+          if (search_depth < neighbor_dist)
+            search_depth = neighbor_dist;
         }
       }
     }
@@ -80,6 +85,7 @@ namespace algorithm
     float elapsed = cpu_timer.ElapsedMillis();
     search_depth++;
 
+    printArray("output", source_path, nrows);
     printf("CPU SSSP finished in %lf msec. Search depth is: %d\n", elapsed, search_depth);
 
     return search_depth;

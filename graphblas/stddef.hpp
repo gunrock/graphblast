@@ -158,7 +158,8 @@ namespace graphblas
   REGISTER_MONOID( LogicalAndMonoid, logical_and, false )
 
   // New monoids
-  REGISTER_MONOID( GreaterMonoid, greater, 0 );
+  REGISTER_MONOID( GreaterMonoid, greater, std::numeric_limits<T_out>::min() );
+  REGISTER_MONOID( LessMonoid, less, std::numeric_limits<T_out>::max() );
 }  // graphblas
 
 // Semiring generator macro provided by Scott McMillan
@@ -199,6 +200,7 @@ namespace graphblas
   REGISTER_SEMIRING( PlusDividesSemiring, PlusMonoid, divides )
   REGISTER_SEMIRING( PlusGreaterSemiring, PlusMonoid, greater )
   REGISTER_SEMIRING( GreaterPlusSemiring, GreaterMonoid, plus )
+  REGISTER_SEMIRING( LessPlusSemiring, LessMonoid, plus )
 
   // AddOp and MulOp extraction provided by Peter Zhang
 	template <typename SemiringT>

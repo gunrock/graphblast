@@ -59,8 +59,6 @@ namespace backend
     Info extractTuples(  std::vector<Index>* indices,
                          std::vector<T>*     values,
                          Index*              n );
-    Info extractTuples(  std::vector<T>* values,
-                         Index*          n );
 
     // handy methods
     const T& operator[]( Index ind );
@@ -250,13 +248,6 @@ namespace backend
       values->push_back( h_val_[i] );
     }
    
-    return GrB_SUCCESS;
-  }
-
-  template <typename T>
-  Info SparseVector<T>::extractTuples( std::vector<T>* values,
-                                       Index*          nvals )
-  {
     return GrB_SUCCESS;
   }
 

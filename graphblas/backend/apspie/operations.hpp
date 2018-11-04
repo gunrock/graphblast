@@ -389,6 +389,8 @@ namespace backend
     Storage v_vec_type;
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( v->getStorage( &v_vec_type ) );
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
+    Vector<V>* v_t = const_cast<Vector<V>*>(v);
 
     /* 
      * \brief 4 cases:
@@ -399,37 +401,44 @@ namespace backend
      */
     if ((u == w && u_vec_type == GrB_SPARSE) || (v == w && v_vec_type == GrB_SPARSE))
     {
-      std::cout << "Error: eWiseAdd sparse vector inplace not implemented yet!\n";
+      if (u == w)
+      {
+        u_t->sparse2dense(op.identity(), desc);
+        u_vec_type = GrB_DENSE;
+      }
+      else if (v == w)
+      {
+        v_t->sparse2dense(op.identity(), desc);
+        v_vec_type = GrB_DENSE;
+      }
+    }
+
+    CHECK( w->setStorage(GrB_DENSE) );
+    if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE)
+    {
+      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
+          &v->sparse_, desc) );
+    }
+    else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE)
+    {
+      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->dense_,
+          &v->dense_, desc) );
+    }
+    else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
+    {
+      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
+          &v->dense_, desc) );
+    }
+    else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
+    {
+      // TODO(@ctcyang): Fix for non-commutative ops
+      CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->sparse_, 
+          &u->dense_, desc) );
     }
     else
     {
-      CHECK( w->setStorage(GrB_DENSE) );
-      if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE)
-      {
-        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
-            &v->sparse_, desc) );
-      }
-      else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE)
-      {
-        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->dense_,
-            &v->dense_, desc) );
-      }
-      else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
-      {
-        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
-            &v->dense_, desc) );
-      }
-      else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
-      {
-        // TODO(@ctcyang): Fix for non-commutative ops
-        CHECK( eWiseAddInner(&w->dense_, mask, accum, op, &v->sparse_, 
-            &u->dense_, desc) );
-      }
-      else
-      {
-        std::cout << "Error: eWiseAdd backend invalid choice!\n";
-        return GrB_INVALID_OBJECT;
-      }
+      std::cout << "Error: eWiseAdd backend invalid choice!\n";
+      return GrB_INVALID_OBJECT;
     }
 
     return GrB_SUCCESS;

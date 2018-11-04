@@ -169,32 +169,116 @@ void testeWiseAddVectorNomaskSparseDenseInplace(
   graphblas::Vector<float> v(nvals);
   err = v.build(&v_val, nvals);
 
+  graphblas::Vector<float>* vec;
+
   switch (swap)
   {
     case 0:
+      printf("Testing case %d:\n", swap);
       err = graphblas::eWiseAdd<float, float, float, float>( &v, GrB_NULL,
           GrB_NULL, graphblas::PlusMultipliesSemiring<float>(), &u, &v, &desc );
+      vec = &v;
       break;
     case 1:
+      printf("Testing case %d:\n", swap);
       err = graphblas::eWiseAdd<float, float, float, float>( &v, GrB_NULL,
           GrB_NULL, graphblas::PlusMultipliesSemiring<float>(), &v, &u, &desc );
+      vec = &v;
       break;
     case 2:
+      printf("Testing case %d:\n", swap);
       err = graphblas::eWiseAdd<float, float, float, float>( &u, GrB_NULL,
           GrB_NULL, graphblas::PlusMultipliesSemiring<float>(), &u, &v, &desc );
+      vec = &u;
       break;
     case 3:
-      err = graphblas::eWiseAdd<float, float, float, float>( &v, GrB_NULL,
+      printf("Testing case %d:\n", swap);
+      err = graphblas::eWiseAdd<float, float, float, float>( &u, GrB_NULL,
           GrB_NULL, graphblas::PlusMultipliesSemiring<float>(), &v, &u, &desc );
+      vec = &u;
       break;
   }
 
   graphblas::Index nvals_t = nvals;
   printArray("correct", correct_val, nvals);
-  err = v.print();
-  err = v.extractTuples( &values, &nvals_t );
+  err = vec->print();
+  err = vec->extractTuples( &values, &nvals_t );
   BOOST_ASSERT( nvals == nvals_t );
   BOOST_ASSERT_LIST( values, correct_val, u_nvals );
+}
+
+void testeWiseAddVectorNomaskSparseSparseInplace( 
+    const std::vector<graphblas::Index>& u_ind,
+    const std::vector<float>&            u_val,
+    const std::vector<graphblas::Index>& v_ind,
+    const std::vector<float>&            v_val,
+    int                                  nrows,
+    int                                  swap,
+    po::variables_map&                   vm )
+{
+  std::vector<float> values;
+  graphblas::Index u_nvals = u_ind.size();
+  graphblas::Index v_nvals = v_ind.size();
+  graphblas::Info err;
+  graphblas::Descriptor desc;
+  desc.loadArgs(vm);
+
+  std::vector<float> correct_val(nrows, 0.f);
+  
+  for (int i = 0; i < u_nvals; ++i)
+  {
+    graphblas::Index ind = u_ind[i];
+    correct_val[ind] = u_val[i];
+  }
+
+  for (int i = 0; i < v_nvals; ++i)
+  {
+    graphblas::Index ind = v_ind[i];
+    correct_val[ind] += v_val[i];
+  }
+
+  graphblas::Vector<float> u(nrows);
+  err = u.build(&u_ind, &u_val, u_nvals, GrB_NULL);
+
+  graphblas::Vector<float> v(nrows);
+  err = v.build(&v_ind, &v_val, v_nvals, GrB_NULL);
+
+  graphblas::Vector<float>* vec;
+
+  switch (swap)
+  {
+    case 0:
+      printf("Testing case %d:\n", swap);
+      err = graphblas::eWiseAdd<float, float, float, float>( &v, GrB_NULL,
+          GrB_NULL, graphblas::PlusMultipliesSemiring<float>(), &u, &v, &desc );
+      vec = &v;
+      break;
+    case 1:
+      printf("Testing case %d:\n", swap);
+      err = graphblas::eWiseAdd<float, float, float, float>( &v, GrB_NULL,
+          GrB_NULL, graphblas::PlusMultipliesSemiring<float>(), &v, &u, &desc );
+      vec = &v;
+      break;
+    case 2:
+      printf("Testing case %d:\n", swap);
+      err = graphblas::eWiseAdd<float, float, float, float>( &u, GrB_NULL,
+          GrB_NULL, graphblas::PlusMultipliesSemiring<float>(), &u, &v, &desc );
+      vec = &u;
+      break;
+    case 3:
+      printf("Testing case %d:\n", swap);
+      err = graphblas::eWiseAdd<float, float, float, float>( &u, GrB_NULL,
+          GrB_NULL, graphblas::PlusMultipliesSemiring<float>(), &v, &u, &desc );
+      vec = &u;
+      break;
+  }
+
+  graphblas::Index nrows_t = nrows;
+  printArray("correct", correct_val, nrows);
+  err = vec->print();
+  err = vec->extractTuples( &values, &nrows_t );
+  BOOST_ASSERT( nrows == nrows_t );
+  BOOST_ASSERT_LIST( values, correct_val, nrows );
 }
 
 void testeWiseMultVectorSparsemaskSparseDense( 
@@ -346,18 +430,6 @@ BOOST_FIXTURE_TEST_CASE( dup7, TestMatrix )
   testeWiseAddVectorNomaskSparseDenseInplace(u_ind, u_val, v_val, 3, vm);
 }
 
-BOOST_FIXTURE_TEST_CASE( dup8, TestMatrix )
-{
-  int argc = 3;
-  char* argv[] = {"app", "--debug", "1"};
-  po::variables_map vm;
-  parseArgs( argc, argv, vm );
-  std::vector<graphblas::Index> u_ind   { 1,  2,  5,  6,  7,  8 }; 
-  std::vector<float>            u_val   { 3., 2., 2., 0., 3., 1.};
-  std::vector<float>            v_val   { 3., 2., 2., 3., 0., 0., 3., 2., 2.};
-  testeWiseAddVectorNomaskSparseDenseInplace(u_ind, u_val, v_val, 3, vm);
-}
-
 BOOST_FIXTURE_TEST_CASE( dup9, TestMatrix )
 {
   int argc = 3;
@@ -371,6 +443,22 @@ BOOST_FIXTURE_TEST_CASE( dup9, TestMatrix )
   std::vector<float>            v_val   { 3., 2., 2., 3., 0., 0., 0., 2., 2.};
   testeWiseMultVectorSparsemaskSparseDense(mask_ind, mask_val, u_ind, u_val,
       v_val, vm);
+}
+
+BOOST_FIXTURE_TEST_CASE( dup11, TestMatrix )
+{
+  int argc = 3;
+  char* argv[] = {"app", "--debug", "1"};
+  po::variables_map vm;
+  parseArgs( argc, argv, vm );
+  std::vector<graphblas::Index> u_ind   { 1,  2,  5,  6,  7,  8 }; 
+  std::vector<float>            u_val   { 3., 2., 2., 0., 3., 1.};
+  std::vector<graphblas::Index> v_ind   { 1,  2,  4,  6,  7,  9 }; 
+  std::vector<float>            v_val   { 3., 2., 2., 0., 3., 1.};
+  testeWiseAddVectorNomaskSparseSparseInplace(u_ind, u_val, v_ind, v_val, 10, 0, vm);
+  testeWiseAddVectorNomaskSparseSparseInplace(u_ind, u_val, v_ind, v_val, 10, 1, vm);
+  testeWiseAddVectorNomaskSparseSparseInplace(u_ind, u_val, v_ind, v_val, 10, 2, vm);
+  testeWiseAddVectorNomaskSparseSparseInplace(u_ind, u_val, v_ind, v_val, 10, 3, vm);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
