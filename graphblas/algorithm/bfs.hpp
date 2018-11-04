@@ -38,7 +38,7 @@ namespace algorithm
       CHECK( q1.build(&indices, &values, 1, GrB_NULL) );
     }
 
-    float d    = 0;
+    float iter = 1;
     float succ = 0.f;
     Index unvisited = A_nrows;
     Index frontier;
@@ -49,21 +49,20 @@ namespace algorithm
     {
       if( desc->descriptor_.debug() )
       {
-        std::cout << "Iteration " << d << ":\n";
+        std::cout << "Iteration " << iter << ":\n";
         v->print();
         q1.print();
       }
       if( desc->descriptor_.timing_==2 )
       {
         cpu_tight.Stop();
-        if( d!=0 )
-          std::cout << d-1 << ", " << frontier << ", " << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
+        if (iter != 0)
+          std::cout << iter-1 << ", " << frontier << ", " << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
         frontier  = (int)succ;
         unvisited -= (int)succ;
         cpu_tight.Start();
       }
-      d++;
-      assign<float,float>(v, &q1, GrB_NULL, d, GrB_ALL, A_nrows, desc);
+      assign<float,float>(v, &q1, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
       CHECK( desc->toggle(GrB_MASK) );
       vxm<float,float,float,float>(&q2, v, GrB_NULL, 
           PlusMultipliesSemiring<float>(), &q1, A, desc);
@@ -71,13 +70,16 @@ namespace algorithm
       CHECK( q2.swap(&q1) );
       reduce<float,float>(&succ, GrB_NULL, PlusMonoid<float>(), &q1, desc);
 
-      if( desc->descriptor_.debug() )
+      iter++;
+      if (desc->descriptor_.debug())
         std::cout << "succ: " << succ << " " << (int)succ << std::endl;
-    } while( succ>0 );
+      if (iter > desc->descriptor_.max_niter_)
+        break;
+    } while (succ > 0);
     if( desc->descriptor_.timing_>0 )
     {
       cpu_tight.Stop();
-      std::cout << d-1 << ", " << frontier << ", " << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
+      std::cout << iter - 1 << ", " << frontier << ", " << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
       return cpu_tight.ElapsedMillis();
     }
     return 0.f;

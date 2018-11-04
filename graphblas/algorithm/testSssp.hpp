@@ -29,7 +29,7 @@ namespace algorithm
       source_path[i] = std::numeric_limits<T>::max();
     }
     source_path[src] = 0.f;
-    Index search_depth = 1;
+    Index search_depth = 0;
 
     // Initialize queue for managing previously-discovered nodes
     std::priority_queue<DistanceIndex, std::vector<DistanceIndex>, 
@@ -82,7 +82,6 @@ namespace algorithm
 
     cpu_timer.Stop();
     float elapsed = cpu_timer.ElapsedMillis();
-    search_depth++;
 
     printArray("output", source_path, nrows);
     printf("CPU SSSP finished in %lf msec. Search depth is: %d\n", elapsed, search_depth);

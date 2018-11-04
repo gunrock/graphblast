@@ -73,7 +73,6 @@ namespace algorithm
 
     cpu_timer.Stop();
     float elapsed = cpu_timer.ElapsedMillis();
-    search_depth++;
 
     printf("CPU BFS finished in %lf msec. Search depth is: %d\n", elapsed, search_depth);
 

@@ -50,7 +50,6 @@ namespace algorithm
     {
       if( desc->descriptor_.debug() )
         std::cout << "Iteration " << iter << ":\n";
-      iter++;
       // TODO(@ctcyang): add inplace + accumulate version
       vxm<float,float,float,float>(&w, GrB_NULL, GrB_NULL,
           MinimumPlusSemiring<float>(), v, A, desc);
@@ -61,10 +60,11 @@ namespace algorithm
           LessPlusSemiring<float>(), v, &zero, desc);
       reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &w, desc);
       succ_last = succ - succ_last;
+      iter++;
 
       if (desc->descriptor_.debug())
         std::cout << "succ: " << succ_last << std::endl;
-      if (iter >= desc->descriptor_.max_niter_)
+      if (iter > desc->descriptor_.max_niter_)
         break;
     } while (succ_last > 0);
     if( desc->descriptor_.timing_>0 )
