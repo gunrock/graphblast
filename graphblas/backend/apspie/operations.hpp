@@ -107,7 +107,10 @@ namespace backend
       CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
       CHECK( desc->get( GrB_TOL,     &tol      ) );
       if( desc->debug() )
+      {
         std::cout << "Identity: " << op.identity() << std::endl;
+        std::cout << "Sparse format: " << A_format << std::endl;
+      }
 
 			// Fallback for lacking CSC storage overrides any mxvmode selections
 			if (A_format == GrB_SPARSE_MATRIX_CSRONLY)
