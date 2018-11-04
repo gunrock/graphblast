@@ -41,7 +41,8 @@ namespace algorithm
 
     Index iter = 1;
     float succ_last = 0.f;
-    float succ = 0.f;
+    float succ = 1.f;
+    Index unvisited = A_nrows;
 
     backend::GpuTimer cpu_tight;
     if( desc->descriptor_.timing_>0 )
@@ -49,7 +50,17 @@ namespace algorithm
     do
     {
       if( desc->descriptor_.debug() )
-        std::cout << "Iteration " << iter << ":\n";
+        std::cout << "=====Iteration " << iter - 1 << "=====\n";
+      if( desc->descriptor_.timing_==2 )
+      {
+        cpu_tight.Stop();
+        if (iter > 1)
+          std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+              << cpu_tight.ElapsedMillis() << "\n";
+        unvisited -= (int)succ;
+        cpu_tight.Start();
+      }
+
       // TODO(@ctcyang): add inplace + accumulate version
       vxm<float,float,float,float>(&w, GrB_NULL, GrB_NULL,
           MinimumPlusSemiring<float>(), v, A, desc);
@@ -70,7 +81,8 @@ namespace algorithm
     if( desc->descriptor_.timing_>0 )
     {
       cpu_tight.Stop();
-      std::cout << iter-1 << ", " << cpu_tight.ElapsedMillis() << "\n";
+      std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+          << cpu_tight.ElapsedMillis() << "\n";
       return cpu_tight.ElapsedMillis();
     }
     return 0.f;

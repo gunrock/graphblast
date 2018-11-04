@@ -41,7 +41,6 @@ namespace algorithm
     float iter = 1;
     float succ = 0.f;
     Index unvisited = A_nrows;
-    Index frontier;
     backend::GpuTimer cpu_tight;
     if( desc->descriptor_.timing_>0 )
       cpu_tight.Start();
@@ -49,16 +48,16 @@ namespace algorithm
     {
       if( desc->descriptor_.debug() )
       {
-        std::cout << "Iteration " << iter << ":\n";
+        std::cout << "=====Iteration " << iter - 1 << "=====\n";
         v->print();
         q1.print();
       }
       if( desc->descriptor_.timing_==2 )
       {
         cpu_tight.Stop();
-        if (iter != 0)
-          std::cout << iter-1 << ", " << frontier << ", " << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
-        frontier  = (int)succ;
+        if (iter > 1)
+          std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+              << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
         unvisited -= (int)succ;
         cpu_tight.Start();
       }
@@ -79,7 +78,8 @@ namespace algorithm
     if( desc->descriptor_.timing_>0 )
     {
       cpu_tight.Stop();
-      std::cout << iter - 1 << ", " << frontier << ", " << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
+      std::cout << iter - 1 << ", " << succ << "/" << A_nrows << " "
+          << unvisited << ", " << cpu_tight.ElapsedMillis() << "\n";
       return cpu_tight.ElapsedMillis();
     }
     return 0.f;

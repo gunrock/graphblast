@@ -81,15 +81,15 @@ namespace algorithm
     std::cout << "degrees_eps (d x eps): " << std::endl;
     CHECK( degrees_eps.print() );
 
-    Index iter = 0;
+    Index iter = 1;
     float succ;
     backend::GpuTimer cpu_tight;
     if( desc->descriptor_.timing_>0 )
       cpu_tight.Start();
     do
     {
-      iter++;
-      //std::cout << "=====Begin iteration " << iter << "=====\n";
+      if (desc->descriptor_.debug())
+        std::cout << "=====Iteration " << iter << "=====\n";
 
       // p = p + alpha * r .* f
       CHECK( desc->toggle(GrB_MASK) );
@@ -132,6 +132,8 @@ namespace algorithm
       // Update frontier size
       reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &f, desc);
 
+      iter++;
+
       if (desc->descriptor_.debug_)
       {
         std::cout << "succ: " << succ << std::endl;
@@ -142,7 +144,7 @@ namespace algorithm
         std::cout << "pagerank (p): " << std::endl;
         CHECK( p->print() );
       }
-      if (iter >= desc->descriptor_.max_niter_)
+      if (iter > desc->descriptor_.max_niter_)
         break;
     } while (succ > 0);
     if( desc->descriptor_.timing_>0 )

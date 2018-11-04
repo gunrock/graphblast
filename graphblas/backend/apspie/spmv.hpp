@@ -40,7 +40,7 @@ namespace backend
     // -accum and replace as parts in flow
     bool use_mask  = (mask != NULL);
     bool use_accum = (accum_type.size() > 1);
-    bool use_scmp  = (scmp_mode != GrB_SCMP);
+    bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
     bool use_tran = (inp0_mode == GrB_TRAN || inp1_mode == GrB_TRAN);
 
@@ -104,169 +104,61 @@ namespace backend
           variant |= (desc->earlyexit()) ? 2 : 0;
           variant |= (desc->opreuse()  ) ? 1 : 0;
 
-          if( desc->earlyexitbench() )
+          switch( variant )
           {
-            int* d_stats;
-            CUDA_CALL( cudaMalloc(&d_stats, A_nrows*sizeof(int)) );
-            CUDA_CALL( cudaMemset(d_stats, 0, A_nrows*sizeof(int)) );
-
-            switch( variant )
-            {
-              case 0:
-                spmvDenseMaskedOrKernelBench<false,false,false><<<NB,NT>>>( 
-                    w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 1:
-                spmvDenseMaskedOrKernelBench<false,false,true><<<NB,NT>>>(
-                    w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 2:
-                spmvDenseMaskedOrKernelBench<false, true,false><<<NB,NT>>>(
-                    w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 3:
-                spmvDenseMaskedOrKernelBench<false, true, true><<<NB,NT>>>(
-                    w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 4:
-                spmvDenseMaskedOrKernelBench< true,false,false><<<NB,NT>>>( 
-                    w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 5:
-                spmvDenseMaskedOrKernelBench< true,false, true><<<NB,NT>>>(
-                    w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 6:
-                spmvDenseMaskedOrKernelBench<true, true,false><<<NB,NT>>>(
-                    w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 7:
-                spmvDenseMaskedOrKernelBench<true, true, true><<<NB,NT>>>(
-                    w->d_val_, d_stats, mask->dense_.d_val_, (M)-1.f, NULL, 0.f,
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              default:
-                break;
-            }
-
-            int* h_stats = (int*)malloc(A_nrows*sizeof(int));
-            CUDA_CALL( cudaMemcpy(h_stats, d_stats, A_nrows*sizeof(int),
-                cudaMemcpyDeviceToHost) );
-
-            // Total:
-            int my_total;
-            mgpu::Reduce( u->d_val_, A_nrows, (int)0, mgpu::plus<Index>(),
-                (Index*)0, &my_total, *(desc->d_context_) );
-
-            // Min:
-            int my_min;
-            mgpu::Reduce( d_stats, A_nrows, INT_MAX, mgpu::minimum<int>(), 
-                (int*)0, &my_min, *(desc->d_context_) );
-
-            // Max:
-            int my_max;
-            mgpu::Reduce( d_stats, A_nrows, INT_MIN, mgpu::maximum<int>(), 
-                (int*)0, &my_max, *(desc->d_context_) );
-            
-            // Sum:
-            int my_sum;
-            mgpu::Reduce( d_stats, A_nrows, (int)0, mgpu::plus<int>(), 
-                (int*)0, &my_sum, *(desc->d_context_) );
-            
-            double my_mean = (double)my_sum/my_total;
-
-            // Stddev:
-            double my_var  = 0.;
-            for( int i=0; i<A_nrows; i++ )
-            {
-              if( desc->debug() )
-                std::cout << i << " " << h_stats[i] << std::endl;
-              double delta = (double)h_stats[i]-my_mean;
-              my_var      += (delta*delta);
-            }
-
-            printf("%d, %lf, %d, %d\n", my_sum, my_var, my_min, my_max);
-            /*std::cout << "Total of " << my_total << " nnz\n";
-            std::cout << "Min: "     << my_min   << std::endl;
-            std::cout << "Max: "     << my_max   << std::endl;
-            std::cout << "Sum: "     << my_sum   << std::endl;
-            std::cout << "Var: "     << my_var   << std::endl;*/
-            CUDA_CALL( cudaFree(d_stats) );
-            free( h_stats );
+            case 0:
+              spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
+                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                  extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 1:
+              spmvDenseMaskedOrKernel<false,false,true><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 2:
+              spmvDenseMaskedOrKernel<false, true,false><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 3:
+              spmvDenseMaskedOrKernel<false, true, true><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 4:
+              spmvDenseMaskedOrKernel< true,false,false><<<NB,NT>>>( 
+                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                  extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 5:
+              spmvDenseMaskedOrKernel< true,false, true><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 6:
+              spmvDenseMaskedOrKernel<true, true,false><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            case 7:
+              spmvDenseMaskedOrKernel<true, true, true><<<NB,NT>>>(
+                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+              break;
+            default:
+              break;
           }
-          else
-          {
-            switch( variant )
-            {
-              case 0:
-                spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
-                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 1:
-                spmvDenseMaskedOrKernel<false,false,true><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 2:
-                spmvDenseMaskedOrKernel<false, true,false><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 3:
-                spmvDenseMaskedOrKernel<false, true, true><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 4:
-                spmvDenseMaskedOrKernel< true,false,false><<<NB,NT>>>( 
-                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 5:
-                spmvDenseMaskedOrKernel< true,false, true><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 6:
-                spmvDenseMaskedOrKernel<true, true,false><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              case 7:
-                spmvDenseMaskedOrKernel<true, true, true><<<NB,NT>>>(
-                    w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                    extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                    A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-                break;
-              default:
-                break;
-            }
-            if( desc->debug() )
-              printDevice("w_val", w->d_val_, A_nrows);
-          }
+          if( desc->debug() )
+            printDevice("w_val", w->d_val_, A_nrows);
 				}
 				else if( mask_vec_type==GrB_SPARSE )
 				{
@@ -278,7 +170,7 @@ namespace backend
 					return GrB_UNINITIALIZED_OBJECT;
 				}
       }
-      // TODO: add else condition here for generic mask semiring
+      // TODO(@ctcyang): add else condition here for generic mask semiring
       else
       {
         std::cout << "Indirect Spmv\n";

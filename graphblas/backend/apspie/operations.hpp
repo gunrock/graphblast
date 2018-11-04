@@ -154,7 +154,7 @@ namespace backend
         // only convert rather than setStorage if accum is being used
         //CHECK( w->setStorage( GrB_DENSE ) );
         CHECK( w->sparse2dense(op.identity(), desc) );
-        if( A_mat_type==GrB_SPARSE )
+        if (A_mat_type == GrB_SPARSE)
           CHECK(spmv(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
               desc));
         else
