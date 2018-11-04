@@ -297,7 +297,7 @@ namespace backend
       if (use_accum)
       {
         CHECK( desc->resize(A_nrows*sizeof(W), "buffer") );
-        w_val = (W*)     desc->d_buffer_+A_nrows;
+        w_val = (W*) desc->d_buffer_;
       }
       else
       {
