@@ -12,8 +12,8 @@ namespace algorithm
   // A simple CPU-based reference BFS ranking implementation
   template <typename T>
   int SimpleReferenceBfs( Index        nrows, 
-                          const Index* h_rowPtrA, 
-                          const Index* h_colIndA,
+                          const Index* h_rowPtr, 
+                          const Index* h_colInd,
                           T*           source_path,
                           Index*       predecessor,
                           Index        src,
@@ -49,13 +49,13 @@ namespace algorithm
         break;
 
       // Locate adjacency list
-      int edges_begin = h_rowPtrA[dequeued_node];
-      int edges_end = h_rowPtrA[dequeued_node + 1];
+      int edges_begin = h_rowPtr[dequeued_node];
+      int edges_end = h_rowPtr[dequeued_node + 1];
 
       for (int edge = edges_begin; edge < edges_end; ++edge) 
       {
         //Lookup neighbor and enqueue if undiscovered
-        Index neighbor = h_colIndA[edge];
+        Index neighbor = h_colInd[edge];
         if (source_path[neighbor] == 0) 
         {
           source_path[neighbor] = neighbor_dist;
