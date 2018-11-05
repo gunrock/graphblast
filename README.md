@@ -13,7 +13,7 @@ Our project seeks to combine the elegance of the GraphBLAS interface with the be
 
 This software has been tested on the following dependencies:
 
-* CUDA 8.0, 9.2
+* CUDA 9.1, 9.2
 * Boost 1.58
 * g++ 4.9.3, 5.4.0
 
