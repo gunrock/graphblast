@@ -55,8 +55,13 @@ namespace algorithm
       {
         cpu_tight.Stop();
         if (iter > 1)
+        {
+          std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+              "push" : "pull";
           std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+              << unvisited << ", " << vxm_mode << ", "
               << cpu_tight.ElapsedMillis() << "\n";
+        }
         unvisited -= (int)succ;
         cpu_tight.Start();
       }
@@ -81,7 +86,10 @@ namespace algorithm
     if( desc->descriptor_.timing_>0 )
     {
       cpu_tight.Stop();
+      std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+          "push" : "pull";
       std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+          << unvisited << ", " << vxm_mode << ", "
           << cpu_tight.ElapsedMillis() << "\n";
       return cpu_tight.ElapsedMillis();
     }

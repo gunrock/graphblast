@@ -92,6 +92,7 @@ namespace backend
     Info setNcols( Index ncols );
     Info setNvals( Index nvals );
     Info getFormat( SparseMatrixFormat* format ) const;
+    Info getSymmetry( bool* symmetry ) const;
     Info resize(   Index nrows, 
                    Index ncols );
     template <typename U>
@@ -628,6 +629,14 @@ namespace backend
     *format = format_;
     return GrB_SUCCESS;
   }
+
+  template <typename T>
+  Info SparseMatrix<T>::getSymmetry( bool* symmetry ) const
+  {
+    *symmetry = symmetric_;
+    return GrB_SUCCESS;
+  }
+
   // Note: has different meaning from sequential resize
   //      -that one makes SparseMatrix bigger
   //      -this one accounts for smaller nrows

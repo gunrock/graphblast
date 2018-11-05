@@ -16,11 +16,11 @@ namespace algorithm
              double               eps,    // tolerance
              Descriptor*          desc )
   {
-    Index n;
-    CHECK( A->nrows( &n ) );
+    Index A_nrows;
+    CHECK( A->nrows( &A_nrows ) );
 
     // degrees: compute the degree of each node
-    Vector<float> degrees(n);
+    Vector<float> degrees(A_nrows);
     reduce<float, float, float>(&degrees, GrB_NULL, GrB_NULL, 
         PlusMonoid<float>(), A, desc);
 
@@ -28,12 +28,12 @@ namespace algorithm
     CHECK( p->fill(0.f) );
 
     // residual (r): initialized to 0 except source to 1
-    Vector<float> r(n);
+    Vector<float> r(A_nrows);
     std::vector<Index> indices(1, s);
     std::vector<float> values(1, 1.f);
 
     // residual2 (r2)
-    Vector<float> r2(n);
+    Vector<float> r2(A_nrows);
     CHECK( r2.fill(0.f) );
 
     Desc_value desc_value;
@@ -49,8 +49,8 @@ namespace algorithm
     }
 
     // degrees_eps (d x eps): precompute degree of each node times eps
-    Vector<float> eps_vector(n);
-    Vector<float> degrees_eps(n);
+    Vector<float> eps_vector(A_nrows);
+    Vector<float> degrees_eps(A_nrows);
     CHECK( eps_vector.fill(eps) );
     eWiseMult<float, float, float, float>( &degrees_eps, GrB_NULL, GrB_NULL,
         PlusMultipliesSemiring<float>(), &degrees, &eps_vector, desc );
@@ -58,13 +58,13 @@ namespace algorithm
 
     // frontier (f): portion of r(v) >= degrees(v) x eps
     // (use float for now)
-    Vector<float> f(n);
+    Vector<float> f(A_nrows);
     CHECK( f.build(&indices, &values, 1, GrB_NULL) );
 
     // alpha: TODO(@ctcyang): introduce vector-constant eWiseMult
-    Vector<float> alpha_vector(n);
+    Vector<float> alpha_vector(A_nrows);
     CHECK( alpha_vector.fill(alpha) );
-    Vector<float> alpha_vector2(n);
+    Vector<float> alpha_vector2(A_nrows);
     CHECK( alpha_vector2.fill((1.-alpha)/2.) );
 
     Index nvals;
@@ -82,6 +82,7 @@ namespace algorithm
     CHECK( degrees_eps.print() );
 
     Index iter = 1;
+    Index unvisited = A_nrows;
     float succ;
     backend::GpuTimer cpu_tight;
     if( desc->descriptor_.timing_>0 )
@@ -90,6 +91,20 @@ namespace algorithm
     {
       if (desc->descriptor_.debug())
         std::cout << "=====Iteration " << iter << "=====\n";
+      if (desc->descriptor_.timing_ == 2)
+      {
+        cpu_tight.Stop();
+        if (iter > 1)
+        {
+          std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+              "push" : "pull";
+          std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+              << unvisited << ", " << vxm_mode << ", "
+              << cpu_tight.ElapsedMillis() << "\n";
+        }
+        unvisited -= (int)succ;
+        cpu_tight.Start();
+      }
 
       // p = p + alpha * r .* f
       CHECK( desc->toggle(GrB_MASK) );
@@ -104,7 +119,7 @@ namespace algorithm
       //CHECK( p->print() );
 
       // r = (1 - alpha)/2 * r
-      eWiseMult<float, float, float, float>(&r, GrB_NULL, GrB_NULL,
+      eWiseMult<float, float, float, float>(&r, &f, GrB_NULL,
           PlusMultipliesSemiring<float>(), &r, &alpha_vector2, desc);
       //std::cout << "residual (r): " << std::endl;
       //CHECK( r.print() );
@@ -123,11 +138,11 @@ namespace algorithm
       mxv<float, float, float, float>(&r, GrB_NULL, PlusMonoid<float>(), 
           PlusMultipliesSemiring<float>(), A, &r2, desc);
 
-      // f = {v | r(v) >= d* eps}
-      eWiseAdd<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
-          GreaterPlusSemiring<float>(), &r, &degrees_eps, desc);
-      //eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
-      //    PlusGreaterSemiring<float>(), &r, &degrees_eps, desc);
+      // f = {v | r(v) >= d*eps}
+      //eWiseAdd<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
+      //    GreaterPlusSemiring<float>(), &r, &degrees_eps, desc);
+      eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL, 
+          PlusGreaterSemiring<float>(), &r, &degrees_eps, desc);
 
       // Update frontier size
       reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &f, desc);
@@ -150,7 +165,11 @@ namespace algorithm
     if( desc->descriptor_.timing_>0 )
     {
       cpu_tight.Stop();
-      std::cout << "elapsed time: " << cpu_tight.ElapsedMillis() << "\n";
+      std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+          "push" : "pull";
+      std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+          << unvisited << ", " << vxm_mode << ", "
+          << cpu_tight.ElapsedMillis() << "\n";
       return cpu_tight.ElapsedMillis();
     }
     return 0.f;

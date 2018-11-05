@@ -101,7 +101,9 @@ namespace backend
       // Conversions:
       // TODO: add tol
 			SparseMatrixFormat A_format;
+      bool A_symmetric;
 			CHECK( A->getFormat(&A_format) );
+      CHECK( A->getSymmetry(&A_symmetric) );
 
       Desc_value vxm_mode, tol;
       CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
@@ -110,10 +112,11 @@ namespace backend
       {
         std::cout << "Identity: " << op.identity() << std::endl;
         std::cout << "Sparse format: " << A_format << std::endl;
+        std::cout << "Symmetric: " << A_symmetric << std::endl;
       }
 
 			// Fallback for lacking CSC storage overrides any mxvmode selections
-			if (A_format == GrB_SPARSE_MATRIX_CSRONLY)
+			if (!A_symmetric && A_format == GrB_SPARSE_MATRIX_CSRONLY)
       {
         if (u_vec_type == GrB_DENSE)
           CHECK( u_t->dense2sparse( op.identity(), desc ) );
@@ -150,6 +153,7 @@ namespace backend
         CHECK( w->setStorage( GrB_SPARSE ) );
         CHECK( spmspv( &w->sparse_, mask, accum, op, &A->sparse_, 
             &u->sparse_, desc ) );
+        desc->lastmxv_ = GrB_PUSHONLY;
       }
       else
       {
@@ -163,6 +167,7 @@ namespace backend
         else
           CHECK(gemv( &w->dense_, mask, accum, op, &A->dense_, &u->dense_, 
               desc));
+        desc->lastmxv_ = GrB_PULLONLY;
       }
     }
     else
@@ -218,14 +223,17 @@ namespace backend
       //
       // Conversions:
 			SparseMatrixFormat A_format;
+      bool A_symmetric;
 			CHECK( A->getFormat(&A_format) );
+      CHECK( A->getSymmetry(&A_symmetric) );
+
       Desc_value mxv_mode;
       Desc_value tol;
       CHECK( desc->get( GrB_MXVMODE, &mxv_mode ) );
       CHECK( desc->get( GrB_TOL,     &tol      ) );
 
 			// Fallback for lacking CSC storage overrides any mxvmode selections
-		  if (A_format == GrB_SPARSE_MATRIX_CSRONLY)
+		  if (!A_symmetric && A_format == GrB_SPARSE_MATRIX_CSRONLY)
       {
         if (u_vec_type == GrB_SPARSE)
           CHECK( u_t->sparse2dense( op.identity(), desc ) );
@@ -256,6 +264,7 @@ namespace backend
         CHECK( w->setStorage( GrB_SPARSE ) );
         CHECK( spmspv( &w->sparse_, mask, accum, op, &A->sparse_, 
             &u->sparse_, desc ) );
+        desc->lastmxv_ = GrB_PUSHONLY;
       }
       else
       {
@@ -271,6 +280,7 @@ namespace backend
           CHECK( gemv( &w->dense_, mask, accum, op, &A->dense_, 
               &u->dense_, desc ) );
         }
+        desc->lastmxv_ = GrB_PULLONLY;
       }
     }
     else

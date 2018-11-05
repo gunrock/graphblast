@@ -209,6 +209,56 @@ void testeWiseMultVectorSparsemaskSparseDense(
   BOOST_ASSERT_LIST( values, correct_val, mask_nvals );
 }
 
+void testeWiseMultVectorDensemaskSparseDense( 
+    const std::vector<float>&            mask_val,
+    const std::vector<graphblas::Index>& u_ind,
+    const std::vector<float>&            u_val,
+    const std::vector<float>&            v_val,
+    po::variables_map&                   vm )
+{
+  std::vector<graphblas::Index> indices;
+  std::vector<float> values;
+  graphblas::Index nvals   = v_val.size();
+  graphblas::Index u_nvals = u_ind.size();
+  graphblas::Info err;
+  graphblas::Descriptor desc;
+  desc.loadArgs(vm);
+
+  std::vector<graphblas::Index> correct_ind(u_nvals);
+  std::vector<float> correct_val(u_nvals);
+  for (int i = 0; i < u_nvals; ++i)
+  {
+    graphblas::Index ind = u_ind[i];
+    correct_val[i] = 0.f;
+    if (mask_val[ind] != 0.f && v_val[ind] != 0.f)
+    {
+      correct_val[i] = u_val[i] * v_val[ind];
+    }
+    correct_ind[i] = ind;
+  }
+
+  graphblas::Vector<float> u(nvals);
+  err = u.build(&u_ind, &u_val, u_nvals, GrB_NULL);
+
+  graphblas::Vector<float> v(nvals);
+  err = v.build(&v_val, nvals);
+
+  graphblas::Vector<float> mask(nvals);
+  err = mask.build(&mask_val, nvals);
+
+  graphblas::Vector<float> vec(nvals);
+
+  err = graphblas::eWiseMult<float, float, float, float>( &vec, &mask, GrB_NULL,
+      graphblas::PlusMultipliesSemiring<float>(), &u, &v, &desc );
+
+  graphblas::Index nvals_t = u_nvals;
+  err = vec.print();
+  err = vec.extractTuples( &indices, &values, &nvals_t );
+  BOOST_ASSERT( u_nvals == nvals_t );
+  BOOST_ASSERT_LIST( indices, correct_ind, u_nvals );
+  BOOST_ASSERT_LIST( values, correct_val, u_nvals );
+}
+
 void testeWiseMultVectorNomaskDenseDenseGreater(
     const std::vector<float>& u_val,
     const std::vector<float>& v_val,
@@ -245,6 +295,48 @@ void testeWiseMultVectorNomaskDenseDenseGreater(
   err = vec.extractTuples( &values, &nvals_t );
   BOOST_ASSERT( nvals == nvals_t );
   BOOST_ASSERT_LIST( values, correct, nvals );
+}
+
+void testeWiseMultVectorNomaskSparseDenseGreater( 
+    const std::vector<graphblas::Index>& u_ind,
+    const std::vector<float>&            u_val,
+    const std::vector<float>&            v_val,
+    po::variables_map&                   vm )
+{
+  std::vector<graphblas::Index> indices;
+  std::vector<float> values;
+  graphblas::Index nvals      = v_val.size();
+  graphblas::Index u_nvals    = u_ind.size();
+  graphblas::Info err;
+  graphblas::Descriptor desc;
+  desc.loadArgs(vm);
+
+  std::vector<graphblas::Index> correct_ind(u_nvals);
+  std::vector<float> correct_val(u_nvals);
+  for (int i = 0; i < u_nvals; ++i)
+  {
+    graphblas::Index ind = u_ind[i];
+    correct_ind[i] = ind;
+    correct_val[i] = u_val[i] > v_val[ind];
+  }
+
+  graphblas::Vector<float> u(nvals);
+  err = u.build(&u_ind, &u_val, u_nvals, GrB_NULL);
+
+  graphblas::Vector<float> v(nvals);
+  err = v.build(&v_val, nvals);
+
+  graphblas::Vector<float> vec(nvals);
+
+  err = graphblas::eWiseMult<float, float, float, float>( &vec, GrB_NULL,
+      GrB_NULL, graphblas::PlusGreaterSemiring<float>(), &u, &v, &desc );
+
+  graphblas::Index nvals_t = u_nvals;
+  err = vec.print();
+  err = vec.extractTuples( &indices, &values, &nvals_t );
+  BOOST_ASSERT( u_nvals == nvals_t );
+  BOOST_ASSERT_LIST( indices, correct_ind, u_nvals );
+  BOOST_ASSERT_LIST( values, correct_val, u_nvals );
 }
 
 struct TestMatrix
@@ -330,6 +422,19 @@ BOOST_FIXTURE_TEST_CASE( dup7, TestMatrix )
       v_val, vm);
 }
 
+BOOST_FIXTURE_TEST_CASE( dup9, TestMatrix )
+{
+  int argc = 3;
+  char* argv[] = {"app", "--debug", "1"};
+  po::variables_map vm;
+  parseArgs( argc, argv, vm );
+  std::vector<float>            mask_val{ 3., 2., 2., 0., 3., 0., 1., 1., 0.};
+  std::vector<graphblas::Index> u_ind   { 1,  2,  5,  6,  7,  8 }; 
+  std::vector<float>            u_val   { 3., 2., 2., 0., 3., 1.};
+  std::vector<float>            v_val   { 3., 2., 2., 3., 0., 0., 0., 2., 2.};
+  testeWiseMultVectorDensemaskSparseDense(mask_val, u_ind, u_val, v_val, vm);
+}
+
 BOOST_FIXTURE_TEST_CASE( dup11, TestMatrix )
 {
   int argc = 3;
@@ -362,6 +467,18 @@ BOOST_FIXTURE_TEST_CASE( dup12, TestMatrix )
     v_val[i] = 1.;
   }
   testeWiseMultVectorNomaskDenseDenseGreater(u_val, v_val, vm);
+}
+
+BOOST_FIXTURE_TEST_CASE( dup13, TestMatrix )
+{
+  int argc = 3;
+  char* argv[] = {"app", "--debug", "1"};
+  po::variables_map vm;
+  parseArgs( argc, argv, vm );
+  std::vector<graphblas::Index> u_ind   { 1,  2,  5,  6,  7,  8 }; 
+  std::vector<float>            u_val   { 3., 1., 2.,-1., 3., 1.};
+  std::vector<float>            v_val   { 3., 2., 2., 3., 0., 0., 0., 2., 2.};
+  testeWiseMultVectorNomaskSparseDenseGreater(u_ind, u_val, v_val, vm);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

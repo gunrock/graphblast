@@ -206,9 +206,19 @@ namespace backend
     bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
+    // Get mask type 
+    // -if dense, we want code to follow no mask route
+    // -if sparse, we want it to follow special masked route
+    Storage mask_type = GrB_UNKNOWN;
+    if (mask != NULL && desc->mask())
+      mask->getStorage(&mask_type);
+
     if( desc->debug() )
     {
-      std::cout << "Executing eWiseMult sparse-dense\n";
+      std::string mask_mode = "";
+      mask_mode = (mask_type == GrB_SPARSE) ? 
+          " (sparse mask)" : " (dense mask)";
+      std::cout << "Executing eWiseMult sparse-dense" << mask_mode << "\n";
       printState( use_mask, use_accum, use_scmp, use_repl, 0 );
     }
 
@@ -221,33 +231,26 @@ namespace backend
     Index u_nvals;
     u->nvals(&u_nvals);
 
-    if (use_mask && desc->mask())
+    if (use_mask && desc->mask() && mask_type == GrB_SPARSE)
     {
-      Storage mask_type;
-      mask->getStorage(&mask_type);
-      if (mask_type == GrB_DENSE)
-        std::cout << "Error: Masked eWiseMult sparse-dense with dense mask not implemented yet!\n";
-      else if (mask_type == GrB_SPARSE)
-      {
-        const SparseVector<M>* mask_sparse = &mask->sparse_;
-        Index mask_nvals;
-        mask_sparse->nvals(&mask_nvals);
+      const SparseVector<M>* mask_sparse = &mask->sparse_;
+      Index mask_nvals;
+      mask_sparse->nvals(&mask_nvals);
 
-        dim3 NT, NB;
-        NT.x = nt;
-        NT.y = 1;
-        NT.z = 1;
-        NB.x = (mask_nvals + nt - 1) / nt;
-        NB.y = 1;
-        NB.z = 1;
+      dim3 NT, NB;
+      NT.x = nt;
+      NT.y = 1;
+      NT.z = 1;
+      NB.x = (mask_nvals + nt - 1) / nt;
+      NB.y = 1;
+      NB.z = 1;
 
-        eWiseMultKernel<<<NB, NT>>>(w->d_ind_, w->d_val_, mask_sparse->d_ind_,
-            mask_sparse->d_val_, mask_nvals, NULL, op.identity(), 
-            extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_);
+      eWiseMultKernel<<<NB, NT>>>(w->d_ind_, w->d_val_, mask_sparse->d_ind_,
+          mask_sparse->d_val_, mask_nvals, NULL, op.identity(), 
+          extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_);
 
-        // Mask size is upper bound on output memory allocation
-        w->nvals_ = mask_nvals;
-      }
+      // Mask size is upper bound on output memory allocation
+      w->nvals_ = mask_nvals;
     }
     else
     {
@@ -285,6 +288,13 @@ namespace backend
             cudaMemcpyDeviceToDevice) );
         CUDA_CALL( cudaMemcpy(u->d_val_, w_val, u_nvals*sizeof(W), 
             cudaMemcpyDeviceToDevice) );
+      }
+
+      if (desc->mask() && mask_type == GrB_DENSE)
+      {
+        const DenseVector<M>* mask_dense = &mask->dense_;
+        zeroDenseIdentityKernel<<<NB, NT>>>(mask_dense->d_val_, op.identity(),
+            w_ind, w_val, w->nvals_);
       }
     }
     w->need_update_ = true;

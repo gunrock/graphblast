@@ -76,6 +76,7 @@ namespace backend
     Info setStorage( Storage  mat_type );
     Info getStorage( Storage* mat_type ) const;
     Info getFormat( SparseMatrixFormat* format) const;
+    Info getSymmetry(bool* symmetry) const;
     template <typename MatrixT>
     MatrixT* getMatrix() const;
 
@@ -336,6 +337,15 @@ namespace backend
     if (mat_type_ == GrB_SPARSE) return sparse_.getFormat(format);
     else std::cout << 
         "Error: Sparse matrix format is not defined for dense matrix!\n";
+    return GrB_SUCCESS;
+  }
+
+  template <typename T>
+  inline Info Matrix<T>::getSymmetry( bool* symmetry ) const
+  {
+    if (mat_type_ == GrB_SPARSE) return sparse_.getSymmetry(symmetry);
+    else std::cout << 
+        "Error: Matrix symmetry is not defined for dense matrix!\n";
     return GrB_SUCCESS;
   }
 

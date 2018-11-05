@@ -20,10 +20,10 @@ namespace backend
       //d_buffer_(NULL), d_buffer_size_(0), d_temp_(NULL), d_temp_size_(0),
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
       split_(0), enable_split_(0), niter_(0), max_niter_(0), directed_(0), 
-      timing_(0), memusage_(0), switchpoint_(0), mxvmode_(0), transpose_(0),
-      mtxinfo_(0), dirinfo_(0), verbose_(0), struconly_(0), earlyexit_(0), 
-      opreuse_(0), endbit_(0), sort_(0), mask_(0), nthread_(0), ndevice_(0),
-      debug_(0), memory_(0) 
+      timing_(0), memusage_(0), switchpoint_(0), mxvmode_(0), 
+      lastmxv_(GrB_PUSHONLY), transpose_(0), mtxinfo_(0), dirinfo_(0), 
+      verbose_(0), struconly_(0), earlyexit_(0), opreuse_(0), endbit_(0), 
+      sort_(0), mask_(0), nthread_(0), ndevice_(0), debug_(0), memory_(0) 
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -89,6 +89,7 @@ namespace backend
     int         max_niter_;
     int         directed_;
     int         mxvmode_;
+    Desc_value  lastmxv_;
     int         timing_;
     float       memusage_;
     float       switchpoint_;
