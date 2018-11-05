@@ -84,26 +84,26 @@ namespace algorithm
     Index iter = 1;
     Index unvisited = A_nrows;
     float succ;
-    backend::GpuTimer cpu_tight;
+    backend::GpuTimer gpu_tight;
     if( desc->descriptor_.timing_>0 )
-      cpu_tight.Start();
+      gpu_tight.Start();
     do
     {
       if (desc->descriptor_.debug())
         std::cout << "=====Iteration " << iter << "=====\n";
       if (desc->descriptor_.timing_ == 2)
       {
-        cpu_tight.Stop();
+        gpu_tight.Stop();
         if (iter > 1)
         {
           std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
               "push" : "pull";
           std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
               << unvisited << ", " << vxm_mode << ", "
-              << cpu_tight.ElapsedMillis() << "\n";
+              << gpu_tight.ElapsedMillis() << "\n";
         }
         unvisited -= (int)succ;
-        cpu_tight.Start();
+        gpu_tight.Start();
       }
 
       // p = p + alpha * r .* f
@@ -164,16 +164,15 @@ namespace algorithm
     } while (succ > 0);
     if( desc->descriptor_.timing_>0 )
     {
-      cpu_tight.Stop();
+      gpu_tight.Stop();
       std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
           "push" : "pull";
       std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
           << unvisited << ", " << vxm_mode << ", "
-          << cpu_tight.ElapsedMillis() << "\n";
-      return cpu_tight.ElapsedMillis();
+          << gpu_tight.ElapsedMillis() << "\n";
+      return gpu_tight.ElapsedMillis();
     }
     return 0.f;
-    //return GrB_SUCCESS;
   }
 
   template <typename T, typename a>

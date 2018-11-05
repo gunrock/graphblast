@@ -44,27 +44,28 @@ namespace algorithm
     float succ = 1.f;
     Index unvisited = A_nrows;
 
-    backend::GpuTimer cpu_tight;
+    backend::GpuTimer gpu_tight;
     if( desc->descriptor_.timing_>0 )
-      cpu_tight.Start();
+      gpu_tight.Start();
     do
     {
       if( desc->descriptor_.debug() )
         std::cout << "=====Iteration " << iter - 1 << "=====\n";
       if( desc->descriptor_.timing_==2 )
       {
-        cpu_tight.Stop();
+        gpu_tight.Stop();
         if (iter > 1)
         {
           std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
               "push" : "pull";
           std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
               << unvisited << ", " << vxm_mode << ", "
-              << cpu_tight.ElapsedMillis() << "\n";
+              << gpu_tight.ElapsedMillis() << "\n";
         }
         unvisited -= (int)succ;
-        cpu_tight.Start();
+        gpu_tight.Start();
       }
+      succ_last = succ;
 
       // TODO(@ctcyang): add inplace + accumulate version
       vxm<float,float,float,float>(&w, GrB_NULL, GrB_NULL,
@@ -75,26 +76,24 @@ namespace algorithm
       eWiseAdd<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
           LessPlusSemiring<float>(), v, &zero, desc);
       reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &w, desc);
-      succ_last = succ - succ_last;
       iter++;
 
       if (desc->descriptor_.debug())
         std::cout << "succ: " << succ_last << std::endl;
       if (iter > desc->descriptor_.max_niter_)
         break;
-    } while (succ_last > 0);
+    } while (succ_last != succ);
     if( desc->descriptor_.timing_>0 )
     {
-      cpu_tight.Stop();
+      gpu_tight.Stop();
       std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
           "push" : "pull";
       std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
           << unvisited << ", " << vxm_mode << ", "
-          << cpu_tight.ElapsedMillis() << "\n";
-      return cpu_tight.ElapsedMillis();
+          << gpu_tight.ElapsedMillis() << "\n";
+      return gpu_tight.ElapsedMillis();
     }
     return 0.f;
-    //return GrB_SUCCESS;
   }
 
   template <typename T, typename a>
