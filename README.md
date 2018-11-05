@@ -64,7 +64,7 @@ As well, the other GraphBLAS core principle is the concept of generalized semiri
 
 ## Usage
 
-Single Source-Shortest Path (Bellman-Ford SSSP) Example (see the [graphblas/algorithm]() directory for more examples):
+Single Source-Shortest Path (Bellman-Ford SSSP) example (see the [graphblas/algorithm]() directory for more examples):
 
 ```c++
 #include "graphblas/graphblas.hpp"
@@ -79,7 +79,7 @@ graphblas::Info sssp_simple( Vector<float>*       v,
   graphblas::Index A_nrows;
   A->nrows(&A_nrows);
 
-  // Visited vector (v)
+  // Distance vector (v)
   std::vector<graphblas::Index> indices(1, s);
   std::vector<float>  values(1, 0.f);
   v->build(&indices, &values, 1, GrB_NULL);
@@ -100,23 +100,22 @@ graphblas::Info sssp_simple( Vector<float>*       v,
   {
     succ_last = succ;
     
-    // v = v + v * A^T
+    // v = v + v * A^T (do relaxation on distance vector v)
     graphblas::vxm<float,float,float,float>(&w, GrB_NULL, GrB_NULL,
         MinimumPlusSemiring<float>(), v, A, desc);
     graphblas::eWiseAdd<float,float,float,float>(v, GrB_NULL, GrB_NULL,
         MinimumPlusSemiring<float>(), v, &w, desc);
 
-    // w = v < FLT_MAX
-    graphblas::eWiseAdd<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
-        LessPlusSemiring<float>(), v, &zero, desc);
+    // w = v < FLT_MAX (get all reachable vertices)
+    graphblas::eWiseMult<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
+        PlusLessSemiring<float>(), v, &zero, desc);
 
-    // succ = reduce(w)
-    graphblas::reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &w,
+    // succ = reduce(w) (do reduction on all reachable distances)
     graphblas::reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &w,
         desc);
     iter++;
 
-    // Repeat until distance converged
+    // Loop until total reachable distance has converged
   } while (succ_last != succ);
 
   return GrB_SUCCESS;
