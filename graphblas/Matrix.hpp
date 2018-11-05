@@ -272,9 +272,9 @@ namespace graphblas
     return matrix_.fill( axis, nvals, start );
   }
 
-	template <typename T>
+  template <typename T>
   template <typename U>
-	Info Matrix<T>::fillAscending( Index axis, 
+  Info Matrix<T>::fillAscending( Index axis, 
                                  Index nvals, 
                                  U     start )
   {

@@ -110,7 +110,7 @@ namespace backend
   }
 
   template <typename T>
-	Info Vector<T>::clear()
+  Info Vector<T>::clear()
   {
     vec_type_ = GrB_UNKNOWN;
     nvals_    = 0;
@@ -122,7 +122,7 @@ namespace backend
   // Calls size_ from SparseVector or DenseVector
   // Updates nsize_ with the latest value
   template <typename T>
-	Info Vector<T>::size( Index* nsize_t )
+  Info Vector<T>::size( Index* nsize_t )
   {
     Index nsize;
     if(      vec_type_ == GrB_SPARSE ) CHECK( sparse_.size(&nsize) );
@@ -136,7 +136,7 @@ namespace backend
   }
   
   template <typename T>
-	Info Vector<T>::nvals( Index* nvals_t )
+  Info Vector<T>::nvals( Index* nvals_t )
   {
     Index new_nvals;
     if(      vec_type_ == GrB_SPARSE ) CHECK( sparse_.nvals(&new_nvals) );
@@ -186,8 +186,8 @@ namespace backend
   }
 
   template <typename T>
-	Info Vector<T>::setElement( T     val,
-	           									Index index )
+  Info Vector<T>::setElement( T     val,
+                               Index index )
   {
     if(      vec_type_ == GrB_SPARSE ) return sparse_.setElement( val, index );
     else if( vec_type_ == GrB_DENSE  ) return  dense_.setElement( val, index );
@@ -195,8 +195,8 @@ namespace backend
   }
 
   template <typename T>
-	Info Vector<T>::extractElement( T*    val,
-											            Index index )
+  Info Vector<T>::extractElement( T*    val,
+                                  Index index )
   {
     if( vec_type_ == GrB_SPARSE ) 
       return sparse_.extractElement( val, index );
@@ -206,9 +206,9 @@ namespace backend
   }
 
   template <typename T>
-	Info Vector<T>::extractTuples( std::vector<Index>* indices,
-											           std::vector<T>*     values,
-											           Index*              n )
+  Info Vector<T>::extractTuples( std::vector<Index>* indices,
+                                 std::vector<T>*     values,
+                                 Index*              n )
   {
     if (vec_type_ == GrB_SPARSE)
       return sparse_.extractTuples( indices, values, n );
@@ -218,8 +218,8 @@ namespace backend
   }
 
   template <typename T>
-	Info Vector<T>::extractTuples( std::vector<T>* values,
-											           Index*          n )
+  Info Vector<T>::extractTuples( std::vector<T>* values,
+                                 Index*          n )
   {
     if (vec_type_ == GrB_SPARSE)
     {
@@ -293,10 +293,10 @@ namespace backend
   inline Info Vector<T>::setStorage( Storage vec_type )
   {
     vec_type_ = vec_type;
-		if( vec_type_ == GrB_SPARSE )
-			CHECK( sparse_.allocate() );
-		else if( vec_type_ == GrB_DENSE )
-			CHECK( dense_.allocate() );
+    if( vec_type_ == GrB_SPARSE )
+      CHECK( sparse_.allocate() );
+    else if( vec_type_ == GrB_DENSE )
+      CHECK( dense_.allocate() );
     return GrB_SUCCESS;
   }
 
@@ -308,8 +308,8 @@ namespace backend
   }
 
   // Check if necessary to convert sparse-to-dense or dense-to-sparse
-	// a) if more elements than desc->switchpoint(), convert SpVec->DeVec
-	// b) if less elements than desc->switchpoint(), convert DeVec->SpVec
+  // a) if more elements than desc->switchpoint(), convert SpVec->DeVec
+  // b) if less elements than desc->switchpoint(), convert DeVec->SpVec
   template <typename T>
   Info Vector<T>::convert( T identity, Descriptor* desc )
   {
@@ -421,27 +421,27 @@ namespace backend
     NB.y = 1;
 
     desc->resize((2*nvals)*max(sizeof(Index),sizeof(T)), "buffer");
-		Index* d_flag = (Index*) desc->d_buffer_+  nvals;
-		Index* d_scan = (Index*) desc->d_buffer_+2*nvals;
+    Index* d_flag = (Index*) desc->d_buffer_+  nvals;
+    Index* d_scan = (Index*) desc->d_buffer_+2*nvals;
 
-		updateFlagKernel<<<NB,NT>>>( d_flag, identity, dense_.d_val_, nvals );
-		mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, nvals, (Index)0,
-				mgpu::plus<Index>(), (Index*)0, &sparse_.nvals_, d_scan,
-				*(desc->d_context_) );
+    updateFlagKernel<<<NB,NT>>>( d_flag, identity, dense_.d_val_, nvals );
+    mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, nvals, (Index)0,
+        mgpu::plus<Index>(), (Index*)0, &sparse_.nvals_, d_scan,
+        *(desc->d_context_) );
 
-		if( desc->debug() )
-		{
-			printDevice("d_flag", d_flag, nvals);
-			printDevice("d_scan", d_scan, nvals);
-			std::cout << "Dense frontier size: " << nvals << std::endl;
-			std::cout << "Sparse frontier size: " << sparse_.nvals_ << std::endl;
-		}
+    if( desc->debug() )
+    {
+      printDevice("d_flag", d_flag, nvals);
+      printDevice("d_scan", d_scan, nvals);
+      std::cout << "Dense frontier size: " << nvals << std::endl;
+      std::cout << "Sparse frontier size: " << sparse_.nvals_ << std::endl;
+    }
 
     if( desc->struconly() )
-			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, (Index)1, 
+      streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, (Index)1, 
           d_flag, nvals);
     else
-			streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, 
+      streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, 
           sparse_.d_val_, d_scan, (T)identity, dense_.d_val_, nvals);
 
     if( desc->debug() )

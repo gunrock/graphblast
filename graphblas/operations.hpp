@@ -415,13 +415,13 @@ namespace graphblas
                Descriptor*      desc )
   {
     if( w==NULL || A==NULL )
-			return GrB_UNINITIALIZED_OBJECT;
+      return GrB_UNINITIALIZED_OBJECT;
 
-		const backend::Vector<W>* mask_t = (mask==NULL ) ? NULL : &mask->vector_;
+    const backend::Vector<W>* mask_t = (mask==NULL ) ? NULL : &mask->vector_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
     return backend::reduce( &w->vector_, mask_t, accum, op, &A->matrix_, desc_t );
-	}
+  }
 
   // Reduction of vector to form scalar
   //   val = val + \sum_i u(i) for all i    +: accum

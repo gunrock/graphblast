@@ -412,26 +412,26 @@ namespace backend
     printf("%s\n", dat_name);
 
     if( dat_name != NULL && exists(dat_name) )
-		{
-			// The size of the file in bytes is in results.st_size
-			// -unserialize vector
-			std::ifstream ifs(dat_name, std::ios::in | std::ios::binary);
-			if (ifs.fail())
-				std::cout << "Error: Unable to open file for reading!\n";
-			else
-			{
-				printf("Reading %s\n", dat_name);
-			  ifs.read( reinterpret_cast<char*>(&nrows_), sizeof(Index));
+    {
+      // The size of the file in bytes is in results.st_size
+      // -unserialize vector
+      std::ifstream ifs(dat_name, std::ios::in | std::ios::binary);
+      if (ifs.fail())
+        std::cout << "Error: Unable to open file for reading!\n";
+      else
+      {
+        printf("Reading %s\n", dat_name);
+        ifs.read( reinterpret_cast<char*>(&nrows_), sizeof(Index));
         if( ncols_ != nrows_ )
           std::cout << "Error: nrows not equal to ncols!\n";
-				ifs.read( reinterpret_cast<char*>(&nvals_), sizeof(Index) );
+        ifs.read( reinterpret_cast<char*>(&nvals_), sizeof(Index) );
         CHECK( allocateCpu() );      
 
-				ifs.read( reinterpret_cast<char*>(h_csrRowPtr_),
-						(nrows_+1)*sizeof(Index) );
+        ifs.read( reinterpret_cast<char*>(h_csrRowPtr_),
+            (nrows_+1)*sizeof(Index) );
 
-				ifs.read( reinterpret_cast<char*>(h_csrColInd_),
-						nvals_*sizeof(Index) );
+        ifs.read( reinterpret_cast<char*>(h_csrColInd_),
+            nvals_*sizeof(Index) );
 
         for( Index i=0; i<nvals_; i++ )
           h_csrVal_[i] = (T)1;
@@ -442,10 +442,10 @@ namespace backend
         h_cscRowInd_ = h_csrColInd_;
         h_cscVal_    = h_csrVal_;
         CHECK( cpuToGpu() );
-			}
+      }
       free(dat_name);
-		}
-		else
+    }
+    else
       std::cout << "Error: Unable to read file!\n";
 
     return GrB_SUCCESS;
@@ -555,13 +555,13 @@ namespace backend
     printArray( "csrRowPtr", h_csrRowPtr_, std::min(nrows_+1,40) );
     printArray( "csrVal",    h_csrVal_,    std::min(nvals_,40) );
     CHECK( printCSR("pretty print") );
-		if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
-	  {
+    if( format_ == GrB_SPARSE_MATRIX_CSRCSC )
+    {
       printArray( "cscRowInd", h_cscRowInd_, std::min(nvals_,40) );
       printArray( "cscColPtr", h_cscColPtr_, std::min(ncols_+1,40) );
       printArray( "cscVal",    h_cscVal_,    std::min(nvals_,40) );
       CHECK( printCSC("pretty print") );
-		}
+    }
     return GrB_SUCCESS;
   }
 
@@ -720,8 +720,8 @@ namespace backend
     if( nvals_>0 && h_cscVal_ == NULL )
       h_cscVal_    = (T*)    malloc(ncapacity_*sizeof(T));
 
-		// TODO(@ctcyang): does not need to be so strict since mxm may need to
-		// only set storage type, but not allocate yet since nvals_ not known
+    // TODO(@ctcyang): does not need to be so strict since mxm may need to
+    // only set storage type, but not allocate yet since nvals_ not known
     //if( h_csrRowPtr_==NULL || h_csrColInd_==NULL || h_csrVal_==NULL )
     //  return GrB_OUT_OF_MEMORY;
 
@@ -762,7 +762,7 @@ namespace backend
       }
     }
 
-		// TODO(@ctcyang): same reason as above for allocateCpu()
+    // TODO(@ctcyang): same reason as above for allocateCpu()
     //if( d_csrRowPtr_==NULL || d_csrColInd_==NULL || d_csrVal_==NULL )
     //  return GrB_OUT_OF_MEMORY;
 

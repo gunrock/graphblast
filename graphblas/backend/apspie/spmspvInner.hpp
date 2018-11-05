@@ -114,19 +114,19 @@ namespace backend
 
     indirectScanKernel<<<NB,NT>>>( (Index*)d_temp_nvals, A_csrRowPtr, u_ind, 
         *u_nvals );
-		CUDA_CALL(cudaDeviceSynchronize());
+    CUDA_CALL(cudaDeviceSynchronize());
     // Note: cannot use op.add_op() here
     mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>( (Index*)d_temp_nvals, *u_nvals,
         (Index)0, mgpu::plus<Index>(), (Index*)d_scan+(*u_nvals), w_nvals, 
         (Index*)d_scan, (Index*)d_temp, *(desc->d_context_) );
-		CUDA_CALL(cudaDeviceSynchronize());
+    CUDA_CALL(cudaDeviceSynchronize());
 
     if( desc->debug() )
     {
       printDevice( "d_temp_nvals", (Index*)d_temp_nvals, *u_nvals );
-		  CUDA_CALL(cudaDeviceSynchronize());
+      CUDA_CALL(cudaDeviceSynchronize());
       printDevice( "d_scan",       (Index*)d_scan,       *u_nvals+1 );
-		  CUDA_CALL(cudaDeviceSynchronize());
+      CUDA_CALL(cudaDeviceSynchronize());
 
       std::cout << "u_nvals: " << *u_nvals << std::endl;
       std::cout << "w_nvals: " << *w_nvals << std::endl;
@@ -142,16 +142,16 @@ namespace backend
     if( *w_nvals==0 )
       return GrB_SUCCESS;
 
-		//Step 1) Gather from CSR graph into one big array  |     |  |
+    //Step 1) Gather from CSR graph into one big array  |     |  |
     //Step 2) Vector Portion
-		//   -IntervalExpand into frontier-length list
-		//      1. Gather the elements indexed by d_csrVecInd
-		//      2. Expand the elements to memory set by d_csrColGood
-		//   -Element-wise multiplication with frontier
-		//Step 3) Matrix Structure Portion
-		//Step 4) Element-wise multiplication
-		//Step 1-4) custom kernel method (1 single kernel)
-		//  modify spmvCsrIndirectBinary() to stop after expand phase
+    //   -IntervalExpand into frontier-length list
+    //      1. Gather the elements indexed by d_csrVecInd
+    //      2. Expand the elements to memory set by d_csrColGood
+    //   -Element-wise multiplication with frontier
+    //Step 3) Matrix Structure Portion
+    //Step 4) Element-wise multiplication
+    //Step 1-4) custom kernel method (1 single kernel)
+    //  modify spmvCsrIndirectBinary() to stop after expand phase
     //  output: 1) expanded index array 2) expanded value array
     //  -> d_csrSwapInd |E| x desc->memusage()
     //  -> d_csrSwapVal |E| x desc->memusage()
@@ -208,7 +208,7 @@ namespace backend
           *u_nvals, A_csrVal, u_ind, (T*)d_csrSwapVal,
           *(desc->d_context_) );
 
-		//Step 4) Element-wise multiplication
+    //Step 4) Element-wise multiplication
       NB.x = (*w_nvals+nt-1)/nt;
       eWiseMultKernel<<<NB, NT>>>((T*)d_csrSwapVal, extractAdd(op),
           op.identity(), extractMul(op), (T*)d_csrSwapVal, (T*)d_temp, 
@@ -222,7 +222,7 @@ namespace backend
         printDevice( "SwapVal", (T*)    d_csrSwapVal, *w_nvals );
     }
 
-		//Step 5) Sort step
+    //Step 5) Sort step
     //  -> d_csrTempInd |E| x desc->memusage()
     //  -> d_csrTempVal |E| x desc->memusage()
     size_t temp_storage_bytes = 0;
@@ -290,14 +290,14 @@ namespace backend
       }
     }
 
-		if( desc->debug() )
+    if( desc->debug() )
     {
       printf("Endbit: %d\n", endbit);
       printf("Current iteration: %d nonzero vector, %d edges\n", *u_nvals, 
         *w_nvals);
     }
 
-		//Step 6) Segmented Reduce By Key
+    //Step 6) Segmented Reduce By Key
 
     if( desc->struconly() )
     {

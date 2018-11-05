@@ -14,7 +14,7 @@ namespace algorithm
   float sssp( Vector<float>*       v,
               const Matrix<float>* A, 
               Index                s,
-		          Descriptor*          desc )
+              Descriptor*          desc )
   {
     Index A_nrows;
     CHECK( A->nrows( &A_nrows ) );
@@ -101,22 +101,22 @@ namespace algorithm
   int ssspCpu( Index        source,
                Matrix<a>*   A,
                T*           h_sssp_cpu,
-							 Index        depth,
+               Index        depth,
                bool         transpose=false )
   {
     int max_depth;
 
     if( transpose )
-		  max_depth = SimpleReferenceSssp<T>( A->matrix_.nrows_, 
+      max_depth = SimpleReferenceSssp<T>( A->matrix_.nrows_, 
           A->matrix_.sparse_.h_cscColPtr_, A->matrix_.sparse_.h_cscRowInd_, 
           A->matrix_.sparse_.h_cscVal_, h_sssp_cpu, source, depth);
     else
-		  max_depth = SimpleReferenceSssp<T>( A->matrix_.nrows_, 
+      max_depth = SimpleReferenceSssp<T>( A->matrix_.nrows_, 
           A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_, 
           A->matrix_.sparse_.h_csrVal_, h_sssp_cpu, source, depth);
 
-		return max_depth; 
-	}
+    return max_depth; 
+  }
 
 }  // algorithm
 }  // graphblas

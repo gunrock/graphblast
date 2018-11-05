@@ -34,7 +34,7 @@ namespace backend
     }
     else
     {
-			std::cout << "Error: SpMM and GEMM not implemented yet!\n";
+      std::cout << "Error: SpMM and GEMM not implemented yet!\n";
       /*CHECK( C->setStorage( GrB_DENSE ) );
       if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
       {
@@ -100,9 +100,9 @@ namespace backend
       //
       // Conversions:
       // TODO: add tol
-			SparseMatrixFormat A_format;
+      SparseMatrixFormat A_format;
       bool A_symmetric;
-			CHECK( A->getFormat(&A_format) );
+      CHECK( A->getFormat(&A_format) );
       CHECK( A->getSymmetry(&A_symmetric) );
 
       Desc_value vxm_mode, tol;
@@ -115,8 +115,8 @@ namespace backend
         std::cout << "Symmetric: " << A_symmetric << std::endl;
       }
 
-			// Fallback for lacking CSC storage overrides any mxvmode selections
-			if (!A_symmetric && A_format == GrB_SPARSE_MATRIX_CSRONLY)
+      // Fallback for lacking CSC storage overrides any mxvmode selections
+      if (!A_symmetric && A_format == GrB_SPARSE_MATRIX_CSRONLY)
       {
         if (u_vec_type == GrB_DENSE)
           CHECK( u_t->dense2sparse( op.identity(), desc ) );
@@ -143,11 +143,11 @@ namespace backend
       // Breakdown into 4 cases:
       // 1) SpMSpV: SpMat x SpVec
       // 2) SpMV:   SpMat x DeVec (preferred to 3)
-			// 3) SpMSpV: SpMat x SpVec (fallback if CSC representation not available)
+      // 3) SpMSpV: SpMat x SpVec (fallback if CSC representation not available)
       // 4) GeMV:   DeMat x DeVec
-			//
-			// Note: differs from mxv, because mxv would say instead:
-			// 3) "... if CSC representation not available ..."
+      //
+      // Note: differs from mxv, because mxv would say instead:
+      // 3) "... if CSC representation not available ..."
       if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
       {
         CHECK( w->setStorage( GrB_SPARSE ) );
@@ -176,7 +176,7 @@ namespace backend
     }
 
     // Undo change to desc by toggling again
-	  CHECK( desc->toggle( GrB_INP1 ) );
+    CHECK( desc->toggle( GrB_INP1 ) );
 
     return GrB_SUCCESS;
   }
@@ -222,9 +222,9 @@ namespace backend
       // 1b) Merge-path and direction-optimizing codepath
       //
       // Conversions:
-			SparseMatrixFormat A_format;
+      SparseMatrixFormat A_format;
       bool A_symmetric;
-			CHECK( A->getFormat(&A_format) );
+      CHECK( A->getFormat(&A_format) );
       CHECK( A->getSymmetry(&A_symmetric) );
 
       Desc_value mxv_mode;
@@ -232,8 +232,8 @@ namespace backend
       CHECK( desc->get( GrB_MXVMODE, &mxv_mode ) );
       CHECK( desc->get( GrB_TOL,     &tol      ) );
 
-			// Fallback for lacking CSC storage overrides any mxvmode selections
-		  if (!A_symmetric && A_format == GrB_SPARSE_MATRIX_CSRONLY)
+      // Fallback for lacking CSC storage overrides any mxvmode selections
+      if (!A_symmetric && A_format == GrB_SPARSE_MATRIX_CSRONLY)
       {
         if (u_vec_type == GrB_SPARSE)
           CHECK( u_t->sparse2dense( op.identity(), desc ) );
@@ -257,7 +257,7 @@ namespace backend
       // 3 cases:
       // 1) SpMSpV: SpMat x SpVec (preferred)
       // 2) SpMV:   SpMat x DeVec
-			// 3) SpMV:   SpMat x DeVec (fallback if CSC representation not available)
+      // 3) SpMV:   SpMat x DeVec (fallback if CSC representation not available)
       // 4) GeMV:   DeMat x DeVec
       if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
       {
@@ -652,10 +652,10 @@ namespace backend
     // Get storage:
     Storage mat_type;
     CHECK( A->getStorage( &mat_type ) );
-		CHECK( w->setStorage( GrB_DENSE ) );
+    CHECK( w->setStorage( GrB_DENSE ) );
 
-		if( mask == NULL )
-		{
+    if( mask == NULL )
+    {
     // 2 cases:
     // 1) SpMat
     // 2) DeMat
@@ -667,13 +667,13 @@ namespace backend
       {
         CHECK( reduceInner( &w->dense_, mask, accum, op, &A->dense_, desc) );
       }
-		}
-		else
-		{
+    }
+    else
+    {
       std::cout << "Error: Masked reduce not implemented yet!\n";
-		}
+    }
 
-		return GrB_SUCCESS;
+    return GrB_SUCCESS;
   }
 
   template <typename T, typename U,

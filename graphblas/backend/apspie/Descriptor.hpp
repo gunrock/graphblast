@@ -246,20 +246,20 @@ namespace backend
     debug_          = vm["debug"         ].as<bool>();
     memory_         = vm["memory"        ].as<bool>();
 
-		switch( mxvmode_ )
-		{
-			case 0:
-				CHECK( set(GrB_MXVMODE, GrB_PUSHPULL) );
-				break;
-			case 1:
-				CHECK( set(GrB_MXVMODE, GrB_PUSHONLY) );
-				break;
-			case 2:
-				CHECK( set(GrB_MXVMODE, GrB_PULLONLY) );
-				break;
-			default:
-				std::cout << "Error: incorrect mxvmode selection!\n";
-		}
+    switch( mxvmode_ )
+    {
+      case 0:
+        CHECK( set(GrB_MXVMODE, GrB_PUSHPULL) );
+        break;
+      case 1:
+        CHECK( set(GrB_MXVMODE, GrB_PUSHONLY) );
+        break;
+      case 2:
+        CHECK( set(GrB_MXVMODE, GrB_PULLONLY) );
+        break;
+      default:
+        std::cout << "Error: incorrect mxvmode selection!\n";
+    }
 
     switch( nthread_ )
     {

@@ -8,8 +8,8 @@ namespace backend
   enum SparseMatrixFormat
   {
     GrB_SPARSE_MATRIX_CSRCSC,
-		GrB_SPARSE_MATRIX_CSRONLY,
-		GrB_SPARSE_MATRIX_CSCONLY
+    GrB_SPARSE_MATRIX_CSRONLY,
+    GrB_SPARSE_MATRIX_CSCONLY
   };
 
   enum LoadBalanceMode

@@ -86,7 +86,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
     ("sort", po::value<bool>()->default_value(true),
         "True means sort, False means do not sort. (Option is only valid if struconly is true)")
     ("mask", po::value<bool>()->default_value(true),
-		    "True means use fused mask in pull direction, False means do not do it")
+        "True means use fused mask in pull direction, False means do not do it")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 
@@ -309,18 +309,18 @@ char* convert( const char* fname, bool is_undirected=true )
 {
   char* dat_name = (char*)malloc(256);
 
-	// separate the graph path and the file name
-	char *temp1 = strdup(fname);
-	char *temp2 = strdup(fname);
-	char *file_path = dirname (temp1);
-	char *file_name = basename(temp2);
+  // separate the graph path and the file name
+  char *temp1 = strdup(fname);
+  char *temp2 = strdup(fname);
+  char *file_path = dirname (temp1);
+  char *file_name = basename(temp2);
 
   if (is_undirected)
-	  sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
-		  	((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
+    sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
+        ((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
   else
-	  sprintf(dat_name, "%s/.%s.d.%d.%sbin", file_path, file_name, 0,
-		  	((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
+    sprintf(dat_name, "%s/.%s.d.%d.%sbin", file_path, file_name, 0,
+        ((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
 
   return dat_name;
 }

@@ -40,7 +40,7 @@ namespace backend
                         SemiringT              op, 
                         const SparseMatrix<a>* A,
                         const SparseMatrix<b>* B,
-							          Descriptor*            desc )
+                        Descriptor*            desc )
   {
     Index A_nrows, A_ncols, A_nvals;
     Index B_nrows, B_ncols, B_nvals;

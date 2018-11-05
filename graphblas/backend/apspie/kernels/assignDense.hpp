@@ -21,22 +21,22 @@ namespace backend
 
     if( UseAll )
     {
-			for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
-			{
-				if( UseMask )
-				{
+      for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
+      {
+        if( UseMask )
+        {
           M m_val = __ldg( mask_val+row );
 
-					// val passes through if either:
-					// 1) UseScmp is not selected and m_val is zero
-					// 2) UseScmp is selected and m_val is not zero
+          // val passes through if either:
+          // 1) UseScmp is not selected and m_val is zero
+          // 2) UseScmp is selected and m_val is not zero
           if( UseScmp^((bool) m_val) )
             u_val[row] = val;
         }
-				else
-				{
-				  u_val[row] = val;
-				}
+        else
+        {
+          u_val[row] = val;
+        }
       }
     }
     else

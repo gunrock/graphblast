@@ -108,23 +108,23 @@ void testDup( char const* tsv )
 
 void testShiftRight( char const* tsv )
 {
-	std::vector<graphblas::Index> row_indices;
-	std::vector<graphblas::Index> col_indices;
-	std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-	graphblas::Info err;
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  graphblas::Info err;
 
-	int argc = 2;
-	char** argv = (char**) malloc(2*sizeof(char*));
-	argv[1] = (char *) "--verbose=false";
+  int argc = 2;
+  char** argv = (char**) malloc(2*sizeof(char*));
+  argv[1] = (char *) "--verbose=false";
 
-	// Read in sparse matrix
-	err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-		nvals );
+  // Read in sparse matrix
+  err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
+    nvals );
 
-	graphblas::BlockState<graphblas::T> state( nrows, ncols );
-	err = state.parseArgs( argc, argv );
-	err = state.build( row_indices, col_indices, values, nvals );
+  graphblas::BlockState<graphblas::T> state( nrows, ncols );
+  err = state.parseArgs( argc, argv );
+  err = state.build( row_indices, col_indices, values, nvals );
   check( state.block_state_.blk_.sparse_ );
 
   graphblas::Index col_ind = state.block_state_.blk_.sparse_.h_csrRowPtr_[5];
@@ -141,23 +141,23 @@ void testEwiseSub( char const*                          tsv,
                        graphblas::Index>&              out_edge,
                    const std::vector<graphblas::Index> correct )
 {
-	std::vector<graphblas::Index> row_indices;
-	std::vector<graphblas::Index> col_indices;
-	std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-	graphblas::Info err;
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  graphblas::Info err;
 
-	int argc = 2;
-	char** argv = (char**) malloc(2*sizeof(char*));
-	argv[1] = (char *) "--verbose=false";
+  int argc = 2;
+  char** argv = (char**) malloc(2*sizeof(char*));
+  argv[1] = (char *) "--verbose=false";
 
-	// Read in sparse matrix
-	err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-		nvals );
+  // Read in sparse matrix
+  err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
+    nvals );
 
-	graphblas::BlockState<graphblas::T> state( nrows, ncols );
-	err = state.parseArgs( argc, argv );
-	err = state.build( row_indices, col_indices, values, nvals );
+  graphblas::BlockState<graphblas::T> state( nrows, ncols );
+  err = state.parseArgs( argc, argv );
+  err = state.build( row_indices, col_indices, values, nvals );
   //printArray("col_ind",state.block_state_.blk_.sparse_.h_csrColInd_);
 
   err = ewiseSub( state.block_state_.blk_.sparse_, 5, out_edge );
@@ -181,23 +181,23 @@ void testEwiseAdd( char const*                          tsv,
                    const std::vector<graphblas::T>     correct_val,
                    const int                            case_choice )
 {
-	std::vector<graphblas::Index> row_indices;
-	std::vector<graphblas::Index> col_indices;
-	std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-	graphblas::Info err;
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  graphblas::Info err;
 
-	int argc = 2;
-	char** argv = (char**) malloc(2*sizeof(char*));
-	argv[1] = (char *) "--verbose=false";
+  int argc = 2;
+  char** argv = (char**) malloc(2*sizeof(char*));
+  argv[1] = (char *) "--verbose=false";
 
-	// Read in sparse ma://sacmail.nvidia.com/owa/#path=/mailtrix
-	err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-		nvals );
+  // Read in sparse ma://sacmail.nvidia.com/owa/#path=/mailtrix
+  err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
+    nvals );
 
-	graphblas::BlockState<graphblas::T> state( nrows, ncols );
-	err = state.parseArgs( argc, argv );
-	err = state.build( row_indices, col_indices, values, nvals );
+  graphblas::BlockState<graphblas::T> state( nrows, ncols );
+  err = state.parseArgs( argc, argv );
+  err = state.build( row_indices, col_indices, values, nvals );
 
   graphblas::Index p_rowLength = state.block_state_.blk_.sparse_.h_csrRowPtr_[6]-
       state.block_state_.blk_.sparse_.h_csrRowPtr_[5];
@@ -252,23 +252,23 @@ void testEwiseSubCol( char const*                          tsv,
                           graphblas::Index>&              out_edge,
                       const std::vector<graphblas::Index> correct )
 {
-	std::vector<graphblas::Index> row_indices;
-	std::vector<graphblas::Index> col_indices;
-	std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-	graphblas::Info err;
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  graphblas::Info err;
 
-	int argc = 2;
-	char** argv = (char**) malloc(2*sizeof(char*));
-	argv[1] = (char *) "--verbose=false";
+  int argc = 2;
+  char** argv = (char**) malloc(2*sizeof(char*));
+  argv[1] = (char *) "--verbose=false";
 
-	// Read in sparse matrix
-	err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-		nvals );
+  // Read in sparse matrix
+  err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
+    nvals );
 
-	graphblas::BlockState<graphblas::T> state( nrows, ncols );
-	err = state.parseArgs( argc, argv );
-	err = state.build( row_indices, col_indices, values, nvals );
+  graphblas::BlockState<graphblas::T> state( nrows, ncols );
+  err = state.parseArgs( argc, argv );
+  err = state.build( row_indices, col_indices, values, nvals );
   //printArray("col_ind",state.block_state_.blk_.sparse_.h_csrColInd_);
 
   err = ewiseSubCol( state.block_state_.blk_t_.sparse_, 5, out_edge );
@@ -289,23 +289,23 @@ void testEwiseAddCol( char const*                          tsv,
                       const std::vector<graphblas::Index> correct_ind,
                       const std::vector<graphblas::T>     correct_val )
 {
-	std::vector<graphblas::Index> row_indices;
-	std::vector<graphblas::Index> col_indices;
-	std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-	graphblas::Info err;
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  graphblas::Info err;
 
-	int argc = 2;
-	char** argv = (char**) malloc(2*sizeof(char*));
-	argv[1] = (char *) "--verbose=false";
+  int argc = 2;
+  char** argv = (char**) malloc(2*sizeof(char*));
+  argv[1] = (char *) "--verbose=false";
 
-	// Read in sparse matrix
-	err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-		nvals );
+  // Read in sparse matrix
+  err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
+    nvals );
 
-	graphblas::BlockState<graphblas::T> state( nrows, ncols );
-	err = state.parseArgs( argc, argv );
-	err = state.build( row_indices, col_indices, values, nvals );
+  graphblas::BlockState<graphblas::T> state( nrows, ncols );
+  err = state.parseArgs( argc, argv );
+  err = state.build( row_indices, col_indices, values, nvals );
   //printArray("col_ind",state.block_state_.blk_.sparse_.h_csrColInd_);
 
   err = ewiseAddCol( state.block_state_.blk_t_.sparse_, 5, out_edge );
@@ -325,23 +325,23 @@ void testEwiseAddCol( char const*                          tsv,
 void testRequest( char const* tsv, 
                   const graphblas::Index row )
 {
-	std::vector<graphblas::Index> row_indices;
-	std::vector<graphblas::Index> col_indices;
-	std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-	graphblas::Info err;
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  graphblas::Info err;
 
-	int argc = 2;
-	char** argv = (char**) malloc(2*sizeof(char*));
-	argv[1] = (char *) "--verbose=false";
+  int argc = 2;
+  char** argv = (char**) malloc(2*sizeof(char*));
+  argv[1] = (char *) "--verbose=false";
 
-	// Read in sparse matrix
-	err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-		nvals );
+  // Read in sparse matrix
+  err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
+    nvals );
 
-	graphblas::BlockState<graphblas::T> state( nrows, ncols );
-	err = state.parseArgs( argc, argv );
-	err = state.build( row_indices, col_indices, values, nvals );
+  graphblas::BlockState<graphblas::T> state( nrows, ncols );
+  err = state.parseArgs( argc, argv );
+  err = state.build( row_indices, col_indices, values, nvals );
   //printArray("col_ind",state.block_state_.blk_.sparse_.h_csrColInd_);
 
   const graphblas::Index request = state.block_state_.blk_.sparse_.ncapacity_-nvals;
@@ -361,23 +361,23 @@ void testRequest( char const* tsv,
 
 void testResize( char const* tsv )
 {
-	std::vector<graphblas::Index> row_indices;
-	std::vector<graphblas::Index> col_indices;
-	std::vector<float> values;
-	graphblas::Index nrows, ncols, nvals;
-	graphblas::Info err;
+  std::vector<graphblas::Index> row_indices;
+  std::vector<graphblas::Index> col_indices;
+  std::vector<float> values;
+  graphblas::Index nrows, ncols, nvals;
+  graphblas::Info err;
 
-	int argc = 2;
-	char** argv = (char**) malloc(2*sizeof(char*));
-	argv[1] = (char *) "--verbose=false";
+  int argc = 2;
+  char** argv = (char**) malloc(2*sizeof(char*));
+  argv[1] = (char *) "--verbose=false";
 
-	// Read in sparse matrix
-	err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
-		nvals );
+  // Read in sparse matrix
+  err = readTsv( tsv, row_indices, col_indices, values, nrows, ncols,
+    nvals );
 
-	graphblas::BlockState<graphblas::T> state( nrows, ncols );
-	err = state.parseArgs( argc, argv );
-	err = state.build( row_indices, col_indices, values, nvals );
+  graphblas::BlockState<graphblas::T> state( nrows, ncols );
+  err = state.parseArgs( argc, argv );
+  err = state.build( row_indices, col_indices, values, nvals );
   //printArray("col_ind",state.block_state_.blk_.sparse_.h_csrColInd_);
 
   //std::cout << state.block_state_.blk_.sparse_.ncapacity_ << " " << request << std::endl;

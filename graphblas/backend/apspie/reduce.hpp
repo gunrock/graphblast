@@ -13,10 +13,10 @@ namespace backend
   template <typename T, typename U,
             typename BinaryOpT, typename MonoidT>
   Info reduceInner( T*                     val,
-									  BinaryOpT              accum,
-									  MonoidT                op,
-									  const DenseVector<U>*  u,
-									  Descriptor*            desc )
+                    BinaryOpT              accum,
+                    MonoidT                op,
+                    const DenseVector<U>*  u,
+                    Descriptor*            desc )
   {
     // Nasty bug! Must point d_val at desc->d_buffer_ only after it gets 
     // possibly resized!
@@ -52,10 +52,10 @@ namespace backend
   template <typename T, typename U,
             typename BinaryOpT, typename MonoidT>
   Info reduceInner( T*                     val,
-									  BinaryOpT              accum,
-									  MonoidT                op,
-									  const SparseVector<U>* u,
-									  Descriptor*            desc )
+                    BinaryOpT              accum,
+                    MonoidT                op,
+                    const SparseVector<U>* u,
+                    Descriptor*            desc )
   {
     if( desc->struconly() )
     {
@@ -83,7 +83,7 @@ namespace backend
     return GrB_SUCCESS;
   }
 
-	// TODO(@ctcyang): Dense matrix variant
+  // TODO(@ctcyang): Dense matrix variant
   template <typename W, typename a, typename M,
             typename BinaryOpT,     typename MonoidT>
   Info reduceInner( DenseVector<W>*       w,
@@ -95,8 +95,8 @@ namespace backend
   {
     std::cout << "Error: Dense reduce matrix-to-vector not implemented yet!\n";
 
-		return GrB_SUCCESS;
-	}
+    return GrB_SUCCESS;
+  }
 
   // Sparse matrix variant
   template <typename W, typename a, typename M,
@@ -114,10 +114,10 @@ namespace backend
     }
     else
     {
-			// Cannot use mgpu, because BinaryOps and Monoids do not satisfy
-			// first_argument_type requirement for mgpu ops
+      // Cannot use mgpu, because BinaryOps and Monoids do not satisfy
+      // first_argument_type requirement for mgpu ops
       //mgpu::SegReduceCsr( A->d_csrVal_, A->d_csrRowPtr_, 
-			//		static_cast<int>(A->nvals_), static_cast<int>(A->nrows_),
+      //    static_cast<int>(A->nvals_), static_cast<int>(A->nrows_),
       //    true, w->d_val_, op.identity(), op, *desc->d_context_ );
 
       // Use CUB
@@ -125,14 +125,14 @@ namespace backend
 
       if( !desc->split() )
         CUDA_CALL( cub::DeviceSegmentedReduce::Reduce( NULL, temp_storage_bytes,
-						A->d_csrVal_, w->d_val_, A->nrows_, A->d_csrRowPtr_, 
-						A->d_csrRowPtr_+1, op, op.identity() ) );
+            A->d_csrVal_, w->d_val_, A->nrows_, A->d_csrRowPtr_, 
+            A->d_csrRowPtr_+1, op, op.identity() ) );
       else
         temp_storage_bytes = desc->d_temp_size_;
       desc->resize( temp_storage_bytes, "temp" );
       CUDA_CALL(cub::DeviceSegmentedReduce::Reduce( desc->d_temp_, 
-					temp_storage_bytes, A->d_csrVal_, w->d_val_, A->nrows_, 
-					A->d_csrRowPtr_, A->d_csrRowPtr_+1, op, op.identity() ));
+          temp_storage_bytes, A->d_csrVal_, w->d_val_, A->nrows_, 
+          A->d_csrRowPtr_, A->d_csrRowPtr_+1, op, op.identity() ));
       w->nnz_ = A->nrows_;
     }
     w->need_update_ = true;

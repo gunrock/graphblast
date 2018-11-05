@@ -98,12 +98,12 @@ namespace backend
       CHECK( desc->get(GrB_NT, &nt_mode) );
       const int nt = static_cast<int>(nt_mode);
       dim3 NT, NB;
-			NT.x = nt;
-			NT.y = 1;
-			NT.z = 1;
-			NB.x = (temp_nvals+nt-1)/nt;
-			NB.y = 1;
-			NB.z = 1;
+      NT.x = nt;
+      NT.y = 1;
+      NT.z = 1;
+      NB.x = (temp_nvals+nt-1)/nt;
+      NB.y = 1;
+      NB.z = 1;
 
       // Mask type
       // 1) Dense mask
@@ -161,7 +161,7 @@ namespace backend
         {
           // For visited nodes, assign 0.f to vector
           // For GrB_DENSE mask, need to add parameter for mask_identity to user
-				  // Scott: this is not necessary. Checking castable to (bool)1 is fine
+          // Scott: this is not necessary. Checking castable to (bool)1 is fine
           if( mask_vec_type==GrB_DENSE )
           {
             if( use_scmp )
@@ -222,7 +222,7 @@ namespace backend
       {
         // For visited nodes, assign 0.f to vector
         // For GrB_DENSE mask, need to add parameter for mask_identity to user
-				// Scott: this is not necessary. Checking castable to (bool)1 is enough
+        // Scott: this is not necessary. Checking castable to (bool)1 is enough
         if( mask_vec_type==GrB_DENSE )
         {
           if( use_scmp )

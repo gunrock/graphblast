@@ -82,22 +82,22 @@ namespace backend
       // TODO: add if condition here for if( add_ == GrB_LOR )
       if(true)
       {
-				// Mask type
-				// 1) Dense mask
-				// 2) Sparse mask (TODO)
-				// 3) Uninitialized
-				Storage mask_vec_type;
-				CHECK( mask->getStorage(&mask_vec_type) );
+        // Mask type
+        // 1) Dense mask
+        // 2) Sparse mask (TODO)
+        // 3) Uninitialized
+        Storage mask_vec_type;
+        CHECK( mask->getStorage(&mask_vec_type) );
 
-				if( mask_vec_type==GrB_DENSE )
-				{
-					dim3 NT, NB;
-					NT.x = nt;
-					NT.y = 1;
-					NT.z = 1;
-					NB.x = (A_nrows+nt-1)/nt;
-					NB.y = 1;
-					NB.z = 1;
+        if( mask_vec_type==GrB_DENSE )
+        {
+          dim3 NT, NB;
+          NT.x = nt;
+          NT.y = 1;
+          NT.z = 1;
+          NB.x = (A_nrows+nt-1)/nt;
+          NB.y = 1;
+          NB.z = 1;
 
           int variant = 0;
           variant |= (use_scmp         ) ? 4 : 0;
@@ -159,22 +159,22 @@ namespace backend
           }
           if( desc->debug() )
             printDevice("w_val", w->d_val_, A_nrows);
-				}
-				else if( mask_vec_type==GrB_SPARSE )
-				{
+        }
+        else if( mask_vec_type==GrB_SPARSE )
+        {
           std::cout << "DeVec Sparse Mask Spmv\n";
-					std::cout << "Error: Feature not implemented yet!\n";
-				}
-				else
-				{
-					return GrB_UNINITIALIZED_OBJECT;
-				}
+          std::cout << "Error: Feature not implemented yet!\n";
+        }
+        else
+        {
+          return GrB_UNINITIALIZED_OBJECT;
+        }
       }
       // TODO(@ctcyang): add else condition here for generic mask semiring
       else
       {
         std::cout << "Indirect Spmv\n";
-			  std::cout << "Error: Feature not implemented yet!\n";
+        std::cout << "Error: Feature not implemented yet!\n";
         /*mgpu::SpmvCsrIndirectBinary( A_csrVal, A_csrColInd, A->nvals_,
             A_csrRowPtr, mask->dense_.d_ind_, A_nrows, u->d_val_, true, 
             w->d_val_, 0.f, mgpu::multiplies<a>(), mgpu::plus<a>(),
@@ -198,52 +198,52 @@ namespace backend
       mgpu::SpmvCsrBinary( A_csrVal, A_csrColInd, A->nvals_, A_csrRowPtr, 
           A_nrows, u->d_val_, true, w_val, op.identity(), extractMul(op), 
           extractAdd(op), *(desc->d_context_) );
-			dim3 NT, NB;
-			NT.x = nt;
-			NT.y = 1;
-			NT.z = 1;
-			NB.x = (A_nrows+nt-1)/nt;
-			NB.y = 1;
-			NB.z = 1;
-			w->nvals_ = u->nvals_;
-			if( desc->debug() )
-			{
-				std::cout << w->nvals_ << " nnz in vector w\n";
-				printDevice("w_val", w_val, A_nrows);
-			}
-		  if( use_mask )
-			{
-				if( use_scmp )
+      dim3 NT, NB;
+      NT.x = nt;
+      NT.y = 1;
+      NT.z = 1;
+      NB.x = (A_nrows+nt-1)/nt;
+      NB.y = 1;
+      NB.z = 1;
+      w->nvals_ = u->nvals_;
+      if( desc->debug() )
+      {
+        std::cout << w->nvals_ << " nnz in vector w\n";
+        printDevice("w_val", w_val, A_nrows);
+      }
+      if( use_mask )
+      {
+        if( use_scmp )
           assignDenseDenseMaskedKernel<false, true, true><<<NB,NT>>>(
-				    	w_val, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
-					    op.identity(), (Index*)NULL, A_nrows);
+              w_val, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
+              op.identity(), (Index*)NULL, A_nrows);
         else
           assignDenseDenseMaskedKernel< true, true, true><<<NB,NT>>>(
-				    	w_val, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
-					    op.identity(), (Index*)NULL, A_nrows);
+              w_val, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
+              op.identity(), (Index*)NULL, A_nrows);
       }
       if (use_accum)
       {
         if (desc->debug())
         {
           std::cout << "Doing eWiseAdd accumulate:\n";
-				  printDevice("w_val", w->d_val_, A_nrows);
+          printDevice("w_val", w->d_val_, A_nrows);
         }
         eWiseAddDenseDenseKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op),
             w->d_val_, w_val, A_nrows);
       }
 
-			if( desc->debug() )
-				printDevice("w_val", w->d_val_, A_nrows);
+      if( desc->debug() )
+        printDevice("w_val", w->d_val_, A_nrows);
       // TODO: add semiring inputs to CUB
       /*size_t temp_storage_bytes = 0;
-			cub::DeviceSpmv::CsrMV(desc->d_temp_, temp_storage_bytes, A->d_csrVal_,
-					A->d_csrRowPtr_, A->d_csrColInd_, u->d_val_, w->d_val_,
-					A->nrows_, A->ncols_, A->nvals_, 1.f, op->identity());
+      cub::DeviceSpmv::CsrMV(desc->d_temp_, temp_storage_bytes, A->d_csrVal_,
+          A->d_csrRowPtr_, A->d_csrColInd_, u->d_val_, w->d_val_,
+          A->nrows_, A->ncols_, A->nvals_, 1.f, op->identity());
       desc->resize( temp_storage_bytes, "temp" );
-			cub::DeviceSpmv::CsrMV(desc->d_temp_, desc->d_temp_size_, A->d_csrVal_,
-					A->d_csrRowPtr_, A->d_csrColInd_, u->d_val_, w->d_val_,
-					A->nrows_, A->ncols_, A->nvals_, 1.f, op->identity());*/
+      cub::DeviceSpmv::CsrMV(desc->d_temp_, desc->d_temp_size_, A->d_csrVal_,
+          A->d_csrRowPtr_, A->d_csrColInd_, u->d_val_, w->d_val_,
+          A->nrows_, A->ncols_, A->nvals_, 1.f, op->identity());*/
     }
     w->need_update_ = true;
     return GrB_SUCCESS;

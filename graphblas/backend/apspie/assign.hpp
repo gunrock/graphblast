@@ -59,12 +59,12 @@ namespace backend
       CHECK( desc->get(GrB_NT, &nt_mode) );
       const int nt = static_cast<int>(nt_mode);
       dim3 NT, NB;
-			NT.x = nt;
-			NT.y = 1;
-			NT.z = 1;
-			NB.x = (w->nvals_+nt-1)/nt;
-			NB.y = 1;
-			NB.z = 1;
+      NT.x = nt;
+      NT.y = 1;
+      NT.z = 1;
+      NB.x = (w->nvals_+nt-1)/nt;
+      NB.y = 1;
+      NB.z = 1;
 
       // Mask type
       // 1) Dense mask
@@ -79,11 +79,11 @@ namespace backend
         if( use_scmp )
           assignDenseDenseMaskedKernel<true, true ,true ><<<NB,NT>>>( w->d_val_,
               w->nvals_, (mask->dense_).d_val_, accum, (W)val, indices_t, 
-							nindices );
+              nindices );
         else
           assignDenseDenseMaskedKernel<false,true ,true ><<<NB,NT>>>( w->d_val_,
               w->nvals_, (mask->dense_).d_val_, accum, (W)val, indices_t, 
-							nindices );
+              nindices );
       }
       else if( mask_vec_type==GrB_SPARSE )
       {
