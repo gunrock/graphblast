@@ -125,7 +125,7 @@ See [graphblas/operations.hpp](https://github.com/gunrock/gunrock-grb/blob/maste
 
 ### Semirings
 
-As well, the other GraphBLAS core principle is the concept of generalized semirings, which means replacing the standard (+, x) of matrix multiplication with a different operation. These represent operations on vertices and edges of a graph. Together these two concepts---operation and semiring---can be used to implement many graph algorithms. See [graphblas/stddef.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
+As well, the other GraphBLAS core principle is the concept of generalized semirings, which means replacing the standard (+, x) of matrix multiplication with a different operation. These represent computation on vertices and edges of a graph. Together these two concepts---operation and semiring---can be used to implement many graph algorithms. See [graphblas/stddef.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
 
 ## Publications
 
