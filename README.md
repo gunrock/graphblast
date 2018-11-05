@@ -102,17 +102,17 @@ graphblas::Info sssp_simple( Vector<float>*       v,
     
     // v = v + v * A^T (do relaxation on distance vector v)
     graphblas::vxm<float,float,float,float>(&w, GrB_NULL, GrB_NULL,
-        MinimumPlusSemiring<float>(), v, A, desc);
+        graphblas::MinimumPlusSemiring<float>(), v, A, desc);
     graphblas::eWiseAdd<float,float,float,float>(v, GrB_NULL, GrB_NULL,
-        MinimumPlusSemiring<float>(), v, &w, desc);
+        graphblas::MinimumPlusSemiring<float>(), v, &w, desc);
 
     // w = v < FLT_MAX (get all reachable vertices)
     graphblas::eWiseMult<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
-        PlusLessSemiring<float>(), v, &zero, desc);
+        graphblas::PlusLessSemiring<float>(), v, &zero, desc);
 
     // succ = reduce(w) (do reduction on all reachable distances)
-    graphblas::reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &w,
-        desc);
+    graphblas::reduce<float, float>(&succ, GrB_NULL,
+        graphblas::PlusMonoid<float>(), &w, desc);
     iter++;
 
     // Loop until total reachable distance has converged
