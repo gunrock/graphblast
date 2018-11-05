@@ -115,25 +115,41 @@ graphblas::Info sssp_simple( Vector<float>*       v,
 
 ## Concepts
 
-### Operations
+The idea behind GraphBLAS is that four concepts can be used to implement many graph algorithms: vector, matrix, operation and semiring.
 
-This library is based on the concept that a graph traversal can be formulated as a sparse matrix-vector multiplication. GraphBLAS core principles are based on linear algebra operations, which describe the memory access pattern common to most graph algorithms:
+### Vector
 
-- `mxv` (matrix-vector multiply)
-- `mxm` (matrix-matrix multiply)
-- `eWiseAdd` (elementwise addition)
-- `eWiseMult` (elementwise multiplication)
+A vector is a subset of vertices of some graph.
+
+### Matrix
+
+A matrix is the adjacency matrix of some graph.
+
+### Operation
+
+An operation is the memory access pattern common to most graph algorithms (equivalent Ligra terminology is shown in brackets):
+
+- `mxv`: matrix-vector multiply (EdgeMap)
+- `vxm`: vector-matrix multiply (EdgeMap)
+- `mxm`: matrix-matrix multiply (multi-frontier EdgeMap)
+- `eWiseAdd`: elementwise addition (VertexMap)
+- `eWiseMult`: elementwise multiplication (VertexMap)
 
 See [graphblas/operations.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/operations.hpp) for a complete list of operations.
 
-### Semirings
+### Semiring
 
-As well, the other GraphBLAS core principle is the concept of generalized semirings, which means replacing the standard (+, x) of matrix multiplication with a different operation. These represent computation on vertices and edges of a graph. Together these two concepts---operation and semiring---can be used to implement many graph algorithms. Some commonly used semirings are:
+A semiring is the computation on vertex and edge of the graph. In standard matrix multiplication the semiring used is the `(+, x)` arithmetic semiring. In GraphBLAS, when the semiring is applied to this operation, it represents the transformation that is required to transform the input vector into the output vector. What the `(+, x)` represent are:
 
-- `PlusMultiplies` (arithmetic semiring)
-- `MinimumPlus` (tropical min-plus semiring)
-- `LogicalOrAndSemiring` (Boolean semiring)
-- `MaximumMultipliesSemiring` (tropical max-times semiring)
+- `x`: computation per edge, generates up to `num_edges` intermediate elements
+- `+`: computation in the reduction of intermediates back down to a subset of vertices, up to `num_verts` elements
+
+The most commonly used semirings are:
+
+- `PlusMultiplies`: arithmetic semiring, used for classical linear algebra
+- `LogicalOrAndSemiring`: Boolean semiring, used for graph connectivity
+- `MinimumPlus`: tropical min-plus semiring, used for shortest path
+- `MaximumMultipliesSemiring`: tropical max-times semiring, used for maximal independent set
 
 See [graphblas/stddef.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
 
