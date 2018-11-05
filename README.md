@@ -2,11 +2,11 @@
 
 [GraphBLAS](https://graphblas.org) is an open standard for building blocks of graph algorithms in the language of linear algebra. By virtue of it being an open standard, it gives data scientists who have no GPU programming experience the power to implement graph algorithms on the GPU. [Gunrock](https://github.com/gunrock/gunrock) is the fastest GPU graph framework in the world. Gunrock is featured on NVIDIA's [list of GPU Accelerated Libraries](https://developer.nvidia.com/gpu-accelerated-libraries) as the only non-NVIDIA library for GPU graph analytics. 
 
-Our project seeks to combine the elegance of the GraphBLAS interface with the best-in-class performance Gunrock provides. Our goal is to be:
+Our project seeks to combine the elegance of the GraphBLAS interface with the best-in-class performance Gunrock provides. Our goal is to be the leading graph framework in the following metrics:
 
 - **Performance**: The first high-performance GPU implementation of GraphBLAS
 - **Expressible**: A graph algorithm library containing commonly used graph algorithms
-- **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 19 lines of code
+- **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 19 lines of code gets 3.26 GTEPS on a single NVIDIA V100 GPU (which would rank 2nd in Graph500 for SSSP)
 - **Portable**: Algorithms implemented using other GraphBLAS backends ([GBTL](https://github.com/cmu-sei/gbtl), [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html), [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas))  can be ported to performance-centric GPU backend
 
 ## Prerequisites
