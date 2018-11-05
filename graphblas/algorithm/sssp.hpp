@@ -18,6 +18,7 @@ namespace algorithm
   {
     Index A_nrows;
     CHECK( A->nrows( &A_nrows ) );
+    CHECK( v->clear() );
 
     graphblas::Vector<float> w(A_nrows);
     graphblas::Vector<float> zero(A_nrows);

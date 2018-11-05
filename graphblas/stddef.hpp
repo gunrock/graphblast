@@ -201,6 +201,7 @@ namespace graphblas
   REGISTER_SEMIRING( PlusGreaterSemiring, PlusMonoid, greater )
   REGISTER_SEMIRING( GreaterPlusSemiring, GreaterMonoid, plus )
   REGISTER_SEMIRING( LessPlusSemiring, LessMonoid, plus )
+  REGISTER_SEMIRING( PlusLessSemiring, PlusMonoid, less )
 
   // AddOp and MulOp extraction provided by Peter Zhang
 	template <typename SemiringT>
