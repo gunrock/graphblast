@@ -9,7 +9,7 @@ Our project seeks to combine the elegance of the GraphBLAS interface with the st
 - The first high-performance GPU implementation of GraphBLAS
 - Possessing many Gunrock GPU optimizations for common graph operations
 - A graph algorithm library containing commonly used graph algorithms
-- Capable of direction-optimization in general as first demonstrated by [Ligra](https://www.cs.cmu.edu/~jshun/ligra.pdf)
+- Capable of generalized direction-optimization introduced by [Ligra](https://www.cs.cmu.edu/~jshun/ligra.pdf)
 
 ## Prerequisites
 
