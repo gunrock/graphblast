@@ -143,4 +143,4 @@ This work was funded by the DARPA HIVE program under AFRL Contract FA8650-18-2-7
 
 ## Copyright and Software License
 
-GunrockGrB is copyright under the Regents of the University of California, 2013–2018. The library, examples, and all source code are released under [Apache 2.0](LICENSE.md).
+GunrockGrB is copyright under the Regents of the University of California, 2015–2018. The library, examples, and all source code are released under [Apache 2.0](LICENSE.md).
