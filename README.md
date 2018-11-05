@@ -66,7 +66,7 @@ As well, the other GraphBLAS core principle is the concept of generalized semiri
 
 Single Source-Shortest Path (Bellman-Ford SSSP) Example (see the [graphblas/algorithm]() directory for more examples):
 
-```
+```c++
 #include "graphblas/graphblas.hpp"
 
 // Use float for now for both v and A
