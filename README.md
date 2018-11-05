@@ -8,7 +8,7 @@ Our project seeks to combine the elegance of the GraphBLAS interface with the be
 - **Expressible**: A graph algorithm library containing commonly used graph algorithms
 - **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 19 lines of code gets 3.26 GTEPS on a single NVIDIA V100 GPU (which would place 2nd in [Graph500](https://graph500.org/?page_id=384) for SSSP)
 - **Portable**: Algorithms implemented using other GraphBLAS backends ([GBTL](https://github.com/cmu-sei/gbtl), [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html), [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas))  can be ported to performance-centric GPU backend
-- **Innovative**: Combines state-of-the-art graph optimizations from Gunrock with the automatic direction-optimization heuristic of [Ligra](https://github.com/jshun/ligra)
+- **Innovative**: Combines state-of-the-art [graph optimizations](https://escholarship.org/uc/item/021076bn) from Gunrock with the automatic direction-optimization heuristic of [Ligra](https://github.com/jshun/ligra)
 
 ## Prerequisites
 
