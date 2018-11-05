@@ -51,17 +51,6 @@ cmake ..
 make -j$(nproc)
 ```
 
-## Concepts
-
-This library is based on the concept that a graph traversal can be formulated as a sparse matrix-vector multiplication. GraphBLAS core principles are based on linear algebra operations, which describe the memory access pattern common to most graph algorithms:
-
-- `mxv` (matrix-vector multiply)
-- `mxm` (matrix-matrix multiply)
-- `eWiseAdd` (elementwise addition)
-- `eWiseMult` (elementwise multiplication)
-
-As well, the other GraphBLAS core principle is the concept of generalized semirings, which means replacing the standard (+, x) of matrix multiplication with a different operation. These represent operations on vertices and edges of a graph. Together these two concepts---operation and semiring---can be used to implement many graph algorithms.
-
 ## Usage
 
 Single Source-Shortest Path (Bellman-Ford SSSP) example (see the [graphblas/algorithm]() directory for more examples):
@@ -121,6 +110,24 @@ graphblas::Info sssp_simple( Vector<float>*       v,
   return GrB_SUCCESS;
 }
 ```
+
+## Concepts
+
+### Operations
+
+This library is based on the concept that a graph traversal can be formulated as a sparse matrix-vector multiplication. GraphBLAS core principles are based on linear algebra operations, which describe the memory access pattern common to most graph algorithms:
+
+- `mxv` (matrix-vector multiply)
+- `mxm` (matrix-matrix multiply)
+- `eWiseAdd` (elementwise addition)
+- `eWiseMult` (elementwise multiplication)
+- ...
+
+See [graphblas/operations.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/operations.hpp) for a complete list of operations.
+
+### Semirings
+
+As well, the other GraphBLAS core principle is the concept of generalized semirings, which means replacing the standard (+, x) of matrix multiplication with a different operation. These represent operations on vertices and edges of a graph. Together these two concepts---operation and semiring---can be used to implement many graph algorithms. See [graphblas/stddef.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
 
 ## Publications
 
