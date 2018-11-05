@@ -4,10 +4,10 @@
 
 Our project seeks to combine the elegance of the GraphBLAS interface with the best-in-class performance Gunrock provides. Our goal is to be:
 
-- The first high-performance GPU implementation of GraphBLAS
-- Possessing many Gunrock GPU optimizations for common graph operations
-- A graph algorithm library containing commonly used graph algorithms
-- Capable of generalized direction-optimization introduced by [Ligra](https://www.cs.cmu.edu/~jshun/ligra.pdf)
+- **Performance**: The first high-performance GPU implementation of GraphBLAS
+- **Expressible**: A graph algorithm library containing commonly used graph algorithms
+- **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 19 lines of code
+- **Portable**: Algorithms implemented using other GraphBLAS backends ([GBTL](https://github.com/cmu-sei/gbtl), [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html), [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas))  can be ported to performance-centric GPU backend
 
 ## Prerequisites
 
