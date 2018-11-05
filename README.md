@@ -30,7 +30,18 @@ A step by step series of instructions that tell you have to get a development en
 git clone --recursive https://github.com/gunrock/gunrock-grb.git
 ```
 
-2. Then, you must compile the software.
+2. The current library is set up as a header-only library. To install this library, copy the graphblas directory, its subdirectories and the specific platform subdirectory (sans the platform's test directories) to a location in your include path. However, there are 2 source files that need to be compiled with your program (`ext/moderngpu/src/mgpucontext.cu` and `ext/moderngpu/src/mgpuutil.cpp`).
+
+We provide two sample build paths using `Makefile` and `CMake`.
+
+### Using Makefile
+
+```
+cd gunrock-grb
+make -j16
+```
+
+### Using CMake
 
 ```
 cd gunrock-grb
@@ -53,8 +64,63 @@ As well, the other GraphBLAS core principle is the concept of generalized semiri
 
 ## Usage
 
+Single Source-Shortest Path (Bellman-Ford SSSP) Example (see the [graphblas/algorithm]() directory for more examples):
+
 ```
-TODO(@ctcyang):
+#include "graphblas/graphblas.hpp"
+
+// Use float for now for both v and A
+graphblas::Info sssp_simple( Vector<float>*       v,
+                             const Matrix<float>* A,
+                             Index                s,
+                             Descriptor*          desc )
+{
+  // Get number of vertices
+  graphblas::Index A_nrows;
+  A->nrows(&A_nrows);
+
+  // Visited vector (v)
+  std::vector<graphblas::Index> indices(1, s);
+  std::vector<float>  values(1, 0.f);
+  v->build(&indices, &values, 1, GrB_NULL);
+
+  // Buffer vector (w)
+  graphblas::Vector<float> w(A_nrows);
+
+  // Semiring zero vector (zero)
+  graphblas::Vector<float> zero(A_nrows);
+  zero.fill(std::numeric_limits<float>::max());
+
+  // Initialize loop variables
+  graphblas::Index iter = 1;
+  float succ_last = 0.f;
+  float succ = 1.f;
+
+  do
+  {
+    succ_last = succ;
+    
+    // v = v + v * A^T
+    graphblas::vxm<float,float,float,float>(&w, GrB_NULL, GrB_NULL,
+        MinimumPlusSemiring<float>(), v, A, desc);
+    graphblas::eWiseAdd<float,float,float,float>(v, GrB_NULL, GrB_NULL,
+        MinimumPlusSemiring<float>(), v, &w, desc);
+
+    // w = v < FLT_MAX
+    graphblas::eWiseAdd<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
+        LessPlusSemiring<float>(), v, &zero, desc);
+
+    // succ = reduce(w)
+    graphblas::reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &w,
+    graphblas::reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &w,
+        desc);
+    iter++;
+
+    // Repeat until distance converged
+  } while (succ_last != succ);
+
+  return GrB_SUCCESS;
+}
 ```
 
 ## Publications
