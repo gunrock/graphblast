@@ -60,7 +60,7 @@ Single Source-Shortest Path (Bellman-Ford SSSP) example (see the [graphblas/algo
 ```c++
 #include "graphblas/graphblas.hpp"
 
-// Use float for now for both v and A
+// Single-source shortest-path on adjacency matrix A from source s
 graphblas::Info sssp_simple( Vector<float>*       v,
                              const Matrix<float>* A,
                              Index                s,
