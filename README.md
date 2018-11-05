@@ -8,12 +8,13 @@ Our project seeks to combine the elegance of the GraphBLAS interface with the be
 - **Expressible**: A graph algorithm library containing commonly used graph algorithms
 - **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 19 lines of code gets 3.26 GTEPS on a single NVIDIA V100 GPU (which would place 2nd in [Graph500](https://graph500.org/?page_id=384) for SSSP)
 - **Portable**: Algorithms implemented using other GraphBLAS backends ([GBTL](https://github.com/cmu-sei/gbtl), [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html), [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas))  can be ported to performance-centric GPU backend
+- **Innovative**: Combines state-of-the-art [graph optimizations](https://escholarship.org/uc/item/021076bn) from Gunrock with the automatic direction-optimization heuristic of [Ligra](https://github.com/jshun/ligra)
 
 ## Prerequisites
 
 This software has been tested on the following dependencies:
 
-* CUDA 8.0, 9.2
+* CUDA 9.1, 9.2
 * Boost 1.58
 * g++ 4.9.3, 5.4.0
 
@@ -59,7 +60,7 @@ Single Source-Shortest Path (Bellman-Ford SSSP) example (see the [graphblas/algo
 ```c++
 #include "graphblas/graphblas.hpp"
 
-// Use float for now for both v and A
+// Single-source shortest-path on adjacency matrix A from source s
 graphblas::Info sssp_simple( Vector<float>*       v,
                              const Matrix<float>* A,
                              Index                s,
@@ -122,13 +123,19 @@ This library is based on the concept that a graph traversal can be formulated as
 - `mxm` (matrix-matrix multiply)
 - `eWiseAdd` (elementwise addition)
 - `eWiseMult` (elementwise multiplication)
-- ...
 
 See [graphblas/operations.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/operations.hpp) for a complete list of operations.
 
 ### Semirings
 
-As well, the other GraphBLAS core principle is the concept of generalized semirings, which means replacing the standard (+, x) of matrix multiplication with a different operation. These represent computation on vertices and edges of a graph. Together these two concepts---operation and semiring---can be used to implement many graph algorithms. See [graphblas/stddef.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
+As well, the other GraphBLAS core principle is the concept of generalized semirings, which means replacing the standard (+, x) of matrix multiplication with a different operation. These represent computation on vertices and edges of a graph. Together these two concepts---operation and semiring---can be used to implement many graph algorithms. Some commonly used semirings are:
+
+- `PlusMultiplies` (arithmetic semiring)
+- `MinimumPlus` (tropical min-plus semiring)
+- `LogicalOrAndSemiring` (Boolean semiring)
+- `MaximumMultipliesSemiring` (tropical max-times semiring)
+
+See [graphblas/stddef.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
 
 ## Publications
 
@@ -144,7 +151,7 @@ As well, the other GraphBLAS core principle is the concept of generalized semiri
 
 ## Acknowledgments
 
-We would like to thank the following people: [Yangzihao Wang](https://yzhwang.github.io) for teaching me the basics of graph frameworks, [Yuechao Pan's](https://sites.google.com/site/panyuechao/home) for his valuable insights into BFS optimizations, [Scott McMillan](https://github.com/sei-smcmillan) for [his library](https://github.com/cmu-sei/gbtl) which inspired our code organization, [Ben Johnson](https://github.com/bkj) for helping me catch many bugs, and [John D. Owens](https://www.ece.ucdavis.edu/~jowens/) and [Aydın Buluç](https://people.eecs.berkeley.edu/~aydin/) for their guidance and belief in me.
+We would like to thank the following people: [Yangzihao Wang](https://yzhwang.github.io) for teaching me the basics of graph frameworks, [Yuechao Pan's](https://sites.google.com/site/panyuechao/home) for his valuable insights into BFS optimizations, [Scott McMillan](https://github.com/sei-smcmillan) for [his library](https://github.com/cmu-sei/gbtl) which inspired our code organization and some pointers on how to implement the semiring object using macros, [Ben Johnson](https://github.com/bkj) for helping me catch many bugs, and [John D. Owens](https://www.ece.ucdavis.edu/~jowens/) and [Aydın Buluç](https://people.eecs.berkeley.edu/~aydin/) for their guidance and belief in me.
 
 This work was funded by the DARPA HIVE program under AFRL Contract FA8650-18-2-7835, the DARPA XDATA program under AFRL Contract FA8750-13-C-0002, by NSF awards OAC-1740333, CCF-1629657, OCI-1032859, and CCF-1017399, by DARPA STTR award D14PC00023, by DARPA SBIR award W911NF-16-C-0020, Applied Mathematics program of the DOE Office of Advanced Scientific Computing Research under Contract No. DE-AC02-05CH11231, and by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of the U.S. Department of Energy Office of Science and the National Nuclear Security Administration. 
 
