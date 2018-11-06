@@ -80,99 +80,101 @@ namespace backend
     // Treat vxm as an mxv with transposed matrix
     CHECK( desc->toggle( GrB_INP1 ) );
 
-    // 1a) Simple SpMSpV without any load-balancing codepath
-    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE", GrB_LOAD_BALANCE_LB);
+    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE", GrB_LOAD_BALANCE_MERGE);
     if( desc->debug() )
       std::cout << "Load balance mode: " << mxv_mode << std::endl;
-    if (mxv_mode == GrB_LOAD_BALANCE_SIMPLE)
+    // 1a) Simple SpMSpV without any load-balancing codepath
+    // 1b) Merge-path and direction-optimizing codepath
+    // Conversions:
+    // TODO: add tol
+    SparseMatrixFormat A_format;
+    bool A_symmetric;
+    CHECK( A->getFormat(&A_format) );
+    CHECK( A->getSymmetry(&A_symmetric) );
+
+    Desc_value vxm_mode, tol;
+    CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
+    CHECK( desc->get( GrB_TOL,     &tol      ) );
+    if( desc->debug() )
     {
-      if( desc->debug() )
-        std::cout << "u_vec_type: " << u_vec_type << std::endl;
-      if( u_vec_type==GrB_SPARSE )
-        CHECK( u_t->sparse2dense(op.identity(), desc) );
-      CHECK( w->setStorage(GrB_DENSE) );
-      CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
-          desc) );
+      std::cout << "Identity: " << op.identity() << std::endl;
+      std::cout << "Sparse format: " << A_format << std::endl;
+      std::cout << "Symmetric: " << A_symmetric << std::endl;
     }
-    else if (mxv_mode == GrB_LOAD_BALANCE_LB)
+
+    // Fallback for lacking CSC storage overrides any mxvmode selections
+    if (!A_symmetric && A_format == GrB_SPARSE_MATRIX_CSRONLY)
     {
-      // 1b) Merge-path and direction-optimizing codepath
-      //
-      // Conversions:
-      // TODO: add tol
-      SparseMatrixFormat A_format;
-      bool A_symmetric;
-      CHECK( A->getFormat(&A_format) );
-      CHECK( A->getSymmetry(&A_symmetric) );
-
-      Desc_value vxm_mode, tol;
-      CHECK( desc->get( GrB_MXVMODE, &vxm_mode ) );
-      CHECK( desc->get( GrB_TOL,     &tol      ) );
-      if( desc->debug() )
-      {
-        std::cout << "Identity: " << op.identity() << std::endl;
-        std::cout << "Sparse format: " << A_format << std::endl;
-        std::cout << "Symmetric: " << A_symmetric << std::endl;
-      }
-
-      // Fallback for lacking CSC storage overrides any mxvmode selections
-      if (!A_symmetric && A_format == GrB_SPARSE_MATRIX_CSRONLY)
-      {
-        if (u_vec_type == GrB_DENSE)
-          CHECK( u_t->dense2sparse( op.identity(), desc ) );
-      }
-      else if( vxm_mode==GrB_PUSHPULL )
-      {
-        CHECK( u_t->convert( op.identity(), desc ) );
-      }
-      else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
-      {
+      if (u_vec_type == GrB_DENSE)
         CHECK( u_t->dense2sparse( op.identity(), desc ) );
-      }
-      else if( vxm_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
+    }
+    else if( vxm_mode==GrB_PUSHPULL )
+    {
+      CHECK( u_t->convert( op.identity(), desc ) );
+    }
+    else if( vxm_mode==GrB_PUSHONLY && u_vec_type==GrB_DENSE )
+    {
+      CHECK( u_t->dense2sparse( op.identity(), desc ) );
+    }
+    else if( vxm_mode==GrB_PULLONLY && u_vec_type==GrB_SPARSE )
+    {
+      CHECK( u_t->sparse2dense( op.identity(), desc ) );
+    }
+
+    // Check if vector type was changed due to conversion!
+    CHECK( u->getStorage( &u_vec_type ) );
+
+    if( desc->debug() )
+      std::cout << "u_vec_type: " << u_vec_type << std::endl;
+
+    // Breakdown into 4 cases:
+    // 1) SpMSpV: SpMat x SpVec
+    // 2) SpMV:   SpMat x DeVec (preferred to 3)
+    // 3) SpMSpV: SpMat x SpVec (fallback if CSC representation not available)
+    // 4) GeMV:   DeMat x DeVec
+    //
+    // Note: differs from mxv, because mxv would say instead:
+    // 3) "... if CSC representation not available ..."
+    if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
+    {
+      // 1a) Simple SpMSpV no load-balancing codepath
+      if (mxv_mode == GrB_LOAD_BALANCE_SIMPLE)
       {
-        CHECK( u_t->sparse2dense( op.identity(), desc ) );
+        CHECK( w->setStorage(GrB_DENSE) );
+        CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
+            &u->sparse_, desc) );
       }
-
-      // Check if vector type was changed due to conversion!
-      CHECK( u->getStorage( &u_vec_type ) );
-
-      if( desc->debug() )
-        std::cout << "u_vec_type: " << u_vec_type << std::endl;
-
-      // Breakdown into 4 cases:
-      // 1) SpMSpV: SpMat x SpVec
-      // 2) SpMV:   SpMat x DeVec (preferred to 3)
-      // 3) SpMSpV: SpMat x SpVec (fallback if CSC representation not available)
-      // 4) GeMV:   DeMat x DeVec
-      //
-      // Note: differs from mxv, because mxv would say instead:
-      // 3) "... if CSC representation not available ..."
-      if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
+      // 1b) Thread-warp-block (single kernel) codepath
+      else if (mxv_mode == GrB_LOAD_BALANCE_TWC)
+      {
+        std::cout << "Error: B40C load-balance algorithm not implemented yet!\n";
+      }
+      // 1c) Merge-path (two-phase decomposition) codepath
+      else if (mxv_mode == GrB_LOAD_BALANCE_MERGE)
       {
         CHECK( w->setStorage( GrB_SPARSE ) );
-        CHECK( spmspv( &w->sparse_, mask, accum, op, &A->sparse_, 
+        CHECK( spmspvMerge( &w->sparse_, mask, accum, op, &A->sparse_, 
             &u->sparse_, desc ) );
-        desc->lastmxv_ = GrB_PUSHONLY;
       }
       else
       {
-        // TODO(@ctcyang): Some performance left on table, sparse2dense should 
-        // only convert rather than setStorage if accum is being used
-        //CHECK( w->setStorage( GrB_DENSE ) );
-        CHECK( w->sparse2dense(op.identity(), desc) );
-        if (A_mat_type == GrB_SPARSE)
-          CHECK(spmv(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
-              desc));
-        else
-          CHECK(gemv( &w->dense_, mask, accum, op, &A->dense_, &u->dense_, 
-              desc));
-        desc->lastmxv_ = GrB_PULLONLY;
+        std::cout << "Error: Invalid load-balance algorithm!\n";
       }
+      desc->lastmxv_ = GrB_PUSHONLY;
     }
     else
     {
-      std::cout << "Error: Invalid load-balance algorithm!\n";
+      // TODO(@ctcyang): Some performance left on table, sparse2dense should 
+      // only convert rather than setStorage if accum is being used
+      //CHECK( w->setStorage( GrB_DENSE ) );
+      CHECK( w->sparse2dense(op.identity(), desc) );
+      if (A_mat_type == GrB_SPARSE)
+        CHECK(spmv(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
+            desc));
+      else
+        CHECK(gemv( &w->dense_, mask, accum, op, &A->dense_, &u->dense_, 
+            desc));
+      desc->lastmxv_ = GrB_PULLONLY;
     }
 
     // Undo change to desc by toggling again
@@ -208,16 +210,14 @@ namespace backend
     if( inp1_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
 
     // 1a) Simple SpMSpV without any load-balancing codepath
-    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE", GrB_LOAD_BALANCE_LB);
+    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE", GrB_LOAD_BALANCE_MERGE);
     if (mxv_mode == GrB_LOAD_BALANCE_SIMPLE)
     {
-      if( u_vec_type==GrB_SPARSE )
-        CHECK( u_t->sparse2dense(op.identity(), desc) );
       CHECK( w->setStorage(GrB_DENSE) );
-      CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_, &u->dense_, 
+      CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_, &u->sparse_,
           desc) );
     }
-    else if (mxv_mode == GrB_LOAD_BALANCE_LB)
+    else if (mxv_mode == GrB_LOAD_BALANCE_MERGE)
     {
       // 1b) Merge-path and direction-optimizing codepath
       //
@@ -262,7 +262,7 @@ namespace backend
       if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
       {
         CHECK( w->setStorage( GrB_SPARSE ) );
-        CHECK( spmspv( &w->sparse_, mask, accum, op, &A->sparse_, 
+        CHECK( spmspvMerge( &w->sparse_, mask, accum, op, &A->sparse_, 
             &u->sparse_, desc ) );
         desc->lastmxv_ = GrB_PUSHONLY;
       }

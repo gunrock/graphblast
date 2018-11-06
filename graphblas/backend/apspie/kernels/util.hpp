@@ -26,12 +26,12 @@ namespace backend
   }
 
   template <typename U>
-  __global__ void zeroKernel( U* u_val, Index u_nvals )
+  __global__ void zeroKernel( U* u_val, U identity, Index u_nvals )
   {
     Index row = blockIdx.x*blockDim.x + threadIdx.x;
     for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
     {
-      u_val[row] = (U)0;
+      u_val[row] = identity;
     }
   }
 

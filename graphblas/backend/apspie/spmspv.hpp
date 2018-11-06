@@ -12,13 +12,13 @@ namespace backend
 
   template <typename W, typename a, typename U, typename M,
             typename BinaryOpT, typename SemiringT>
-  Info spmspv( SparseVector<W>*       w,
-               const Vector<M>*       mask,
-               BinaryOpT              accum,
-               SemiringT              op,
-               const SparseMatrix<a>* A,
-               const SparseVector<U>* u,
-               Descriptor*            desc )
+  Info spmspvMerge( SparseVector<W>*       w,
+                    const Vector<M>*       mask,
+                    BinaryOpT              accum,
+                    SemiringT              op,
+                    const SparseMatrix<a>* A,
+                    const SparseVector<U>* u,
+                    Descriptor*            desc )
   {
     // Get descriptor parameters for SCMP, REPL, TRAN
     Desc_value scmp_mode, repl_mode, inp0_mode, inp1_mode;
@@ -42,7 +42,7 @@ namespace backend
 
     if( desc->debug())
     {
-      std::cout << "Executing Spmspv\n";
+      std::cout << "Executing Spmspv Merge\n";
       if( desc->struconly() )
         std::cout << "In structure only mode\n";
       else
@@ -74,7 +74,7 @@ namespace backend
       T*     temp_val   = (T*)     desc->d_buffer_+A_nrows;
       Index  temp_nvals = 0;
     
-      spmspvApspieLB(
+      spmspvApspieMerge(
           temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows, A->nvals_, 
           A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
           &u->nvals_, desc );
@@ -227,12 +227,12 @@ namespace backend
         {
           if( use_scmp )
             assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, temp_val, 
-              temp_nvals, (mask->dense_).d_val_, NULL, (U)0.f, (Index*)NULL, 
-              A_nrows);
+                temp_nvals, (mask->dense_).d_val_, NULL, (U)0.f, (Index*)NULL, 
+                A_nrows);
           else
             assignSparseKernel<false,true, true><<<NB,NT>>>(temp_ind, temp_val, 
-              temp_nvals, (mask->dense_).d_val_, NULL, (U)0.f, (Index*)NULL, 
-              A_nrows);
+                temp_nvals, (mask->dense_).d_val_, NULL, (U)0.f, (Index*)NULL, 
+                A_nrows);
         }
         else if( mask_vec_type==GrB_SPARSE )
         {
@@ -283,10 +283,9 @@ namespace backend
     }
     else
     {
-      spmspvApspieLB(
-          w->d_ind_, w->d_val_, &w->nvals_, NULL, op, A_nrows, A->nvals_, 
-          A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, &u->nvals_, 
-          desc );
+      spmspvApspieMerge( w->d_ind_, w->d_val_, &w->nvals_, NULL, op, A_nrows, 
+          A->nvals_, A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_,
+          &u->nvals_, desc );
     }
     w->need_update_ = true;
     return GrB_SUCCESS;
@@ -299,7 +298,7 @@ namespace backend
                      BinaryOpT              accum,
                      SemiringT              op,
                      const SparseMatrix<a>* A,
-                     const DenseVector<U>*  u,
+                     const SparseVector<U>* u,
                      Descriptor*            desc )
   {
     // Get descriptor parameters for SCMP, REPL, TRAN
@@ -322,7 +321,7 @@ namespace backend
 
     if( desc->debug())
     {
-      std::cout << "Executing Spmspv\n";
+      std::cout << "Executing Spmspv SIMPLE\n";
       if( desc->struconly() )
         std::cout << "In structure only mode\n";
       else
@@ -337,6 +336,10 @@ namespace backend
     const Index  A_nrows     = (!use_tran) ? A->ncols_       : A->nrows_;
     const Index* Ah_csrRowPtr= (!use_tran) ? A->h_cscColPtr_ : A->h_csrRowPtr_;
 
+    // Get number of nonzeroes in vector u
+    Index u_nvals;
+    CHECK( u->nvals(&u_nvals) );
+
     // Get descriptor parameters for nthreads
     Desc_value nt_mode;
     CHECK( desc->get(GrB_NT, &nt_mode) );
@@ -345,13 +348,16 @@ namespace backend
     NT.x = nt;
     NT.y = 1;
     NT.z = 1;
-    NB.x = (A_nrows+nt-1)/nt;
+    NB.x = (u_nvals+nt-1)/nt;
     NB.y = 1;
     NB.z = 1;
 
     if( desc->debug() )
-      printDevice("u_val", u->d_val_, A_nrows);
-    zeroKernel<<<NB,NT>>>( w->d_val_, A_nrows );
+    {
+      printDevice("u_ind", u->d_ind_, u_nvals);
+      printDevice("u_val", u->d_val_, u_nvals);
+    }
+    zeroKernel<<<NB,NT>>>(w->d_val_, op.identity(), A_nrows);
 
     // STRUCONLY and KEY-VALUE are the same for this kernel
     // TODO: Make operation follow extractMul and extractAdd
@@ -361,32 +367,53 @@ namespace backend
     {
       Storage mask_vec_type;
       CHECK( mask->getStorage( &mask_vec_type ) );
-      if( mask_vec_type==GrB_SPARSE )
+      if (mask_vec_type == GrB_SPARSE)
       {
         std::cout << "Error: Simple kernel sparse mask not implemented yet!\n";
         return GrB_INVALID_OBJECT;
       }
-
-      // Fused mxv and eWiseMult kernel
-      if( use_scmp )
-        spmspvSimpleMaskedKernel< true><<<NB,NT>>>( w->d_val_, 
-            (mask->dense_).d_val_, NULL, op.identity(), extractMul(op), 
-            extractAdd(op), A_nrows, A_csrRowPtr, A_csrColInd, 
-            A_csrVal, u->d_val_ );
+      else if (mask_vec_type == GrB_DENSE)
+      {
+        std::cout << "Error: Simple kernel dense mask not implemented yet!\n";
+        /*// Fused mxv and eWiseMult kernel
+        if( use_scmp )
+          spmspvSimpleMaskedKernel< true><<<NB,NT>>>( w->d_val_, 
+              (mask->dense_).d_val_, NULL, op.identity(), extractMul(op), 
+              extractAdd(op), A_nrows, A_csrRowPtr, A_csrColInd, 
+              A_csrVal, u->d_val_ );
+        else
+          spmspvSimpleMaskedKernel<false><<<NB,NT>>>( w->d_val_, 
+              (mask->dense_).d_val_, NULL, op.identity(), extractMul(op), 
+              extractAdd(op), A_nrows, A_csrRowPtr, A_csrColInd, 
+              A_csrVal, u->d_val_ );*/
+      }
       else
-        spmspvSimpleMaskedKernel<false><<<NB,NT>>>( w->d_val_, 
-            (mask->dense_).d_val_, NULL, op.identity(), extractMul(op), 
-            extractAdd(op), A_nrows, A_csrRowPtr, A_csrColInd, 
-            A_csrVal, u->d_val_ );
+      {
+        std::cout << "Error: Mask is selected, but not initialized!\n";
+        return GrB_INVALID_OBJECT;
+      }
     }
     else
     {
-      // mxv only kernel
-      // TODO: Needs atomics to be useful, so not implemented yet
-      std::cout << "Error: Simple kernel unmasked not implemented yet!\n";
-      /*spmspvSimpleKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(), 
-          extractMul(op), extractAdd(op), A_nrows, A_csrRowPtr, 
-          A_csrColInd, A_csrVal, u->d_val_ );*/
+      /*!
+       * /brief atomicAdd() 3+5 = 8
+       *        atomicSub() 3-5 =-2
+       *        atomicMin() 3,5 = 3
+       *        atomicMax() 3,5 = 5
+       *        atomicAnd() 3&5 = 1
+       *        atomicOr()  3|5 = 7
+       *        atomicXor() 3^5 = 6
+       */
+      auto add_op = extractAdd(op);
+      int functor = add_op(3, 5);
+      if (functor == 8)
+        spmspvSimpleAddKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
+            extractMul(op), A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_,
+            u->d_val_, u_nvals );
+      else
+        spmspvSimpleKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
+            extractMul(op), add_op, A_csrRowPtr, A_csrColInd, A_csrVal,
+            u->d_ind_, u->d_val_, u_nvals );
     }
 
     if( desc->debug() )
@@ -395,7 +422,6 @@ namespace backend
     w->need_update_ = true;
     return GrB_SUCCESS;
   }
-
 }  // backend
 }  // graphblas
 

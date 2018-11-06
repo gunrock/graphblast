@@ -79,6 +79,22 @@ namespace backend
     std::cout << "Tran: " << use_tran  << std::endl;
   }
 
+  /*! 
+   * \brief constexpr variant of std::min, since we may not be using C++14
+   */
+  template<typename T> constexpr
+  T const& min(T const& a, T const& b) {
+    return a < b ? a : b;
+  }
+
+  /*!
+   * \brief  constexpr variant of std::max, since we may not be using C++14
+   */
+  template<typename T> constexpr
+  T const& max(T const& a, T const& b) {
+    return a > b ? a : b;
+  }
+
   struct GpuTimer
   {
     cudaEvent_t start;

@@ -15,7 +15,8 @@ namespace backend
   enum LoadBalanceMode
   {
     GrB_LOAD_BALANCE_SIMPLE,
-    GrB_LOAD_BALANCE_LB
+    GrB_LOAD_BALANCE_TWC,
+    GrB_LOAD_BALANCE_MERGE
   };
 }  // backend
 }  // graphblas

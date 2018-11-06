@@ -61,20 +61,20 @@ namespace backend
   //       external memory sorting
   template <typename W, typename a, typename U,
             typename BinaryOpT, typename SemiringT>
-  Info spmspvApspieLB( Index*            w_ind,
-                       W*                w_val,
-                       Index*            w_nvals,
-                       BinaryOpT         accum,
-                       SemiringT         op,
-                       Index             A_nrows,
-                       Index             A_nvals,
-                       const Index*      A_csrRowPtr,
-                       const Index*      A_csrColInd,
-                       const a*          A_csrVal,
-                       const Index*      u_ind,
-                       const U*          u_val,
-                       const Index*      u_nvals,
-                       Descriptor*       desc )
+  Info spmspvApspieMerge( Index*            w_ind,
+                          W*                w_val,
+                          Index*            w_nvals,
+                          BinaryOpT         accum,
+                          SemiringT         op,
+                          Index             A_nrows,
+                          Index             A_nvals,
+                          const Index*      A_csrRowPtr,
+                          const Index*      A_csrColInd,
+                          const a*          A_csrVal,
+                          const Index*      u_ind,
+                          const U*          u_val,
+                          const Index*      u_nvals,
+                          Descriptor*       desc )
   {
     // Get descriptor parameters for nthreads
     Desc_value ta_mode, tb_mode, nt_mode;
