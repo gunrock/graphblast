@@ -13,7 +13,7 @@
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
-#include "graphblas/algorithm/sssp_simple.hpp"
+#include "graphblas/algorithm/ssspSimple.hpp"
 #include "test/test.hpp"
 
 bool debug_;
@@ -86,7 +86,7 @@ int main( int argc, char** argv )
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::algorithm::sssp_simple(&v, &a, source, &desc);
+  graphblas::algorithm::ssspSimple(&v, &a, source, &desc);
   warmup.Stop();
 
   std::vector<float> h_sssp_gpu;
@@ -102,7 +102,7 @@ int main( int argc, char** argv )
   float val;
   for( int i=0; i<niter; i++ )
   {
-    val = graphblas::algorithm::sssp_simple(&y, &a, source, &desc);
+    val = graphblas::algorithm::ssspSimple(&y, &a, source, &desc);
     tight += val;
   }
   //cudaProfilerStop();

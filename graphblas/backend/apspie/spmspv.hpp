@@ -357,12 +357,34 @@ namespace backend
       printDevice("u_ind", u->d_ind_, u_nvals);
       printDevice("u_val", u->d_val_, u_nvals);
     }
-    zeroKernel<<<NB,NT>>>(w->d_val_, op.identity(), A_nrows);
 
-    // STRUCONLY and KEY-VALUE are the same for this kernel
-    // TODO: Make operation follow extractMul and extractAdd
-    // -would need to make or, xor, plus, min, etc. map to their atomic 
-    // equivalents and pass them into kernel
+    if (!use_accum)
+      zeroKernel<<<NB,NT>>>(w->d_val_, op.identity(), A_nrows);
+
+    /*!
+     * /brief atomicAdd() 3+5 = 8
+     *        atomicSub() 3-5 =-2
+     *        atomicMin() 3,5 = 3
+     *        atomicMax() 3,5 = 5
+     *        atomicAnd() 3&5 = 1
+     *        atomicOr()  3|5 = 7
+     *        atomicXor() 3^5 = 6
+     */
+    auto add_op = extractAdd(op);
+    int functor = add_op(3, 5);
+    if (functor == 8)
+      spmspvSimpleAddKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
+          extractMul(op), A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_,
+          u->d_val_, u_nvals );
+    else
+      spmspvSimpleKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
+          extractMul(op), add_op, A_csrRowPtr, A_csrColInd, A_csrVal,
+          u->d_ind_, u->d_val_, u_nvals );
+
+    if( desc->debug() )
+      printDevice("w_val", w->d_val_, A_nrows);
+
+    // Run mask kernel to filter stuff out
     if( use_mask )
     {
       Storage mask_vec_type;
@@ -393,31 +415,6 @@ namespace backend
         return GrB_INVALID_OBJECT;
       }
     }
-    else
-    {
-      /*!
-       * /brief atomicAdd() 3+5 = 8
-       *        atomicSub() 3-5 =-2
-       *        atomicMin() 3,5 = 3
-       *        atomicMax() 3,5 = 5
-       *        atomicAnd() 3&5 = 1
-       *        atomicOr()  3|5 = 7
-       *        atomicXor() 3^5 = 6
-       */
-      auto add_op = extractAdd(op);
-      int functor = add_op(3, 5);
-      if (functor == 8)
-        spmspvSimpleAddKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
-            extractMul(op), A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_,
-            u->d_val_, u_nvals );
-      else
-        spmspvSimpleKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
-            extractMul(op), add_op, A_csrRowPtr, A_csrColInd, A_csrVal,
-            u->d_ind_, u->d_val_, u_nvals );
-    }
-
-    if( desc->debug() )
-      printDevice("w_val", w->d_val_, A_nrows);
 
     w->need_update_ = true;
     return GrB_SUCCESS;

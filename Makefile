@@ -3,7 +3,7 @@
 ARCH=-gencode arch=compute_60,code=compute_60 -gencode arch=compute_60,code=sm_60
 OPTIONS=-O3 -use_fast_math
 
-all: gbfs gsssp glgc gsssp_simple
+all: gbfs gsssp glgc gbfs_simple gsssp_simple
 
 gbfs: example/*
 	nvcc -g $(ARCH) $(OPTIONS) -w -std=c++11 -o bin/gbfs \
@@ -36,6 +36,20 @@ gsssp: example/*
 glgc: example/*
 	nvcc -g $(ARCH) $(OPTIONS) -w -std=c++11 -o bin/glgc \
 		example/glgc.cu \
+		ext/moderngpu/src/mgpucontext.cu \
+		ext/moderngpu/src/mgpuutil.cpp \
+		-Iext/moderngpu/include \
+		-Iext/cub/cub \
+		-I. \
+		-Itest \
+		-lboost_program_options \
+		-lcublas \
+		-lcusparse \
+		-lcurand
+
+gbfs_simple: example/*
+	nvcc -g $(ARCH) $(OPTIONS) -w -std=c++11 -o bin/gbfs_simple \
+		example/gbfs_simple.cu \
 		ext/moderngpu/src/mgpucontext.cu \
 		ext/moderngpu/src/mgpuutil.cpp \
 		-Iext/moderngpu/include \
