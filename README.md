@@ -1,4 +1,4 @@
-# Gunrock GraphBLAS on GPU (GunrockGrB)
+# GunrockGrB: Gunrock GraphBLAS on GPU
 
 [GraphBLAS](https://graphblas.org) is an open standard for building blocks of graph algorithms in the language of linear algebra. By virtue of it being an open standard, it gives data scientists who have no GPU programming experience the power to implement graph algorithms on the GPU. [Gunrock](https://github.com/gunrock/gunrock) is the fastest GPU graph framework in the world. Gunrock is featured on NVIDIA's [list of GPU Accelerated Libraries](https://developer.nvidia.com/gpu-accelerated-libraries) as the only non-NVIDIA library for GPU graph analytics. 
 
@@ -61,10 +61,10 @@ Single Source-Shortest Path (Bellman-Ford SSSP) example (see the [graphblas/algo
 #include "graphblas/graphblas.hpp"
 
 // Single-source shortest-path on adjacency matrix A from source s
-graphblas::Info sssp_simple( Vector<float>*       v,
-                             const Matrix<float>* A,
-                             Index                s,
-                             Descriptor*          desc )
+graphblas::Info ssspSimple( Vector<float>*       v,
+                            const Matrix<float>* A,
+                            Index                s,
+                            Descriptor*          desc )
 {
   // Get number of vertices
   graphblas::Index A_nrows;
