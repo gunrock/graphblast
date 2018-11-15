@@ -376,6 +376,10 @@ namespace backend
       spmspvSimpleAddKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
           extractMul(op), A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_,
           u->d_val_, u_nvals );
+    else if (functor == 7)
+      spmspvSimpleOrKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
+          extractMul(op), A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_,
+          u->d_val_, u_nvals );
     else
       spmspvSimpleKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
           extractMul(op), add_op, A_csrRowPtr, A_csrColInd, A_csrVal,
@@ -396,18 +400,12 @@ namespace backend
       }
       else if (mask_vec_type == GrB_DENSE)
       {
-        std::cout << "Error: Simple kernel dense mask not implemented yet!\n";
-        /*// Fused mxv and eWiseMult kernel
-        if( use_scmp )
-          spmspvSimpleMaskedKernel< true><<<NB,NT>>>( w->d_val_, 
-              (mask->dense_).d_val_, NULL, op.identity(), extractMul(op), 
-              extractAdd(op), A_nrows, A_csrRowPtr, A_csrColInd, 
-              A_csrVal, u->d_val_ );
+        if (use_scmp)
+          setDenseMaskKernel<true><<<NB,NT>>>( w->d_val_, (mask->dense_).d_val_,
+              op.identity(), u_nvals);
         else
-          spmspvSimpleMaskedKernel<false><<<NB,NT>>>( w->d_val_, 
-              (mask->dense_).d_val_, NULL, op.identity(), extractMul(op), 
-              extractAdd(op), A_nrows, A_csrRowPtr, A_csrColInd, 
-              A_csrVal, u->d_val_ );*/
+          setDenseMaskKernel<true><<<NB,NT>>>( w->d_val_, (mask->dense_).d_val_,
+              op.identity(), u_nvals);
       }
       else
       {

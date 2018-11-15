@@ -137,17 +137,18 @@ namespace backend
     // 3) "... if CSC representation not available ..."
     if( A_mat_type==GrB_SPARSE && u_vec_type==GrB_SPARSE )
     {
-      // 1a) Simple SpMSpV no load-balancing codepath
-      if (mxv_mode == GrB_LOAD_BALANCE_SIMPLE)
+      if (mxv_mode == GrB_LOAD_BALANCE_SIMPLE || 
+          mxv_mode == GrB_LOAD_BALANCE_TWC)
       {
         CHECK( w->setStorage(GrB_DENSE) );
-        CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
-            &u->sparse_, desc) );
-      }
-      // 1b) Thread-warp-block (single kernel) codepath
-      else if (mxv_mode == GrB_LOAD_BALANCE_TWC)
-      {
-        std::cout << "Error: B40C load-balance algorithm not implemented yet!\n";
+        // 1a) Simple SpMSpV no load-balancing codepath
+        if (mxv_mode == GrB_LOAD_BALANCE_SIMPLE)
+          CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
+              &u->sparse_, desc) );
+        // 1b) Thread-warp-block (single kernel) codepath
+        else if (mxv_mode == GrB_LOAD_BALANCE_TWC)
+          std::cout << "Error: B40C load-balance algorithm not implemented yet!\n";
+        CHECK( w->dense2sparse( op.identity(), desc ) );
       }
       // 1c) Merge-path (two-phase decomposition) codepath
       else if (mxv_mode == GrB_LOAD_BALANCE_MERGE)
