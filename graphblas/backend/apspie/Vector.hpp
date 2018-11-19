@@ -431,16 +431,17 @@ namespace backend
 
     if( desc->debug() )
     {
+      printDevice("d_val",  dense_.d_val_, nvals);
       printDevice("d_flag", d_flag, nvals);
       printDevice("d_scan", d_scan, nvals);
       std::cout << "Dense frontier size: " << nvals << std::endl;
       std::cout << "Sparse frontier size: " << sparse_.nvals_ << std::endl;
     }
 
-    if( desc->struconly() )
-      streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, (Index)1, 
-          d_flag, nvals);
-    else
+    //if( desc->struconly() )
+    //  streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, (Index)1, 
+    //      d_flag, nvals);
+    //else
       streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, 
           sparse_.d_val_, d_scan, (T)identity, dense_.d_val_, nvals);
 

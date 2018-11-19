@@ -188,10 +188,10 @@ void testVxmSparseSparseDenseMask(
   }
   for (graphblas::Index i = 0; i < correct.size(); ++i)
   {
-    if (mask_val[i] == 0)
-    {
+    if (use_mask == 0 && mask_val[i] == 0)
       correct[i] = 0.f;
-    }
+    else if (use_mask == 1 && mask_val[i] != 0)
+      correct[i] = 0.f;
   }
 
   // Vector x
@@ -209,6 +209,8 @@ void testVxmSparseSparseDenseMask(
   graphblas::Descriptor desc;
   desc.loadArgs(vm);
   //desc.set(graphblas::GrB_MXVMODE, graphblas::GrB_PUSHONLY) );
+  if (use_mask == 1)
+    desc.set(graphblas::GrB_MASK, graphblas::GrB_SCMP); 
 
   // Compute
   graphblas::vxm<float, float, float, float>(&y, &mask, GrB_NULL, 
@@ -284,6 +286,7 @@ BOOST_FIXTURE_TEST_CASE( dup5, TestMatrix )
   std::vector<float>            vec_val{ 1.,2.,3.,4.,3.,10.};
   std::vector<float>            mask_val{1.,0.,0.,1.,0., 1.,1.,1.,1.,1.};
   testVxmSparseSparseDenseMask( "data/small/test_cc.mtx", vec_ind, vec_val, mask_val, 0, vm );
+  testVxmSparseSparseDenseMask( "data/small/test_cc.mtx", vec_ind, vec_val, mask_val, 1, vm );
 }
 
 BOOST_FIXTURE_TEST_CASE( dup6, TestMatrix )
@@ -297,5 +300,6 @@ BOOST_FIXTURE_TEST_CASE( dup6, TestMatrix )
   std::vector<float>            mask_val{1., 1.,0.,1., 0., 0., 1., 0., 0., 1.,
                                          0., 1.,1.,1., 1., 1., 1., 1., 1., 1.};
   testVxmSparseSparseDenseMask( "data/small/test_sgm.mtx", vec_ind, vec_val, mask_val, 0, vm );
+  testVxmSparseSparseDenseMask( "data/small/test_sgm.mtx", vec_ind, vec_val, mask_val, 1, vm );
 }
 BOOST_AUTO_TEST_SUITE_END()

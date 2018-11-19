@@ -148,7 +148,17 @@ namespace backend
         // 1b) Thread-warp-block (single kernel) codepath
         else if (mxv_mode == GrB_LOAD_BALANCE_TWC)
           std::cout << "Error: B40C load-balance algorithm not implemented yet!\n";
+        if (desc->debug())
+        {
+          CHECK( w->getStorage(&u_vec_type) );
+          std::cout << "w_vec_type: " << u_vec_type << std::endl;
+        }
         CHECK( w->dense2sparse( op.identity(), desc ) );
+        if (desc->debug())
+        {
+          CHECK( w->getStorage(&u_vec_type) );
+          std::cout << "w_vec_type: " << u_vec_type << std::endl;
+        }
       }
       // 1c) Merge-path (two-phase decomposition) codepath
       else if (mxv_mode == GrB_LOAD_BALANCE_MERGE)

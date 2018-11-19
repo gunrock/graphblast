@@ -404,7 +404,7 @@ namespace backend
           setDenseMaskKernel<true><<<NB,NT>>>( w->d_val_, (mask->dense_).d_val_,
               op.identity(), u_nvals);
         else
-          setDenseMaskKernel<true><<<NB,NT>>>( w->d_val_, (mask->dense_).d_val_,
+          setDenseMaskKernel<false><<<NB,NT>>>( w->d_val_,(mask->dense_).d_val_,
               op.identity(), u_nvals);
       }
       else
