@@ -401,9 +401,9 @@ namespace backend
   template <typename T>
   Info Vector<T>::dense2sparse( T identity, Descriptor* desc )
   {
-    if( vec_type_==GrB_SPARSE ) return GrB_INVALID_OBJECT;
+    if (vec_type_==GrB_SPARSE) return GrB_INVALID_OBJECT;
 
-    if( desc->dirinfo() )
+    if (desc->dirinfo())
       std::cout << "Converting from dense to sparse!\n";
     
     // 1. Initialize memory
@@ -421,15 +421,17 @@ namespace backend
     NB.y = 1;
 
     desc->resize((2*nvals)*max(sizeof(Index),sizeof(T)), "buffer");
-    Index* d_flag = (Index*) desc->d_buffer_+  nvals;
-    Index* d_scan = (Index*) desc->d_buffer_+2*nvals;
+    Index* d_flag = (Index*) desc->d_buffer_;
+    Index* d_scan = (Index*) desc->d_buffer_+nvals;
+    Index sparse_nvals;
 
     updateFlagKernel<<<NB,NT>>>( d_flag, identity, dense_.d_val_, nvals );
     mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, nvals, (Index)0,
+        //mgpu::plus<Index>(), (Index*)0, &sparse_nvals, d_scan,
         mgpu::plus<Index>(), (Index*)0, &sparse_.nvals_, d_scan,
         *(desc->d_context_) );
 
-    if( desc->debug() )
+    if (desc->debug())
     {
       printDevice("d_val",  dense_.d_val_, nvals);
       printDevice("d_flag", d_flag, nvals);
@@ -438,10 +440,13 @@ namespace backend
       std::cout << "Sparse frontier size: " << sparse_.nvals_ << std::endl;
     }
 
-    //if( desc->struconly() )
-    //  streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, (Index)1, 
-    //      d_flag, nvals);
-    //else
+    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE",
+        GrB_LOAD_BALANCE_MERGE);
+
+    if (desc->struconly() && mxv_mode == GrB_LOAD_BALANCE_MERGE)
+      streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, d_scan, (Index)1, 
+          d_flag, nvals);
+    else
       streamCompactDenseKernel<<<NB,NT>>>(sparse_.d_ind_, 
           sparse_.d_val_, d_scan, (T)identity, dense_.d_val_, nvals);
 

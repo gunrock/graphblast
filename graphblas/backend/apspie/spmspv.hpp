@@ -42,7 +42,7 @@ namespace backend
 
     if( desc->debug())
     {
-      std::cout << "Executing Spmspv Merge\n";
+      std::cout << "Executing Spmspv MERGE\n";
       if( desc->struconly() )
         std::cout << "In structure only mode\n";
       else
@@ -402,10 +402,10 @@ namespace backend
       {
         if (use_scmp)
           setDenseMaskKernel<true><<<NB,NT>>>( w->d_val_, (mask->dense_).d_val_,
-              op.identity(), u_nvals);
+              op.identity(), A_nrows);
         else
           setDenseMaskKernel<false><<<NB,NT>>>( w->d_val_,(mask->dense_).d_val_,
-              op.identity(), u_nvals);
+              op.identity(), A_nrows);
       }
       else
       {
@@ -414,6 +414,7 @@ namespace backend
       }
     }
 
+    w->nvals_ = A_nrows;
     w->need_update_ = true;
     return GrB_SUCCESS;
   }

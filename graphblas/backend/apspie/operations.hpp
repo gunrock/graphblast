@@ -80,7 +80,8 @@ namespace backend
     // Treat vxm as an mxv with transposed matrix
     CHECK( desc->toggle( GrB_INP1 ) );
 
-    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE", GrB_LOAD_BALANCE_MERGE);
+    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE",
+        GrB_LOAD_BALANCE_MERGE);
     if( desc->debug() )
       std::cout << "Load balance mode: " << mxv_mode << std::endl;
     // 1a) Simple SpMSpV without any load-balancing codepath
@@ -221,7 +222,8 @@ namespace backend
     if( inp1_mode!=GrB_DEFAULT ) return GrB_INVALID_VALUE;
 
     // 1a) Simple SpMSpV without any load-balancing codepath
-    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE", GrB_LOAD_BALANCE_MERGE);
+    LoadBalanceMode mxv_mode = getEnv("GRB_LOAD_BALANCE_MODE", 
+        GrB_LOAD_BALANCE_MERGE);
     if (mxv_mode == GrB_LOAD_BALANCE_SIMPLE)
     {
       CHECK( w->setStorage(GrB_DENSE) );

@@ -57,7 +57,8 @@ namespace backend
     for (; row < w_nvals; row += gridDim.x * blockDim.x)
     {
       M val = __ldg(mask_val + row);
-      if (UseScmp ^ (val == identity))
+      //printf("ind: %d, use_scmp: %d, mask: %d, UseScmp ^ (!(val)): %d\n", row, UseScmp, val, UseScmp ^ (val == 0));
+      if (UseScmp ^ (!(bool)val))
         w_val[row] = identity;
     }
   }
