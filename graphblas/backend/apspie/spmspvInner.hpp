@@ -133,10 +133,7 @@ namespace backend
     }
 
     if( desc->struconly() && !desc->sort() )
-    {
       CUDA_CALL( cudaMemset(w_ind, 0, A_nrows*sizeof(Index)) );
-      //CUDA_CALL( cudaMemsetAsync(w_ind, 0, A_nrows*sizeof(Index)) );
-    }
 
     // No neighbors is one possible stopping condition
     if( *w_nvals==0 )
@@ -298,7 +295,6 @@ namespace backend
     }
 
     //Step 6) Segmented Reduce By Key
-
     if( desc->struconly() )
     {
       if( !desc->sort() )
@@ -318,7 +314,7 @@ namespace backend
         ReduceByKey( (Index*)d_csrTempInd, (T*)d_csrSwapInd, *w_nvals, 
             op.identity(), extractAdd(op), mgpu::equal_to<T>(), w_ind, w_val, 
             &w_nvals_t, (int*)0, *(desc->d_context_) );
-        *w_nvals         = w_nvals_t;
+        *w_nvals = w_nvals_t;
       }
     }
     else

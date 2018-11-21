@@ -30,10 +30,10 @@ namespace backend
         {
           M m_val = __ldg( mask_val+ind );
 
-          // val passes through if either:
-          // 1) UseScmp is not selected and m_val is zero
-          // 2) UseScmp is selected and m_val is not zero
-          if( UseScmp^((bool)m_val) )
+          // val is assigned if either:
+          // 1) use structural complement and m_val is zero
+          // 2) do not use structural complement and m_val is not zero
+          if ((UseScmp && m_val == 0) || (!UseScmp && m_val != 0))
           {
             //printf("Success: %d\n", row);
             u_val[row] = val;
@@ -77,10 +77,10 @@ namespace backend
         {
           M m_val = __ldg( mask_val+ind );
 
-          // val passes through if either:
-          // 1) UseScmp is not selected and m_val is zero
-          // 2) UseScmp is selected and m_val is not zero
-          if( UseScmp^((bool)m_val) )
+          // val is assigned if either:
+          // 1) use structural complement and m_val is zero
+          // 2) do not use structural complement and m_val is not zero
+          if ((UseScmp && m_val == 0) || (!UseScmp && m_val != 0))
           {
             //printf("Success: %d\n", row);
             u_ind[row] = val;
