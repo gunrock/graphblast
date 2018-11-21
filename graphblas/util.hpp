@@ -55,7 +55,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "Source node traversal is launched from")
     ("niter", po::value<int>()->default_value(10), 
         "Number of iterations to run outer loop after warmup")
-    ("max_niter", po::value<int>()->default_value(10), 
+    ("max_niter", po::value<int>()->default_value(10000), 
         "Number of iterations to run inner loop to convergence to")
     ("directed", po::value<int>()->default_value(0), 
         "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected")

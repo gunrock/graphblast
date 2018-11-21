@@ -45,6 +45,24 @@ namespace backend
     }
   }
 
+  template <bool UseScmp,
+            typename W, typename U, typename M>
+  __global__ void setDenseMaskKernel( W*       w_val,
+                                      const M* mask_val,
+                                      const U  identity,
+                                      Index    w_nvals )
+  {
+    Index row = blockIdx.x * blockDim.x + threadIdx.x;
+
+    for (; row < w_nvals; row += gridDim.x * blockDim.x)
+    {
+      M val = __ldg(mask_val + row);
+      //printf("ind: %d, use_scmp: %d, mask: %d, UseScmp ^ (!(val)): %d\n", row, UseScmp, val, UseScmp ^ (val == 0));
+      if (UseScmp ^ (!(bool)val))
+        w_val[row] = identity;
+    }
+  }
+
   template <typename AddOp>
   __device__ double atomic(double* address, double val, AddOp add_op)
   {
@@ -146,6 +164,42 @@ namespace backend
         a     dest_val = __ldg( A_csrVal   +row_start );
 
         atomicAdd( w_val+dest_ind, mul_op(val, dest_val) );
+      }
+    }
+  }
+
+  /*!
+   * \brief Not load-balanced, naive Sparse Matrix x Sparse Vector kernel
+   *        specialized for functor being add_op == Plus
+   */
+  template <typename W, typename a, typename U,
+            typename AccumOp, typename MulOp>
+  __global__ void spmspvSimpleOrKernel( W*           w_val,
+                                        AccumOp      accum_op,
+                                        a            identity,
+                                        MulOp        mul_op,
+                                        const Index* A_csrRowPtr,
+                                        const Index* A_csrColInd,
+                                        const a*     A_csrVal,
+                                        const Index* u_ind,
+                                        const U*     u_val,
+                                        Index        u_nvals )
+  {
+    Index row = blockIdx.x * blockDim.x + threadIdx.x;
+
+    for (; row < u_nvals; row += gridDim.x * blockDim.x)
+    {
+      Index ind = __ldg( u_ind+row );
+      U     val = __ldg( u_val+row );
+      Index row_start   = __ldg( A_csrRowPtr+ind   );
+      Index row_end     = __ldg( A_csrRowPtr+ind+1 );
+
+      for (; row_start < row_end; row_start++)
+      {
+        Index dest_ind = __ldg( A_csrColInd+row_start );
+        a     dest_val = __ldg( A_csrVal   +row_start );
+
+        w_val[dest_ind] = 1;
       }
     }
   }

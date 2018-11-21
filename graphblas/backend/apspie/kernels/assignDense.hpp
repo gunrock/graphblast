@@ -5,7 +5,6 @@ namespace graphblas
 {
 namespace backend
 {
-
   // This is the dense mask variant of assignDense
   template <bool UseScmp, bool UseMask, bool UseAll,
             typename U, typename M, typename BinaryOpT>
@@ -27,10 +26,10 @@ namespace backend
         {
           M m_val = __ldg( mask_val+row );
 
-          // val passes through if either:
+          // val is assigned if either:
           // 1) UseScmp is not selected and m_val is zero
           // 2) UseScmp is selected and m_val is not zero
-          if( UseScmp^((bool) m_val) )
+          if ((UseScmp && m_val == 0) || (!UseScmp && m_val != 0))
             u_val[row] = val;
         }
         else
