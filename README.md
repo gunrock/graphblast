@@ -163,7 +163,9 @@ See [graphblas/stddef.hpp](https://github.com/gunrock/gunrock-grb/blob/master/gr
 
 ## Presentations
 
-* SIAM Minisymposium 2016, **Design Considerations for a GraphBLAS Compliant Graph Library on Clusters of GPUs**, July 2016. [[slides](http://www.ece.ucdavis.edu/~ctcyang/pub/siam-slides2016.pdf)]
+1. SC Doctoral Showcase 2018, **Linear Algebra is the Right Way to Think About Graphs**, November 2018. [[slides](http://www.ece.ucdavis.edu/~ctcyang/pub/sc-slides2018.pdf) | [poster](http://www.ece.ucdavis.edu/~ctcyang/pub/sc-poster2018.pdf)]
+
+2. SIAM Minisymposium 2016, **Design Considerations for a GraphBLAS Compliant Graph Library on Clusters of GPUs**, July 2016. [[slides](http://www.ece.ucdavis.edu/~ctcyang/pub/siam-slides2016.pdf)]
 
 ## Acknowledgments
 
