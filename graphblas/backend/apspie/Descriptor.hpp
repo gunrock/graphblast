@@ -20,10 +20,10 @@ namespace backend
       //d_buffer_(NULL), d_buffer_size_(0), d_temp_(NULL), d_temp_size_(0),
       d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), 
       split_(0), enable_split_(0), niter_(0), max_niter_(0), directed_(0), 
-      timing_(0), memusage_(0), switchpoint_(0), mxvmode_(0), 
-      lastmxv_(GrB_PUSHONLY), transpose_(0), mtxinfo_(0), dirinfo_(0), 
-      verbose_(0), struconly_(0), earlyexit_(0), opreuse_(0), endbit_(0), 
-      sort_(0), mask_(0), nthread_(0), ndevice_(0), debug_(0), memory_(0) 
+      timing_(0), transpose_(0), mtxinfo_(0), verbose_(0), mxvmode_(0),
+      switchpoint_(0), lastmxv_(GrB_PUSHONLY), dirinfo_(0), struconly_(0),
+      opreuse_(0), memusage_(0), endbit_(0), sort_(0), atomic_(0),
+      earlyexit_(0), mask_(0), nthread_(0), ndevice_(0), debug_(0), memory_(0) 
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -58,6 +58,7 @@ namespace backend
     inline bool endbit()         { return endbit_; }
     inline bool sort()           { return sort_; }
     inline bool mask()           { return mask_; }
+    inline bool atomic()         { return atomic_; }
     inline float switchpoint()   { return switchpoint_; }
     inline float memusage()      { return memusage_; }
 
@@ -88,20 +89,27 @@ namespace backend
     int         niter_;
     int         max_niter_;
     int         directed_;
-    int         mxvmode_;
-    Desc_value  lastmxv_;
     int         timing_;
-    float       memusage_;
-    float       switchpoint_;
     bool        transpose_;
     bool        mtxinfo_;
-    bool        dirinfo_;
     bool        verbose_;
+
+    // mxv params
+    int         mxvmode_;
+    Desc_value  lastmxv_;
+    float       switchpoint_;
+    bool        dirinfo_;
     bool        struconly_;
-    bool        earlyexit_;
     bool        opreuse_;
+
+    // mxv (spmspv/push) params
+    float       memusage_;
     bool        endbit_;
     bool        sort_;
+    bool        atomic_;
+
+    // mxv (spmv/pull) params
+    bool        earlyexit_;
     bool        mask_;
 
     // GPU params
@@ -226,18 +234,25 @@ namespace backend
     max_niter_      = vm["max_niter"     ].as<int>();
     directed_       = vm["directed"      ].as<int>();
     timing_         = vm["timing"        ].as<int>();
-    memusage_       = vm["memusage"      ].as<float>();
-    switchpoint_    = vm["switchpoint"   ].as<float>();
-    mxvmode_        = vm["mxvmode"       ].as<int>();
     transpose_      = vm["transpose"     ].as<bool>();
     mtxinfo_        = vm["mtxinfo"       ].as<bool>();
-    dirinfo_        = vm["dirinfo"       ].as<bool>();
     verbose_        = vm["verbose"       ].as<bool>();
+
+    // mxv params
+    mxvmode_        = vm["mxvmode"       ].as<int>();
+    switchpoint_    = vm["switchpoint"   ].as<float>();
+    dirinfo_        = vm["dirinfo"       ].as<bool>();
     struconly_      = vm["struconly"     ].as<bool>();
-    earlyexit_      = vm["earlyexit"     ].as<bool>();
     opreuse_        = vm["opreuse"       ].as<bool>();
+
+    // mxv (spmspv/push) params
+    memusage_       = vm["memusage"      ].as<float>();
     endbit_         = vm["endbit"        ].as<bool>();
     sort_           = vm["sort"          ].as<bool>();
+    atomic_         = vm["atomic"        ].as<bool>();
+
+    // mxv (spmv/pull) params
+    earlyexit_      = vm["earlyexit"     ].as<bool>();
     mask_           = vm["mask"          ].as<bool>();
 
     // GPU params

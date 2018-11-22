@@ -362,28 +362,41 @@ namespace backend
       zeroKernel<<<NB,NT>>>(w->d_val_, op.identity(), A_nrows);
 
     /*!
-     * /brief atomicAdd() 3+5 = 8
-     *        atomicSub() 3-5 =-2
-     *        atomicMin() 3,5 = 3
-     *        atomicMax() 3,5 = 5
-     *        atomicAnd() 3&5 = 1
-     *        atomicOr()  3|5 = 7
-     *        atomicXor() 3^5 = 6
+     * /brief atomicAdd() 3+5  = 8
+     *        atomicSub() 3-5  =-2
+     *        atomicMin() 3,5  = 3
+     *        atomicMax() 3,5  = 5
+     *        atomicOr()  3||5 = 1
+     *        atomicXor() 3^^5 = 0
      */
     auto add_op = extractAdd(op);
     int functor = add_op(3, 5);
+    if (desc->debug())
+      std::cout << "Functor: " << functor << "\n";
     if (functor == 8)
+    {
       spmspvSimpleAddKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
           extractMul(op), A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_,
           u->d_val_, u_nvals );
-    else if (functor == 7)
+      if (desc->debug())
+        std::cout << "Using atomicAdd!\n";
+    }
+    else if (functor == 1 && !desc->atomic())
+    {
       spmspvSimpleOrKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
           extractMul(op), A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_,
           u->d_val_, u_nvals );
+      if (desc->debug())
+        std::cout << "Using Boolean or!\n";
+    }
     else
+    {
       spmspvSimpleKernel<<<NB,NT>>>( w->d_val_, NULL, op.identity(),
           extractMul(op), add_op, A_csrRowPtr, A_csrColInd, A_csrVal,
           u->d_ind_, u->d_val_, u_nvals );
+      if (desc->debug())
+        std::cout << "Using atomic operation!\n";
+    }
 
     if( desc->debug() )
       printDevice("w_val", w->d_val_, A_nrows);

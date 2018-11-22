@@ -48,43 +48,51 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
     ("mode", po::value<std::string>()->default_value("fixedrow"), 
         "row or column")
     ("split", po::value<bool>()->default_value(false), 
-        "True means split spgemm computation")
+        "True means split computation when possible e.g. mxm, reduce")
 
     // General params
-    ("source", po::value<int>()->default_value(0),
-        "Source node traversal is launched from")
     ("niter", po::value<int>()->default_value(10), 
         "Number of iterations to run outer loop after warmup")
     ("max_niter", po::value<int>()->default_value(10000), 
         "Number of iterations to run inner loop to convergence to")
     ("directed", po::value<int>()->default_value(0), 
         "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected")
-    ("mxvmode", po::value<int>()->default_value(1), 
-        "0: push-pull, 1: push only, 2: pull only")
     ("timing", po::value<int>()->default_value(1),
-        "0: final timing, 1: per niter timing, 2: per graphblas algorithm timing")
-    ("memusage", po::value<float>()->default_value(1.0),
-        "Multiple of edge used to store temporary neighbor list during push phase")
-    ("switchpoint", po::value<float>()->default_value(0.01),
-        "Percentage of nnz needed in order to switch from sparse to dense when mxvmode=push-pull")
+        "0: outer loop timing, 1: inner loop timing, 2: per graphblas operation timing")
     ("transpose", po::value<bool>()->default_value(false), 
         "True means use transpose graph")
     ("mtxinfo", po::value<bool>()->default_value(true),
         "True means show matrix MTX info")
+    ("verbose", po::value<bool>()->default_value(true),
+        "0: timing output only, 1: timing output and correctness indicator")
+
+    // mxv params
+    ("source", po::value<int>()->default_value(0),
+        "Source node traversal is launched from")
+    ("mxvmode", po::value<int>()->default_value(1), 
+        "0: push-pull, 1: push only, 2: pull only")
+    ("switchpoint", po::value<float>()->default_value(0.01),
+        "Percentage of nnz needed in order to switch from sparse to dense when mxvmode=0")
     ("dirinfo", po::value<bool>()->default_value(false),
         "True means show mxvmode direction info, and when switches happen")
-    ("verbose", po::value<bool>()->default_value(true),
-        "0: timing output only, 1: correctness indicator")
     ("struconly", po::value<bool>()->default_value(false),
         "True means use implied nonzeroes, False means key-value operations")
-    ("earlyexit", po::value<bool>()->default_value(true),
-        "True means use early exit, False means do not use it")
     ("opreuse", po::value<bool>()->default_value(false),
         "True means use operand reuse, False means do not use it")
+
+    // mxv (spmspv/push) params
+    ("memusage", po::value<float>()->default_value(1.0),
+        "Multiple of |E| used to store temporary neighbor list during push phase when using MERGE load-balancing")
     ("endbit", po::value<bool>()->default_value(true),
-        "True means do not do radix sort on full 32 bits, False means do it on full 32 bits")
+        "True means do not do radix sort on full 32 bits, False means do it on full 32 bits when using MERGE load-balancing")
     ("sort", po::value<bool>()->default_value(true),
-        "True means sort, False means do not sort. (Option is only valid if struconly is true)")
+        "True means sort, False means do not sort when using MERGE load-balancing and struconly=1")
+    ("atomic", po::value<bool>()->default_value(false),
+        "True means use atomics, False means do not use atomics when using SIMPLE or TWC load-balancing")
+
+    // mxv (spmv/pull) params
+    ("earlyexit", po::value<bool>()->default_value(true),
+        "True means use early exit, False means do not use it when using Boolean LogicalOrAndSemiring")
     ("mask", po::value<bool>()->default_value(true),
         "True means use fused mask in pull direction, False means do not do it")
 
