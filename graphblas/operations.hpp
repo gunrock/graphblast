@@ -67,23 +67,17 @@ namespace graphblas
     // Dimension check
     Index u_nvals = 0;
     CHECK( u->nvals(&u_nvals) );
-    if( u_nvals==0 )
-    {
-      if( desc->descriptor_.debug() )
-        std::cout << "u.nvals == 0\n";
-      CHECK( w->dup(u) );
-      return GrB_SUCCESS;
-    }
+    if (u_nvals == 0)
+      return GrB_UNINITIALIZED_OBJECT;
+    
     //CHECK( checkDimVecNvals(  u,    "u.nvals == 0"    ) );
 
     // Case 1: u*A
     CHECK( checkDimRowSize(  A, u,    "A.nrows != u.size"    ) );
     CHECK( checkDimColSize(  A, w,    "A.ncols != w.size"    ) );
-    if( mask!=NULL )
     CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
 
     // Case 2: u*AT
-
     const backend::Vector<M>*        mask_t = (mask==NULL ) ? NULL 
         : &mask->vector_;
     backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
@@ -116,12 +110,9 @@ namespace graphblas
     // Dimension check
     Index u_nvals = 0;
     CHECK( u->nvals(&u_nvals) );
-    if( u_nvals==0 )
+    if (u_nvals == 0)
     {
-      if( desc->descriptor_.debug() )
-        std::cout << "u.nvals == 0\n";
-      CHECK( w->dup(u) );
-      return GrB_SUCCESS;
+      return GrB_UNINITIALIZED_OBJECT;
     }
     //CHECK( checkDimVecNvals( u, "u.nvals == 0" ) );
 
@@ -131,7 +122,6 @@ namespace graphblas
     CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
 
     // Case 2: AT*u
-
     const backend::Vector<M>*        mask_t = (mask==NULL ) ? NULL 
         : &mask->vector_;
     backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
@@ -386,7 +376,19 @@ namespace graphblas
               const Vector<U>* u,
               Descriptor*      desc )
   {
-    std::cout << "Error: apply vector variant not implemented yet!\n";
+    // Null pointer check
+    if (w == NULL || u == NULL)
+      return GrB_UNINITIALIZED_OBJECT;
+
+    // Dimension check
+    CHECK( checkDimSizeSize( u, w,    "u.size != w.size"    ) );
+    CHECK( checkDimSizeSize( u, mask, "u.size != mask.size" ) );
+    CHECK( checkDimSizeSize( w, mask, "w.size != mask.size" ) );
+    
+    const backend::Vector<M>*  mask_t = (mask==NULL) ? NULL : &mask->vector_;
+    backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+
+    return backend::apply(&w->vector_, mask_t, accum, op, &u->vector_, desc_t);
   }
 
   template <typename c, typename a, typename m,

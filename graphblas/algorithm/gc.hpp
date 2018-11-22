@@ -2,22 +2,31 @@
 #define GRB_ALGORITHM_GC_HPP
 
 #include "graphblas/algorithm/testGc.hpp"
-#include "graphblas/backend/apspie/util.hpp" // GpuTimer
+#include "graphblas/backend/cuda/util.hpp" // GpuTimer
 
 namespace graphblas
 {
   template <typename T_in1, typename T_out=T_in1>
   struct set_random
   {
+    set_random()
+    {
+      seed_ = getEnv("GRB_SEED", 0);
+      srand(seed_);
+    }
+
     inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs)
-    { return random(); }
-  }
+    { return rand(); }
+
+    int seed_;
+  };
 
 namespace algorithm
 {
   // Use float for now for both v and A
   float gc( Vector<float>*       v,
-            const Matrix<float>* A, 
+            const Matrix<float>* A,
+            int                  seed,
             Descriptor*          desc )
   {
     Index A_nrows;
@@ -36,10 +45,15 @@ namespace algorithm
 
     // Weight vectors (use float for now)
     Vector<float> w(A_nrows);
-    CHECK( w->fill(0.f) );
+    CHECK( w.fill(0.f) );
 
-    desc->set()
-    apply<float,float,float>(&w, GrB_NULL, GrB_NULL, set_random, &w, desc);
+    // Set seed
+    setEnv("GRB_SEED", seed);
+
+    desc->set(GrB_BACKEND, GrB_SEQUENTIAL);
+    apply<float,float,float>(&w, GrB_NULL, GrB_NULL, set_random<float>(), &w, desc);
+    CHECK( w.print() );
+    desc->set(GrB_BACKEND, GrB_CUDA);
 
     float iter = 1;
     float succ = 0.f;
@@ -103,21 +117,21 @@ namespace algorithm
   }
 
   template <typename T, typename a>
-  int bfsCpu( Index        source,
-              Matrix<a>*   A,
-              T*           h_bfs_cpu,
-              Index        depth,
-              bool         transpose=false )
+  int gcCpu( Index        source,
+             Matrix<a>*   A,
+             T*           h_bfs_cpu,
+             Index        depth,
+             bool         transpose=false )
   {
     Index* reference_check_preds = NULL;
     int max_depth;
 
     if( transpose )
-      max_depth = SimpleReferenceBfs<T>( A->matrix_.nrows_, 
+      max_depth = SimpleReferenceGc<T>( A->matrix_.nrows_, 
           A->matrix_.sparse_.h_cscColPtr_, A->matrix_.sparse_.h_cscRowInd_, 
           h_bfs_cpu, reference_check_preds, source, depth);
     else
-      max_depth = SimpleReferenceBfs<T>( A->matrix_.nrows_, 
+      max_depth = SimpleReferenceGc<T>( A->matrix_.nrows_, 
           A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_, 
           h_bfs_cpu, reference_check_preds, source, depth);
 
@@ -127,4 +141,4 @@ namespace algorithm
 }  // algorithm
 }  // graphblas
 
-#endif  // GRB_ALGORITHM_BFS_HPP
+#endif  // GRB_ALGORITHM_GC_HPP

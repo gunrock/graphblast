@@ -638,7 +638,25 @@ namespace backend
               const Vector<U>* u,
               Descriptor*      desc )
   {
+    Storage u_vec_type;
+    CHECK( u->getStorage( &u_vec_type ) );
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
 
+    // sparse variant
+    if (u_vec_type == GrB_SPARSE)
+    {
+      CHECK( w->setStorage(GrB_SPARSE) );
+      applySparse( &w->sparse_, mask, accum, op, &u_t->sparse_, desc);
+    }
+    // dense variant
+    else if (u_vec_type == GrB_DENSE)
+    {
+      CHECK( w->setStorage(GrB_DENSE) );
+      applyDense( &w->dense_, mask, accum, op, &u_t->dense_, desc);
+    }
+    else return GrB_UNINITIALIZED_OBJECT;
+
+    return GrB_SUCCESS;
   }
 
   template <typename c, typename a, typename m,

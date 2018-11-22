@@ -128,6 +128,13 @@ inline T getEnv(const char *key, T default_val) {
 }
 
 template<typename T>
+void setEnv(const char *key, T default_val) {
+  std::string s = std::to_string(default_val);
+  char const *val = s.c_str();
+  setenv(key, val, 0);
+}
+
+template<typename T>
 bool compare(const std::tuple<graphblas::Index,
                               graphblas::Index,
                               T,

@@ -18,6 +18,7 @@
 #include "graphblas/backend/cuda/eWiseAdd.hpp"
 #include "graphblas/backend/cuda/trace.hpp"
 #include "graphblas/backend/cuda/assign.hpp"
+#include "graphblas/backend/cuda/apply.hpp"
 #include "graphblas/backend/cuda/Descriptor.hpp"
 #include "graphblas/backend/cuda/SparseVector.hpp"
 #include "graphblas/backend/cuda/DenseVector.hpp"
