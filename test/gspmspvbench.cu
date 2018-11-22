@@ -1,4 +1,4 @@
-#define GRB_USE_APSPIE
+#define GRB_USE_CUDA
 #define private public
 
 #include <iostream>
@@ -11,7 +11,7 @@
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
-#include "graphblas/backend/apspie/util.hpp"  // GpuTimer
+#include "graphblas/backend/cuda/util.hpp"  // GpuTimer
 #include "test/test.hpp"
 
 int main( int argc, char** argv )

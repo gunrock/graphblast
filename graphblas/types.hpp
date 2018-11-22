@@ -53,6 +53,7 @@ namespace graphblas
                    GrB_NT,
                    GrB_MXVMODE,
                    GrB_TOL,
+                   GrB_BACKEND,
                    GrB_NDESCFIELD};
 
   enum Desc_value {GrB_SCMP,             // for GrB_MASK
@@ -67,6 +68,8 @@ namespace graphblas
                    GrB_PUSHPULL  =  10,  // for GrB_MXVMODE
                    GrB_PUSHONLY  =  11,  // for GrB_MXVMODE
                    GrB_PULLONLY  =  12,  // for GrB_MXVMODE
+                   GrB_SEQUENTIAL=  13,  // for GrB_BACKEND
+                   GrB_CUDA      =  14,  // for GrB_BACKEND
                    GrB_8         =   8,  // for GrB_TA, GrB_TB, GrB_NT
                    GrB_16        =  16,  // for GrB_TOL
                    GrB_32        =  32,

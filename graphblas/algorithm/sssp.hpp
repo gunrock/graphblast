@@ -4,7 +4,7 @@
 #include <limits>
 
 #include "graphblas/algorithm/testSssp.hpp"
-#include "graphblas/backend/apspie/util.hpp" // GpuTimer
+#include "graphblas/backend/cuda/util.hpp" // GpuTimer
 
 namespace graphblas
 {

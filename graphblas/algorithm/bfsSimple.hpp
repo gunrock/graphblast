@@ -2,7 +2,7 @@
 #define GRB_ALGORITHM_BFSSIMPLE_HPP
 
 #include "graphblas/algorithm/testBfs.hpp"
-#include "graphblas/backend/apspie/util.hpp" // GpuTimer
+#include "graphblas/backend/cuda/util.hpp" // GpuTimer
 
 namespace graphblas
 {

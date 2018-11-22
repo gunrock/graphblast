@@ -8,7 +8,7 @@
 namespace graphblas
 {
   // Unary Operations
-  // TODO
+  // TODO(@ctcyang): add unary ops
 
   // Binary Operations
   template <typename T_in1=bool, typename T_in2=bool, typename T_out=bool>
