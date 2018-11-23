@@ -497,4 +497,116 @@ struct CpuTimer {
 #endif
 };
 
+using namespace graphblas;
+
+template <typename T>
+void coo2csr( Index*                    csrRowPtr,
+              Index*                    csrColInd,
+              T*                        csrVal,
+              const std::vector<Index>& row_indices,
+              const std::vector<Index>& col_indices,
+              const std::vector<T>&     values,
+              Index                     nrows,
+              Index                     ncols )
+{
+  Index temp, row, col, dest, cumsum = 0;
+  Index nvals = row_indices.size();
+
+  std::vector<Index> row_indices_t = row_indices;
+  std::vector<Index> col_indices_t = col_indices;
+  std::vector<T>     values_t = values;
+
+  customSort<T>(row_indices_t, col_indices_t, values_t);
+
+  // Set all rowPtr to 0
+  for (Index i = 0; i <= nrows; i++)
+    csrRowPtr[i] = 0;
+
+  // Go through all elements to see how many fall in each row
+  for (Index i = 0; i < nvals; i++)
+  {
+    row = row_indices_t[i];
+    if (row >= nrows) std::cout << "Error: Index out of bounds!\n";;
+    csrRowPtr[row]++;
+  }
+
+  // Cumulative sum to obtain rowPtr
+  for (Index i = 0; i < nrows; i++)
+  {
+    temp = csrRowPtr[i];
+    csrRowPtr[i] = cumsum;
+    cumsum += temp;
+  }
+  csrRowPtr[nrows] = nvals;
+
+  // Store colInd and val
+  for (Index i = 0; i < nvals; i++)
+  {
+    row = row_indices_t[i];
+    dest = csrRowPtr[row];
+    col = col_indices_t[i];
+    if (col >= ncols) std::cout << "Error: Index out of bounds!\n";
+    csrColInd[dest] = col;
+    csrVal[dest] = values_t[i];
+    csrRowPtr[row]++;
+  }
+  cumsum = 0;
+
+  // Undo damage done to rowPtr
+  for (Index i = 0; i < nrows; i++)
+  {
+    temp = csrRowPtr[i];
+    csrRowPtr[i] = cumsum;
+    cumsum = temp;
+  }
+  temp = csrRowPtr[nrows];
+  csrRowPtr[nrows] = cumsum;
+  cumsum = temp;
+}
+
+template <typename T>
+void coo2csc( Index*                    cscColPtr,
+              Index*                    cscRowInd,
+              T*                        cscVal,
+              const std::vector<Index>& row_indices,
+              const std::vector<Index>& col_indices,
+              const std::vector<T>&     values,
+              Index                     nrows,
+              Index                     ncols )
+{
+  return coo2csr(cscColPtr, cscRowInd, cscVal, col_indices, row_indices, values,
+      ncols, nrows);
+}
+
+template <typename T>
+void csr2csc( Index*       cscColPtr,
+              Index*       cscRowInd,
+              T*           cscVal,
+              const Index* csrRowPtr,
+              const Index* csrColInd,
+              const T*     csrVal,
+              Index        nrows,
+              Index        ncols )
+{
+  Index nvals = csrRowPtr[nrows];
+  std::vector<Index> row_indices(nvals, 0);
+  std::vector<Index> col_indices(nvals, 0);
+  std::vector<T>     values(nvals, 0);
+
+  for (Index i = 0; i < nrows; ++i)
+  {
+    Index row_start = csrRowPtr[i];
+    Index row_end   = csrRowPtr[i+1];
+    for (; row_start < row_end; ++row_start)
+    {
+      row_indices[row_start] = i;
+      col_indices[row_start] = csrColInd[row_start];
+      values[row_start] = csrVal[row_start];
+    }
+  }
+
+  return coo2csc(cscColPtr, cscRowInd, cscVal, row_indices, col_indices, values,
+      ncols, nrows);
+}
+
 #endif  // GRB_UTIL_HPP

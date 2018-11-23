@@ -190,9 +190,6 @@ namespace backend
 
     CHECK( allocate() );
 
-    //std::cout << "copying " << nrows_+1 << " rows\n";
-    //std::cout << "copying " << nvals_+1 << " rows\n";
-
     CUDA_CALL( cudaMemcpy( d_csrRowPtr_, rhs->d_csrRowPtr_, (nrows_+1)*
         sizeof(Index), cudaMemcpyDeviceToDevice ) );
     CUDA_CALL( cudaMemcpy( d_csrColInd_, rhs->d_csrColInd_, nvals_*sizeof(Index),
@@ -281,118 +278,57 @@ namespace backend
     nvals_ = nvals;
     CHECK( allocateCpu() );
 
-    // Convert to CSR if transpose is false (iter 1)
-    //            CSC if transpose is true  (iter 0)
-    for( int iter=0; iter<2; iter++ )
+    if (dat_name != NULL)
     {
-      bool transpose = (iter==0) ? true : false;
-      Index temp, row, col, dest, cumsum=0;
-
-      std::vector<Index>* row_indices_t = transpose ? 
-        const_cast<std::vector<Index>*>(col_indices) : 
-        const_cast<std::vector<Index>*>(row_indices);
-      std::vector<Index>* col_indices_t = transpose ? 
-        const_cast<std::vector<Index>*>(row_indices) :
-        const_cast<std::vector<Index>*>(col_indices);
-      std::vector<T>*     values_t      = const_cast<std::vector<T>*>(values);
-      customSort<T>( *row_indices_t, *col_indices_t, *values_t );
-
-      Index* csrRowPtr = (transpose) ? h_cscColPtr_ : h_csrRowPtr_;
-      Index* csrColInd = (transpose) ? h_cscRowInd_ : h_csrColInd_;
-      T*     csrVal    = (transpose) ? h_cscVal_    : h_csrVal_;
-      Index  nrows     = (transpose) ? ncols_       : nrows_;
-      Index  ncols     = (transpose) ? nrows_       : ncols_;
-
-      // Set all rowPtr to 0
-      for( Index i=0; i<=nrows; i++ )
-        csrRowPtr[i] = 0;
-      // Go through all elements to see how many fall in each row
-      for( Index i=0; i<nvals_; i++ )
-      {
-        row = (*row_indices_t)[i];
-        if( row>=nrows ) return GrB_INDEX_OUT_OF_BOUNDS;
-        csrRowPtr[ row ]++;
-      }
-      // Cumulative sum to obtain rowPtr
-      for( Index i=0; i<nrows; i++ )
-      {
-        temp = csrRowPtr[i];
-        csrRowPtr[i] = cumsum;
-        cumsum += temp;
-      }
-      csrRowPtr[nrows] = nvals;
-
-      // Store colInd and val
-      for( Index i=0; i<nvals_; i++ )
-      {
-        row = (*row_indices_t)[i];
-        dest= csrRowPtr[row];
-        col = (*col_indices_t)[i];
-        if( col>=ncols ) return GrB_INDEX_OUT_OF_BOUNDS;
-        csrColInd[dest] = col;
-        csrVal[   dest] = (*values_t)[i];
-        csrRowPtr[row]++;
-      }
-      cumsum = 0;
-      
-      // Undo damage done to rowPtr
-      for( Index i=0; i<nrows; i++ )
-      {
-        temp = csrRowPtr[i];
-        csrRowPtr[i] = cumsum;
-        cumsum = temp;
-      }
-      temp = csrRowPtr[nrows];
-      csrRowPtr[nrows] = cumsum;
-      cumsum = temp;
-    }
-
-    // Check symmetric without passing in parameter from user
-    // i.e. if every csrRowPtr == cscColPtr, then:
-    // 1) free h_cscColPtr, h_cscRowInd, h_cscVal
-    // 2) set them equal to their CSR counterparts
-    symmetric_ = true;
-    for( Index i=0; i<nvals_; i++ )
-    {
-      if( h_csrColInd_[i]!=h_cscRowInd_[i] )
-      {
+      char* pch = strstr(dat_name, ".ud.");
+      if (pch == NULL)
         symmetric_ = false;
-        break;
-      }
+      else
+        symmetric_ = true;
     }
 
-    if( symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY )
+    coo2csr(h_csrRowPtr_, h_csrColInd_, h_csrVal_,
+            *row_indices, *col_indices, *values, nrows_, ncols_);
+
+    if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY)
     {
-      free( h_cscColPtr_ );
-      free( h_cscRowInd_ );
-      free( h_cscVal_    );
+      free(h_cscColPtr_);
+      free(h_cscRowInd_);
+      free(h_cscVal_);
       h_cscColPtr_ = h_csrRowPtr_;
       h_cscRowInd_ = h_csrColInd_;
       h_cscVal_    = h_csrVal_;
+    }
+    else
+    {
+      coo2csc(h_cscColPtr_, h_cscRowInd_, h_cscVal_,
+              *row_indices, *col_indices, *values, nrows_, ncols_);
+    }
 
-      if (dat_name != NULL)
+    if (dat_name != NULL)
+    {
+      if (!exists(dat_name))
       {
-        if( !exists(dat_name) )
+        std::ofstream ofs( dat_name, std::ios::out | std::ios::binary );
+        if (ofs.fail())
         {
-          std::ofstream ofs( dat_name, std::ios::out | std::ios::binary );
-          if (ofs.fail())
-            std::cout << "Error: Unable to open file for writing!\n";
-          else
-          {
-            printf("Writing %s\n", dat_name);
-            ofs.write( reinterpret_cast<char*>(&nrows_), sizeof(Index));
-            if( ncols_ != nrows_ )
-              std::cout << "Error: nrows not equal to ncols!\n";
-            ofs.write( reinterpret_cast<char*>(&nvals_), sizeof(Index));
-            ofs.write( reinterpret_cast<char*>(h_csrRowPtr_),
-                (nrows_+1)*sizeof(Index));
-            ofs.write( reinterpret_cast<char*>(h_csrColInd_),
-                nvals_*sizeof(Index));
-            ofs.close();
-          }
+          std::cout << "Error: Unable to open file for writing!\n";
         }
-        free(dat_name);
+        else
+        {
+          printf("Writing %s\n", dat_name);
+          ofs.write( reinterpret_cast<char*>(&nrows_), sizeof(Index));
+          if( ncols_ != nrows_ )
+            std::cout << "Error: nrows not equal to ncols!\n";
+          ofs.write( reinterpret_cast<char*>(&nvals_), sizeof(Index));
+          ofs.write( reinterpret_cast<char*>(h_csrRowPtr_),
+              (nrows_+1)*sizeof(Index));
+          ofs.write( reinterpret_cast<char*>(h_csrColInd_),
+              nvals_*sizeof(Index));
+          ofs.close();
+        }
       }
+      free(dat_name);
     }
 
     CHECK( cpuToGpu() );
@@ -403,15 +339,7 @@ namespace backend
   template <typename T>
   Info SparseMatrix<T>::build( char* dat_name )
   {
-    if( !symmetric_ ) 
-    {
-      std::cout << "Error: This feature does not support non-symmetric!\n";
-      return GrB_SUCCESS;
-    }
-
-    printf("%s\n", dat_name);
-
-    if( dat_name != NULL && exists(dat_name) )
+    if (dat_name != NULL && exists(dat_name))
     {
       // The size of the file in bytes is in results.st_size
       // -unserialize vector
@@ -421,6 +349,12 @@ namespace backend
       else
       {
         printf("Reading %s\n", dat_name);
+        char* pch = strstr(dat_name, ".ud.");
+        if (pch == NULL)
+          symmetric_ = false;
+        else
+          symmetric_ = true;
+
         ifs.read( reinterpret_cast<char*>(&nrows_), sizeof(Index));
         if( ncols_ != nrows_ )
           std::cout << "Error: nrows not equal to ncols!\n";
@@ -436,17 +370,29 @@ namespace backend
         for( Index i=0; i<nvals_; i++ )
           h_csrVal_[i] = (T)1;
 
-        symmetric_   = true;
-        
-        h_cscColPtr_ = h_csrRowPtr_;
-        h_cscRowInd_ = h_csrColInd_;
-        h_cscVal_    = h_csrVal_;
+        if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY)
+        {
+          free(h_cscColPtr_);
+          free(h_cscRowInd_);
+          free(h_cscVal_);
+          h_cscColPtr_ = h_csrRowPtr_;
+          h_cscRowInd_ = h_csrColInd_;
+          h_cscVal_    = h_csrVal_;
+        }
+        else
+        {
+          csr2csc(h_cscColPtr_, h_cscRowInd_, h_cscVal_,
+                  h_csrRowPtr_, h_csrColInd_, h_csrVal_, nrows_, ncols_);
+        }
+
         CHECK( cpuToGpu() );
       }
       free(dat_name);
     }
     else
+    {
       std::cout << "Error: Unable to read file!\n";
+    }
 
     return GrB_SUCCESS;
   }
@@ -886,7 +832,6 @@ namespace backend
     need_update_ = false;
     return GrB_SUCCESS;
   }
-
 }  // backend
 }  // graphblas
 
