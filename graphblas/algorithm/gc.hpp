@@ -24,28 +24,40 @@ namespace graphblas
 namespace algorithm
 {
   // Use float for now for both v and A
-  float gc( Vector<float>*       v,
+  float gc( Vector<int>*         v,
             const Matrix<float>* A,
             int                  seed,
+            int                  max_colors,
             Descriptor*          desc )
   {
     Index A_nrows;
     CHECK( A->nrows(&A_nrows) );
 
-    // Visited vector (use float for now)
-    CHECK( v->fill(0.f) );
+    // Colors vector (v)
+    // 0: no color, 1 ... n: color
+    CHECK( v->fill(0) );
 
-    // Frontier vectors (use float for now)
-    Vector<float> q1(A_nrows);
-    Vector<float> q2(A_nrows);
+    // Frontier vector (f)
+    Vector<float> f(A_nrows);
 
-    Desc_value desc_value;
-    CHECK( desc->get(GrB_MXVMODE, &desc_value) );
-    CHECK( q1.fill(0.f) );
-
-    // Weight vectors (use float for now)
+    // Weight vectors (w)
     Vector<float> w(A_nrows);
     CHECK( w.fill(0.f) );
+
+    // Neighbor max (m)
+    Vector<float> m(A_nrows);
+
+    // Neighbor color (n)
+    Vector<int> n(A_nrows);
+
+    // Dense array (d)
+    Vector<int> d(max_colors);
+
+    // Ascending array (ascending)
+    Vector<int> ascending(max_colors);
+
+    // Array for finding smallest color (min_array)
+    Vector<int> min_array(max_colors);
 
     // Set seed
     setEnv("GRB_SEED", seed);
@@ -57,8 +69,10 @@ namespace algorithm
 
     float iter = 1;
     float succ = 0.f;
+    int   min_color = 0;
     Index unvisited = A_nrows;
     backend::GpuTimer gpu_tight;
+
     if( desc->descriptor_.timing_>0 )
       gpu_tight.Start();
     do
@@ -67,7 +81,9 @@ namespace algorithm
       {
         std::cout << "=====Iteration " << iter - 1 << "=====\n";
         v->print();
-        q1.print();
+        w.print();
+        f.print();
+        m.print();
       }
       if( desc->descriptor_.timing_==2 )
       {
@@ -83,19 +99,57 @@ namespace algorithm
         unvisited -= (int)succ;
         gpu_tight.Start();
       }
-      assign<float,float>(v, &q1, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
+      
+      // find max of neighbors
       CHECK( desc->toggle(GrB_MASK) );
-      vxm<float,float,float,float>(&q2, v, GrB_NULL, 
-          LogicalOrAndSemiring<float>(), &q1, A, desc);
-      //vxm<float,float,float,float>(&q2, v, GrB_NULL, 
-      //    PlusMultipliesSemiring<float>(), &q1, A, desc);
+      vxm<float, float, float, float>(&m, &w, GrB_NULL, 
+          MaximumMultipliesSemiring<float>(), &w, A, desc);
       CHECK( desc->toggle(GrB_MASK) );
-      if (desc->descriptor_.debug())
-        q2.print();
-      CHECK( q2.swap(&q1) );
-      if (desc->descriptor_.debug())
-        q1.print();
-      reduce<float,float>(&succ, GrB_NULL, PlusMonoid<float>(), &q1, desc);
+
+      // find all largest nodes that are uncolored
+      eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,
+          PlusGreaterSemiring<float>(), &w, &m, desc);
+
+      // stop when frontier is empty
+      reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &f, desc);
+
+      if (succ == 0)
+        break;
+
+      // find neighbors of frontier
+      CHECK( desc->toggle(GrB_MASK) );
+      vxm<float, int, float, float>(&m, v, GrB_NULL,
+          LogicalOrAndSemiring<float>(), &f, A, desc);
+      CHECK( desc->toggle(GrB_MASK) );
+
+      // get color
+      //eWiseMult<float, float, float, float>(&n, GrB_NULL, GrB_NULL,
+      //    PlusMultipliesSemiring<float>(), &m, v, desc);
+
+      // prepare dense array
+      // index 0 means no color, so set 0'th element to 0
+      CHECK( d.fill(1) );
+      CHECK( d.setElement(0, 0) );
+
+      // scatter nodes into a dense array
+      scatter<float, float, float>(&d, GrB_NULL, &m, (int)0, desc);
+
+      // TODO(@ctcyang): this eWiseMult and reduce could be changed into single
+      // reduce with argmin Monoid
+      // map boolean bit array to element id
+      eWiseMult<int, int, int, int>(&min_array, GrB_NULL, GrB_NULL,
+          PlusMultipliesSemiring<int>(), &d, &ascending, desc);
+
+      // compute min color
+      reduce<int, int>(&min_color, GrB_NULL, MinimumMonoid<int>(),
+          &min_array, desc);
+
+      // assign new color
+      assign<int, float>(v, &f, GrB_NULL, min_color, GrB_ALL, A_nrows, desc);
+
+      // get rid of colored nodes in candidate list
+      assign<float, float>(&w, &f, GrB_NULL, (float)0.f, GrB_ALL, A_nrows,
+          desc);
 
       iter++;
       if (desc->descriptor_.debug())

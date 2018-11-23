@@ -40,9 +40,9 @@ namespace algorithm
       succ_last = succ;
       
       // v = v + v * A^T (do relaxation on distance vector v)
-      graphblas::vxm<float,float,float,float>(&w, GrB_NULL, GrB_NULL,
+      graphblas::vxm<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
           graphblas::MinimumPlusSemiring<float>(), v, A, desc);
-      graphblas::eWiseAdd<float,float,float,float>(v, GrB_NULL, GrB_NULL,
+      graphblas::eWiseAdd<float, float, float, float>(v, GrB_NULL, GrB_NULL,
           graphblas::MinimumPlusSemiring<float>(), v, &w, desc);
 
       // w = v < FLT_MAX (get all reachable vertices)

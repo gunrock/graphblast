@@ -14,7 +14,7 @@ namespace graphblas
   //   C = C + mask .* (A * B)    +: accum
   //                              *: op
   //                             .*: Boolean and
-  template <typename c, typename a, typename b, typename m, 
+  template <typename c, typename m, typename a, typename b, 
             typename BinaryOpT,     typename SemiringT>
   Info mxm( Matrix<c>*       C,
             const Matrix<m>* mask,
@@ -50,7 +50,7 @@ namespace graphblas
   //   w^T = w^T + mask^T .* (u^T * A)    +: accum
   //                                      *: op
   //                                     .*: Boolean and
-  template <typename W, typename U, typename a, typename M,
+  template <typename W, typename M, typename U, typename a,
             typename BinaryOpT, typename SemiringT>
   Info vxm( Vector<W>*       w,
             const Vector<M>* mask,
@@ -92,7 +92,7 @@ namespace graphblas
   //   w = w + mask .* (A * u)    +: accum
   //                              *: op
   //                             .*: Boolean and
-  template <typename W, typename a, typename U, typename M,
+  template <typename W, typename M, typename a, typename U,
             typename BinaryOpT, typename SemiringT>
   Info mxv( Vector<W>*       w,
             const Vector<M>* mask,
@@ -135,7 +135,7 @@ namespace graphblas
   //   w = w + mask .* (u .* v)    +: accum
   //                 2     1    1).*: op (semiring multiply)
   //                            2).*: Boolean and
-  template <typename W, typename U, typename V, typename M,
+  template <typename W, typename M, typename U, typename V,
             typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( Vector<W>*       w,
                   const Vector<M>* mask,
@@ -166,7 +166,7 @@ namespace graphblas
   //   C = C + mask .* (A .* B)    +: accum
   //                 2     1    1).*: op (semiring multiply)
   //                            2).*: Boolean and
-  template <typename c, typename a, typename b, typename m,
+  template <typename c, typename m, typename a, typename b,
             typename BinaryOpT,     typename SemiringT>
   Info eWiseMult( Matrix<c>*       C,
                   const Matrix<m>* mask,
@@ -184,7 +184,7 @@ namespace graphblas
   //   w = w + mask .* (u + v)    +: accum
   //                             .+: op (semiring add)
   //                             .*: Boolean and
-  template <typename W, typename U, typename V, typename M,
+  template <typename W, typename M, typename U, typename V,
             typename BinaryOpT,     typename SemiringT>
   Info eWiseAdd( Vector<W>*       w,
                  const Vector<M>* mask,
@@ -215,7 +215,7 @@ namespace graphblas
   //   C = C + mask .* (A .+ B)    +: accum
   //                              .+: op (semiring add)
   //                              .*: Boolean and
-  template <typename c, typename a, typename b, typename m,
+  template <typename c, typename m, typename a, typename b,
             typename BinaryOpT,     typename SemiringT>
   Info eWiseAdd( Matrix<c>*       C,
                  const Matrix<m>* mask,
@@ -229,7 +229,7 @@ namespace graphblas
     std::cout << "Error: eWiseAdd matrix variant not implemented yet!\n";
   }
 
-  template <typename W, typename U, typename M,
+  template <typename W, typename M, typename U,
             typename BinaryOpT>
   Info extract( Vector<W>*                w,
                 const Vector<M>*          mask,
@@ -242,7 +242,7 @@ namespace graphblas
     std::cout << "Error: extract vector variant not implemented yet!\n";
   }
 
-  template <typename c, typename a, typename m,
+  template <typename c, typename m, typename a,
             typename BinaryOpT>
   Info extract( Matrix<c>*                C,
                 const Matrix<m>*          mask,
@@ -257,7 +257,7 @@ namespace graphblas
     std::cout << "Error: extract matrix variant not implemented yet!\n";
   }
 
-  template <typename W, typename a, typename M,
+  template <typename W, typename M, typename a,
             typename BinaryOpT>
   Info extract( Vector<W>*                w,
                 const Vector<M>*          mask,
@@ -271,7 +271,7 @@ namespace graphblas
     std::cout << "Error: extract matrix variant not implemented yet!\n";
   }
 
-  template <typename W, typename U, typename M,
+  template <typename W, typename M, typename U,
             typename BinaryOpT>
   Info assign( Vector<W>*                w,
                const Vector<U>*          mask,
@@ -284,7 +284,7 @@ namespace graphblas
     std::cout << "Error: assign vector variant not implemented yet!\n";
   }
 
-  template <typename c, typename a, typename m,
+  template <typename c, typename m, typename a,
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Matrix<m>*          mask,
@@ -299,7 +299,7 @@ namespace graphblas
     std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
-  template <typename c, typename U, typename M,
+  template <typename c, typename M, typename U,
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Vector<M>*          mask,
@@ -313,7 +313,7 @@ namespace graphblas
     std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
-  template <typename c, typename U, typename M,
+  template <typename c, typename M, typename U,
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Vector<M>*          mask,
@@ -327,10 +327,10 @@ namespace graphblas
     std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
-  template <typename W, typename T,
+  template <typename W, typename M, typename T,
             typename BinaryOpT>
   Info assign( Vector<W>*                w,
-               const Vector<W>*          mask,
+               const Vector<M>*          mask,
                BinaryOpT                 accum,
                T                         val,
                const std::vector<Index>* indices,
@@ -352,7 +352,7 @@ namespace graphblas
         desc_t );
   }
 
-  template <typename c, typename T, typename m,
+  template <typename c, typename m, typename T,
             typename BinaryOpT>
   Info assign( Matrix<c>*                C,
                const Matrix<m>*          mask,
@@ -367,7 +367,7 @@ namespace graphblas
     std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
-  template <typename W, typename U, typename M,
+  template <typename W, typename M, typename U,
             typename BinaryOpT,     typename UnaryOpT>
   Info apply( Vector<W>*       w,
               const Vector<M>* mask,
@@ -391,7 +391,7 @@ namespace graphblas
     return backend::apply(&w->vector_, mask_t, accum, op, &u->vector_, desc_t);
   }
 
-  template <typename c, typename a, typename m,
+  template <typename c, typename m, typename a,
             typename BinaryOpT,     typename UnaryOpT>
   Info apply( Matrix<c>*       C,
               const Matrix<m>* mask,
@@ -407,7 +407,7 @@ namespace graphblas
   //   w(i) = w(i) + mask(i) .* \sum_j A(i,j) for all j    +: accum
   //                                                     sum: op
   //                                                      .*: Boolean and
-  template <typename W, typename a, typename M,
+  template <typename W, typename M, typename a,
             typename BinaryOpT,     typename MonoidT>
   Info reduce( Vector<W>*       w,
                const Vector<M>* mask,
@@ -461,7 +461,7 @@ namespace graphblas
   // Matrix transposition
   //   C = C + mask .* (A^T)    +: accum
   //                           .*: Boolean and
-  template <typename c, typename a, typename m,
+  template <typename c, typename m, typename a,
             typename BinaryOpT>
   Info transpose( Matrix<c>*       C,
                   const Matrix<m>* mask,
@@ -517,6 +517,15 @@ namespace graphblas
     std::cout << "Error: scale not implemented yet!\n";
   }
 
+  template <typename T, typename M, typename U, typename W>
+  Info scatter( Vector<W>*       w,
+                const Vector<M>* mask,
+                const Vector<U>* u,
+                T                val,
+                Descriptor*      desc )
+  {
+    std::cout << "Error: scatter not implemented yet!\n";
+  }
 } // graphblas
 
 #endif  // GRB_OPERATIONS_HPP

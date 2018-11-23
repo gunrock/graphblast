@@ -33,6 +33,7 @@ int main( int argc, char** argv )
   int  directed;
   int  niter;
   int  source;
+  int  max_colors;
   char* dat_name;
   po::variables_map vm;
 
@@ -42,12 +43,13 @@ int main( int argc, char** argv )
     exit(1);
   } else { 
     parseArgs( argc, argv, vm );
-    debug     = vm["debug"    ].as<bool>();
-    transpose = vm["transpose"].as<bool>();
-    mtxinfo   = vm["mtxinfo"  ].as<bool>();
-    directed  = vm["directed" ].as<int>();
-    niter     = vm["niter"    ].as<int>();
-    source    = vm["source"   ].as<int>();
+    debug      = vm["debug"    ].as<bool>();
+    transpose  = vm["transpose"].as<bool>();
+    mtxinfo    = vm["mtxinfo"  ].as<bool>();
+    directed   = vm["directed" ].as<int>();
+    niter      = vm["niter"    ].as<int>();
+    source     = vm["source"   ].as<int>();
+    max_colors = vm["maxcolors"].as<int>();
 
     // This is an imperfect solution, because this should happen in 
     // desc.loadArgs(vm) instead of application code!
@@ -72,7 +74,7 @@ int main( int argc, char** argv )
   if( debug ) CHECK( a.print() );
 
   // Vector v
-  graphblas::Vector<float> v(nrows);
+  graphblas::Vector<int> v(nrows);
 
   // Cpu graph coloring
   CpuTimer gc_cpu;
@@ -87,15 +89,15 @@ int main( int argc, char** argv )
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::algorithm::gc(&v, &a, source, &desc);
+  graphblas::algorithm::gc(&v, &a, source, max_colors, &desc);
   warmup.Stop();
 
-  std::vector<float> h_gc_gpu;
+  std::vector<int> h_gc_gpu;
   CHECK( v.extractTuples(&h_gc_gpu, &nrows) );
   BOOST_ASSERT_LIST( h_gc_cpu, h_gc_gpu, nrows );
 
   // Benchmark
-  graphblas::Vector<float> y(nrows);
+  graphblas::Vector<int> y(nrows);
   CpuTimer vxm_gpu;
   //cudaProfilerStart();
   vxm_gpu.Start();
@@ -103,7 +105,7 @@ int main( int argc, char** argv )
   float val;
   for( int i=0; i<niter; i++ )
   {
-    val = graphblas::algorithm::gc(&y, &a, source, &desc);
+    val = graphblas::algorithm::gc(&y, &a, source, max_colors, &desc);
     tight += val;
   }
   //cudaProfilerStop();
@@ -119,7 +121,7 @@ int main( int argc, char** argv )
 
   if( niter )
   {
-    std::vector<float> h_gc_gpu2;
+    std::vector<int> h_gc_gpu2;
     CHECK( y.extractTuples(&h_gc_gpu2, &nrows) );
     BOOST_ASSERT_LIST( h_gc_cpu, h_gc_gpu2, nrows );
   }

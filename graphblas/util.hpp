@@ -68,7 +68,7 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
 
     // mxv params
     ("source", po::value<int>()->default_value(0),
-        "Source node traversal is launched from")
+        "Source node traversal is launched from, Seed for probabilistic algorithms such as maximal independent set, graph coloring, etc.")
     ("mxvmode", po::value<int>()->default_value(1), 
         "0: push-pull, 1: push only, 2: pull only")
     ("switchpoint", po::value<float>()->default_value(0.01),
@@ -95,6 +95,10 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
         "True means use early exit, False means do not use it when using Boolean LogicalOrAndSemiring")
     ("mask", po::value<bool>()->default_value(true),
         "True means use fused mask in pull direction, False means do not do it")
+
+    // algorithm-specific params
+    ("maxcolors", po::value<int>()->default_value(10000),
+        "Upper bound on colors when graph coloring algorithm is used")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128), 
@@ -130,7 +134,7 @@ inline T getEnv(const char *key, T default_val) {
 template<typename T>
 void setEnv(const char *key, T default_val) {
   std::string s = std::to_string(default_val);
-  char const *val = s.c_str();
+  const char *val = s.c_str();
   setenv(key, val, 0);
 }
 

@@ -423,11 +423,9 @@ namespace backend
     desc->resize((2*nvals)*max(sizeof(Index),sizeof(T)), "buffer");
     Index* d_flag = (Index*) desc->d_buffer_;
     Index* d_scan = (Index*) desc->d_buffer_+nvals;
-    Index sparse_nvals;
 
     updateFlagKernel<<<NB,NT>>>( d_flag, identity, dense_.d_val_, nvals );
     mgpu::Scan<mgpu::MgpuScanTypeExc>( d_flag, nvals, (Index)0,
-        //mgpu::plus<Index>(), (Index*)0, &sparse_nvals, d_scan,
         mgpu::plus<Index>(), (Index*)0, &sparse_.nvals_, d_scan,
         *(desc->d_context_) );
 

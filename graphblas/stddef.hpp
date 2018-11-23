@@ -29,7 +29,7 @@ namespace graphblas
   struct logical_xor
   {
     inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) 
-    { return lhs ^ rhs; }
+    { return (lhs && !rhs) || (!lhs && rhs); }
   };
 
   template <typename T_in1, typename T_in2, typename T_out=bool>
