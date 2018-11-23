@@ -40,10 +40,10 @@ namespace backend
     bool use_tran = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN);
     bool use_allowdupl; //TODO opt4
 
-    if( desc->debug())
+    if (desc->debug())
     {
       std::cout << "Executing Spmspv MERGE\n";
-      if( desc->struconly() )
+      if (desc->struconly())
         std::cout << "In structure only mode\n";
       else
         std::cout << "In key-value mode\n";
@@ -60,14 +60,14 @@ namespace backend
     // temp_ind and temp_val need |V| memory for masked case, so just allocate 
     // this much memory for now. TODO: optimize for memory
     int size          = (float)A->nvals_*desc->memusage()+1;
-    if( desc->struconly() )
+    if (desc->struconly())
       desc->resize((2*A_nrows+2*size)*max(sizeof(Index),sizeof(T)), "buffer");
     else
       desc->resize((2*A_nrows+4*size)*max(sizeof(Index),sizeof(T)), "buffer");
 
     // Only difference between masked and unmasked versions if whether
     // eWiseMult() is called afterwards or not
-    if( use_mask )
+    if (use_mask)
     {
       // temp_ind and temp_val need |V| memory
       Index* temp_ind   = (Index*) desc->d_buffer_;
@@ -79,7 +79,7 @@ namespace backend
           A_csrRowPtr, A_csrColInd, A_csrVal, u->d_ind_, u->d_val_, 
           &u->nvals_, desc );
 
-      if( temp_nvals==0 )
+      if (temp_nvals == 0)
       {
         if( desc->debug() )
           std::cout << "No neighbours!\n";
@@ -89,7 +89,7 @@ namespace backend
       }
       else
       {
-        if( desc->debug() )
+        if (desc->debug())
           std::cout << "temp_nvals: " << temp_nvals << std::endl;
       }
 
@@ -113,11 +113,11 @@ namespace backend
       CHECK( mask->getStorage(&mask_vec_type) );
       assert( mask->dense_.nvals_ >= temp_nvals );
 
-      if( desc->struconly() )
+      if (desc->struconly())
       {
-        if( !desc->sort() )
+        if (!desc->sort())
         {
-          if( use_scmp )
+          if (use_scmp)
             assignDenseDenseMaskedKernel<true,true,true><<<NB,NT>>>(temp_ind, 
                 temp_nvals, (mask->dense_).d_val_, NULL, (Index)0, (Index*)NULL,
                 A_nrows);
@@ -126,7 +126,7 @@ namespace backend
                 temp_nvals, (mask->dense_).d_val_, NULL, (Index)0, (Index*)NULL,
                 A_nrows);
 
-          if( desc->debug() )
+          if (desc->debug())
           {
             CUDA_CALL( cudaDeviceSynchronize() );
             printDevice("mask", (mask->dense_).d_val_, A_nrows);
@@ -142,7 +142,7 @@ namespace backend
               (Index)0, mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
               d_temp, *(desc->d_context_) );
 
-          if( desc->debug() )
+          if (desc->debug())
           {
             printDevice("d_scan", d_scan, A_nrows);
             std::cout << "Pre-assign frontier size: " << temp_nvals <<std::endl;
@@ -152,7 +152,7 @@ namespace backend
           streamCompactDenseKernel<<<NB,NT>>>(w->d_ind_, d_scan, (W)1, temp_ind,
               A_nrows);
 
-          if( desc->debug() )
+          if (desc->debug())
           {
             printDevice("w_ind", w->d_ind_, w->nvals_);
           }
@@ -162,9 +162,9 @@ namespace backend
           // For visited nodes, assign 0.f to vector
           // For GrB_DENSE mask, need to add parameter for mask_identity to user
           // Scott: this is not necessary. Checking castable to (bool)1 is fine
-          if( mask_vec_type==GrB_DENSE )
+          if (mask_vec_type == GrB_DENSE)
           {
-            if( use_scmp )
+            if (use_scmp)
               assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, 
                 temp_nvals, (mask->dense_).d_val_, NULL, (Index)-1, 
                 (Index*)NULL, A_nrows);
@@ -173,7 +173,7 @@ namespace backend
                 temp_nvals, (mask->dense_).d_val_, NULL, (Index)-1, 
                 (Index*)NULL, A_nrows);
           }
-          else if( mask_vec_type==GrB_SPARSE )
+          else if (mask_vec_type == GrB_SPARSE)
           {
             std::cout << "Spmspv Sparse Mask\n";
             std::cout << "Error: Feature not implemented yet!\n";
@@ -183,7 +183,7 @@ namespace backend
             return GrB_UNINITIALIZED_OBJECT;
           }
 
-          if( desc->debug() )
+          if (desc->debug())
           {
             CUDA_CALL( cudaDeviceSynchronize() );
             printDevice("mask", (mask->dense_).d_val_, A_nrows);
@@ -201,7 +201,7 @@ namespace backend
               (Index)0, mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, 
               d_temp, *(desc->d_context_) );
 
-          if( desc->debug() )
+          if (desc->debug())
           {
             printDevice("d_flag", d_flag, temp_nvals);
             printDevice("d_scan", d_scan, temp_nvals);
@@ -212,7 +212,7 @@ namespace backend
           streamCompactSparseKernel<<<NB,NT>>>(w->d_ind_, d_scan, 
               (Index)1, temp_ind, d_flag, temp_nvals);
 
-          if( desc->debug() )
+          if (desc->debug())
           {
             printDevice("w_ind", w->d_ind_, w->nvals_);
           }
@@ -223,9 +223,9 @@ namespace backend
         // For visited nodes, assign 0.f to vector
         // For GrB_DENSE mask, need to add parameter for mask_identity to user
         // Scott: this is not necessary. Checking castable to (bool)1 is enough
-        if( mask_vec_type==GrB_DENSE )
+        if (mask_vec_type == GrB_DENSE)
         {
-          if( use_scmp )
+          if (use_scmp)
             assignSparseKernel<true, true, true><<<NB,NT>>>(temp_ind, temp_val, 
                 temp_nvals, (mask->dense_).d_val_, NULL, (U)0.f, (Index*)NULL, 
                 A_nrows);
@@ -234,7 +234,7 @@ namespace backend
                 temp_nvals, (mask->dense_).d_val_, NULL, (U)0.f, (Index*)NULL, 
                 A_nrows);
         }
-        else if( mask_vec_type==GrB_SPARSE )
+        else if (mask_vec_type == GrB_SPARSE)
         {
           std::cout << "Spmspv Sparse Mask\n";
           std::cout << "Error: Feature not implemented yet!\n";
@@ -244,7 +244,7 @@ namespace backend
           return GrB_UNINITIALIZED_OBJECT;
         }
 
-        if( desc->debug() )
+        if (desc->debug())
         {
           CUDA_CALL( cudaDeviceSynchronize() );
           printDevice("mask", (mask->dense_).d_val_, A_nrows);
@@ -263,7 +263,7 @@ namespace backend
             mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, d_temp,
             *(desc->d_context_) );
 
-        if( desc->debug() )
+        if (desc->debug())
         {
           printDevice("d_flag", d_flag, temp_nvals);
           printDevice("d_scan", d_scan, temp_nvals);
@@ -274,7 +274,7 @@ namespace backend
         streamCompactSparseKernel<<<NB,NT>>>(w->d_ind_, w->d_val_, d_scan, (W)0,
             temp_ind, temp_val, temp_nvals);
 
-        if( desc->debug() )
+        if (desc->debug())
         {
           printDevice("w_ind", w->d_ind_, w->nvals_);
           printDevice("w_val", w->d_val_, w->nvals_);
@@ -319,10 +319,10 @@ namespace backend
     bool use_tran  = (inp0_mode==GrB_TRAN || inp1_mode==GrB_TRAN);
     bool use_allowdupl; //TODO opt4
 
-    if( desc->debug())
+    if (desc->debug())
     {
       std::cout << "Executing Spmspv SIMPLE\n";
-      if( desc->struconly() )
+      if (desc->struconly())
         std::cout << "In structure only mode\n";
       else
         std::cout << "In key-value mode\n";
@@ -352,7 +352,7 @@ namespace backend
     NB.y = 1;
     NB.z = 1;
 
-    if( desc->debug() )
+    if (desc->debug())
     {
       printDevice("u_ind", u->d_ind_, u_nvals);
       printDevice("u_val", u->d_val_, u_nvals);
@@ -398,11 +398,11 @@ namespace backend
         std::cout << "Using atomic operation!\n";
     }
 
-    if( desc->debug() )
+    if (desc->debug())
       printDevice("w_val", w->d_val_, A_nrows);
 
     // Run mask kernel to filter stuff out
-    if( use_mask )
+    if (use_mask)
     {
       Storage mask_vec_type;
       CHECK( mask->getStorage( &mask_vec_type ) );

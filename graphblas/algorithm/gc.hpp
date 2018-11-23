@@ -101,10 +101,8 @@ namespace algorithm
       }
       
       // find max of neighbors
-      CHECK( desc->toggle(GrB_MASK) );
       vxm<float, float, float, float>(&m, &w, GrB_NULL, 
           MaximumMultipliesSemiring<float>(), &w, A, desc);
-      CHECK( desc->toggle(GrB_MASK) );
 
       // find all largest nodes that are uncolored
       eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,

@@ -23,7 +23,8 @@ namespace backend
       timing_(0), transpose_(0), mtxinfo_(0), verbose_(0), mxvmode_(0),
       switchpoint_(0), lastmxv_(GrB_PUSHONLY), dirinfo_(0), struconly_(0),
       opreuse_(0), memusage_(0), endbit_(0), sort_(0), atomic_(0),
-      earlyexit_(0), mask_(0), nthread_(0), ndevice_(0), debug_(0), memory_(0) 
+      earlyexit_(0), fusedmask_(0), nthread_(0), ndevice_(0), debug_(0),
+      memory_(0) 
     {
       // Preallocate d_buffer_size
       d_buffer_size_ = 183551;
@@ -57,7 +58,7 @@ namespace backend
     inline bool opreuse()        { return opreuse_; }
     inline bool endbit()         { return endbit_; }
     inline bool sort()           { return sort_; }
-    inline bool mask()           { return mask_; }
+    inline bool fusedmask()      { return fusedmask_; }
     inline bool atomic()         { return atomic_; }
     inline float switchpoint()   { return switchpoint_; }
     inline float memusage()      { return memusage_; }
@@ -110,7 +111,7 @@ namespace backend
 
     // mxv (spmv/pull) params
     bool        earlyexit_;
-    bool        mask_;
+    bool        fusedmask_;
 
     // GPU params
     int         nthread_;
@@ -253,7 +254,7 @@ namespace backend
 
     // mxv (spmv/pull) params
     earlyexit_      = vm["earlyexit"     ].as<bool>();
-    mask_           = vm["mask"          ].as<bool>();
+    fusedmask_      = vm["fusedmask"     ].as<bool>();
 
     // GPU params
     nthread_        = vm["nthread"       ].as<int>();

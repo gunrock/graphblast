@@ -44,7 +44,7 @@ namespace backend
     bool use_repl  = (repl_mode == GrB_REPLACE);
     bool use_tran = (inp0_mode == GrB_TRAN || inp1_mode == GrB_TRAN);
 
-    if( desc->debug() )
+    if (desc->debug())
     {
       std::cout << "Executing Spmv\n";
       printState( use_mask, use_accum, use_scmp, use_repl, use_tran );
@@ -56,7 +56,7 @@ namespace backend
     const T*     A_csrVal    = (use_tran) ? A->d_cscVal_    : A->d_csrVal_;
     const Index  A_nrows     = (use_tran) ? A->ncols_       : A->nrows_;
 
-    if( desc->debug() )
+    if (desc->debug())
     {
       std::cout << "cscColPtr: " << A->d_cscColPtr_ << std::endl;
       std::cout << "cscRowInd: " << A->d_cscRowInd_ << std::endl;
@@ -77,108 +77,105 @@ namespace backend
     const int tb = static_cast<int>(tb_mode);
     const int nt = static_cast<int>(nt_mode);
 
-    if( use_mask && desc->mask() )
+    /*!
+     * /brief atomicAdd() 3+5  = 8
+     *        atomicSub() 3-5  =-2
+     *        atomicMin() 3,5  = 3
+     *        atomicMax() 3,5  = 5
+     *        atomicOr()  3||5 = 1
+     *        atomicXor() 3^^5 = 0
+     */
+    auto add_op = extractAdd(op);
+    int functor = add_op(3, 5);
+ 
+    if (use_mask && desc->fusedmask() && functor == 1)
     {
-      // TODO: add if condition here for if( add_ == GrB_LOR )
-      if(true)
+      // Mask type
+      // 1) Dense mask
+      // 2) Sparse mask (TODO)
+      // 3) Uninitialized
+      Storage mask_vec_type;
+      CHECK( mask->getStorage(&mask_vec_type) );
+
+      if (mask_vec_type == GrB_DENSE)
       {
-        // Mask type
-        // 1) Dense mask
-        // 2) Sparse mask (TODO)
-        // 3) Uninitialized
-        Storage mask_vec_type;
-        CHECK( mask->getStorage(&mask_vec_type) );
+        dim3 NT, NB;
+        NT.x = nt;
+        NT.y = 1;
+        NT.z = 1;
+        NB.x = (A_nrows+nt-1)/nt;
+        NB.y = 1;
+        NB.z = 1;
 
-        if( mask_vec_type==GrB_DENSE )
-        {
-          dim3 NT, NB;
-          NT.x = nt;
-          NT.y = 1;
-          NT.z = 1;
-          NB.x = (A_nrows+nt-1)/nt;
-          NB.y = 1;
-          NB.z = 1;
+        int variant = 0;
+        variant |= (use_scmp         ) ? 4 : 0;
+        variant |= (desc->earlyexit()) ? 2 : 0;
+        variant |= (desc->opreuse()  ) ? 1 : 0;
 
-          int variant = 0;
-          variant |= (use_scmp         ) ? 4 : 0;
-          variant |= (desc->earlyexit()) ? 2 : 0;
-          variant |= (desc->opreuse()  ) ? 1 : 0;
-
-          switch( variant )
-          {
-            case 0:
-              spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
-                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                  extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
-                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-              break;
-            case 1:
-              spmvDenseMaskedOrKernel<false,false,true><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-              break;
-            case 2:
-              spmvDenseMaskedOrKernel<false, true,false><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-              break;
-            case 3:
-              spmvDenseMaskedOrKernel<false, true, true><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-              break;
-            case 4:
-              spmvDenseMaskedOrKernel< true,false,false><<<NB,NT>>>( 
-                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                  extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
-                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-              break;
-            case 5:
-              spmvDenseMaskedOrKernel< true,false, true><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-              break;
-            case 6:
-              spmvDenseMaskedOrKernel<true, true,false><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-              break;
-            case 7:
-              spmvDenseMaskedOrKernel<true, true, true><<<NB,NT>>>(
-                  w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
-                  extractMul(op), extractAdd(op), A_nrows, A->nvals_,
-                  A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
-              break;
-            default:
-              break;
-          }
-          if( desc->debug() )
-            printDevice("w_val", w->d_val_, A_nrows);
-        }
-        else if( mask_vec_type==GrB_SPARSE )
+        switch (variant)
         {
-          std::cout << "DeVec Sparse Mask Spmv\n";
-          std::cout << "Error: Feature not implemented yet!\n";
+          case 0:
+            spmvDenseMaskedOrKernel<false,false,false><<<NB,NT>>>( 
+                w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
+                A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+            break;
+          case 1:
+            spmvDenseMaskedOrKernel<false,false,true><<<NB,NT>>>(
+                w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+            break;
+          case 2:
+            spmvDenseMaskedOrKernel<false, true,false><<<NB,NT>>>(
+                w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+            break;
+          case 3:
+            spmvDenseMaskedOrKernel<false, true, true><<<NB,NT>>>(
+                w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+            break;
+          case 4:
+            spmvDenseMaskedOrKernel< true,false,false><<<NB,NT>>>( 
+                w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                extractMul(op), extractAdd(op), A_nrows, A->nvals_, 
+                A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+            break;
+          case 5:
+            spmvDenseMaskedOrKernel< true,false, true><<<NB,NT>>>(
+                w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+            break;
+          case 6:
+            spmvDenseMaskedOrKernel<true, true,false><<<NB,NT>>>(
+                w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+            break;
+          case 7:
+            spmvDenseMaskedOrKernel<true, true, true><<<NB,NT>>>(
+                w->d_val_, mask->dense_.d_val_, NULL, op.identity(),
+                extractMul(op), extractAdd(op), A_nrows, A->nvals_,
+                A_csrRowPtr, A_csrColInd, A_csrVal, u->d_val_ );
+            break;
+          default:
+            break;
         }
-        else
-        {
-          return GrB_UNINITIALIZED_OBJECT;
-        }
+        if (desc->debug())
+          printDevice("w_val", w->d_val_, A_nrows);
       }
-      // TODO(@ctcyang): add else condition here for generic mask semiring
+      else if (mask_vec_type == GrB_SPARSE)
+      {
+        std::cout << "DeVec Sparse Mask logical_or Spmv\n";
+        std::cout << "Error: Feature not implemented yet!\n";
+      }
       else
       {
-        std::cout << "Indirect Spmv\n";
-        std::cout << "Error: Feature not implemented yet!\n";
-        /*mgpu::SpmvCsrIndirectBinary( A_csrVal, A_csrColInd, A->nvals_,
-            A_csrRowPtr, mask->dense_.d_ind_, A_nrows, u->d_val_, true, 
-            w->d_val_, 0.f, mgpu::multiplies<a>(), mgpu::plus<a>(),
-            *(desc->d_context_) );*/
+        return GrB_UNINITIALIZED_OBJECT;
       }
     }
     else
@@ -206,14 +203,14 @@ namespace backend
       NB.y = 1;
       NB.z = 1;
       w->nvals_ = u->nvals_;
-      if( desc->debug() )
+      if (desc->debug())
       {
         std::cout << w->nvals_ << " nnz in vector w\n";
         printDevice("w_val", w_val, A_nrows);
       }
-      if( use_mask )
+      if (use_mask)
       {
-        if( use_scmp )
+        if (use_scmp)
           assignDenseDenseMaskedKernel<false, true, true><<<NB,NT>>>(
               w_val, w->nvals_, mask->dense_.d_val_, extractAdd(op), 
               op.identity(), (Index*)NULL, A_nrows);
@@ -233,7 +230,7 @@ namespace backend
             w->d_val_, w_val, A_nrows);
       }
 
-      if( desc->debug() )
+      if (desc->debug())
         printDevice("w_val", w->d_val_, A_nrows);
       // TODO: add semiring inputs to CUB
       /*size_t temp_storage_bytes = 0;

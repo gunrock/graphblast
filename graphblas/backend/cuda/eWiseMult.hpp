@@ -55,7 +55,7 @@ namespace backend
     bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
-    if( desc->debug() )
+    if (desc->debug())
     {
       std::cout << "Executing eWiseMult dense-dense\n";
       printState( use_mask, use_accum, use_scmp, use_repl, 0 );
@@ -73,7 +73,7 @@ namespace backend
     DenseVector<U>* u_t = const_cast<DenseVector<U>*>(u);
     DenseVector<V>* v_t = const_cast<DenseVector<V>*>(v);
 
-    if( use_mask && desc->mask() )
+    if (use_mask)
     {
       Storage mask_type;
       CHECK( mask->getStorage(&mask_type) );
@@ -137,7 +137,7 @@ namespace backend
     bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
-    if( desc->debug() )
+    if (desc->debug())
     {
       std::cout << "Executing eWiseMult dense-dense (sparse mask)\n";
       printState( use_mask, use_accum, use_scmp, use_repl, 0 );
@@ -152,7 +152,7 @@ namespace backend
     Index u_nvals;
     u->nvals(&u_nvals);
 
-    if( use_mask && desc->mask() )
+    if (use_mask)
     {
       Index mask_nvals;
       mask->nvals(&mask_nvals);
@@ -210,10 +210,10 @@ namespace backend
     // -if dense, we want code to follow no mask route
     // -if sparse, we want it to follow special masked route
     Storage mask_type = GrB_UNKNOWN;
-    if (mask != NULL && desc->mask())
+    if (mask != NULL)
       mask->getStorage(&mask_type);
 
-    if( desc->debug() )
+    if (desc->debug())
     {
       std::string mask_mode = "";
       mask_mode = (mask_type == GrB_SPARSE) ? 
@@ -231,7 +231,7 @@ namespace backend
     Index u_nvals;
     u->nvals(&u_nvals);
 
-    if (use_mask && desc->mask() && mask_type == GrB_SPARSE)
+    if (use_mask && mask_type == GrB_SPARSE)
     {
       const SparseVector<M>* mask_sparse = &mask->sparse_;
       Index mask_nvals;
@@ -290,7 +290,7 @@ namespace backend
             cudaMemcpyDeviceToDevice) );
       }
 
-      if (desc->mask() && mask_type == GrB_DENSE)
+      if (use_mask && mask_type == GrB_DENSE)
       {
         const DenseVector<M>* mask_dense = &mask->dense_;
         zeroDenseIdentityKernel<<<NB, NT>>>(mask_dense->d_val_, op.identity(),

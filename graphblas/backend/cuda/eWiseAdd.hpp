@@ -55,7 +55,7 @@ namespace backend
     bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
-    if( desc->debug() )
+    if (desc->debug())
     {
       std::cout << "Executing eWiseAdd dense-dense\n";
       printState( use_mask, use_accum, use_scmp, use_repl, 0 );
@@ -73,7 +73,7 @@ namespace backend
     DenseVector<U>* u_t = const_cast<DenseVector<U>*>(u);
     DenseVector<V>* v_t = const_cast<DenseVector<V>*>(v);
 
-    if( use_mask && desc->mask() )
+    if (use_mask)
     {
       std::cout << "Error: Masked eWiseAdd dense-dense not implemented yet!\n";
     }
@@ -121,7 +121,7 @@ namespace backend
     bool use_scmp  = (scmp_mode == GrB_SCMP);
     bool use_repl  = (repl_mode == GrB_REPLACE);
 
-    if( desc->debug() )
+    if (desc->debug())
     {
       std::cout << "Executing eWiseAdd sparse-dense\n";
       printState( use_mask, use_accum, use_scmp, use_repl, 0 );
@@ -136,7 +136,7 @@ namespace backend
     Index u_nvals;
     u->nvals(&u_nvals);
 
-    if (use_mask && desc->mask())
+    if (use_mask)
     {
       std::cout << "Error: Masked eWiseAdd sparse-dense not implemented yet!\n";
     }
