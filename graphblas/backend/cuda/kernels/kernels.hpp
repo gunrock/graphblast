@@ -9,5 +9,6 @@
 #include "graphblas/backend/cuda/kernels/eWiseMult.hpp"
 #include "graphblas/backend/cuda/kernels/eWiseAdd.hpp"
 #include "graphblas/backend/cuda/kernels/trace.hpp"
+#include "graphblas/backend/cuda/kernels/scatter.hpp"
 
 #endif  // GRB_BACKEND_CUDA_KERNELS_KERNELS_HPP

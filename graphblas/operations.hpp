@@ -419,7 +419,7 @@ namespace graphblas
     if( w==NULL || A==NULL )
       return GrB_UNINITIALIZED_OBJECT;
 
-    const backend::Vector<W>* mask_t = (mask==NULL ) ? NULL : &mask->vector_;
+    const backend::Vector<M>* mask_t = (mask==NULL ) ? NULL : &mask->vector_;
     backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
 
     return backend::reduce( &w->vector_, mask_t, accum, op, &A->matrix_, desc_t );
@@ -493,7 +493,7 @@ namespace graphblas
 
   // Multiply matrix by scalar
   //   B = A * val    *: op
-  template <typename T, typename a, typename b,
+  template <typename b, typename a, typename T,
             typename BinaryOpT>
   Info scale( Matrix<b>*       B,
               BinaryOpT        op,
@@ -506,7 +506,7 @@ namespace graphblas
 
   // Multiply vector by scalar
   //   w = u * val    *: op
-  template <typename T, typename U, typename W,
+  template <typename W, typename U, typename T,
             typename BinaryOpT>
   Info scale( Vector<W>*       w,
               BinaryOpT        op,
@@ -517,14 +517,20 @@ namespace graphblas
     std::cout << "Error: scale not implemented yet!\n";
   }
 
-  template <typename T, typename M, typename U, typename W>
+  template <typename W, typename M, typename U, typename T>
   Info scatter( Vector<W>*       w,
                 const Vector<M>* mask,
                 const Vector<U>* u,
                 T                val,
                 Descriptor*      desc )
   {
-    std::cout << "Error: scatter not implemented yet!\n";
+    if (u == NULL || w == NULL)
+      return GrB_UNINITIALIZED_OBJECT;
+
+    const backend::Vector<M>* mask_t = (mask==NULL ) ? NULL : &mask->vector_;
+    backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+
+    return backend::scatter( &w->vector_, mask_t, &u->vector_, val, desc_t );
   }
 } // graphblas
 

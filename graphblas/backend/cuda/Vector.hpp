@@ -191,7 +191,7 @@ namespace backend
   {
     if(      vec_type_ == GrB_SPARSE ) return sparse_.setElement( val, index );
     else if( vec_type_ == GrB_DENSE  ) return  dense_.setElement( val, index );
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
@@ -202,7 +202,7 @@ namespace backend
       return sparse_.extractElement( val, index );
     else if( vec_type_ == GrB_DENSE ) 
       return dense_.extractElement( val, index );
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
@@ -214,7 +214,7 @@ namespace backend
       return sparse_.extractTuples( indices, values, n );
     else if (vec_type_ == GrB_DENSE)
       return dense_.extractTuples( indices, values, n );
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   template <typename T>
@@ -228,7 +228,7 @@ namespace backend
     }
     else if (vec_type_ == GrB_DENSE)
       return dense_.extractTuples( values, n );
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   // Handy methods:
@@ -239,7 +239,7 @@ namespace backend
       return sparse_[ind];
     else if( vec_type_ == GrB_DENSE )
       return dense_[ind];
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   // Copies the val to arrays kresize_ratio x bigger than capacity
@@ -250,7 +250,7 @@ namespace backend
       return sparse_.resize(nvals );
     else if( vec_type_ == GrB_DENSE )
       return dense_.resize( nvals );
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
   }
 
   // Fill constant value
@@ -278,7 +278,8 @@ namespace backend
       return sparse_.print( forceUpdate );
     else if( vec_type_ == GrB_DENSE )
       return dense_.print( forceUpdate );
-    else return GrB_UNINITIALIZED_OBJECT;
+    std::cout << "Error: Vector not initialized!\n"; 
+    return GrB_SUCCESS;
   }
 
   // Count number of unique numbers
@@ -325,7 +326,7 @@ namespace backend
       CHECK(   dense_.nnz(&nvals_t) );
       CHECK( dense_.nvals(&nsize_t) );
     }
-    else return GrB_UNINITIALIZED_OBJECT;
+    return GrB_UNINITIALIZED_OBJECT;
 
     //nvals_ = nvals_t;
     //nsize_ = nsize_t;

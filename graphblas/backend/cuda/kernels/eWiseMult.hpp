@@ -8,11 +8,11 @@ namespace backend
   // dense-dense dense no mask vector variant
   // TODO(@ctcyang): add scmp, accum, repl, mask
   //template <bool UseScmp, bool UseAccum, bool UseRepl,
-  template <typename W, typename U, typename V,
+  template <typename W, typename T, typename U, typename V,
             typename AccumOp, typename MulOp>
   __global__ void eWiseMultKernel( W*       w_val,
                                    AccumOp  accum_op,
-                                   U        identity,
+                                   T        identity,
                                    MulOp    mul_op,
                                    U*       u_val,
                                    V*       v_val,
@@ -34,7 +34,7 @@ namespace backend
   // dense-dense sparse mask vector variant
   // TODO(@ctcyang): add scmp, accum, repl, mask
   //template <bool UseScmp, bool UseAccum, bool UseRepl,
-  template <typename W, typename U, typename V, typename M,
+  template <typename W, typename M, typename T, typename U, typename V,
             typename AccumOp, typename MulOp>
   __global__ void eWiseMultKernel( Index*       w_ind,
                                    W*           w_val,
@@ -42,7 +42,7 @@ namespace backend
                                    const M*     mask_val,
                                    Index        mask_nvals,
                                    AccumOp      accum_op,
-                                   U            identity,
+                                   T            identity,
                                    MulOp        mul_op,
                                    const U*     u_val,
                                    const V*     v_val )
@@ -68,12 +68,12 @@ namespace backend
   // dense-dense dense mask vector variant
   // TODO(@ctcyang): add scmp, accum, repl, mask
   //template <bool UseScmp, bool UseAccum, bool UseRepl,
-  template <typename W, typename U, typename V, typename M,
+  template <typename W, typename M, typename T, typename U, typename V,
             typename AccumOp, typename MulOp>
   __global__ void eWiseMultKernel( W*       w_val,
                                    AccumOp  accum_op,
                                    const M* mask_val,
-                                   U        identity,
+                                   T        identity,
                                    MulOp    mul_op,
                                    U*       u_val,
                                    V*       v_val,
@@ -98,12 +98,12 @@ namespace backend
   // sparse-dense dense no mask vector variant
   // TODO(@ctcyang): add scmp, accum, repl, mask
   //template <bool UseScmp, bool UseAccum, bool UseRepl,
-  template <typename W, typename U, typename V,
+  template <typename W, typename T, typename U, typename V,
             typename AccumOp, typename MulOp>
   __global__ void eWiseMultKernel( Index*       w_ind,
                                    W*           w_val,
                                    AccumOp      accum_op,
-                                   U            identity,
+                                   T            identity,
                                    MulOp        mul_op,
                                    const Index* u_ind,
                                    const U*     u_val,
@@ -133,7 +133,7 @@ namespace backend
   // sparse-dense dense mask vector variant
   // TODO(@ctcyang): add scmp, accum, repl, mask
   //template <bool UseScmp, bool UseAccum, bool UseRepl,
-  template <typename W, typename U, typename V, typename M,
+  template <typename W, typename M, typename T, typename U, typename V,
             typename AccumOp, typename MulOp>
   __global__ void eWiseMultKernel( Index*       w_ind,
                                    W*           w_val,
@@ -141,7 +141,7 @@ namespace backend
                                    const M*     mask_val,
                                    Index        mask_nvals,
                                    AccumOp      accum_op,
-                                   U            identity,
+                                   T            identity,
                                    MulOp        mul_op,
                                    const Index* u_ind,
                                    const U*     u_val,

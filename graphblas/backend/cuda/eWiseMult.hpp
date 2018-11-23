@@ -254,20 +254,8 @@ namespace backend
     }
     else
     {
-      Index* w_ind;
-      W*     w_val;
-      if (u == w)
-      {
-        CHECK( desc->resize(u_nvals*sizeof(Index) + u_nvals*sizeof(W), 
-            "buffer") );
-        w_ind = (Index*) desc->d_buffer_;
-        w_val = (W*)     desc->d_buffer_+u_nvals;
-      }
-      else
-      {
-        w_ind = w->d_ind_;
-        w_val = w->d_val_;
-      }
+      Index* w_ind = w->d_ind_;
+      W*     w_val = w->d_val_;
 
       dim3 NT, NB;
       NT.x = nt;
@@ -282,13 +270,6 @@ namespace backend
 
       // u size is upper bound on output memory allocation
       w->nvals_ = u_nvals;
-      if (u == w)
-      {
-        CUDA_CALL( cudaMemcpy(u->d_ind_, w_ind, u_nvals*sizeof(Index), 
-            cudaMemcpyDeviceToDevice) );
-        CUDA_CALL( cudaMemcpy(u->d_val_, w_val, u_nvals*sizeof(W), 
-            cudaMemcpyDeviceToDevice) );
-      }
 
       if (use_mask && mask_type == GrB_DENSE)
       {

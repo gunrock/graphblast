@@ -21,6 +21,11 @@ namespace backend
             const Matrix<b>* B,
             Descriptor*      desc )
   {
+    if (desc->debug())
+    {
+      std::cout << "===Begin mxm===\n";
+    }
+
     Storage A_mat_type;
     Storage B_mat_type;
     CHECK( A->getStorage( &A_mat_type ) );
@@ -65,14 +70,21 @@ namespace backend
             const Matrix<a>* A,
             Descriptor*      desc )
   {
-    // Get storage:
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
+
+    if (desc->debug())
+    {
+      std::cout << "===Begin vxm===\n";
+      CHECK( u_t->print() );
+    }
+
+    // Get storage
     Storage u_vec_type;
     Storage A_mat_type;
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
-    Vector<U>* u_t = const_cast<Vector<U>*>(u);
 
-    // Transpose:
+    // Transpose
     Desc_value inp0_mode;
     CHECK( desc->get(GrB_INP0, &inp0_mode) );
     if (inp0_mode != GrB_DEFAULT) return GrB_INVALID_VALUE;
@@ -82,9 +94,8 @@ namespace backend
 
     LoadBalanceMode lb_mode = getEnv("GRB_LOAD_BALANCE_MODE",
         GrB_LOAD_BALANCE_MERGE);
-    if( desc->debug() )
-      std::cout << "Load balance mode: " << lb_mode << std::endl;
-    // Conversions:
+
+    // Conversions
     // TODO: add tol
     SparseMatrixFormat A_format;
     bool A_symmetric;
@@ -96,6 +107,7 @@ namespace backend
     CHECK( desc->get( GrB_TOL,     &tol      ) );
     if( desc->debug() )
     {
+      std::cout << "Load balance mode: " << lb_mode << std::endl;
       std::cout << "Identity: " << op.identity() << std::endl;
       std::cout << "Sparse format: " << A_format << std::endl;
       std::cout << "Symmetric: " << A_symmetric << std::endl;
@@ -190,6 +202,11 @@ namespace backend
     // Undo change to desc by toggling again
     CHECK( desc->toggle( GrB_INP1 ) );
 
+    if (desc->debug())
+    {
+      std::cout << "===End vxm===\n";
+      CHECK( w->print() );
+    }
     return GrB_SUCCESS;
   }
 
@@ -207,12 +224,19 @@ namespace backend
             const Vector<U>* u,
             Descriptor*      desc )
   {
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
+
+    if (desc->debug())
+    {
+      std::cout << "===Begin mxv===\n";
+      CHECK( u_t->print() );
+    }
+
     // Get storage:
     Storage u_vec_type;
     Storage A_mat_type;
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( A->getStorage( &A_mat_type ) );
-    Vector<U>* u_t = const_cast<Vector<U>*>(u);
 
     // Transpose:
     Desc_value inp1_mode;
@@ -315,6 +339,11 @@ namespace backend
       desc->lastmxv_ = GrB_PULLONLY;
     }
 
+    if (desc->debug())
+    {
+      std::cout << "===End mxv===\n";
+      CHECK( w->print() );
+    }
     return GrB_SUCCESS;
   }
 
@@ -328,6 +357,16 @@ namespace backend
                   const Vector<V>* v,
                   Descriptor*      desc )
   {
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
+    Vector<V>* v_t = const_cast<Vector<V>*>(v);
+
+    if (desc->debug())
+    {
+      std::cout << "===Begin eWiseMult===\n";
+      CHECK( u_t->print() );
+      CHECK( v_t->print() );
+    }
+
     Storage u_vec_type;
     Storage v_vec_type;
     CHECK( u->getStorage( &u_vec_type ) );
@@ -361,8 +400,6 @@ namespace backend
         }
         else if (mask_type == GrB_SPARSE)
         {
-          if (u == w || v == w)
-            std::cout << "Error: eWiseMult dense-dense sparse mask dense vector inplace not implemented yet!\n";
           CHECK( w->setStorage(GrB_SPARSE) );
           CHECK( eWiseMultInner(&w->sparse_, &mask->sparse_, accum, op,
               &u->dense_, &v->dense_, desc) );
@@ -379,8 +416,6 @@ namespace backend
     }
     else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE)
     {
-      if (v == w)
-        std::cout << "Error: eWiseMult sparse-dense dense vector inplace not implemented yet!\n";
       CHECK( w->setStorage(GrB_SPARSE) );
       CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
           &v->dense_, desc) );
@@ -388,8 +423,6 @@ namespace backend
     else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE)
     {
       // TODO(@ctcyang): Fix for non-commutative ops
-      if (u == w)
-        std::cout << "Error: eWiseMult sparse-dense dense vector inplace not implemented yet!\n";
       CHECK( w->setStorage(GrB_SPARSE) );
       CHECK( eWiseMultInner(&w->sparse_, mask, accum, op, &v->sparse_, 
           &u->dense_, desc) );
@@ -399,6 +432,11 @@ namespace backend
       return GrB_INVALID_OBJECT;
     }
 
+    if (desc->debug())
+    {
+      std::cout << "===End eWiseMult===\n";
+      CHECK( w->print() );
+    }
     return GrB_SUCCESS;
   }
 
@@ -413,6 +451,7 @@ namespace backend
                   Descriptor*      desc )
   {
     // Use either op->operator() or op->mul() as the case may be
+    std::cout << "Error: eWiseMult matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename U, typename V, typename M,
@@ -425,12 +464,20 @@ namespace backend
                  const Vector<V>* v,
                  Descriptor*      desc )
   {
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
+    Vector<V>* v_t = const_cast<Vector<V>*>(v);
+
+    if (desc->debug())
+    {
+      std::cout << "===Begin eWiseAdd===\n";
+      CHECK( u_t->print() );
+      CHECK( v_t->print() );
+    }
+
     Storage u_vec_type;
     Storage v_vec_type;
     CHECK( u->getStorage( &u_vec_type ) );
     CHECK( v->getStorage( &v_vec_type ) );
-    Vector<U>* u_t = const_cast<Vector<U>*>(u);
-    Vector<V>* v_t = const_cast<Vector<V>*>(v);
 
     /* 
      * \brief 4 cases:
@@ -481,6 +528,11 @@ namespace backend
       return GrB_INVALID_OBJECT;
     }
 
+    if (desc->debug())
+    {
+      std::cout << "===End eWiseAdd===\n";
+      CHECK( w->print() );
+    }
     return GrB_SUCCESS;
   }
 
@@ -495,6 +547,7 @@ namespace backend
                  Descriptor*      desc )
   {
     // Use either op->operator() or op->add() as the case may be
+    std::cout << "Error: eWiseAdd matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename U, typename M,
@@ -507,7 +560,7 @@ namespace backend
                 Index                     nindices,
                 Descriptor*               desc )
   {
-
+    std::cout << "Error: extract vector variant not implemented yet!\n";
   }
 
   template <typename c, typename a, typename m,
@@ -522,7 +575,7 @@ namespace backend
                 Index                     ncols,
                 Descriptor*               desc )
   {
-
+    std::cout << "Error: extract matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename a, typename M,
@@ -536,7 +589,7 @@ namespace backend
                 Index                     col_index,
                 Descriptor*               desc )
   {
-
+    std::cout << "Error: extract vector variant not implemented yet!\n";
   }
 
   template <typename W, typename U, typename M,
@@ -549,6 +602,7 @@ namespace backend
                Index                     nindices,
                Descriptor*               desc )
   {
+    std::cout << "Error: assign vector variant not implemented yet!\n";
     return GrB_SUCCESS;
   }
 
@@ -564,7 +618,7 @@ namespace backend
                Index                     ncols,
                Descriptor*               desc )
   {
-
+    std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
   template <typename c, typename U, typename M,
@@ -578,7 +632,7 @@ namespace backend
                Index                     col_index,
                Descriptor*               desc )
   {
-
+    std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
   template <typename c, typename U, typename M,
@@ -605,6 +659,12 @@ namespace backend
                Index                     nindices,
                Descriptor*               desc )
   {
+    if (desc->debug())
+    {
+      std::cout << "===Begin assign===\n";
+      std::cout << "Input: " << val << std::endl;
+    }
+
     // Get storage:
     Storage vec_type;
     CHECK( w->getStorage( &vec_type ) );
@@ -625,6 +685,11 @@ namespace backend
           desc) );
     }
 
+    if (desc->debug())
+    {
+      std::cout << "===End assign===\n";
+      CHECK( w->print() );
+    }
     return GrB_SUCCESS;
   }
 
@@ -640,7 +705,7 @@ namespace backend
                Index                     ncols,
                Descriptor*               desc )
   {
-
+    std::cout << "Error: assign matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename U, typename M,
@@ -652,9 +717,16 @@ namespace backend
               const Vector<U>* u,
               Descriptor*      desc )
   {
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
+
+    if (desc->debug())
+    {
+      std::cout << "===Begin apply===\n";
+      CHECK( u_t->print() );
+    }
+
     Storage u_vec_type;
     CHECK( u->getStorage( &u_vec_type ) );
-    Vector<U>* u_t = const_cast<Vector<U>*>(u);
 
     // sparse variant
     if (u_vec_type == GrB_SPARSE)
@@ -670,6 +742,11 @@ namespace backend
     }
     else return GrB_UNINITIALIZED_OBJECT;
 
+    if (desc->debug())
+    {
+      std::cout << "===End apply===\n";
+      w->print();
+    }
     return GrB_SUCCESS;
   }
 
@@ -682,7 +759,7 @@ namespace backend
               const Matrix<a>* A,
               Descriptor*      desc )
   {
-
+    std::cout << "Error: apply matrix variant not implemented yet!\n";
   }
 
   template <typename W, typename a, typename M,
@@ -694,6 +771,11 @@ namespace backend
                const Matrix<a>* A,
                Descriptor*      desc )
   {
+    if (desc->debug())
+    {
+      std::cout << "===Begin reduce===\n";
+    }
+
     // Get storage:
     Storage mat_type;
     CHECK( A->getStorage( &mat_type ) );
@@ -718,6 +800,11 @@ namespace backend
       std::cout << "Error: Masked reduce not implemented yet!\n";
     }
 
+    if (desc->debug())
+    {
+      std::cout << "===End reduce===\n";
+      CHECK( w->print() );
+    }
     return GrB_SUCCESS;
   }
 
@@ -729,6 +816,14 @@ namespace backend
                const Vector<U>* u,
                Descriptor*      desc )
   {
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
+
+    if (desc->debug())
+    {
+      std::cout << "===Begin reduce===\n";
+      u_t->print();
+    }
+
     // Get storage:
     Storage vec_type;
     CHECK( u->getStorage( &vec_type ) );
@@ -745,6 +840,11 @@ namespace backend
       CHECK( reduceInner( val, accum, op, &u->dense_, desc) );
     }
 
+    if (desc->debug())
+    {
+      std::cout << "===End reduce===\n";
+      std::cout << "Output: " << *val << std::endl;
+    }
     return GrB_SUCCESS;
   }
 
@@ -756,7 +856,11 @@ namespace backend
                const Matrix<a>* A,
                Descriptor*      desc )
   {
-
+    if (desc->debug())
+    {
+      std::cout << "===Begin reduce===\n";
+    }
+    std::cout << "Error: reduce matrix variant not implemented yet!\n";
   }
 
   template <typename c, typename a, typename m,
@@ -767,7 +871,11 @@ namespace backend
                   const Matrix<a>* A,
                   Descriptor*      desc )
   {
-
+    if (desc->debug())
+    {
+      std::cout << "===Begin transpose===\n";
+    }
+    std::cout << "Error: transpose not implemented yet!\n";
   }
 
   template <typename T, typename a, typename b,
@@ -778,6 +886,11 @@ namespace backend
                           const Matrix<b>* B,
                           Descriptor*      desc )
   {
+    if (desc->debug())
+    {
+      std::cout << "===Begin traceMxmTranspose===\n";
+    }
+    
     // Get storage:
     Storage A_mat_type;
     Storage B_mat_type;
@@ -798,9 +911,49 @@ namespace backend
       std::cout << "Error: Trace operator not implemented!\n";
     }
 
+    if (desc->debug())
+    {
+      std::cout << "===End traceMxmTranspose===\n";
+    }
     return GrB_SUCCESS;
   }
 
+  template <typename W, typename M, typename U, typename T>
+  Info scatter( Vector<W>*       w,
+                const Vector<M>* mask,
+                const Vector<U>* u,
+                T                val,
+                Descriptor*      desc )
+  {
+    Vector<U>* u_t = const_cast<Vector<U>*>(u);
+
+    if (desc->debug())
+    {
+      std::cout << "===Begin scatter===\n";
+      CHECK( u_t->print() );
+    }
+
+    Storage u_vec_type;
+    CHECK( u->getStorage(&u_vec_type) );
+    /*!
+     * Cases:
+     * 1) sparse -> dense
+     * 2) dense  -> dense
+     */
+    CHECK( w->setStorage(GrB_DENSE) );
+    if (u_vec_type == GrB_SPARSE)
+      scatterSparse(&w->dense_, mask, &u->sparse_, val, desc);
+    else if (u_vec_type == GrB_DENSE)
+      scatterDense(&w->dense_, mask, &u->dense_, val, desc);
+    else return GrB_UNINITIALIZED_OBJECT;
+
+    if (desc->debug())
+    {
+      std::cout << "===End scatter===\n";
+      CHECK( w->print() );
+    }
+    return GrB_SUCCESS;
+  }
 }  // backend
 }  // graphblas
 

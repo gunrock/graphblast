@@ -55,6 +55,7 @@ namespace algorithm
 
     // Ascending array (ascending)
     Vector<int> ascending(max_colors);
+    CHECK( ascending.fillAscending(max_colors) );
 
     // Array for finding smallest color (min_array)
     Vector<int> min_array(max_colors);
@@ -80,10 +81,10 @@ namespace algorithm
       if( desc->descriptor_.debug() )
       {
         std::cout << "=====Iteration " << iter - 1 << "=====\n";
-        v->print();
-        w.print();
-        f.print();
-        m.print();
+        CHECK( v->print() );
+        CHECK( w.print() );
+        CHECK( f.print() );
+        CHECK( m.print() );
       }
       if( desc->descriptor_.timing_==2 )
       {
@@ -115,28 +116,25 @@ namespace algorithm
         break;
 
       // find neighbors of frontier
-      CHECK( desc->toggle(GrB_MASK) );
       vxm<float, int, float, float>(&m, v, GrB_NULL,
           LogicalOrAndSemiring<float>(), &f, A, desc);
-      CHECK( desc->toggle(GrB_MASK) );
 
       // get color
-      //eWiseMult<float, float, float, float>(&n, GrB_NULL, GrB_NULL,
-      //    PlusMultipliesSemiring<float>(), &m, v, desc);
+      eWiseMult<int, float, float, int>(&n, GrB_NULL, GrB_NULL,
+          PlusMultipliesSemiring<float, int, int>(), &m, v, desc);
 
       // prepare dense array
-      // index 0 means no color, so set 0'th element to 0
-      CHECK( d.fill(1) );
-      CHECK( d.setElement(0, 0) );
+      CHECK( d.fill(0) );
 
       // scatter nodes into a dense array
-      scatter<float, float, float>(&d, GrB_NULL, &m, (int)0, desc);
+      scatter<int, float, int, int>(&d, GrB_NULL, &n, (int)max_colors, desc);
 
       // TODO(@ctcyang): this eWiseMult and reduce could be changed into single
       // reduce with argmin Monoid
       // map boolean bit array to element id
       eWiseMult<int, int, int, int>(&min_array, GrB_NULL, GrB_NULL,
-          PlusMultipliesSemiring<int>(), &d, &ascending, desc);
+          MinimumPlusSemiring<int>(), &d, &ascending, desc);
+      CHECK( min_array.setElement(max_colors, 0) );
 
       // compute min color
       reduce<int, int>(&min_color, GrB_NULL, MinimumMonoid<int>(),

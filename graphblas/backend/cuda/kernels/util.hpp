@@ -35,9 +35,9 @@ namespace backend
     }
   }
 
-  template <typename U, typename M>
+  template <typename U, typename T, typename M>
   __global__ void zeroDenseIdentityKernel( const M* mask,
-                                           U        identity,
+                                           T        identity,
                                            Index*   u_ind,
                                            U*       u_val,
                                            Index    u_nvals )
