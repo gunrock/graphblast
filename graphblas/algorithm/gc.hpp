@@ -65,7 +65,6 @@ namespace algorithm
 
     desc->set(GrB_BACKEND, GrB_SEQUENTIAL);
     apply<float,float,float>(&w, GrB_NULL, GrB_NULL, set_random<float>(), &w, desc);
-    CHECK( w.print() );
     desc->set(GrB_BACKEND, GrB_CUDA);
 
     float iter = 1;
@@ -158,36 +157,33 @@ namespace algorithm
       gpu_tight.Stop();
       std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
           "push" : "pull";
-      std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
-          << unvisited << ", " << vxm_mode << ", "
-          << gpu_tight.ElapsedMillis() << "\n";
+      if (desc->descriptor_.timing_ == 2)
+        std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+            << unvisited << ", " << vxm_mode << ", "
+            << gpu_tight.ElapsedMillis() << "\n";
       return gpu_tight.ElapsedMillis();
     }
     return 0.f;
   }
 
-  template <typename T, typename a>
-  int gcCpu( Index        source,
-             Matrix<a>*   A,
-             T*           h_bfs_cpu,
-             Index        depth,
-             bool         transpose=false )
+  template <typename a>
+  int gcCpu( Index             seed,
+             Matrix<a>*        A,
+             std::vector<int>& h_gc_cpu,
+             int               max_colors )
   {
-    Index* reference_check_preds = NULL;
-    int max_depth;
-
-    if( transpose )
-      max_depth = SimpleReferenceGc<T>( A->matrix_.nrows_, 
-          A->matrix_.sparse_.h_cscColPtr_, A->matrix_.sparse_.h_cscRowInd_, 
-          h_bfs_cpu, reference_check_preds, source, depth);
-    else
-      max_depth = SimpleReferenceGc<T>( A->matrix_.nrows_, 
-          A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_, 
-          h_bfs_cpu, reference_check_preds, source, depth);
-
-    return max_depth; 
+    SimpleReferenceGc( A->matrix_.nrows_, 
+        A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_, 
+        h_gc_cpu, seed, max_colors);
   }
 
+  template <typename a>
+  int verifyGc( const Matrix<a>*        A,
+                const std::vector<int>& h_gc_cpu )
+  {
+    SimpleVerifyGc( A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+        A->matrix_.sparse_.h_csrColInd_, h_gc_cpu);
+  }
 }  // algorithm
 }  // graphblas
 
