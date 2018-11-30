@@ -1,0 +1,149 @@
+#ifndef GRB_ALGORITHM_GC_HPP
+#define GRB_ALGORITHM_GC_HPP
+
+#include "graphblas/algorithm/testGc.hpp"
+#include "graphblas/backend/cuda/util.hpp" // GpuTimer
+
+namespace graphblas
+{
+  template <typename T_in1, typename T_out=T_in1>
+  struct set_random
+  {
+    set_random()
+    {
+      seed_ = getEnv("GRB_SEED", 0);
+      srand(seed_);
+    }
+
+    inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs)
+    { return rand(); }
+
+    int seed_;
+  };
+
+namespace algorithm
+{
+  // Use float for now for both v and A
+  float gc( Vector<int>*         v,
+            const Matrix<float>* A,
+            int                  seed,
+            int                  max_colors,
+            Descriptor*          desc )
+  {
+    Index A_nrows;
+    CHECK( A->nrows(&A_nrows) );
+
+    // Colors vector (v)
+    // 0: no color, 1 ... n: color
+    CHECK( v->fill(0) );
+
+    // Frontier vector (f)
+    Vector<float> f(A_nrows);
+
+    // Weight vectors (w)
+    Vector<float> w(A_nrows);
+    CHECK( w.fill(0.f) );
+
+    // Neighbor max (m)
+    Vector<float> m(A_nrows);
+
+    // Neighbor color (n)
+    Vector<int> n(A_nrows);
+
+    // Dense array (d)
+    Vector<int> d(max_colors);
+
+    // Ascending array (ascending)
+    Vector<int> ascending(max_colors);
+    CHECK( ascending.fillAscending(max_colors) );
+
+    // Array for finding smallest color (min_array)
+    Vector<int> min_array(max_colors);
+
+    // Set seed
+    setEnv("GRB_SEED", seed);
+
+    desc->set(GrB_BACKEND, GrB_SEQUENTIAL);
+    apply<float,float,float>(&w, GrB_NULL, GrB_NULL, set_random<float>(), &w, desc);
+    desc->set(GrB_BACKEND, GrB_CUDA);
+
+    float iter = 1;
+    float succ = 0.f;
+    int   min_color = 0;
+    Index unvisited = A_nrows;
+
+    do
+    {
+      // find max of neighbors
+      vxm<float, float, float, float>(&m, &w, GrB_NULL, 
+          MaximumMultipliesSemiring<float>(), &w, A, desc);
+
+      // find all largest nodes that are uncolored
+      eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,
+          PlusGreaterSemiring<float>(), &w, &m, desc);
+
+      // stop when frontier is empty
+      reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &f, desc);
+
+      if (succ == 0)
+        break;
+
+      // find neighbors of frontier
+      vxm<float, int, float, float>(&m, v, GrB_NULL,
+          LogicalOrAndSemiring<float>(), &f, A, desc);
+
+      // get color
+      eWiseMult<int, float, float, int>(&n, GrB_NULL, GrB_NULL,
+          PlusMultipliesSemiring<float, int, int>(), &m, v, desc);
+
+      // prepare dense array
+      CHECK( d.fill(0) );
+
+      // scatter nodes into a dense array
+      scatter<int, float, int, int>(&d, GrB_NULL, &n, (int)max_colors, desc);
+
+      // TODO(@ctcyang): this eWiseMult and reduce could be changed into single
+      // reduce with argmin Monoid
+      // map boolean bit array to element id
+      eWiseMult<int, int, int, int>(&min_array, GrB_NULL, GrB_NULL,
+          MinimumPlusSemiring<int>(), &d, &ascending, desc);
+      CHECK( min_array.setElement(max_colors, 0) );
+
+      // compute min color
+      reduce<int, int>(&min_color, GrB_NULL, MinimumMonoid<int>(),
+          &min_array, desc);
+
+      // assign new color
+      assign<int, float>(v, &f, GrB_NULL, min_color, GrB_ALL, A_nrows, desc);
+
+      // get rid of colored nodes in candidate list
+      assign<float, float>(&w, &f, GrB_NULL, (float)0.f, GrB_ALL, A_nrows,
+          desc);
+
+      iter++;
+    } while (succ > 0);
+    return 0.f;
+  }
+
+  template <typename a>
+  int gcCpu( Index             seed,
+             Matrix<a>*        A,
+             std::vector<int>& h_gc_cpu,
+             int               max_colors )
+  {
+    SimpleReferenceGc( A->matrix_.nrows_, 
+        A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_, 
+        h_gc_cpu, seed, max_colors);
+  }
+
+  template <typename a>
+  int verifyGc( const Matrix<a>*        A,
+                const std::vector<int>& h_gc_cpu )
+  {
+    SimpleVerifyGc( A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+        A->matrix_.sparse_.h_csrColInd_, h_gc_cpu);
+  }
+}  // algorithm
+}  // graphblas
+
+#endif  // GRB_ALGORITHM_GC_HPP
