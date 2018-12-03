@@ -138,13 +138,10 @@ namespace graphblas
                          BinaryOpT                 dup,
                          char*                     dat_name )
   {
-    if( row_indices==NULL || col_indices==NULL || values==NULL )
+    if (row_indices == NULL || col_indices == NULL || values == NULL)
       return GrB_NULL_POINTER;
 
-    printf("dat_name is null: %d\n", dat_name == NULL);
-    printf("row_indices > 0:  %d\n", (*row_indices).size()>0);
-
-    if( dat_name==NULL || (*row_indices).size()>0 )
+    if (dat_name == NULL || (*row_indices).size() > 0)
       return matrix_.build(row_indices, col_indices, values, nvals, dup, 
           dat_name);
 

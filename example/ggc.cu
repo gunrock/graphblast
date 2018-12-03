@@ -42,7 +42,7 @@ int main( int argc, char** argv )
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
-    parseArgs( argc, argv, vm );
+    parseArgs(argc, argv, vm);
     debug      = vm["debug"    ].as<bool>();
     transpose  = vm["transpose"].as<bool>();
     mtxinfo    = vm["mtxinfo"  ].as<bool>();
@@ -66,6 +66,8 @@ int main( int argc, char** argv )
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
+  values.clear();
+  values.resize(nvals, 1.f);
   CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
       dat_name) );
   CHECK( a.nrows(&nrows) );
@@ -78,13 +80,12 @@ int main( int argc, char** argv )
 
   // Cpu graph coloring
   CpuTimer gc_cpu;
-  graphblas::Index* h_gc_cpu = (graphblas::Index*)malloc(nrows*
-      sizeof(graphblas::Index));
+  std::vector<int> h_gc_cpu(nrows, 0);
   int depth = 10000;
   gc_cpu.Start();
-  int d = graphblas::algorithm::gcCpu( source, &a, h_gc_cpu, depth, 
-      transpose );
+  int d = graphblas::algorithm::gcCpu(source, &a, h_gc_cpu, max_colors);
   gc_cpu.Stop();
+  graphblas::algorithm::verifyGc(&a, h_gc_cpu);
 
   // Warmup
   CpuTimer warmup;
@@ -94,7 +95,7 @@ int main( int argc, char** argv )
 
   std::vector<int> h_gc_gpu;
   CHECK( v.extractTuples(&h_gc_gpu, &nrows) );
-  BOOST_ASSERT_LIST( h_gc_cpu, h_gc_gpu, nrows );
+  graphblas::algorithm::verifyGc(&a, h_gc_gpu);
 
   // Benchmark
   graphblas::Vector<int> y(nrows);
@@ -122,8 +123,7 @@ int main( int argc, char** argv )
   if( niter )
   {
     std::vector<int> h_gc_gpu2;
-    CHECK( y.extractTuples(&h_gc_gpu2, &nrows) );
-    BOOST_ASSERT_LIST( h_gc_cpu, h_gc_gpu2, nrows );
+    graphblas::algorithm::verifyGc( &a, h_gc_gpu );
   }
 
   return 0;

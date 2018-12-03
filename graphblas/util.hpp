@@ -188,8 +188,8 @@ void customSort( std::vector<graphblas::Index>& row_indices,
 template<typename T, typename mtxT>
 void readTuples( std::vector<graphblas::Index>& row_indices,
                  std::vector<graphblas::Index>& col_indices,
-                 std::vector<T>& values,
-                 const graphblas::Index nvals,
+                 std::vector<T>&                values,
+                 const graphblas::Index         nvals,
                  FILE* f)
 {
   graphblas::Index row_ind, col_ind;
@@ -216,10 +216,11 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
       col_indices.push_back(col_ind-1);
 
       u = fscanf(f, type_str, &raw_value);
-      value = (T) raw_value;
+      value = static_cast<T>(raw_value);
 
       values.push_back(value);
-  }}
+    }
+  }
 }
 
 template<typename T>
@@ -333,13 +334,13 @@ char* convert( const char* fname, bool is_undirected=true )
   char *temp2 = strdup(fname);
   char *file_path = dirname (temp1);
   char *file_name = basename(temp2);
+  bool remove_self_loops = getEnv("GRB_UTIL_REMOVE_SELFLOOP", true);
+  std::cout << "Remove self-loop: " << remove_self_loops << std::endl;
 
-  if (is_undirected)
-    sprintf(dat_name, "%s/.%s.ud.%d.%sbin", file_path, file_name, 0,
-        ((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
-  else
-    sprintf(dat_name, "%s/.%s.d.%d.%sbin", file_path, file_name, 0,
-        ((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
+  sprintf(dat_name, "%s/.%s.%s.%s.%sbin", file_path, file_name, 
+      (is_undirected ? "ud" : "d"),
+      (remove_self_loops ? "nosl" : "sl"),
+      ((sizeof(graphblas::Index) == 8) ? "64bVe." : ""));
 
   return dat_name;
 }
@@ -379,9 +380,9 @@ int readMtx( const char*                    fname,
   if ((ret_code = mm_read_mtx_crd_size(f, &nrows, &ncols, &nvals)) !=0)
     exit(1);
 
-  printf("Undirected due to mtx: %d\n", mm_is_symmetric(matcode) && directed==0);
-  printf("Undirected due to cmd: %d\n", directed==2);
-  bool is_undirected = (mm_is_symmetric(matcode) && directed==0) || directed==2;
+  printf("Undirected due to mtx: %d\n", mm_is_symmetric(matcode));
+  printf("Undirected due to cmd: %d\n", directed == 2);
+  bool is_undirected = mm_is_symmetric(matcode) || directed==2;
   printf("Undirected: %d\n", is_undirected);
   if (dat_name != NULL)
     *dat_name = convert(fname, is_undirected);

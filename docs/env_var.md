@@ -23,6 +23,6 @@ mization when doing mxv and vxm. This overrides mxvmode settings in Descriptor, 
 
 ## Utility functions
 
-* GRB_UTIL_IGNORE_SELFLOOP
+* GRB_UTIL_REMOVE_SELFLOOP
   - Values: 0, 1 ```(default=1)```
   - Since we are dealing with graphs, the MTX loader will eliminate any edges going from vertex *i* to vertex *i* (self-loops), unless the user sets this option to 0.

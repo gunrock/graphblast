@@ -9,74 +9,102 @@ namespace graphblas
 {
 namespace algorithm
 {
-  // A simple CPU-based reference BFS ranking implementation
-  template <typename T>
-  int SimpleReferenceGc( Index        nrows, 
-                         const Index* h_rowPtr, 
-                         const Index* h_colInd,
-                         T*           source_path,
-                         Index*       predecessor,
-                         Index        src,
-                         Index        stop)
+  // A simple CPU-based reference Graph Coloring implementation of the greedy
+  // First-Fit Implementation (FFI) algorithm
+  int SimpleReferenceGc( Index             nrows, 
+                         const Index*      h_csrRowPtr, 
+                         const Index*      h_csrColInd,
+                         std::vector<int>& h_gc_cpu,
+                         int               seed,
+                         int               max_colors )
   {
-    //initialize distances
+    // initialize distances
     for (Index i = 0; i < nrows; ++i)
-    {
-      source_path[i] = 0;
-      if (MARK_PREDECESSORS)
-        predecessor[i] = -1;
-    }
-    source_path[src] = 1;
-    Index search_depth = 1;
+      h_gc_cpu[i] = 0;
 
-    // Initialize queue for managing previously-discovered nodes
-    std::deque<Index> frontier;
-    frontier.push_back(src);
+    // initialize random number generator
+    std::mt19937 gen(seed);
 
-    //
-    //Perform BFS
-    //
+    std::vector<Index> order(nrows);
+    std::iota(order.begin(), order.end(), 0);
+    std::shuffle(order.begin(), order.end(), gen);
+
+    /*!
+     * perform Graph Coloring
+     */
 
     CpuTimer cpu_timer;
     cpu_timer.Start();
-    while (!frontier.empty())
+
+    for (Index i = 0; i < nrows; ++i)
     {
-      // Dequeue node from frontier
-      Index dequeued_node = frontier.front();
-      frontier.pop_front();
-      Index neighbor_dist = source_path[dequeued_node] + 1;
-      if( neighbor_dist > stop )
-        break;
+      Index row = order[i];
+      std::vector<bool> min_array(max_colors, false);
 
-      // Locate adjacency list
-      int edges_begin = h_rowPtr[dequeued_node];
-      int edges_end = h_rowPtr[dequeued_node + 1];
-
-      for (int edge = edges_begin; edge < edges_end; ++edge) 
+      Index row_start = h_csrRowPtr[row];
+      Index row_end   = h_csrRowPtr[row+1];
+      for (; row_start < row_end; ++row_start)
       {
-        //Lookup neighbor and enqueue if undiscovered
-        Index neighbor = h_colInd[edge];
-        if (source_path[neighbor] == 0) 
+        Index col = h_csrColInd[row_start];
+        int color = h_gc_cpu[col];
+        min_array[color] = true;
+      }
+      for (int color = 1; color < max_colors; ++color)
+      {
+        if (!min_array[color])
         {
-          source_path[neighbor] = neighbor_dist;
-          if (MARK_PREDECESSORS) 
-            predecessor[neighbor] = dequeued_node;
-          if (search_depth < neighbor_dist)
-            search_depth = neighbor_dist;
-          frontier.push_back(neighbor);
+          h_gc_cpu[row] = color;
+          break;
         }
       }
     }
 
-    if (MARK_PREDECESSORS)
-      predecessor[src] = -1;
-
     cpu_timer.Stop();
     float elapsed = cpu_timer.ElapsedMillis();
 
-    printf("CPU BFS finished in %lf msec. Search depth is: %d\n", elapsed, search_depth);
+    std::cout << "CPU GC finished in " << elapsed << " msec.";
+    
+  }
 
-    return search_depth;
+  int SimpleVerifyGc( Index                   nrows,
+                      const Index*            h_csrRowPtr,
+                      const Index*            h_csrColInd,
+                      const std::vector<int>& h_gc_cpu )
+  {
+    int flag = 0;
+    int max_color = 0;
+
+    for (Index row = 0; row < nrows; ++row)
+    {
+      int row_color = h_gc_cpu[row];
+      if (row_color > max_color)
+        max_color = row_color;
+
+      if (row_color == 0 && flag == 0)
+        std::cout << "\nINCORRECT: [" << row << "]: has no color.\n";
+      
+      Index row_start = h_csrRowPtr[row];
+      Index row_end   = h_csrRowPtr[row+1];
+      for (; row_start < row_end; ++row_start)
+      {
+        Index col = h_csrColInd[row_start];
+        int col_color = h_gc_cpu[col];
+        if (col_color == row_color && flag == 0)
+        {
+          std::cout << "\nINCORRECT: [" << row << "]: ";
+          std::cout << row_color << " == " << col_color << " [" << col <<
+            "]\n";
+        }
+
+        if (col_color == row_color)
+          flag++;
+      }
+    }
+    if (flag == 0)
+      std::cout << "\nCORRECT\n";
+    else
+      std::cout << flag << " errors occurred.\n";
+    std::cout << "Graph coloring found with " << max_color << " colors.\n";
   }
 
 }  // namespace algorithm

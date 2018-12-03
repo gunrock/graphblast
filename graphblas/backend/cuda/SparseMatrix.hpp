@@ -368,7 +368,7 @@ namespace backend
             nvals_*sizeof(Index) );
 
         for( Index i=0; i<nvals_; i++ )
-          h_csrVal_[i] = (T)1;
+          h_csrVal_[i] = static_cast<T>(1);
 
         if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY)
         {
