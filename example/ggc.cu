@@ -23,7 +23,7 @@ int main( int argc, char** argv )
 {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
-  std::vector<float> values;
+  std::vector<int> values;
   graphblas::Index nrows, ncols, nvals;
 
   // Parse arguments
@@ -65,7 +65,7 @@ int main( int argc, char** argv )
     CHECK( desc.toggle(graphblas::GrB_INP1) );
 
   // Matrix A
-  graphblas::Matrix<float> a(nrows, ncols);
+  graphblas::Matrix<int> a(nrows, ncols);
   values.clear();
   values.resize(nvals, 1.f);
   CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 

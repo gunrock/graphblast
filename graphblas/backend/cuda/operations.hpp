@@ -154,8 +154,9 @@ namespace backend
         CHECK( w->setStorage(GrB_DENSE) );
         // 1a) Simple SpMSpV no load-balancing codepath
         if (lb_mode == GrB_LOAD_BALANCE_SIMPLE)
-          CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
-              &u->sparse_, desc) );
+          std::cout << "Simple SPMSPV not implemented yet!\n";
+          //CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
+          //    &u->sparse_, desc) );
         // 1b) Thread-warp-block (single kernel) codepath
         else if (lb_mode == GrB_LOAD_BALANCE_TWC)
           std::cout << "Error: B40C load-balance algorithm not implemented yet!\n";
@@ -293,8 +294,9 @@ namespace backend
         CHECK( w->setStorage(GrB_DENSE) );
         // 1a) Simple SpMSpV no load-balancing codepath
         if (lb_mode == GrB_LOAD_BALANCE_SIMPLE)
-          CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
-              &u->sparse_, desc) );
+          std::cout << "Simple SPMSPV not implemented yet!\n";
+          //CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
+          //    &u->sparse_, desc) );
         // 1b) Thread-warp-block (single kernel) codepath
         else if (lb_mode == GrB_LOAD_BALANCE_TWC)
           std::cout << "Error: B40C load-balance algorithm not implemented yet!\n";

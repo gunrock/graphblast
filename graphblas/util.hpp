@@ -122,7 +122,8 @@ void parseArgs( int argc, char**argv, po::variables_map& vm )
 }
 
 template<typename T>
-inline T getEnv(const char *key, T default_val) {
+inline T getEnv( const char *key, T default_val )
+{
   const char *val = std::getenv(key);
   if (val == NULL) {
     return default_val;
@@ -132,7 +133,8 @@ inline T getEnv(const char *key, T default_val) {
 }
 
 template<typename T>
-void setEnv(const char *key, T default_val) {
+void setEnv( const char *key, T default_val )
+{
   std::string s = std::to_string(default_val);
   const char *val = s.c_str();
   setenv(key, val, 0);
@@ -249,68 +251,75 @@ void readTuples( std::vector<graphblas::Index>& row_indices,
   }}
 }
 
+/*!
+ * Remove self-loops, duplicates and make graph undirected if option is set
+ */
 template<typename T>
-void makeSymmetric( std::vector<graphblas::Index>& row_indices, 
-                    std::vector<graphblas::Index>& col_indices,
-                    std::vector<T>& values, 
-                    graphblas::Index& nvals )
+void removeSelfloop( std::vector<graphblas::Index>& row_indices, 
+                     std::vector<graphblas::Index>& col_indices,
+                     std::vector<T>&                values, 
+                     graphblas::Index&              nvals,
+                     bool                           undirected )
 {
   bool remove_self_loops = getEnv("GRB_UTIL_REMOVE_SELFLOOP", true);
 
-  for( graphblas::Index i=0; i<nvals; i++ ) {
-    if( col_indices[i] != row_indices[i] ) {
-      row_indices.push_back( col_indices[i] );
-      col_indices.push_back( row_indices[i] );
-      values.push_back( values[i] );
+  if (undirected) {
+    for (graphblas::Index i = 0; i < nvals; i++) {
+      if (col_indices[i] != row_indices[i]) {
+        row_indices.push_back(col_indices[i]);
+        col_indices.push_back(row_indices[i]);
+        values.push_back(values[i]);
+      }
     }
   }
 
   nvals = row_indices.size();
-  //std::cout << nvals << std::endl;
 
   // Sort
-  customSort<T>( row_indices, col_indices, values );
+  customSort<T>(row_indices, col_indices, values);
 
   graphblas::Index curr = col_indices[0];
   graphblas::Index last;
   graphblas::Index curr_row = row_indices[0];
   graphblas::Index last_row;
 
-  for( graphblas::Index i=1; i<nvals; i++ ) {
+  // Detect self-loops and duplicates
+  for (graphblas::Index i = 0; i < nvals; i++) {
     last = curr;
     last_row = curr_row;
     curr = col_indices[i];
     curr_row = row_indices[i];
 
-    // Self-loops (TODO: make self-loops contingent on whether we 
-    // are doing graph algorithm or matrix multiplication)
-    if( remove_self_loops && curr_row == curr )
+    // Self-loops
+    if (remove_self_loops && curr_row == curr)
       col_indices[i] = -1;
 
   // Duplicates
-    if( curr == last && curr_row == last_row ) {
+    if (curr == last && curr_row == last_row)
       col_indices[i] = -1;
-  }}
+  }
 
   graphblas::Index shift = 0;
 
   // Remove self-loops and duplicates marked -1.
   graphblas::Index back = 0;
-  for( graphblas::Index i=0; i+shift<nvals; i++ ) {
-    if(col_indices[i] == -1) {
-      for( ; back<=nvals; shift++ ) {
+  for (graphblas::Index i = 0; i + shift < nvals; i++) {
+    if (col_indices[i] == -1) {
+      for (; back <= nvals; shift++) {
         back = i+shift;
-        if( col_indices[back] != -1 ) {
+        if (col_indices[back] != -1) {
           col_indices[i] = col_indices[back];
           row_indices[i] = row_indices[back];
           col_indices[back] = -1;
           break;
-  }}}}
+        }
+      }
+    }
+  }
 
-  nvals = nvals-shift;
+  nvals = nvals - shift;
   row_indices.resize(nvals);
   col_indices.resize(nvals);
-  //std::cout << nvals << std::endl;
   values.resize(nvals);
 }
 
@@ -387,36 +396,31 @@ int readMtx( const char*                    fname,
   if (dat_name != NULL)
     *dat_name = convert(fname, is_undirected);
 
-  if( dat_name != NULL && exists(*dat_name) )
-  {  
+  if (dat_name != NULL && exists(*dat_name)) {  
     // The size of the file in bytes is in results.st_size
     // -unserialize vector
     std::ifstream ifs(*dat_name, std::ios::in | std::ios::binary);
-    if (ifs.fail())
+    if (ifs.fail()) {
       std::cout << "Error: Unable to open file for reading!\n";
-    else
-    {
+    } else {
     // Empty arrays indicate to Matrix::build that binary file exists
       row_indices.clear();
       col_indices.clear();
       values.clear();
     }
-  }
-  else
-  {
+  } else {
     if (mm_is_integer(matcode))
-      readTuples<T, int>( row_indices, col_indices, values, nvals, f );
+      readTuples<T, int>(row_indices, col_indices, values, nvals, f);
     else if (mm_is_real(matcode))
-      readTuples<T, float>( row_indices, col_indices, values, nvals, f );
+      readTuples<T, float>(row_indices, col_indices, values, nvals, f);
     else if (mm_is_pattern(matcode))
-      readTuples<T>( row_indices, col_indices, values, nvals, f );
+      readTuples<T>(row_indices, col_indices, values, nvals, f);
 
-    if (is_undirected)
-      makeSymmetric<T>( row_indices, col_indices, values, nvals );
-    customSort<T>( row_indices, col_indices, values );
+    removeSelfloop<T>(row_indices, col_indices, values, nvals, is_undirected);
+    customSort<T>(row_indices, col_indices, values);
 
-    if( mtxinfo ) mm_write_banner(stdout, matcode);
-    if( mtxinfo ) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
+    if (mtxinfo) mm_write_banner(stdout, matcode);
+    if (mtxinfo) mm_write_mtx_crd_size(stdout, nrows, ncols, nvals);
   }
 
   return ret_code; //TODO: parse ret_code

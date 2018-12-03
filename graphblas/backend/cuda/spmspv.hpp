@@ -53,7 +53,7 @@ namespace backend
     // Transpose (default is CSC):
     const Index* A_csrRowPtr = (!use_tran) ? A->d_cscColPtr_ : A->d_csrRowPtr_;
     const Index* A_csrColInd = (!use_tran) ? A->d_cscRowInd_ : A->d_csrColInd_;
-    const T*     A_csrVal    = (!use_tran) ? A->d_cscVal_    : A->d_csrVal_;
+    const a*     A_csrVal    = (!use_tran) ? A->d_cscVal_    : A->d_csrVal_;
     const Index  A_nrows     = (!use_tran) ? A->ncols_       : A->nrows_;
     const Index* Ah_csrRowPtr= (!use_tran) ? A->h_cscColPtr_ : A->h_csrRowPtr_;
 
@@ -71,7 +71,7 @@ namespace backend
     {
       // temp_ind and temp_val need |V| memory
       Index* temp_ind   = (Index*) desc->d_buffer_;
-      T*     temp_val   = (T*)     desc->d_buffer_+A_nrows;
+      a*     temp_val   = (a*)     desc->d_buffer_+A_nrows;
       Index  temp_nvals = 0;
     
       spmspvApspieMerge(
@@ -253,12 +253,13 @@ namespace backend
         }
 
         // Prune 0.f's from vector
-        desc->resize((5*A_nrows)*max(sizeof(Index),sizeof(T)), "buffer");
+        desc->resize((5*A_nrows)*max(sizeof(Index),sizeof(a)), "buffer");
         Index* d_flag = (Index*) desc->d_buffer_+2*A_nrows;
         Index* d_scan = (Index*) desc->d_buffer_+3*A_nrows;
         Index* d_temp = (Index*) desc->d_buffer_+4*A_nrows;
 
-        updateFlagKernel<<<NB,NT>>>( d_flag, 0.f, temp_val, temp_nvals );
+        updateFlagKernel<<<NB,NT>>>( d_flag, (a)0, temp_val,
+            temp_nvals );
         mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>( d_flag, temp_nvals, (Index)0,
             mgpu::plus<Index>(), (Index*)0, &w->nvals_, d_scan, d_temp,
             *(desc->d_context_) );
@@ -332,7 +333,7 @@ namespace backend
     // Transpose (default is CSC):
     const Index* A_csrRowPtr = (!use_tran) ? A->d_cscColPtr_ : A->d_csrRowPtr_;
     const Index* A_csrColInd = (!use_tran) ? A->d_cscRowInd_ : A->d_csrColInd_;
-    const T*     A_csrVal    = (!use_tran) ? A->d_cscVal_    : A->d_csrVal_;
+    const a*     A_csrVal    = (!use_tran) ? A->d_cscVal_    : A->d_csrVal_;
     const Index  A_nrows     = (!use_tran) ? A->ncols_       : A->nrows_;
     const Index* Ah_csrRowPtr= (!use_tran) ? A->h_cscColPtr_ : A->h_csrRowPtr_;
 

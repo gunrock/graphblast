@@ -153,7 +153,8 @@ namespace graphblas
   REGISTER_MONOID( PlusMonoid, plus, 0 )
   REGISTER_MONOID( MultipliesMonoid, multiplies, 1 )
   REGISTER_MONOID( MinimumMonoid, minimum, std::numeric_limits<T_out>::max() )
-  REGISTER_MONOID( MaximumMonoid, maximum, std::numeric_limits<T_out>::min() )
+  REGISTER_MONOID( MaximumMonoid, maximum, 0 )
+  //REGISTER_MONOID( MaximumMonoid, maximum, std::numeric_limits<T_out>::min() )
   REGISTER_MONOID( LogicalOrMonoid, logical_or, false )
   REGISTER_MONOID( LogicalAndMonoid, logical_and, false )
 
@@ -194,6 +195,7 @@ namespace graphblas
   REGISTER_SEMIRING( GreaterPlusSemiring, GreaterMonoid, plus )
   REGISTER_SEMIRING( LessPlusSemiring, LessMonoid, plus )
   REGISTER_SEMIRING( PlusLessSemiring, PlusMonoid, less )
+  REGISTER_SEMIRING( MinimumMultipliesSemiring, MinimumMonoid, multiplies )
 
   // AddOp and MulOp extraction provided by Peter Zhang
   template <typename SemiringT>

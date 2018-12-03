@@ -24,11 +24,11 @@ namespace graphblas
 namespace algorithm
 {
   // Use float for now for both v and A
-  float gc( Vector<int>*         v,
-            const Matrix<float>* A,
-            int                  seed,
-            int                  max_colors,
-            Descriptor*          desc )
+  float gc( Vector<int>*       v,
+            const Matrix<int>* A,
+            int                seed,
+            int                max_colors,
+            Descriptor*        desc )
   {
     Index A_nrows;
     CHECK( A->nrows(&A_nrows) );
@@ -38,14 +38,20 @@ namespace algorithm
     CHECK( v->fill(0) );
 
     // Frontier vector (f)
-    Vector<float> f(A_nrows);
+    Vector<int> f(A_nrows);
 
     // Weight vectors (w)
-    Vector<float> w(A_nrows);
-    CHECK( w.fill(0.f) );
+    Vector<int> w(A_nrows);
+    CHECK( w.fill(0) );
+
+    // Temp weight vector (temp_w)
+    Vector<int> temp_w(A_nrows);
+    CHECK( temp_w.fill(0) );
+    Vector<int> temp_w2(A_nrows);
+    CHECK( temp_w2.fill(0) );
 
     // Neighbor max (m)
-    Vector<float> m(A_nrows);
+    Vector<int> m(A_nrows);
 
     // Neighbor color (n)
     Vector<int> n(A_nrows);
@@ -64,12 +70,13 @@ namespace algorithm
     setEnv("GRB_SEED", seed);
 
     desc->set(GrB_BACKEND, GrB_SEQUENTIAL);
-    apply<float,float,float>(&w, GrB_NULL, GrB_NULL, set_random<float>(), &w, desc);
+    apply<int, int, int>(&w, GrB_NULL, GrB_NULL, set_random<int>(), &w, desc);
     desc->set(GrB_BACKEND, GrB_CUDA);
 
-    float iter = 1;
-    float succ = 0.f;
-    int   min_color = 0;
+    int  iter = 1;
+    int  succ = 0;
+    int  min_color = 0;
+    bool try_again = true;
     Index unvisited = A_nrows;
     backend::GpuTimer gpu_tight;
 
@@ -96,37 +103,56 @@ namespace algorithm
               << unvisited << ", " << vxm_mode << ", "
               << gpu_tight.ElapsedMillis() << "\n";
         }
-        unvisited -= (int)succ;
+        unvisited -= succ;
         gpu_tight.Start();
       }
       
       // find max of neighbors
-      vxm<float, float, float, float>(&m, &w, GrB_NULL, 
-          MaximumMultipliesSemiring<float>(), &w, A, desc);
+      vxm<int, int, int, int>(&m, &w, GrB_NULL, 
+          MaximumMultipliesSemiring<int>(), &w, A, desc);
 
       // find all largest nodes that are uncolored
-      eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,
-          PlusGreaterSemiring<float>(), &w, &m, desc);
+      //eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,
+      //    PlusGreaterSemiring<float>(), &w, &m, desc);
+      eWiseAdd<int, int, int, int>(&f, GrB_NULL, GrB_NULL,
+          GreaterPlusSemiring<int>(), &w, &m, desc);
 
       // stop when frontier is empty
-      reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &f, desc);
+      reduce<int, int>(&succ, GrB_NULL, PlusMonoid<int>(), &f, desc);
 
       if (succ == 0)
-        break;
+      {
+        if (!try_again)
+          break;
+        else
+          try_again = false;
+
+        /*desc->set(GrB_BACKEND, GrB_SEQUENTIAL);
+        apply<float,float,float>(&temp_w, GrB_NULL, GrB_NULL, set_random<float>(), &temp_w, desc);
+        desc->set(GrB_BACKEND, GrB_CUDA);
+
+        CHECK( w.print() );
+        eWiseMult<float, float, float, float>(&temp_w2, GrB_NULL, GrB_NULL,
+            PlusMultipliesSemiring<float>(), &w, &temp_w, desc);
+        w.dup(&temp_w2);
+        CHECK( w.print() );
+
+        continue;*/
+      }
 
       // find neighbors of frontier
-      vxm<float, int, float, float>(&m, v, GrB_NULL,
-          LogicalOrAndSemiring<float>(), &f, A, desc);
+      vxm<int, int, int, int>(&m, v, GrB_NULL,
+          LogicalOrAndSemiring<int>(), &f, A, desc);
 
       // get color
-      eWiseMult<int, float, float, int>(&n, GrB_NULL, GrB_NULL,
-          PlusMultipliesSemiring<float, int, int>(), &m, v, desc);
+      eWiseMult<int, int, int, int>(&n, GrB_NULL, GrB_NULL,
+          PlusMultipliesSemiring<int, int, int>(), &m, v, desc);
 
       // prepare dense array
       CHECK( d.fill(0) );
 
       // scatter nodes into a dense array
-      scatter<int, float, int, int>(&d, GrB_NULL, &n, (int)max_colors, desc);
+      scatter<int, int, int, int>(&d, GrB_NULL, &n, (int)max_colors, desc);
 
       // TODO(@ctcyang): this eWiseMult and reduce could be changed into single
       // reduce with argmin Monoid
@@ -140,10 +166,10 @@ namespace algorithm
           &min_array, desc);
 
       // assign new color
-      assign<int, float>(v, &f, GrB_NULL, min_color, GrB_ALL, A_nrows, desc);
+      assign<int, int>(v, &f, GrB_NULL, min_color, GrB_ALL, A_nrows, desc);
 
       // get rid of colored nodes in candidate list
-      assign<float, float>(&w, &f, GrB_NULL, (float)0.f, GrB_ALL, A_nrows,
+      assign<int, int>(&w, &f, GrB_NULL, (int)0, GrB_ALL, A_nrows,
           desc);
 
       iter++;
@@ -151,10 +177,18 @@ namespace algorithm
         std::cout << "succ: " << succ << " " << (int)succ << std::endl;
       if (iter > desc->descriptor_.max_niter_)
         break;
-    } while (succ > 0);
+    } while (true);
+    //} while (succ > 0);
     if( desc->descriptor_.timing_>0 )
     {
       gpu_tight.Stop();
+      v->vector_.dense_.gpuToCpu(true);
+      w.vector_.dense_.gpuToCpu(true);
+      for (int i = 0; i < A_nrows; ++i)
+      {
+        if (v->vector_.dense_.h_val_[i] == 0)
+          std::cout << i << " " << w.vector_.dense_.h_val_[i] << std::endl;
+      }
       std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
           "push" : "pull";
       if (desc->descriptor_.timing_ == 2)
@@ -163,6 +197,7 @@ namespace algorithm
             << gpu_tight.ElapsedMillis() << "\n";
       return gpu_tight.ElapsedMillis();
     }
+    //graphblas::backend::printDevice("colors", v->vector_.dense_.d_val_, A_nrows, false);
     return 0.f;
   }
 

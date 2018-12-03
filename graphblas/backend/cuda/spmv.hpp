@@ -53,7 +53,7 @@ namespace backend
     // Transpose (default is CSR):
     const Index* A_csrRowPtr = (use_tran) ? A->d_cscColPtr_ : A->d_csrRowPtr_;
     const Index* A_csrColInd = (use_tran) ? A->d_cscRowInd_ : A->d_csrColInd_;
-    const T*     A_csrVal    = (use_tran) ? A->d_cscVal_    : A->d_csrVal_;
+    const a*     A_csrVal    = (use_tran) ? A->d_cscVal_    : A->d_csrVal_;
     const Index  A_nrows     = (use_tran) ? A->ncols_       : A->nrows_;
 
     if (desc->debug())
