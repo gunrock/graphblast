@@ -46,8 +46,8 @@ namespace backend
 
     for( ; row < u_nvals; row += gridDim.x * blockDim.x )
     {
-      Index ind = __ldg(u_ind + row);
-      M     val = __ldg(mask  + ind);
+      Index ind = u_ind[row];
+      M     val = mask[ind];
       if (val == 0)
         u_val[row] = identity;
     }
@@ -63,7 +63,7 @@ namespace backend
 
     for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
     {
-      U val = __ldg( u_val+row );
+      U val = u_val[row];
       if( val==identity )
         d_flag[row] = 0;
       else
@@ -85,9 +85,9 @@ namespace backend
 
     for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
     {
-      Index ind     = __ldg( u_ind +row );
-      U     val     = __ldg( u_val +row );
-      Index scatter = __ldg( d_scan+row );
+      Index ind     = u_ind[row];
+      U     val     = u_val[row];
+      Index scatter = d_scan[row];
 
       if(val!=identity)
       {
@@ -110,9 +110,9 @@ namespace backend
 
     for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
     {
-      Index ind     = __ldg( u_ind +row );
-      U val         = __ldg( u_val+row );
-      Index scatter = __ldg( d_scan+row );
+      Index ind     = u_ind[row];
+      U val         = u_val[row];
+      Index scatter = d_scan[row];
 
       if( val==identity )
       {
@@ -133,8 +133,8 @@ namespace backend
 
     for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
     {
-      Index scatter = __ldg( d_scan+row );
-      U val         = __ldg( u_val+row );
+      Index scatter = d_scan[row];
+      U val         = u_val[row];
 
       if( val==identity )
       {
@@ -156,8 +156,8 @@ namespace backend
 
     for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
     {
-      Index scatter = __ldg( d_scan+row );
-      U val         = __ldg( u_val+row );
+      Index scatter = d_scan[row];
+      U val         = u_val[row];
 
       if( val!=identity )
       {
@@ -177,10 +177,9 @@ namespace backend
 
     if( gid<u_nvals )
     {
-      Index row   = __ldg( u_ind+gid );
-
-      Index start = __ldg( A_csrRowPtr+row   );
-      Index end   = __ldg( A_csrRowPtr+row+1 );
+      Index row   = u_ind[gid];
+      Index start = A_csrRowPtr[row];
+      Index end   = A_csrRowPtr[row + 1];
       length      = end-start;
 
       d_temp_nvals[gid] = length;
@@ -197,8 +196,8 @@ namespace backend
 
     if( gid<u_nvals )
     {
-      Index   row = __ldg( u_ind+gid );
-      Index start = __ldg( A_csrRowPtr+row );
+      Index   row = u_ind[gid];
+      Index start = A_csrRowPtr[row];
       d_temp_nvals[gid] = start;
     }
   }
@@ -214,7 +213,7 @@ namespace backend
 
     if( gid<u_nvals )
     {
-      Index ind = __ldg(u_ind+gid);
+      Index ind = u_ind[gid];
 
       w_val[ind] = val;
     }
@@ -231,8 +230,8 @@ namespace backend
 
     if( gid<u_nvals )
     {
-      Index ind = __ldg(u_ind+gid);
-      T     val = __ldg(u_val+gid);
+      Index ind = u_ind[gid];
+      T     val = u_val[gid];
 
       w_val[ind] = val;
     }

@@ -25,8 +25,8 @@ int main( int argc, char** argv )
 
   // Load A
   std::cerr << "loading A" << std::endl;
-  readMtx("../data/small/chesapeake.mtx", a_row_indices, a_col_indices,
-      a_values, a_num_rows, a_num_cols, a_num_edges, 0, false, &dat_name);
+  readMtx("../data/small/chesapeake.mtx", &a_row_indices, &a_col_indices,
+      &a_values, &a_num_rows, &a_num_cols, &a_num_edges, 0, false, &dat_name);
   graphblas::Matrix<float> a(a_num_rows, a_num_cols);
   a.build(&a_row_indices, &a_col_indices, &a_values, a_num_edges, GrB_NULL,
      dat_name);
@@ -34,8 +34,8 @@ int main( int argc, char** argv )
 
   // Load B
   std::cerr << "loading B" << std::endl;
-  readMtx("../data/small/chesapeake.mtx", b_row_indices, b_col_indices,
-      b_values, b_num_rows, b_num_cols, b_num_edges, 0, false, &dat_name);
+  readMtx("../data/small/chesapeake.mtx", &b_row_indices, &b_col_indices,
+      &b_values, &b_num_rows, &b_num_cols, &b_num_edges, 0, false, &dat_name);
   graphblas::Matrix<float> b(b_num_rows, b_num_cols);
   b.build(&b_row_indices, &b_col_indices, &b_values, b_num_edges, GrB_NULL,
       dat_name);

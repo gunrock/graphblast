@@ -28,21 +28,21 @@ namespace backend
     {
       bool discoverable = false;
 
-      M val = __ldg( mask_val+row );
+      M val = mask_val[row];
       if( UseScmp^(!(bool)val) )
       {
       }
       else
       {
-        Index row_start   = __ldg( A_csrRowPtr+row   );
-        Index row_end     = __ldg( A_csrRowPtr+row+1 );
+        Index row_start   = A_csrRowPtr[row];
+        Index row_end     = A_csrRowPtr[row + 1];
 
         for( ; row_start<row_end; row_start++ )
         {
-          Index col_ind   = __ldg( A_csrColInd+row_start );
+          Index col_ind   = A_csrColInd[row_start];
           if( UseOpReuse )
           {
-            val           = __ldg( mask_val+col_ind );
+            val           = mask_val[col_ind];
             if( ((bool)val) )
             {
               discoverable = true;
@@ -52,7 +52,7 @@ namespace backend
           }
           else
           {
-            val           = __ldg( u_val+col_ind );
+            val           = u_val[col_ind];
             // Early exit if visited parent is discovered
             if( val!=identity )
             {
@@ -95,23 +95,23 @@ namespace backend
     {
       bool discoverable = false;
 
-      M val = __ldg( mask_val+row );
+      M val = mask_val[row];
       if( UseScmp^(val==mask_identity) )
       {
         stats[row] = 0;
       }
       else
       {
-        Index row_start   = __ldg( A_csrRowPtr+row   );
-        Index row_end     = __ldg( A_csrRowPtr+row+1 );
+        Index row_start   = A_csrRowPtr[row];
+        Index row_end     = A_csrRowPtr[row + 1];
         Index row_start2  = row_start;
 
         for( ; row_start<row_end; row_start++ )
         {
-          Index col_ind   = __ldg( A_csrColInd+row_start );
+          Index col_ind   = A_csrColInd[row_start];
           if( UseOpReuse )
           {
-            val           = __ldg( mask_val+col_ind );
+            val           = mask_val[col_ind];
             if( val!=mask_identity )
             {
               discoverable = true;
@@ -126,7 +126,7 @@ namespace backend
           }
           else
           {
-            val           = __ldg( u_val+col_ind );
+            val           = u_val[col_ind];
             // Early exit if visited parent is discovered
             if( val!=identity )
             {

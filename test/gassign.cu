@@ -28,8 +28,8 @@ int main( int argc, char** argv )
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
-    readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, 0, DEBUG );
+    readMtx(argv[argc-1], &row_indices, &col_indices, &values, &nrows, &ncols, 
+        &nvals, 0, DEBUG);
   }
 
   // Vector mask

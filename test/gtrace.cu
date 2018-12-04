@@ -56,7 +56,8 @@ void testTraceMtx( char const* mtx, float correct )
   graphblas::Descriptor desc;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, true);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+     true);
 
   graphblas::Matrix<float> adj(nrows, ncols);
   err = adj.build( &row_indices, &col_indices, &values, nvals, GrB_NULL );

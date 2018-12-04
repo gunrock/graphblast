@@ -24,17 +24,17 @@ namespace backend
 
     for( ; col<A_nrows; col+=gridDim.x*blockDim.x )
     {
-      U     val       = __ldg( u_val+col );
+      U     val       = u_val[col];
       if( val==identity )
         continue;
-      Index row_start = __ldg( A_csrRowPtr+col   );
-      Index row_end   = __ldg( A_csrRowPtr+col+1 );
+      Index row_start = A_csrRowPtr[col];
+      Index row_end   = A_csrRowPtr[col + 1];
 
       //printf("%d: %d\n", threadIdx.x, row_start);
       for( ; row_start<row_end; row_start++ )
       {
-        Index col_ind = __ldg( A_csrColInd+row_start );
-        M     m_val   = __ldg( mask_val+col_ind );
+        Index col_ind = A_csrColInd[row_start];
+        M     m_val   = mask_val[col_ind];
 
         //printf("%d: %d = %d\n", threadIdx.x, col_ind, UseScmp^((bool)m_val));
         if( UseScmp^((bool)m_val) )
@@ -56,7 +56,7 @@ namespace backend
 
     for (; row < w_nvals; row += gridDim.x * blockDim.x)
     {
-      M val = __ldg(mask_val + row);
+      M val = mask_val[row];
       //printf("ind: %d, use_scmp: %d, mask: %d, UseScmp ^ (!(val)): %d\n", row, UseScmp, val, UseScmp ^ (val == 0));
       if (UseScmp ^ (!(bool)val))
         w_val[row] = identity;
@@ -117,15 +117,15 @@ namespace backend
 
     for (; row < u_nvals; row += gridDim.x * blockDim.x)
     {
-      Index ind = __ldg( u_ind+row );
-      U     val = __ldg( u_val+row );
-      Index row_start   = __ldg( A_csrRowPtr+ind   );
-      Index row_end     = __ldg( A_csrRowPtr+ind+1 );
+      Index ind = u_ind[row];
+      U     val = u_val[row];
+      Index row_start  = A_csrRowPtr[ind];
+      Index row_end    = A_csrRowPtr[ind+1];
 
       for (; row_start < row_end; row_start++)
       {
-        Index dest_ind = __ldg( A_csrColInd+row_start );
-        a     dest_val = __ldg( A_csrVal   +row_start );
+        Index dest_ind = A_csrColInd[row_start];
+        a     dest_val = A_csrVal[row_start];
 
         atomic( w_val+dest_ind, mul_op(val, dest_val), add_op );
       }
@@ -153,15 +153,15 @@ namespace backend
 
     for (; row < u_nvals; row += gridDim.x * blockDim.x)
     {
-      Index ind = __ldg( u_ind+row );
-      U     val = __ldg( u_val+row );
-      Index row_start   = __ldg( A_csrRowPtr+ind   );
-      Index row_end     = __ldg( A_csrRowPtr+ind+1 );
+      Index ind = u_ind[row];
+      U     val = u_val[row];
+      Index row_start   = A_csrRowPtr[ind];
+      Index row_end     = A_csrRowPtr[ind + 1];
 
       for (; row_start < row_end; row_start++)
       {
-        Index dest_ind = __ldg( A_csrColInd+row_start );
-        a     dest_val = __ldg( A_csrVal   +row_start );
+        Index dest_ind = A_csrColInd[row_start];
+        a     dest_val = A_csrVal[row_start];
 
         atomicAdd( w_val+dest_ind, mul_op(val, dest_val) );
       }
@@ -189,15 +189,15 @@ namespace backend
 
     for (; row < u_nvals; row += gridDim.x * blockDim.x)
     {
-      Index ind = __ldg( u_ind+row );
-      U     val = __ldg( u_val+row );
-      Index row_start   = __ldg( A_csrRowPtr+ind   );
-      Index row_end     = __ldg( A_csrRowPtr+ind+1 );
+      Index ind = u_ind[row];
+      U     val = u_val[row];
+      Index row_start  = A_csrRowPtr[ind];
+      Index row_end    = A_csrRowPtr[ind + 1];
 
       for (; row_start < row_end; row_start++)
       {
-        Index dest_ind = __ldg( A_csrColInd+row_start );
-        a     dest_val = __ldg( A_csrVal   +row_start );
+        Index dest_ind = A_csrColInd[row_start];
+        a     dest_val = A_csrVal[row_start];
 
         w_val[dest_ind] = 1;
       }

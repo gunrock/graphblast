@@ -29,8 +29,8 @@ void testVxmDenseSparse( char const*               mtx,
   char* dat_name;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, 
-      nvals, 0, false, &dat_name);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, 
+      &nvals, 0, false, &dat_name);
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
@@ -238,7 +238,7 @@ BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<float> vec(11, 2.f);
   testVxmDenseSparse( "data/small/test_cc.mtx", vec, 0, vm );
 }
@@ -248,7 +248,7 @@ BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<float> vec{0, 13,7, 0, 1, 0, 0, 0, 0, 0,
                          0, 0, 0, 0, 0, 0, 4, 4, 5, 4};
   testVxmDenseSparse( "data/small/test_sgm.mtx", vec, 0, vm );
@@ -259,7 +259,7 @@ BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<graphblas::Index> vec_ind{0, 1, 4, 6, 8, 10};
   std::vector<float>            vec_val{1.,2.,3.,4.,3.,10.};
   testVxmSparseSparse( "data/small/test_cc.mtx", vec_ind, vec_val, 0, vm );
@@ -270,7 +270,7 @@ BOOST_FIXTURE_TEST_CASE( dup4, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<graphblas::Index> vec_ind{1,  2, 4, 16, 17, 18, 19};
   std::vector<float>            vec_val{13.,7.,1.,4., 4., 5., 4.};
   testVxmSparseSparse( "data/small/test_sgm.mtx", vec_ind, vec_val, 0, vm );
@@ -281,7 +281,7 @@ BOOST_FIXTURE_TEST_CASE( dup5, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<graphblas::Index> vec_ind{ 0, 1, 4, 6, 8, 10};
   std::vector<float>            vec_val{ 1.,2.,3.,4.,3.,10.};
   std::vector<float>            mask_val{1.,0.,0.,1.,0., 1.,1.,1.,1.,1.};
@@ -294,7 +294,7 @@ BOOST_FIXTURE_TEST_CASE( dup6, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<graphblas::Index> vec_ind{ 1,  2, 4, 16, 17, 18, 19};
   std::vector<float>            vec_val{ 13.,7.,1.,4., 4., 5., 4.};
   std::vector<float>            mask_val{1., 1.,0.,1., 0., 0., 1., 0., 0., 1.,

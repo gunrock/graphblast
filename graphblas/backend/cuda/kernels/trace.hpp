@@ -26,10 +26,10 @@ namespace backend
 
     if (row < A_nrows)
     {
-      Index A_row_start = __ldg(A_csrRowPtr + row);
-      Index A_row_end   = __ldg(A_csrRowPtr + row + 1);
-      Index B_row_start = __ldg(B_csrRowPtr + row);
-      Index B_row_end   = __ldg(B_csrRowPtr + row + 1);
+      Index A_row_start = A_csrRowPtr[row];
+      Index A_row_end   = A_csrRowPtr[row + 1];
+      Index B_row_start = B_csrRowPtr[row];
+      Index B_row_end   = B_csrRowPtr[row + 1];
 
       Index A_col = -1;
       T A_val     = identity;
@@ -40,14 +40,14 @@ namespace backend
       {
         if (jj < A_row_end)
         {
-          A_col = __ldg(A_csrColInd + jj);
-          A_val = __ldg(A_csrVal    + jj);
+          A_col = A_csrColInd[jj];
+          A_val = A_csrVal[jj];
 
           Index B_ind = binarySearch(B_csrColInd, A_col, B_row_start, 
               B_row_end);
           Index B_val     = identity;
           if (B_ind != -1)
-            B_val = __ldg(B_csrVal + B_ind);
+            B_val = B_csrVal[B_ind];
 
           sum = add_op(sum, mul_op(A_val, B_val));
         }
@@ -89,8 +89,8 @@ namespace backend
 
     if (row < A_nrows)
     {
-      Index row_start = __ldg(A_csrRowPtr + row);
-      Index row_end   = __ldg(A_csrRowPtr + row + 1);
+      Index row_start = A_csrRowPtr[row];
+      Index row_end   = A_csrRowPtr[row + 1];
 
       Index A_col = -1;
       T A_val     = identity;
@@ -101,17 +101,17 @@ namespace backend
       {
         if (jj < row_end)
         {
-          A_col = __ldg(A_csrColInd + jj);
-          A_val = __ldg(A_csrVal    + jj);
+          A_col = A_csrColInd[jj];
+          A_val = A_csrVal   [jj];
 
-          Index B_row_start = __ldg(B_csrRowPtr + A_col);
-          Index B_row_end   = __ldg(B_csrRowPtr + A_col + 1);
+          Index B_row_start = B_csrRowPtr[A_col];
+          Index B_row_end   = B_csrRowPtr[A_col + 1];
 
           Index B_col_ind = binarySearch(B_csrColInd, warp_id, B_row_start, 
               B_row_end);
           Index B_val     = identity;
           if (B_col_ind != -1)
-            B_val = __ldg(B_csrVal + B_col_ind);
+            B_val = B_csrVal[B_col_ind];
 
           sum = add_op(sum, mul_op(A_val, B_val));
         }

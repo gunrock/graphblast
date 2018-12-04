@@ -25,10 +25,10 @@ namespace backend
     {
       for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
       {
-        Index ind = __ldg( u_ind   +row );
+        Index ind = u_ind[row];
         if( UseMask )
         {
-          M m_val = __ldg( mask_val+ind );
+          M m_val = mask_val[ind];
 
           // val is assigned if either:
           // 1) use structural complement and m_val is zero
@@ -72,10 +72,10 @@ namespace backend
     {
       for( ; row<u_nvals; row+=gridDim.x*blockDim.x )
       {
-        Index ind = __ldg( u_ind   +row );
+        Index ind = u_ind[row];
         if( UseMask )
         {
-          M m_val = __ldg( mask_val+ind );
+          M m_val = mask_val[ind];
 
           // val is assigned if either:
           // 1) use structural complement and m_val is zero

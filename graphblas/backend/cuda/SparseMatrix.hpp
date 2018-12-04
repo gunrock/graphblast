@@ -339,15 +339,13 @@ namespace backend
   template <typename T>
   Info SparseMatrix<T>::build( char* dat_name )
   {
-    if (dat_name != NULL && exists(dat_name))
-    {
+    if (dat_name != NULL && exists(dat_name)) {
       // The size of the file in bytes is in results.st_size
       // -unserialize vector
       std::ifstream ifs(dat_name, std::ios::in | std::ios::binary);
-      if (ifs.fail())
+      if (ifs.fail()) {
         std::cout << "Error: Unable to open file for reading!\n";
-      else
-      {
+      } else {
         printf("Reading %s\n", dat_name);
         char* pch = strstr(dat_name, ".ud.");
         if (pch == NULL)
@@ -356,7 +354,7 @@ namespace backend
           symmetric_ = true;
 
         ifs.read( reinterpret_cast<char*>(&nrows_), sizeof(Index));
-        if( ncols_ != nrows_ )
+        if (ncols_ != nrows_)
           std::cout << "Error: nrows not equal to ncols!\n";
         ifs.read( reinterpret_cast<char*>(&nvals_), sizeof(Index) );
         CHECK( allocateCpu() );      
@@ -367,20 +365,17 @@ namespace backend
         ifs.read( reinterpret_cast<char*>(h_csrColInd_),
             nvals_*sizeof(Index) );
 
-        for( Index i=0; i<nvals_; i++ )
+        for (Index i = 0; i < nvals_; i++)
           h_csrVal_[i] = static_cast<T>(1);
 
-        if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY)
-        {
+        if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY) {
           free(h_cscColPtr_);
           free(h_cscRowInd_);
           free(h_cscVal_);
           h_cscColPtr_ = h_csrRowPtr_;
           h_cscRowInd_ = h_csrColInd_;
           h_cscVal_    = h_csrVal_;
-        }
-        else
-        {
+        } else {
           csr2csc(h_cscColPtr_, h_cscRowInd_, h_cscVal_,
                   h_csrRowPtr_, h_csrColInd_, h_csrVal_, nrows_, ncols_);
         }
@@ -388,9 +383,7 @@ namespace backend
         CHECK( cpuToGpu() );
       }
       free(dat_name);
-    }
-    else
-    {
+    } else {
       std::cout << "Error: Unable to read file!\n";
     }
 

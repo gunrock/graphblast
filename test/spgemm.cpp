@@ -20,7 +20,7 @@ int main( int argc, char** argv )
   // Parse arguments
   namespace po = boost::program_options;
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   int TA, TB, NT, NUM_ITER, DEVICE;
   bool ROW_MAJOR, DEBUG, SPLIT;
   if( vm.count("ta") )

@@ -55,8 +55,8 @@ namespace backend
       W     w_t = 0;
       if (m_t != 0)
       {
-        U      u_t = __ldg(u_val + ind);
-        V      v_t = __ldg(v_val + ind);
+        U      u_t = u_val[ind];
+        V      v_t = v_val[ind];
         w_t        = mul_op(u_t, v_t);
       }
       w_ind[row] = ind;
@@ -113,12 +113,12 @@ namespace backend
     Index row = blockIdx.x * blockDim.x + threadIdx.x;
     for (; row < u_nvals; row += blockDim.x * gridDim.x)
     {
-      Index ind = __ldg(u_ind + row);
-      U     u_t = __ldg(u_val + row);
+      Index ind = u_ind[row];
+      U     u_t = u_val[row];
 
       if (u_t != identity)
       {
-        V      v_t = __ldg(v_val + ind);
+        V      v_t = v_val[ind];
         w_val[row] = mul_op(u_t, v_t);
       }
       else
@@ -157,14 +157,14 @@ namespace backend
 
       if (m_t != 0)
       {
-        V     v_t = __ldg(v_val + ind);
+        V     v_t = v_val[ind];
 
         if (v_t != identity)
         {
           Index u_found = binarySearch(u_ind, ind, 0, u_nvals);
           if (u_found != -1)
           {
-            U u_t = __ldg(u_val + u_found);
+            U u_t = u_val[u_found];
             w_t   = mul_op(u_t, v_t);
           }
         }

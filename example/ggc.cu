@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-//#include <cuda_profiler_api.h>
+// #include <cuda_profiler_api.h>
 
 #include <boost/program_options.hpp>
 
@@ -19,8 +19,7 @@
 bool debug_;
 bool memory_;
 
-int main( int argc, char** argv )
-{
+int main(int argc, char** argv) {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
   std::vector<int> values;
@@ -41,8 +40,8 @@ int main( int argc, char** argv )
   if (argc < 2) {
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
-  } else { 
-    parseArgs(argc, argv, vm);
+  } else {
+    parseArgs(argc, argv, &vm);
     debug      = vm["debug"    ].as<bool>();
     transpose  = vm["transpose"].as<bool>();
     mtxinfo    = vm["mtxinfo"  ].as<bool>();
@@ -51,29 +50,29 @@ int main( int argc, char** argv )
     source     = vm["source"   ].as<int>();
     max_colors = vm["maxcolors"].as<int>();
 
-    // This is an imperfect solution, because this should happen in 
+    // This is an imperfect solution, because this should happen in
     // desc.loadArgs(vm) instead of application code!
-    // TODO: fix this
-    readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, directed, mtxinfo, &dat_name );
+    // TODO(@ctcyang): fix this
+    readMtx(argv[argc-1], &row_indices, &col_indices, &values, &nrows, &ncols,
+        &nvals, directed, mtxinfo, &dat_name);
   }
 
   // Descriptor desc
   graphblas::Descriptor desc;
-  CHECK( desc.loadArgs(vm) );
-  if( transpose )
-    CHECK( desc.toggle(graphblas::GrB_INP1) );
+  CHECK(desc.loadArgs(vm));
+  if (transpose)
+    CHECK(desc.toggle(graphblas::GrB_INP1));
 
   // Matrix A
   graphblas::Matrix<int> a(nrows, ncols);
   values.clear();
   values.resize(nvals, 1.f);
-  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
-      dat_name) );
-  CHECK( a.nrows(&nrows) );
-  CHECK( a.ncols(&ncols) );
-  CHECK( a.nvals(&nvals) );
-  if( debug ) CHECK( a.print() );
+  CHECK(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
+      dat_name));
+  CHECK(a.nrows(&nrows));
+  CHECK(a.ncols(&ncols));
+  CHECK(a.nvals(&nvals));
+  if (debug) CHECK(a.print());
 
   // Vector v
   graphblas::Vector<int> v(nrows);
@@ -94,22 +93,21 @@ int main( int argc, char** argv )
   warmup.Stop();
 
   std::vector<int> h_gc_gpu;
-  CHECK( v.extractTuples(&h_gc_gpu, &nrows) );
+  CHECK(v.extractTuples(&h_gc_gpu, &nrows));
   graphblas::algorithm::verifyGc(&a, h_gc_gpu);
 
   // Benchmark
   graphblas::Vector<int> y(nrows);
   CpuTimer vxm_gpu;
-  //cudaProfilerStart();
+  // cudaProfilerStart();
   vxm_gpu.Start();
   float tight = 0.f;
   float val;
-  for( int i=0; i<niter; i++ )
-  {
+  for (int i = 0; i < niter; i++) {
     val = graphblas::algorithm::gc(&y, &a, source, max_colors, &desc);
     tight += val;
   }
-  //cudaProfilerStop();
+  // cudaProfilerStop();
   vxm_gpu.Stop();
 
   float flop = 0;
@@ -120,10 +118,9 @@ int main( int argc, char** argv )
   std::cout << "tight, " << tight/niter << "\n";
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
-  if( niter )
-  {
+  if (niter) {
     std::vector<int> h_gc_gpu2;
-    graphblas::algorithm::verifyGc( &a, h_gc_gpu );
+    graphblas::algorithm::verifyGc(&a, h_gc_gpu);
   }
 
   return 0;

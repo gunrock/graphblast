@@ -24,7 +24,7 @@ namespace backend
       {
         if( UseMask )
         {
-          M m_val = __ldg( mask_val+row );
+          M m_val = mask_val[row];
 
           // val is assigned if either:
           // 1) UseScmp is not selected and m_val is zero
@@ -80,7 +80,7 @@ namespace backend
         {
           for( ; row<mask_nvals; row+=gridDim.x*blockDim.x )
           {
-            Index ind  = __ldg( mask_ind   +row );
+            Index ind  = mask_ind[row];
             u_val[ind] = val;
           }
         }
