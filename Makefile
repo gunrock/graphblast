@@ -33,4 +33,4 @@ clean:
 	rm -f bin/gbfs bin/gsssp bin/glgc bin/ggc
 
 lint:
-	scripts/lint.py graphblas cpp $(GRB_DIR)example $(GRB_DIR)graphblas $(GRB_DIR)test
+	scripts/lint.py graphblas cpp $(GRB_DIR)example $(GRB_DIR)graphblas $(GRB_DIR)test --exclude_path $(GRB_DIR)graphblas/backend/sequential

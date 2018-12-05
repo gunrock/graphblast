@@ -1,6 +1,8 @@
 #ifndef GRAPHBLAS_OPERATIONS_HPP_
 #define GRAPHBLAS_OPERATIONS_HPP_
 
+#include <vector>
+
 #define __GRB_BACKEND_OPERATIONS_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/operations.hpp>
 #include __GRB_BACKEND_OPERATIONS_HEADER
 #undef __GRB_BACKEND_OPERATIONS_HEADER
@@ -46,10 +48,12 @@ Info mxm(Matrix<c>*       C,
       &B->matrix_, desc_t);
 }
 
-// Vector-matrix product
-//   w^T = w^T + mask^T .* (u^T * A)    +: accum
-//                                      *: op
-//                                     .*: Boolean and
+/*!
+ * Vector-matrix product
+ *   w^T = w^T + mask^T .* (u^T * A)    +: accum
+ *                                      *: op
+ *                                     .*: Boolean and
+ */
 template <typename W, typename M, typename U, typename a,
           typename BinaryOpT, typename SemiringT>
 Info vxm(Vector<W>*       w,
@@ -68,7 +72,7 @@ Info vxm(Vector<W>*       w,
   CHECK(u->nvals(&u_nvals));
   if (u_nvals == 0)
     return GrB_UNINITIALIZED_OBJECT;
-  
+
   // Case 1: u*A
   CHECK(checkDimRowSize(A,  u,    "A.nrows != u.size"));
   CHECK(checkDimColSize(A,  w,    "A.ncols != w.size"));
@@ -82,205 +86,173 @@ Info vxm(Vector<W>*       w,
       &A->matrix_, desc_t);
 }
 
-// Matrix-vector product
-//   w = w + mask .* (A * u)    +: accum
-//                              *: op
-//                             .*: Boolean and
+/*!
+ * Matrix-vector product
+ *   w = w + mask .* (A * u)    +: accum
+ *                              *: op
+ *                             .*: Boolean and
+ */
 template <typename W, typename M, typename a, typename U,
           typename BinaryOpT, typename SemiringT>
-Info mxv( Vector<W>*       w,
-          const Vector<M>* mask,
-          BinaryOpT        accum,
-          SemiringT        op,
-          const Matrix<a>* A,
-          const Vector<U>* u,
-          Descriptor*      desc )
-{
+Info mxv(Vector<W>*       w,
+         const Vector<M>* mask,
+         BinaryOpT        accum,
+         SemiringT        op,
+         const Matrix<a>* A,
+         const Vector<U>* u,
+         Descriptor*      desc) {
   // Null pointer check
-  // TODO: need way to check op is not empty now that op is no longer pointer
-  if( w==NULL || u==NULL || A==NULL || desc==NULL )
+  // TODO(@ctcyang): need way to check op is not empty now that op is no longer
+  // pointer
+  if (w == NULL || u == NULL || A == NULL || desc == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
   // Dimension check
   Index u_nvals = 0;
-  CHECK( u->nvals(&u_nvals) );
+  CHECK(u->nvals(&u_nvals));
   if (u_nvals == 0)
-  {
     return GrB_UNINITIALIZED_OBJECT;
-  }
-  //CHECK( checkDimVecNvals( u, "u.nvals == 0" ) );
 
   // Case 1: A *u
-  CHECK( checkDimColSize(  A, u,    "A.ncols != u.size"    ) );
-  CHECK( checkDimRowSize(  A, w,    "A.nrows != w.size"    ) );
-  CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
+  CHECK(checkDimColSize(A,  u,    "A.ncols != u.size"));
+  CHECK(checkDimRowSize(A,  w,    "A.nrows != w.size"));
+  CHECK(checkDimSizeSize(w, mask, "w.size  != mask.size"));
 
   // Case 2: AT*u
-  const backend::Vector<M>*        mask_t = (mask==NULL ) ? NULL 
-      : &mask->vector_;
-  backend::Descriptor*             desc_t = (desc==NULL ) ? NULL 
-      : &desc->descriptor_;
+  const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
-  return backend::mxv<W,U,a,M>( &w->vector_, mask_t, accum, op, &A->matrix_,
-      &u->vector_, desc_t );
+  return backend::mxv<W, U, a, M>(&w->vector_, mask_t, accum, op, &A->matrix_,
+      &u->vector_, desc_t);
 }
 
-// Element-wise multiply of two vectors
-//   w = w + mask .* (u .* v)    +: accum
-//                 2     1    1).*: op (semiring multiply)
-//                            2).*: Boolean and
+/*!
+ * Element-wise multiply of two vectors
+ *   w = w + mask .* (u .* v)    +: accum
+ *                 2     1    1).*: op (semiring multiply)
+ *                            2).*: Boolean and
+ */
 template <typename W, typename M, typename U, typename V,
           typename BinaryOpT,     typename SemiringT>
-Info eWiseMult( Vector<W>*       w,
-                const Vector<M>* mask,
-                BinaryOpT        accum,
-                SemiringT        op,
-                const Vector<U>* u,
-                const Vector<V>* v,
-                Descriptor*      desc )
-{
-  // Null pointer check
-  if (w == NULL || u == NULL || v == NULL || desc == NULL)
-    return GrB_UNINITIALIZED_OBJECT;
-
-  // Dimension check
-  CHECK( checkDimSizeSize( u, v,    "u.size != v.size"    ) );
-  CHECK( checkDimSizeSize( u, mask, "u.size != mask.size" ) );
-  CHECK( checkDimSizeSize( v, mask, "v.size != mask.size" ) );
-  CHECK( checkDimSizeSize( w, mask, "w.size != mask.size" ) );
-
-  const backend::Vector<M>*  mask_t = (mask==NULL) ? NULL : &mask->vector_;
-  backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
-
-  return backend::eWiseMult( &w->vector_, mask_t, accum, op, &u->vector_, 
-      &v->vector_, desc_t );
-}
-
-// Element-wise multiply of two matrices
-//   C = C + mask .* (A .* B)    +: accum
-//                 2     1    1).*: op (semiring multiply)
-//                            2).*: Boolean and
-template <typename c, typename m, typename a, typename b,
-          typename BinaryOpT,     typename SemiringT>
-Info eWiseMult( Matrix<c>*       C,
-                const Matrix<m>* mask,
-                BinaryOpT        accum,
-                SemiringT        op,
-                const Matrix<a>* A,
-                const Matrix<b>* B,
-                Descriptor*      desc )
-{
-  // Use either op->operator() or op->mul() as the case may be
-  std::cout << "Error: eWiseMult matrix variant not implemented yet!\n";
-}
-
-// Element-wise addition of two vectors
-//   w = w + mask .* (u + v)    +: accum
-//                             .+: op (semiring add)
-//                             .*: Boolean and
-template <typename W, typename M, typename U, typename V,
-          typename BinaryOpT,     typename SemiringT>
-Info eWiseAdd( Vector<W>*       w,
+Info eWiseMult(Vector<W>*       w,
                const Vector<M>* mask,
                BinaryOpT        accum,
                SemiringT        op,
                const Vector<U>* u,
                const Vector<V>* v,
-               Descriptor*      desc )
-{
+               Descriptor*      desc) {
   // Null pointer check
   if (w == NULL || u == NULL || v == NULL || desc == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
   // Dimension check
-  CHECK( checkDimSizeSize( u, v,    "u.size != v.size"    ) );
-  CHECK( checkDimSizeSize( u, mask, "u.size != mask.size" ) );
-  CHECK( checkDimSizeSize( v, mask, "v.size != mask.size" ) );
-  CHECK( checkDimSizeSize( w, mask, "w.size != mask.size" ) );
+  CHECK(checkDimSizeSize(u, v,    "u.size != v.size"));
+  CHECK(checkDimSizeSize(u, mask, "u.size != mask.size"));
+  CHECK(checkDimSizeSize(v, mask, "v.size != mask.size"));
+  CHECK(checkDimSizeSize(w, mask, "w.size != mask.size"));
 
-  const backend::Vector<M>*  mask_t = (mask==NULL) ? NULL : &mask->vector_;
-  backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+  const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
-  return backend::eWiseAdd( &w->vector_, mask_t, accum, op, &u->vector_, 
-      &v->vector_, desc_t );
+  return backend::eWiseMult(&w->vector_, mask_t, accum, op, &u->vector_,
+      &v->vector_, desc_t);
 }
 
-// Element-wise addition of two matrices
-//   C = C + mask .* (A .+ B)    +: accum
-//                              .+: op (semiring add)
-//                              .*: Boolean and
+/*!
+ * Element-wise multiply of two matrices
+ *   C = C + mask .* (A .* B)    +: accum
+ *                 2     1    1).*: op (semiring multiply)
+ *                            2).*: Boolean and
+ */
 template <typename c, typename m, typename a, typename b,
           typename BinaryOpT,     typename SemiringT>
-Info eWiseAdd( Matrix<c>*       C,
+Info eWiseMult(Matrix<c>*       C,
                const Matrix<m>* mask,
                BinaryOpT        accum,
                SemiringT        op,
                const Matrix<a>* A,
                const Matrix<b>* B,
-               Descriptor*      desc )
-{
+               Descriptor*      desc) {
+  // Use either op->operator() or op->mul() as the case may be
+  std::cout << "Error: eWiseMult matrix variant not implemented yet!\n";
+}
+
+/*!
+ * Element-wise addition of two vectors
+ *   w = w + mask .* (u + v)    +: accum
+ *                             .+: op (semiring add)
+ *                             .*: Boolean and
+ */
+template <typename W, typename M, typename U, typename V,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseAdd(Vector<W>*       w,
+              const Vector<M>* mask,
+              BinaryOpT        accum,
+              SemiringT        op,
+              const Vector<U>* u,
+              const Vector<V>* v,
+              Descriptor*      desc) {
+  // Null pointer check
+  if (w == NULL || u == NULL || v == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  CHECK(checkDimSizeSize(u, v,    "u.size != v.size"));
+  CHECK(checkDimSizeSize(u, mask, "u.size != mask.size"));
+  CHECK(checkDimSizeSize(v, mask, "v.size != mask.size"));
+  CHECK(checkDimSizeSize(w, mask, "w.size != mask.size"));
+
+  const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::eWiseAdd(&w->vector_, mask_t, accum, op, &u->vector_,
+      &v->vector_, desc_t);
+}
+
+/*!
+ * Element-wise addition of two matrices
+ *   C = C + mask .* (A .+ B)    +: accum
+ *                              .+: op (semiring add)
+ *                              .*: Boolean and
+ */
+template <typename c, typename m, typename a, typename b,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseAdd(Matrix<c>*       C,
+              const Matrix<m>* mask,
+              BinaryOpT        accum,
+              SemiringT        op,
+              const Matrix<a>* A,
+              const Matrix<b>* B,
+              Descriptor*      desc) {
   // Use either op->operator() or op->add() as the case may be
   std::cout << "Error: eWiseAdd matrix variant not implemented yet!\n";
 }
 
+/*!
+ * Subvector extraction from vector
+ *   w = w + mask .* (u[indices])   +: accum
+ *                                 .*: Boolean and
+ */
 template <typename W, typename M, typename U,
           typename BinaryOpT>
-Info extract( Vector<W>*                w,
-              const Vector<M>*          mask,
-              BinaryOpT                 accum,
-              const Vector<U>*          u,
-              const std::vector<Index>* indices,
-              Index                     nindices,
-              Descriptor*               desc )
-{
-  std::cout << "Error: extract vector variant not implemented yet!\n";
-}
-
-template <typename c, typename m, typename a,
-          typename BinaryOpT>
-Info extract( Matrix<c>*                C,
-              const Matrix<m>*          mask,
-              BinaryOpT                 accum,
-              const Matrix<a>*          A,
-              const std::vector<Index>* row_indices,
-              Index                     nrows,
-              const std::vector<Index>* col_indices,
-              Index                     ncols,
-              Descriptor*               desc )
-{
-  std::cout << "Error: extract matrix variant not implemented yet!\n";
-}
-
-template <typename W, typename M, typename a,
-          typename BinaryOpT>
-Info extract( Vector<W>*                w,
-              const Vector<M>*          mask,
-              BinaryOpT                 accum,
-              const Matrix<a>*          A,
-              const std::vector<Index>* row_indices,
-              Index                     nrows,
-              Index                     col_index,
-              Descriptor*               desc )
-{
-  std::cout << "Error: extract matrix variant not implemented yet!\n";
-}
-
-template <typename W, typename M, typename U,
-          typename BinaryOpT>
-Info assign( Vector<W>*                w,
-             const Vector<U>*          mask,
+Info extract(Vector<W>*                w,
+             const Vector<M>*          mask,
              BinaryOpT                 accum,
              const Vector<U>*          u,
              const std::vector<Index>* indices,
              Index                     nindices,
-             Descriptor*               desc )
-{
-  std::cout << "Error: assign vector variant not implemented yet!\n";
+             Descriptor*               desc) {
+  std::cout << "Error: extract vector variant not implemented yet!\n";
 }
 
+/*!
+ * Submatrix extraction from matrix
+ *   C = C + mask .* (A[row_indices, col_indices])   +: accum
+ *                                                  .*: Boolean and
+ */
 template <typename c, typename m, typename a,
           typename BinaryOpT>
-Info assign( Matrix<c>*                C,
+Info extract(Matrix<c>*                C,
              const Matrix<m>*          mask,
              BinaryOpT                 accum,
              const Matrix<a>*          A,
@@ -288,243 +260,335 @@ Info assign( Matrix<c>*                C,
              Index                     nrows,
              const std::vector<Index>* col_indices,
              Index                     ncols,
-             Descriptor*               desc )
-{
-  std::cout << "Error: assign matrix variant not implemented yet!\n";
+             Descriptor*               desc) {
+  std::cout << "Error: extract matrix variant not implemented yet!\n";
 }
 
-template <typename c, typename M, typename U,
+/*!
+ * Column vector extraction from matrix
+ *   w = w + mask .* (A[row_indices, col_index])   +: accum
+ *                                                .*: Boolean and
+ */
+template <typename W, typename M, typename a,
           typename BinaryOpT>
-Info assign( Matrix<c>*                C,
+Info extract(Vector<W>*                w,
              const Vector<M>*          mask,
              BinaryOpT                 accum,
-             const Vector<U>*          u,
+             const Matrix<a>*          A,
              const std::vector<Index>* row_indices,
              Index                     nrows,
              Index                     col_index,
-             Descriptor*               desc )
-{
+             Descriptor*               desc) {
+  std::cout << "Error: extract matrix variant not implemented yet!\n";
+}
+
+/*!
+ * Assign vector to vector subset
+ *   w[indices] = w[indices] + mask .* u   +: accum
+ *                                        .*: Boolean and
+ */
+template <typename W, typename M, typename U,
+          typename BinaryOpT>
+Info assign(Vector<W>*                w,
+            const Vector<U>*          mask,
+            BinaryOpT                 accum,
+            const Vector<U>*          u,
+            const std::vector<Index>* indices,
+            Index                     nindices,
+            Descriptor*               desc) {
+  std::cout << "Error: assign vector variant not implemented yet!\n";
+}
+
+/*!
+ * Assign matrix to matrix subset
+ *   C[row_indices, col_indices] = 
+ *       C[row_indices, col_indices] + mask .* A   +: accum
+ *                                                .*: Boolean and
+ */
+template <typename c, typename m, typename a,
+          typename BinaryOpT>
+Info assign(Matrix<c>*                C,
+            const Matrix<m>*          mask,
+            BinaryOpT                 accum,
+            const Matrix<a>*          A,
+            const std::vector<Index>* row_indices,
+            Index                     nrows,
+            const std::vector<Index>* col_indices,
+            Index                     ncols,
+            Descriptor*               desc) {
   std::cout << "Error: assign matrix variant not implemented yet!\n";
 }
 
+/*!
+ * Assign vector to matrix column subset
+ *   C[row_indices, col_index] = 
+ *       C[row_indices, col_index] + mask .* u   +: accum
+ *                                              .*: Boolean and
+ */
 template <typename c, typename M, typename U,
           typename BinaryOpT>
-Info assign( Matrix<c>*                C,
-             const Vector<M>*          mask,
-             BinaryOpT                 accum,
-             const Vector<U>*          u,
-             Index                     row_index,
-             const std::vector<Index>* col_indices,
-             Index                     ncols,
-             Descriptor*               desc )
-{
+Info assign(Matrix<c>*                C,
+            const Vector<M>*          mask,
+            BinaryOpT                 accum,
+            const Vector<U>*          u,
+            const std::vector<Index>* row_indices,
+            Index                     nrows,
+            Index                     col_index,
+            Descriptor*               desc) {
   std::cout << "Error: assign matrix variant not implemented yet!\n";
 }
 
+/*!
+ * Assign vector to matrix row subset
+ *   C[row_index, col_indices] = 
+ *       C[row_index, col_indices] + mask .* u   +: accum
+ *                                              .*: Boolean and
+ */
+template <typename c, typename M, typename U,
+          typename BinaryOpT>
+Info assign(Matrix<c>*                C,
+            const Vector<M>*          mask,
+            BinaryOpT                 accum,
+            const Vector<U>*          u,
+            Index                     row_index,
+            const std::vector<Index>* col_indices,
+            Index                     ncols,
+            Descriptor*               desc) {
+  std::cout << "Error: assign matrix variant not implemented yet!\n";
+}
+
+/*!
+ * Assign constant to vector subset
+ *   w[indices] = w[indices] + val   +: accum
+ *                                  .*: Boolean and
+ */
 template <typename W, typename M, typename T,
           typename BinaryOpT>
-Info assign( Vector<W>*                w,
-             const Vector<M>*          mask,
-             BinaryOpT                 accum,
-             T                         val,
-             const std::vector<Index>* indices,
-             Index                     nindices,
-             Descriptor*               desc )
-{
+Info assign(Vector<W>*                w,
+            const Vector<M>*          mask,
+            BinaryOpT                 accum,
+            T                         val,
+            const std::vector<Index>* indices,
+            Index                     nindices,
+            Descriptor*               desc) {
   // Null pointer check
-  if( w==NULL || desc==NULL )
+  if (w == NULL || desc == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
   // Dimension check
   // -only have one case (no transpose option)
-  CHECK( checkDimSizeSize( w, mask, "w.size  != mask.size" ) );
+  CHECK(checkDimSizeSize(w, mask, "w.size  != mask.size"));
 
-  auto                 mask_t = (mask==NULL ) ? NULL : &mask->vector_;
-  backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+  auto                 mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
-  return backend::assign( &w->vector_, mask_t, accum, val, indices, nindices, 
-      desc_t );
+  return backend::assign(&w->vector_, mask_t, accum, val, indices, nindices,
+      desc_t);
 }
 
+/*!
+ * Assign constant to matrix subset
+ *   C[row_indices, col_indices] = 
+ *     C[row_indices, col_indices] + val   +: accum
+ *                                        .*: Boolean and
+ */
 template <typename c, typename m, typename T,
           typename BinaryOpT>
-Info assign( Matrix<c>*                C,
-             const Matrix<m>*          mask,
-             BinaryOpT                 accum,
-             T                         val,
-             const std::vector<Index>* row_indices,
-             Index                     nrows,
-             const std::vector<Index>* col_indices,
-             Index                     ncols,
-             Descriptor*               desc )
-{
+Info assign(Matrix<c>*                C,
+            const Matrix<m>*          mask,
+            BinaryOpT                 accum,
+            T                         val,
+            const std::vector<Index>* row_indices,
+            Index                     nrows,
+            const std::vector<Index>* col_indices,
+            Index                     ncols,
+            Descriptor*               desc) {
   std::cout << "Error: assign matrix variant not implemented yet!\n";
 }
 
+/*!
+ * Apply unary operation to vector
+ *   w = w + mask .* op(u)    +: accum
+ *                           .*: Boolean and
+ */
 template <typename W, typename M, typename U,
           typename BinaryOpT,     typename UnaryOpT>
-Info apply( Vector<W>*       w,
-            const Vector<M>* mask,
-            BinaryOpT        accum,
-            UnaryOpT         op,
-            const Vector<U>* u,
-            Descriptor*      desc )
-{
+Info apply(Vector<W>*       w,
+           const Vector<M>* mask,
+           BinaryOpT        accum,
+           UnaryOpT         op,
+           const Vector<U>* u,
+           Descriptor*      desc) {
   // Null pointer check
   if (w == NULL || u == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
   // Dimension check
-  CHECK( checkDimSizeSize( u, w,    "u.size != w.size"    ) );
-  CHECK( checkDimSizeSize( u, mask, "u.size != mask.size" ) );
-  CHECK( checkDimSizeSize( w, mask, "w.size != mask.size" ) );
-  
-  const backend::Vector<M>*  mask_t = (mask==NULL) ? NULL : &mask->vector_;
-  backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+  CHECK(checkDimSizeSize(u, w,    "u.size != w.size"));
+  CHECK(checkDimSizeSize(u, mask, "u.size != mask.size"));
+  CHECK(checkDimSizeSize(w, mask, "w.size != mask.size"));
+
+  const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
   return backend::apply(&w->vector_, mask_t, accum, op, &u->vector_, desc_t);
 }
 
+/*!
+ * Apply unary operation to matrix
+ *   w = w + mask .* op(u)    +: accum
+ *                           .*: Boolean and
+ */
 template <typename c, typename m, typename a,
           typename BinaryOpT,     typename UnaryOpT>
-Info apply( Matrix<c>*       C,
-            const Matrix<m>* mask,
-            BinaryOpT        accum,
-            UnaryOpT         op,
-            const Matrix<a>* A,
-            Descriptor*      desc )
-{
+Info apply(Matrix<c>*       C,
+           const Matrix<m>* mask,
+           BinaryOpT        accum,
+           UnaryOpT         op,
+           const Matrix<a>* A,
+           Descriptor*      desc) {
   std::cout << "Error: apply matrix variant not implemented yet!\n";
 }
 
-// Reduction along matrix rows to form vector
-//   w(i) = w(i) + mask(i) .* \sum_j A(i,j) for all j    +: accum
-//                                                     sum: op
-//                                                      .*: Boolean and
+/*!
+ * Reduction along matrix rows to form vector
+ *   w(i) = w(i) + mask(i) .* \sum_j A(i,j) for all j    +: accum
+ *                                                     sum: op
+ *                                                      .*: Boolean and
+ */
 template <typename W, typename M, typename a,
           typename BinaryOpT,     typename MonoidT>
-Info reduce( Vector<W>*       w,
-             const Vector<M>* mask,
-             BinaryOpT        accum,
-             MonoidT          op,
-             const Matrix<a>* A,
-             Descriptor*      desc )
-{
-  if( w==NULL || A==NULL )
+Info reduce(Vector<W>*       w,
+            const Vector<M>* mask,
+            BinaryOpT        accum,
+            MonoidT          op,
+            const Matrix<a>* A,
+            Descriptor*      desc) {
+  if (w == NULL || A == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
-  const backend::Vector<M>* mask_t = (mask==NULL ) ? NULL : &mask->vector_;
-  backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+  const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
-  return backend::reduce( &w->vector_, mask_t, accum, op, &A->matrix_, desc_t );
+  return backend::reduce(&w->vector_, mask_t, accum, op, &A->matrix_, desc_t);
 }
 
-// Reduction of vector to form scalar
-//   val = val + \sum_i u(i) for all i    +: accum
-//                                      sum: op
-template <typename T, typename U, 
+/*!
+ * Reduction of vector to form scalar
+ *   val = val + \sum_i u(i) for all i    +: accum
+ *                                      sum: op
+ */
+template <typename T, typename U,
           typename BinaryOpT, typename MonoidT>
-Info reduce( T*                     val,
-             BinaryOpT              accum,
-             MonoidT                op,
-             const Vector<U>*       u,
-             Descriptor*            desc )
-{
-  if( val==NULL || u==NULL )
+Info reduce(T*               val,
+            BinaryOpT        accum,
+            MonoidT          op,
+            const Vector<U>* u,
+            Descriptor*      desc) {
+  if (val == NULL || u == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
-  backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
-  return backend::reduce( val, accum, op, &u->vector_, desc_t );
+  return backend::reduce(val, accum, op, &u->vector_, desc_t);
 }
 
-// Reduction of matrix to form scalar
-//   val = val + \sum_{i,j} A(i,j) for all i,j    +: accum
-//                                              sum: op
+/*!
+ * Reduction of matrix to form scalar
+ *   val = val + \sum_{i,j} A(i,j) for all i,j    +: accum
+ *                                              sum: op
+ */
 template <typename T, typename a,
           typename BinaryOpT,     typename MonoidT>
-Info reduce( T*               val,
-             BinaryOpT        accum,
-             MonoidT          op,
-             const Matrix<a>* A,
-             Descriptor*      desc )
-{
+Info reduce(T*               val,
+            BinaryOpT        accum,
+            MonoidT          op,
+            const Matrix<a>* A,
+            Descriptor*      desc) {
   std::cout << "Error: reduce matrix to scalar variant not implemented yet!\n";
 }
 
-// Matrix transposition
-//   C = C + mask .* (A^T)    +: accum
-//                           .*: Boolean and
+/*!
+ * Matrix transposition
+ *   C = C + mask .* (A^T)    +: accum
+ *                           .*: Boolean and
+ */
 template <typename c, typename m, typename a,
           typename BinaryOpT>
-Info transpose( Matrix<c>*       C,
-                const Matrix<m>* mask,
-                BinaryOpT        accum,
-                const Matrix<a>* A,
-                Descriptor*      desc )
-{
+Info transpose(Matrix<c>*       C,
+               const Matrix<m>* mask,
+               BinaryOpT        accum,
+               const Matrix<a>* A,
+               Descriptor*      desc) {
   std::cout << "Error: transpose not implemented yet!\n";
 }
 
-// Trace of matrix-matrix product
-//  val = Tr(A * B^T)    *: op
-// A and B are assumed to be square matrices
+/*!
+ * Trace of matrix-matrix product
+ *   val = Tr(A * B^T)    *: op
+ *
+ * Note: A and B are assumed to be square matrices
+ */
 template <typename T, typename a, typename b,
           typename SemiringT>
-Info traceMxmTranspose( T*               val,
-                        SemiringT        op,
-                        const Matrix<a>* A,
-                        const Matrix<b>* B,
-                        Descriptor*      desc )
-{
+Info traceMxmTranspose(T*               val,
+                       SemiringT        op,
+                       const Matrix<a>* A,
+                       const Matrix<b>* B,
+                       Descriptor*      desc) {
   if (val == NULL || A == NULL || B == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
-  backend::Descriptor* desc_t = (desc == NULL ) ? NULL : &desc->descriptor_;
+  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
-  return backend::traceMxmTranspose(val, op, &A->matrix_, &B->matrix_,desc_t);
+  return backend::traceMxmTranspose(val, op, &A->matrix_, &B->matrix_, desc_t);
 }
 
-// Multiply matrix by scalar
-//   B = A * val    *: op
+/*!
+ * Multiply matrix by scalar
+ *   B = A * val    *: op
+ */
 template <typename b, typename a, typename T,
           typename BinaryOpT>
-Info scale( Matrix<b>*       B,
-            BinaryOpT        op,
-            const Matrix<a>* A,
-            T                val,
-            Descriptor*      desc )
-{
+Info scale(Matrix<b>*       B,
+           BinaryOpT        op,
+           const Matrix<a>* A,
+           T                val,
+           Descriptor*      desc) {
   std::cout << "Error: scale not implemented yet!\n";
 }
 
-// Multiply vector by scalar
-//   w = u * val    *: op
+/*!
+ * Multiply vector by scalar
+ *   w = u * val    *: op
+ */
 template <typename W, typename U, typename T,
           typename BinaryOpT>
-Info scale( Vector<W>*       w,
-            BinaryOpT        op,
-            const Vector<U>* u,
-            T                val,
-            Descriptor*      desc )
-{
+Info scale(Vector<W>*       w,
+           BinaryOpT        op,
+           const Vector<U>* u,
+           T                val,
+           Descriptor*      desc) {
   std::cout << "Error: scale not implemented yet!\n";
 }
 
+/*!
+ * Scatter constant to indices (vector u) to another vector w
+ *   w[u] = val
+ */
 template <typename W, typename M, typename U, typename T>
-Info scatter( Vector<W>*       w,
-              const Vector<M>* mask,
-              const Vector<U>* u,
-              T                val,
-              Descriptor*      desc )
-{
+Info scatter(Vector<W>*       w,
+             const Vector<M>* mask,
+             const Vector<U>* u,
+             T                val,
+             Descriptor*      desc) {
   if (u == NULL || w == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
-  const backend::Vector<M>* mask_t = (mask==NULL ) ? NULL : &mask->vector_;
-  backend::Descriptor* desc_t = (desc==NULL ) ? NULL : &desc->descriptor_;
+  const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
-  return backend::scatter( &w->vector_, mask_t, &u->vector_, val, desc_t );
+  return backend::scatter(&w->vector_, mask_t, &u->vector_, val, desc_t);
 }
 }  // namespace graphblas
 

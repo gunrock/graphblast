@@ -5,10 +5,8 @@
 #include <sys/time.h>
 #include <libgen.h>
 #include <cstdio>
-#include <vector>
 #include <fstream>
-#include <iostream>
-#include <typeinfo>
+#include <vector>
 #include <tuple>
 #include <algorithm>
 #include <string>

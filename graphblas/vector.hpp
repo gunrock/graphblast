@@ -4,7 +4,7 @@
 #include <vector>
 
 // Opaque data members from the right backend
-#define __GRB_BACKEND_VECTOR_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/Vector.hpp>
+#define __GRB_BACKEND_VECTOR_HEADER <graphblas/backend/__GRB_BACKEND_ROOT/vector.hpp>
 #include __GRB_BACKEND_VECTOR_HEADER
 #undef __GRB_BACKEND_VECTOR_HEADER
 

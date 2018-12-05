@@ -1,31 +1,31 @@
-#ifndef GRB_BACKEND_CUDA_CUDA_HPP
-#define GRB_BACKEND_CUDA_CUDA_HPP
+#ifndef GRAPHBLAS_BACKEND_CUDA_CUDA_HPP_
+#define GRAPHBLAS_BACKEND_CUDA_CUDA_HPP_
 
 #include "graphblas/backend/cuda/types.hpp"
 #include "graphblas/backend/cuda/util.hpp"
-#include "graphblas/backend/cuda/Vector.hpp"
-#include "graphblas/backend/cuda/Matrix.hpp"
-//#include "graphblas/backend/cuda/transpose.hpp"
+#include "graphblas/backend/cuda/vector.hpp"
+#include "graphblas/backend/cuda/matrix.hpp"
+#include "graphblas/backend/cuda/transpose.hpp"
 #include "graphblas/backend/cuda/spgemm.hpp"
 #include "graphblas/backend/cuda/spmm.hpp"
 #include "graphblas/backend/cuda/gemm.hpp"
-#include "graphblas/backend/cuda/spmspvInner.hpp"
+#include "graphblas/backend/cuda/spmspv_inner.hpp"
 #include "graphblas/backend/cuda/spmspv.hpp"
 #include "graphblas/backend/cuda/spmv.hpp"
 #include "graphblas/backend/cuda/gemv.hpp"
 #include "graphblas/backend/cuda/reduce.hpp"
 #include "graphblas/backend/cuda/scatter.hpp"
-#include "graphblas/backend/cuda/eWiseMult.hpp"
-#include "graphblas/backend/cuda/eWiseAdd.hpp"
+#include "graphblas/backend/cuda/ewisemult.hpp"
+#include "graphblas/backend/cuda/ewiseadd.hpp"
 #include "graphblas/backend/cuda/trace.hpp"
 #include "graphblas/backend/cuda/assign.hpp"
 #include "graphblas/backend/cuda/apply.hpp"
-#include "graphblas/backend/cuda/Descriptor.hpp"
-#include "graphblas/backend/cuda/SparseVector.hpp"
-#include "graphblas/backend/cuda/DenseVector.hpp"
-#include "graphblas/backend/cuda/SparseMatrix.hpp"
-#include "graphblas/backend/cuda/DenseMatrix.hpp"
+#include "graphblas/backend/cuda/descriptor.hpp"
+#include "graphblas/backend/cuda/sparse_vector.hpp"
+#include "graphblas/backend/cuda/dense_vector.hpp"
+#include "graphblas/backend/cuda/sparse_matrix.hpp"
+#include "graphblas/backend/cuda/dense_matrix.hpp"
 #include "graphblas/backend/cuda/operations.hpp"
 #include "graphblas/backend/cuda/kernels/kernels.hpp"
 
-#endif  // GRB_BACKEND_CUDA_CUDA_HPP
+#endif  // GRAPHBLAS_BACKEND_CUDA_CUDA_HPP_

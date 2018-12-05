@@ -1,5 +1,5 @@
-#ifndef GRB_BACKEND_CUDA_DENSEMATRIX_HPP
-#define GRB_BACKEND_CUDA_DENSEMATRIX_HPP
+#ifndef GRB_BACKEND_CUDA_DENSE_MATRIX_HPP
+#define GRB_BACKEND_CUDA_DENSE_MATRIX_HPP
 
 #include <vector>
 #include <iostream>
@@ -359,4 +359,4 @@ namespace backend
 } // backend
 } // graphblas
 
-#endif  // GRB_BACKEND_CUDA_DENSEMATRIX_HPP
+#endif  // GRB_BACKEND_CUDA_DENSE_MATRIX_HPP

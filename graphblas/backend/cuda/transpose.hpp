@@ -1,6 +1,8 @@
 #ifndef GRB_BACKEND_CUDA_TRANSPOSE_HPP
 #define GRB_BACKEND_CUDA_TRANSPOSE_HPP
 
+#include <cusparse.h>
+
 #include <iostream>
 #include <vector>
 
