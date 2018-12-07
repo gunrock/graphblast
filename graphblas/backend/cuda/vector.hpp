@@ -298,8 +298,9 @@ Info Vector<T>::convert(T identity, Descriptor* desc) {
   } else if (vec_type_ == GrB_DENSE) {
     CHECK(dense_.nnz(&nvals_t));
     CHECK(dense_.nvals(&nsize_t));
+  } else {
+    return GrB_UNINITIALIZED_OBJECT;
   }
-  return GrB_UNINITIALIZED_OBJECT;
 
   float ratio = static_cast<float>(nvals_t/nsize_t);
   if (desc->dirinfo())

@@ -1,4 +1,4 @@
-CUDA_ARCH = 35
+CUDA_ARCH = 70
 ARCH = -gencode arch=compute_${CUDA_ARCH},code=compute_${CUDA_ARCH}
 OPTIONS = -O3 -use_fast_math -w -std=c++11
 

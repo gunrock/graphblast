@@ -95,7 +95,7 @@ Info spmspvApspieMerge(Index*       w_ind,
   // worst-case. This is a global reduce.
   //  -> d_temp_nvals |V|
   //  -> d_scan       |V|+1
-  int    size        = reinterpret_cast<float>(A_nvals*desc->memusage()+1);
+  int    size        = static_cast<float>(A_nvals)*desc->memusage()+1;
   void* d_temp_nvals = reinterpret_cast<void*>(w_ind);
   void* d_scan       = reinterpret_cast<void*>(w_val);
   void* d_temp       = desc->d_buffer_+2*A_nrows*sizeof(Index);
@@ -113,8 +113,8 @@ Info spmspvApspieMerge(Index*       w_ind,
   CUDA_CALL(cudaDeviceSynchronize());
   // Note: cannot use op.add_op() here
   mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>(reinterpret_cast<Index*>(
-      d_temp_nvals), *u_nvals, reinterpret_cast<Index>(0), mgpu::plus<Index>(),
-      reinterpret_cast<Index*>(d_scan+(*u_nvals)), w_nvals,
+      d_temp_nvals), *u_nvals, (Index)0, mgpu::plus<Index>(),
+      reinterpret_cast<Index*>(d_scan)+*u_nvals, w_nvals,
       reinterpret_cast<Index*>(d_scan), reinterpret_cast<Index*>(d_temp),
       *(desc->d_context_));
   CUDA_CALL(cudaDeviceSynchronize());
@@ -292,7 +292,7 @@ Info spmspvApspieMerge(Index*       w_ind,
     if (!desc->sort()) {
       NB.x = (*w_nvals+nt-1)/nt;
       scatter<<<NB, NT>>>(w_ind, reinterpret_cast<Index*>(d_csrSwapInd),
-          reinterpret_cast<Index>(1), *w_nvals);
+          (Index)1, *w_nvals);
       *w_nvals = A_nrows;
 
       if (desc->debug())

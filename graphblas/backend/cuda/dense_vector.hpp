@@ -208,7 +208,7 @@ Info DenseVector<T>::extractTuples(std::vector<T>* values, Index* n) {
   if (*n < nvals_) {
     std::cout << *n << " < " << nvals_ << std::endl;
     std::cout << "Error: DeVec Insufficient space!\n";
-    // return GrB_INSUFFICIENT_SPACE;
+    return GrB_INSUFFICIENT_SPACE;
   }
 
   for (Index i = 0; i < *n; i++)
@@ -296,8 +296,7 @@ Info DenseVector<T>::allocateCpu() {
   if (nvals_ > 0 && h_val_ == NULL) {
     h_val_ = reinterpret_cast<T*>(malloc(nvals_*sizeof(T)));
   } else {
-    std::cout << "Error: DeVec Host allocation unsuccessful!\n";
-    // return GrB_UNINITIALIZED_OBJECT;
+    // std::cout << "Error: DeVec Host allocation unsuccessful!\n";
   }
 
   if (nvals_ > 0 && h_val_ == NULL) {
@@ -315,8 +314,7 @@ Info DenseVector<T>::allocateGpu() {
     CUDA_CALL(cudaMalloc(&d_val_, nvals_*sizeof(T)));
     printMemory("DeVec");
   } else {
-    std::cout << "Error: DeVec Device allocation unsuccessful!\n";
-    // return GrB_UNINITIALIZED_OBJECT;
+    // std::cout << "Error: DeVec Device allocation unsuccessful!\n";
   }
 
   if (nvals_ > 0 && d_val_ == NULL) {

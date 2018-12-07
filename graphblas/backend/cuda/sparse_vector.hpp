@@ -318,8 +318,7 @@ Info SparseVector<T>::allocateCpu() {
     h_ind_ = reinterpret_cast<Index*>(malloc(nsize_*sizeof(Index)));
     h_val_ = reinterpret_cast<T*>(malloc((nsize_+1)*sizeof(T)));
   } else {
-    std::cout << "Error: SpVec Host allocation unsuccessful!\n";
-    // return GrB_UNINITIALIZED_OBJECT;
+    // std::cout << "Error: SpVec Host allocation unsuccessful!\n";
   }
 
   if (nsize_ != 0 && (h_ind_ == NULL || h_val_ == NULL)) {
@@ -338,8 +337,7 @@ Info SparseVector<T>::allocateGpu() {
     CUDA_CALL(cudaMalloc(&d_val_, (nsize_+1)*sizeof(T)));
     printMemory("d_ind, d_val");
   } else {
-    std::cout << "Error: SpVec Device allocation unsuccessful!\n";
-    // return GrB_UNINITIALIZED_OBJECT;
+    // std::cout << "Error: SpVec Device allocation unsuccessful!\n";
   }
 
   if (nsize_ != 0 && (d_ind_ == NULL || d_val_ == NULL)) {
