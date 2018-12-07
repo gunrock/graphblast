@@ -302,7 +302,7 @@ Info Vector<T>::convert(T identity, Descriptor* desc) {
     return GrB_UNINITIALIZED_OBJECT;
   }
 
-  float ratio = static_cast<float>(nvals_t/nsize_t);
+  float ratio = static_cast<float>(nvals_t)/nsize_t;
   if (desc->dirinfo())
     std::cout << "Nnz ratio: " << ratio << " Switch point: "
         << desc->switchpoint() << std::endl;
