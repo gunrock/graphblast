@@ -85,7 +85,7 @@ T const& min(T const& a, T const& b) {
  * \brief  constexpr variant of std::max, since we may not be using C++14
  */
 template<typename T> constexpr
-T const& max(T const& a, T const& b) {  // NOLINT build/include_what_you_use
+T const& max(T const& a, T const& b) {  // NOLINT(build/include_what_you_use)
   return a > b ? a : b;
 }
 

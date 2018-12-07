@@ -310,7 +310,7 @@ Info spmspvApspieMerge(Index*       w_ind,
     ReduceByKey(reinterpret_cast<Index*>(d_csrTempInd),
         reinterpret_cast<T*>(d_csrTempVal), *w_nvals, op.identity(),
         extractAdd(op),
-        mgpu::equal_to<Index>(),  // NOLINT build/include_what_you_use
+        mgpu::equal_to<Index>(),  // NOLINT(build/include_what_you_use)
         w_ind, w_val, &w_nvals_t, reinterpret_cast<int*>(0),
         *(desc->d_context_));
     *w_nvals = w_nvals_t;

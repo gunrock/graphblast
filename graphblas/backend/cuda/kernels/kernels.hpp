@@ -1,5 +1,5 @@
-#ifndef GRB_BACKEND_CUDA_KERNELS_KERNELS_HPP
-#define GRB_BACKEND_CUDA_KERNELS_KERNELS_HPP
+#ifndef GRAPHBLAS_BACKEND_CUDA_KERNELS_KERNELS_HPP_
+#define GRAPHBLAS_BACKEND_CUDA_KERNELS_KERNELS_HPP_
 
 #include "graphblas/backend/cuda/kernels/assign_dense.hpp"
 #include "graphblas/backend/cuda/kernels/assign_sparse.hpp"
@@ -11,4 +11,4 @@
 #include "graphblas/backend/cuda/kernels/trace.hpp"
 #include "graphblas/backend/cuda/kernels/scatter.hpp"
 
-#endif  // GRB_BACKEND_CUDA_KERNELS_KERNELS_HPP
+#endif  // GRAPHBLAS_BACKEND_CUDA_KERNELS_KERNELS_HPP_

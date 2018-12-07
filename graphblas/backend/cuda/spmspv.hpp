@@ -228,7 +228,7 @@ Info spmspvMerge(SparseVector<W>*       w,
 
       updateFlagKernel<<<NB, NT>>>(d_flag, (a)0, temp_val, temp_nvals);
       mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>(d_flag, temp_nvals, (Index)0,
-          mgpu::plus<Index>(),  // NOLINT build/include_what_you_use
+          mgpu::plus<Index>(),  // NOLINT(build/include_what_you_use)
           reinterpret_cast<Index*>(0), &w->nvals_, d_scan,
           d_temp, *(desc->d_context_));
 

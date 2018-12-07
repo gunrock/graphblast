@@ -354,7 +354,7 @@ Info DenseVector<T>::gpuToCpu(bool force_update) {
 }
 
 template <typename T>
-Info DenseVector<T>::swap(DenseVector* rhs) {  // NOLINT build/include_what_you_use
+Info DenseVector<T>::swap(DenseVector* rhs) {  // NOLINT(build/include_what_you_use)
   // Change member scalars
   Index temp_nvals = nvals_;
   nvals_ = rhs->nvals_;

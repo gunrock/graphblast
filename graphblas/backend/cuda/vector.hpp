@@ -388,7 +388,7 @@ Info Vector<T>::dense2sparse(T identity, Descriptor* desc) {
 
   updateFlagKernel<<<NB, NT>>>(d_flag, identity, dense_.d_val_, nvals);
   mgpu::Scan<mgpu::MgpuScanTypeExc>(d_flag, nvals, (Index)0,
-      mgpu::plus<Index>(),  // NOLINT build/include_what_you_use
+      mgpu::plus<Index>(),  // NOLINT(build/include_what_you_use)
       reinterpret_cast<Index*>(0), &sparse_.nvals_, d_scan,
       *(desc->d_context_));
 
@@ -424,7 +424,7 @@ Info Vector<T>::dense2sparse(T identity, Descriptor* desc) {
 
 // Assume both are of the same type to make things easier
 template <typename T>
-Info Vector<T>::swap(Vector* rhs) {  // NOLINT build/include_what_you_use
+Info Vector<T>::swap(Vector* rhs) {  // NOLINT(build/include_what_you_use)
   if (vec_type_ != rhs->vec_type_ || vec_type_ == GrB_UNKNOWN)  {
     // std::cout << vec_type_ << " != " << rhs->vec_type_ << std::endl;
     // std::cout << "Error: Format not equivalent!\n";

@@ -382,7 +382,7 @@ Info SparseVector<T>::gpuToCpu(bool force_update) {
 }
 
 template <typename T>
-Info SparseVector<T>::swap(SparseVector* rhs) {  // NOLINT build/include_what_you_use
+Info SparseVector<T>::swap(SparseVector* rhs) {  // NOLINT(build/include_what_you_use)
   // Change member scalars
   Index temp_nsize  = nsize_;
   Index temp_nvals  = nvals_;

@@ -204,7 +204,7 @@ Info Vector<T>::getStorage(Storage* vec_type) const {
 }
 
 template <typename T>
-Info Vector<T>::swap(Vector* rhs) {  // NOLINT build/include_what_you_use
+Info Vector<T>::swap(Vector* rhs) {  // NOLINT(build/include_what_you_use)
   if (rhs == NULL) return GrB_NULL_POINTER;
   return vector_.swap(&rhs->vector_);
 }
