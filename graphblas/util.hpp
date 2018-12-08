@@ -93,7 +93,7 @@ void parseArgs(int argc, char**argv, po::variables_map* vm) {
     // mxv (spmv/pull) params
     ("earlyexit", po::value<bool>()->default_value(true),
         "True means use early exit, False means do not use it when using Boolean LogicalOrAndSemiring") // NOLINT
-    ("fusedmask", po::value<bool>()->default_value(false),
+    ("fusedmask", po::value<bool>()->default_value(true),
         "True means use fused mask in pull direction when using LogicalOrAnd semiring, False means do not do it") // NOLINT
 
     // algorithm-specific params

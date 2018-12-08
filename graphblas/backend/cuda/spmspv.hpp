@@ -57,7 +57,7 @@ Info spmspvMerge(SparseVector<W>*       w,
 
   // temp_ind and temp_val need |V| memory for masked case, so just allocate
   // this much memory for now. TODO(@ctcyang): optimize for memory
-  int size = static_cast<float>(A->nvals_*desc->memusage()+1);
+  int size = static_cast<float>(A->nvals_)*desc->memusage()+1;
   if (desc->struconly())
     desc->resize((2*A_nrows+2*size)*std::max(sizeof(Index), sizeof(T)),
         "buffer");
@@ -70,7 +70,7 @@ Info spmspvMerge(SparseVector<W>*       w,
   if (use_mask) {
     // temp_ind and temp_val need |V| memory
     Index* temp_ind   = reinterpret_cast<Index*>(desc->d_buffer_);
-    a*     temp_val   = reinterpret_cast<a*>(desc->d_buffer_+A_nrows);
+    a*     temp_val   = reinterpret_cast<a*>(desc->d_buffer_)+A_nrows;
     Index  temp_nvals = 0;
 
     spmspvApspieMerge(temp_ind, temp_val, &temp_nvals, NULL, op, A_nrows,
@@ -126,8 +126,8 @@ Info spmspvMerge(SparseVector<W>*       w,
 
         // Turn dense vector into sparse
         desc->resize((4*A_nrows)*std::max(sizeof(Index), sizeof(T)), "buffer");
-        Index* d_scan = reinterpret_cast<Index*>(desc->d_buffer_+2*A_nrows);
-        Index* d_temp = reinterpret_cast<Index*>(desc->d_buffer_+3*A_nrows);
+        Index* d_scan = reinterpret_cast<Index*>(desc->d_buffer_)+2*A_nrows;
+        Index* d_temp = reinterpret_cast<Index*>(desc->d_buffer_)+3*A_nrows;
 
         mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>(temp_ind, A_nrows,
             (Index)0, mgpu::plus<Index>(), reinterpret_cast<Index*>(0),
@@ -171,9 +171,9 @@ Info spmspvMerge(SparseVector<W>*       w,
 
         // Prune 0.f's from vector
         desc->resize((4*A_nrows)*std::max(sizeof(Index), sizeof(T)), "buffer");
-        Index* d_flag = reinterpret_cast<Index*>(desc->d_buffer_+  A_nrows);
-        Index* d_scan = reinterpret_cast<Index*>(desc->d_buffer_+2*A_nrows);
-        Index* d_temp = reinterpret_cast<Index*>(desc->d_buffer_+3*A_nrows);
+        Index* d_flag = reinterpret_cast<Index*>(desc->d_buffer_)+  A_nrows;
+        Index* d_scan = reinterpret_cast<Index*>(desc->d_buffer_)+2*A_nrows;
+        Index* d_temp = reinterpret_cast<Index*>(desc->d_buffer_)+3*A_nrows;
 
         updateFlagKernel<<<NB, NT>>>(d_flag, -1, temp_ind, temp_nvals);
         mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>(d_flag, temp_nvals, (Index)0,
@@ -222,9 +222,9 @@ Info spmspvMerge(SparseVector<W>*       w,
 
       // Prune 0.f's from vector
       desc->resize((5*A_nrows)*std::max(sizeof(Index), sizeof(a)), "buffer");
-      Index* d_flag = reinterpret_cast<Index*>(desc->d_buffer_+2*A_nrows);
-      Index* d_scan = reinterpret_cast<Index*>(desc->d_buffer_+3*A_nrows);
-      Index* d_temp = reinterpret_cast<Index*>(desc->d_buffer_+4*A_nrows);
+      Index* d_flag = reinterpret_cast<Index*>(desc->d_buffer_)+2*A_nrows;
+      Index* d_scan = reinterpret_cast<Index*>(desc->d_buffer_)+3*A_nrows;
+      Index* d_temp = reinterpret_cast<Index*>(desc->d_buffer_)+4*A_nrows;
 
       updateFlagKernel<<<NB, NT>>>(d_flag, (a)0, temp_val, temp_nvals);
       mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>(d_flag, temp_nvals, (Index)0,

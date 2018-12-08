@@ -385,7 +385,7 @@ Info Vector<T>::dense2sparse(T identity, Descriptor* desc) {
 
   desc->resize((2*nvals)*std::max(sizeof(Index), sizeof(T)), "buffer");
   Index* d_flag = reinterpret_cast<Index*>(desc->d_buffer_);
-  Index* d_scan = reinterpret_cast<Index*>(desc->d_buffer_+nvals);
+  Index* d_scan = reinterpret_cast<Index*>(desc->d_buffer_)+nvals;
 
   updateFlagKernel<<<NB, NT>>>(d_flag, identity, dense_.d_val_, nvals);
   mgpu::Scan<mgpu::MgpuScanTypeExc>(d_flag, nvals, (Index)0,
