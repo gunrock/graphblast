@@ -74,7 +74,6 @@ float gc(Vector<int>*       v,
   int iter = 1;
   int succ = 0;
   int min_color = 0;
-  bool try_again = true;
   Index unvisited = A_nrows;
   backend::GpuTimer gpu_tight;
 
@@ -115,22 +114,7 @@ float gc(Vector<int>*       v,
     reduce<int, int>(&succ, GrB_NULL, PlusMonoid<int>(), &f, desc);
 
     if (succ == 0) {
-      if (!try_again)
-        break;
-      else
-        try_again = false;
-
-      /*desc->set(GrB_BACKEND, GrB_SEQUENTIAL);
-      apply<float,float,float>(&temp_w, GrB_NULL, GrB_NULL, set_random<float>(), &temp_w, desc);
-      desc->set(GrB_BACKEND, GrB_CUDA);
-
-      CHECK( w.print() );
-      eWiseMult<float, float, float, float>(&temp_w2, GrB_NULL, GrB_NULL,
-          PlusMultipliesSemiring<float>(), &w, &temp_w, desc);
-      w.dup(&temp_w2);
-      CHECK( w.print() );
-
-      continue;*/
+      break;
     }
 
     // find neighbors of frontier
@@ -169,7 +153,7 @@ float gc(Vector<int>*       v,
       std::cout << "succ: " << succ << " " << (int)succ << std::endl;
     if (iter > desc->descriptor_.max_niter_)
       break;
-  } while (true);
+  } while (succ > 0);
   if (desc->descriptor_.timing_ > 0) {
     gpu_tight.Stop();
     v->vector_.dense_.gpuToCpu(true);
@@ -181,7 +165,7 @@ float gc(Vector<int>*       v,
     std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
         "push" : "pull";
     if (desc->descriptor_.timing_ == 2)
-      std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+      std::cout << iter << ", " << succ << "/" << A_nrows << ", "
           << unvisited << ", " << vxm_mode << ", "
           << gpu_tight.ElapsedMillis() << "\n";
     return gpu_tight.ElapsedMillis();
