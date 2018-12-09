@@ -1,79 +1,36 @@
-# Makefile
+include common.mk
 
-ARCH=-gencode arch=compute_60,code=compute_60 -gencode arch=compute_60,code=sm_60
-OPTIONS=-O3 -use_fast_math
+#-------------------------------------------------------------------------------
+# Compiler and compilation platform
+#-------------------------------------------------------------------------------
 
-all: gbfs gsssp glgc gbfs_simple gsssp_simple
+# Includes
+INC += -I$(MGPU_DIR) -I$(CUB_DIR) -I$(GRB_DIR)
+
+#-------------------------------------------------------------------------------
+# Dependency Lists
+#-------------------------------------------------------------------------------
+
+all: gbfs gsssp glgc ggc
 
 gbfs: example/*
-	nvcc -g $(ARCH) $(OPTIONS) -w -std=c++11 -o bin/gbfs \
-		example/gbfs.cu \
-		ext/moderngpu/src/mgpucontext.cu \
-		ext/moderngpu/src/mgpuutil.cpp \
-		-Iext/moderngpu/include \
-		-Iext/cub/cub \
-		-I. \
-		-Itest \
-		-lboost_program_options \
-		-lcublas \
-		-lcusparse \
-		-lcurand
+	mkdir -p bin
+	nvcc -g $(ARCH) $(OPTIONS) -o bin/gbfs example/gbfs.cu ${INC} $(GRB_DEPS) $(LIBS)
 
 gsssp: example/*
-	nvcc -g $(ARCH) $(OPTIONS) -w -std=c++11 -o bin/gsssp \
-		example/gsssp.cu \
-		ext/moderngpu/src/mgpucontext.cu \
-		ext/moderngpu/src/mgpuutil.cpp \
-		-Iext/moderngpu/include \
-		-Iext/cub/cub \
-		-I. \
-		-Itest \
-		-lboost_program_options \
-		-lcublas \
-		-lcusparse \
-		-lcurand
+	mkdir -p bin
+	nvcc -g $(ARCH) $(OPTIONS) -o bin/gsssp example/gsssp.cu ${INC} $(GRB_DEPS) $(LIBS)
 
 glgc: example/*
-	nvcc -g $(ARCH) $(OPTIONS) -w -std=c++11 -o bin/glgc \
-		example/glgc.cu \
-		ext/moderngpu/src/mgpucontext.cu \
-		ext/moderngpu/src/mgpuutil.cpp \
-		-Iext/moderngpu/include \
-		-Iext/cub/cub \
-		-I. \
-		-Itest \
-		-lboost_program_options \
-		-lcublas \
-		-lcusparse \
-		-lcurand
+	mkdir -p bin
+	nvcc -g $(ARCH) $(OPTIONS) -o bin/glgc example/glgc.cu ${INC} $(GRB_DEPS) $(LIBS)
 
-gbfs_simple: example/*
-	nvcc -g $(ARCH) $(OPTIONS) -w -std=c++11 -o bin/gbfs_simple \
-		example/gbfs_simple.cu \
-		ext/moderngpu/src/mgpucontext.cu \
-		ext/moderngpu/src/mgpuutil.cpp \
-		-Iext/moderngpu/include \
-		-Iext/cub/cub \
-		-I. \
-		-Itest \
-		-lboost_program_options \
-		-lcublas \
-		-lcusparse \
-		-lcurand
-
-gsssp_simple: example/*
-	nvcc -g $(ARCH) $(OPTIONS) -w -std=c++11 -o bin/gsssp_simple \
-		example/gsssp_simple.cu \
-		ext/moderngpu/src/mgpucontext.cu \
-		ext/moderngpu/src/mgpuutil.cpp \
-		-Iext/moderngpu/include \
-		-Iext/cub/cub \
-		-I. \
-		-Itest \
-		-lboost_program_options \
-		-lcublas \
-		-lcusparse \
-		-lcurand
+ggc: example/*
+	mkdir -p bin
+	nvcc -g $(ARCH) $(OPTIONS) -o bin/ggc example/ggc.cu ${INC} $(GRB_DEPS) $(LIBS)
 
 clean:
-	rm -f bin/gbfs
+	rm -f bin/gbfs bin/gsssp bin/glgc bin/ggc
+
+lint:
+	scripts/lint.py graphblas cpp $(GRB_DIR)example $(GRB_DIR)graphblas $(GRB_DIR)test --exclude_path $(GRB_DIR)graphblas/backend/sequential

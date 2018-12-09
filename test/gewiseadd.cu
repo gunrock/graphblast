@@ -1,4 +1,4 @@
-#define GRB_USE_APSPIE
+#define GRB_USE_CUDA
 #define private public
 
 #include <vector>
@@ -362,7 +362,7 @@ BOOST_FIXTURE_TEST_CASE( dup1, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<float> u_val{ 1., 1., 3., 2., 2., 0., 3., 0., 1., 0., 2. };
   std::vector<float> v_val{ 1., 0., 3., 2., 2., 3., 0., 0., 1., 2., 2. };
   testeWiseAddVectorNomaskDenseDense(u_val, v_val, vm);
@@ -373,7 +373,7 @@ BOOST_FIXTURE_TEST_CASE( dup2, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   int n = 10000;
   std::vector<float> u_val(n, 0.f);
   std::vector<float> v_val(n, 0.f);
@@ -395,7 +395,7 @@ BOOST_FIXTURE_TEST_CASE( dup3, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<graphblas::Index> mask_ind{ 0,  2,  4,  6,  7,  8 };
   std::vector<float>            mask_val{ 3., 2., 2., 0., 3., 0.};
   std::vector<float>            u_val   { 3., 2., 2., 0., 3., 1., 2., 3., 5.};
@@ -408,7 +408,7 @@ BOOST_FIXTURE_TEST_CASE( dup5, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<graphblas::Index> u_ind   { 1,  2,  5,  6,  7,  8 }; 
   std::vector<float>            u_val   { 3., 2., 2., 0., 3., 1.};
   std::vector<float>            v_val   { 3., 2., 2., 3., 0., 0., 3., 2., 2.};
@@ -420,7 +420,7 @@ BOOST_FIXTURE_TEST_CASE( dup7, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<graphblas::Index> u_ind   { 1,  2,  5,  6,  7,  8 }; 
   std::vector<float>            u_val   { 3., 2., 2., 0., 3., 1.};
   std::vector<float>            v_val   { 3., 2., 2., 3., 0., 0., 3., 2., 2.};
@@ -435,7 +435,7 @@ BOOST_FIXTURE_TEST_CASE( dup9, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<graphblas::Index> mask_ind{ 0,  2,  4,  6,  7,  8 };
   std::vector<float>            mask_val{ 3., 2., 2., 0., 3., 0.};
   std::vector<graphblas::Index> u_ind   { 1,  2,  5,  6,  7,  8 }; 
@@ -450,7 +450,7 @@ BOOST_FIXTURE_TEST_CASE( dup11, TestMatrix )
   int argc = 3;
   char* argv[] = {"app", "--debug", "1"};
   po::variables_map vm;
-  parseArgs( argc, argv, vm );
+  parseArgs(argc, argv, &vm);
   std::vector<graphblas::Index> u_ind   { 1,  2,  5,  6,  7,  8 }; 
   std::vector<float>            u_val   { 3., 2., 2., 0., 3., 1.};
   std::vector<graphblas::Index> v_ind   { 1,  2,  4,  6,  7,  9 }; 

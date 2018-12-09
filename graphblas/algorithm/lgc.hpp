@@ -2,7 +2,7 @@
 #define GRB_ALGORITHM_LGC_HPP
 
 #include "graphblas/algorithm/testLgc.hpp"
-#include "graphblas/backend/apspie/util.hpp" // GpuTimer
+#include "graphblas/backend/cuda/util.hpp" // GpuTimer
 
 namespace graphblas
 {

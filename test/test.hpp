@@ -68,12 +68,11 @@ void BOOST_ASSERT_LIST( const T* lhs,
                         L length=5 )
 {
   int flag = 0;
-  //length = rhs.size();
   for( L i=0; i<length; i++ )
   {
     if( lhs[i]!=rhs[i] && flag==0 )
     {
-      printf("\nINCORRECT: [%lu]: ", (unsigned long) i);
+      std::cout << "\nINCORRECT: [" << (unsigned long) i << "]: ";
       std::cout << rhs[i] << " != " << lhs[i] << "\nresult[...";
 
       for( size_t j = (i >= 5) ? i - 5 : 0; (j < i + 5) && (j < length); j++ )
@@ -85,14 +84,13 @@ void BOOST_ASSERT_LIST( const T* lhs,
       std::cout << "...]";
     }
     if( lhs[i]!=rhs[i] )
-      flag += 1;
-    //BOOST_ASSERT( lhs[i] == rhs[i] );
+      flag++;
   }
   std::cout << "\n";
   if( flag==0 )
     std::cout << "CORRECT\n";
   else
-    std::cout << flag << " errors occured.\n";
+    std::cout << flag << " errors occurred.\n";
 }
 
 template <typename T, typename S, typename L>
@@ -106,7 +104,7 @@ void BOOST_ASSERT_LIST_FLOAT( const T* lhs,
   {
     if( !assert_float(lhs[i], rhs[i]) && flag==0 )
     {
-      printf("\nINCORRECT: [%lu]: ", (unsigned long) i);
+      std::cout << "\nINCORRECT: [" << (unsigned long) i << "]: ";
       std::cout << rhs[i] << " != " << lhs[i] << "\nresult[...";
 
       for( size_t j = (i >= 5) ? i - 5 : 0; (j < i + 5) && (j < length); j++ )
@@ -119,7 +117,6 @@ void BOOST_ASSERT_LIST_FLOAT( const T* lhs,
     }
     if( !assert_float(lhs[i], rhs[i]) )
       flag += 1;
-    //BOOST_ASSERT( lhs[i] == rhs[i] );
   }
   std::cout << "\n";
   if( flag==0 )

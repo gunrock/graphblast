@@ -2,7 +2,7 @@
 #define GRB_ALGORITHM_BFS_HPP
 
 #include "graphblas/algorithm/testBfs.hpp"
-#include "graphblas/backend/apspie/util.hpp" // GpuTimer
+#include "graphblas/backend/cuda/util.hpp" // GpuTimer
 
 namespace graphblas
 {
@@ -91,9 +91,10 @@ namespace algorithm
       gpu_tight.Stop();
       std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
           "push" : "pull";
-      std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
-          << unvisited << ", " << vxm_mode << ", "
-          << gpu_tight.ElapsedMillis() << "\n";
+      if (desc->descriptor_.timing_ == 2)
+        std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+            << unvisited << ", " << vxm_mode << ", "
+            << gpu_tight.ElapsedMillis() << "\n";
       return gpu_tight.ElapsedMillis();
     }
     return 0.f;

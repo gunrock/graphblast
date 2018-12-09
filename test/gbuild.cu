@@ -1,4 +1,4 @@
-#define GRB_USE_APSPIE
+#define GRB_USE_CUDA
 #define private public
 
 #include <vector>
@@ -31,8 +31,8 @@ void testMatrixBuild( char const* mtx )
   char* dat_name;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false,
-      &dat_name);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+      false, &dat_name);
 
   // Initialize sparse matrix A
   graphblas::Matrix<float> A(nrows, ncols);

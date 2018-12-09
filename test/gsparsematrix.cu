@@ -1,4 +1,4 @@
-#define GRB_USE_APSPIE
+#define GRB_USE_CUDA
 #define private public
 
 #include <vector>
@@ -30,7 +30,8 @@ void testMatrix( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+      false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -52,7 +53,8 @@ void testNnew( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+      false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj;
@@ -76,7 +78,8 @@ void testDup( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+      false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);
@@ -108,7 +111,8 @@ void testClear( char const* mtx )
   std::vector<float> adj_val, blk_val;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+      false);
 
   // Matrix adj (adjacency matrix)
   graphblas::Matrix<float> adj(nrows, ncols);

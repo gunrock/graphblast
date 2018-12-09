@@ -1,22 +1,31 @@
 #ifndef GRB_BACKEND_SEQUENTIAL_SEQUENTIAL
 #define GRB_BACKEND_SEQUENTIAL_SEQUENTIAL
 
-// What is good replacement for CUDA_SAFE_CALL?
-/*#define CUDA_SAFE_CALL_NO_SYNC(call) do {                               \
-  cudaError err = call;                                                 \
-  if( cudaSuccess != err) {                                             \
-    fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",       \
-                __FILE__, __LINE__, cudaGetErrorString( err) );         \
-    exit(EXIT_FAILURE);                                                 \
-    } } while (0)
-
-#define CUDA_SAFE_CALL(call) do {                                       \
-  CUDA_SAFE_CALL_NO_SYNC(call);                                         \
-  cudaError err = cudaThreadSynchronize();                              \
-  if( cudaSuccess != err) {                                             \
-     fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",      \
-                 __FILE__, __LINE__, cudaGetErrorString( err) );        \
-     exit(EXIT_FAILURE);                                                \
-  } } while (0)*/
+#include "graphblas/backend/sequential/types.hpp"
+#include "graphblas/backend/sequential/util.hpp"
+#include "graphblas/backend/sequential/vector.hpp"
+#include "graphblas/backend/sequential/matrix.hpp"
+//#include "graphblas/backend/sequential/transpose.hpp"
+#include "graphblas/backend/sequential/spgemm.hpp"
+#include "graphblas/backend/sequential/spmm.hpp"
+#include "graphblas/backend/sequential/gemm.hpp"
+#include "graphblas/backend/sequential/spmspv_inner.hpp"
+#include "graphblas/backend/sequential/spmspv.hpp"
+#include "graphblas/backend/sequential/spmv.hpp"
+#include "graphblas/backend/sequential/gemv.hpp"
+#include "graphblas/backend/sequential/reduce.hpp"
+#include "graphblas/backend/sequential/scatter.hpp"
+#include "graphblas/backend/sequential/ewisemult.hpp"
+#include "graphblas/backend/sequential/ewiseadd.hpp"
+#include "graphblas/backend/sequential/trace.hpp"
+#include "graphblas/backend/sequential/assign.hpp"
+#include "graphblas/backend/sequential/apply.hpp"
+#include "graphblas/backend/sequential/descriptor.hpp"
+#include "graphblas/backend/sequential/sparse_vector.hpp"
+#include "graphblas/backend/sequential/dense_vector.hpp"
+#include "graphblas/backend/sequential/sparse_matrix.hpp"
+#include "graphblas/backend/sequential/dense_matrix.hpp"
+#include "graphblas/backend/sequential/operations.hpp"
+#include "graphblas/backend/sequential/kernels/kernels.hpp"
 
 #endif  // GRB_BACKEND_SEQUENTIAL_SEQUENTIAL
