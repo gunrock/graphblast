@@ -92,9 +92,9 @@ graphblas::Info ssspSimple( Vector<float>*       v,
     succ_last = succ;
     
     // v = v + v * A^T (do relaxation on distance vector v)
-    graphblas::vxm<float,float,float,float>(&w, GrB_NULL, GrB_NULL,
+    graphblas::vxm<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
         graphblas::MinimumPlusSemiring<float>(), v, A, desc);
-    graphblas::eWiseAdd<float,float,float,float>(v, GrB_NULL, GrB_NULL,
+    graphblas::eWiseAdd<float, float, float, float>(v, GrB_NULL, GrB_NULL,
         graphblas::MinimumPlusSemiring<float>(), v, &w, desc);
 
     // w = v < FLT_MAX (get all reachable vertices)
@@ -163,7 +163,9 @@ See [graphblas/stddef.hpp](https://github.com/gunrock/gunrock-grb/blob/master/gr
 
 ## Presentations
 
-* SIAM Minisymposium 2016, **Design Considerations for a GraphBLAS Compliant Graph Library on Clusters of GPUs**, July 2016. [[slides](http://www.ece.ucdavis.edu/~ctcyang/pub/siam-slides2016.pdf)]
+1. SC Doctoral Showcase 2018, **Linear Algebra is the Right Way to Think About Graphs**, November 2018. [[slides](http://www.ece.ucdavis.edu/~ctcyang/pub/sc-slides2018.pdf) | [poster](http://www.ece.ucdavis.edu/~ctcyang/pub/sc-poster2018.pdf)]
+
+2. SIAM Minisymposium 2016, **Design Considerations for a GraphBLAS Compliant Graph Library on Clusters of GPUs**, July 2016. [[slides](http://www.ece.ucdavis.edu/~ctcyang/pub/siam-slides2016.pdf)]
 
 ## Acknowledgments
 
