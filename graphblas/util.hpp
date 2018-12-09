@@ -287,7 +287,7 @@ void removeSelfloop(std::vector<graphblas::Index>* row_indices,
       (*col_indices)[i] = -1;
 
   // Duplicates
-    if (curr == last && curr_row == last_row)
+    if (i > 0 && curr == last && curr_row == last_row)
       (*col_indices)[i] = -1;
   }
 

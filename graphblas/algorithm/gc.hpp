@@ -76,6 +76,7 @@ float gc(Vector<int>*       v,
   int min_color = 0;
   Index unvisited = A_nrows;
   backend::GpuTimer gpu_tight;
+  float gpu_tight_time = 0.f;
 
   if (desc->descriptor_.timing_ > 0)
     gpu_tight.Start();
@@ -95,6 +96,7 @@ float gc(Vector<int>*       v,
         std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
             << unvisited << ", " << vxm_mode << ", "
             << gpu_tight.ElapsedMillis() << "\n";
+        gpu_tight_time += gpu_tight.ElapsedMillis();
       }
       unvisited -= succ;
       gpu_tight.Start();
@@ -168,9 +170,9 @@ float gc(Vector<int>*       v,
       std::cout << iter << ", " << succ << "/" << A_nrows << ", "
           << unvisited << ", " << vxm_mode << ", "
           << gpu_tight.ElapsedMillis() << "\n";
-    return gpu_tight.ElapsedMillis();
+    gpu_tight_time += gpu_tight.ElapsedMillis();
+    return gpu_tight_time;
   }
-  //graphblas::backend::printDevice("colors", v->vector_.dense_.d_val_, A_nrows, false);
   return 0.f;
 }
 
