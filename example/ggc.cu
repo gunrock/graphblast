@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
   int  niter;
   int  source;
   int  max_colors;
+  int  gc_algo;
   char* dat_name;
   po::variables_map vm;
 
@@ -49,6 +50,7 @@ int main(int argc, char** argv) {
     niter      = vm["niter"    ].as<int>();
     source     = vm["source"   ].as<int>();
     max_colors = vm["maxcolors"].as<int>();
+    gc_algo    = vm["gcalgo"   ].as<int>();
 
     // This is an imperfect solution, because this should happen in
     // desc.loadArgs(vm) instead of application code!
@@ -89,7 +91,12 @@ int main(int argc, char** argv) {
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::algorithm::gc(&v, &a, source, max_colors, &desc);
+  if (gc_algo == 0)
+    graphblas::algorithm::gcJP(&v, &a, source, max_colors, &desc);
+  else if (gc_algo == 1)
+    graphblas::algorithm::gcMIS(&v, &a, source, max_colors, &desc);
+  else
+    std::cout << "Error: Invalid graph coloring algorithm selected!\n";
   warmup.Stop();
 
   std::vector<int> h_gc_gpu;
@@ -104,7 +111,14 @@ int main(int argc, char** argv) {
   float tight = 0.f;
   float val;
   for (int i = 0; i < niter; i++) {
-    val = graphblas::algorithm::gc(&y, &a, source, max_colors, &desc);
+    if (gc_algo == 0) {
+      val = graphblas::algorithm::gcJP(&v, &a, source, max_colors, &desc);
+    } else if (gc_algo == 1) {
+      val = graphblas::algorithm::gcMIS(&v, &a, source, max_colors, &desc);
+    } else {
+      std::cout << "Error: Invalid graph coloring algorithm selected!\n";
+      break;
+    }
     tight += val;
   }
   // cudaProfilerStop();
