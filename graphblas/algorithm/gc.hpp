@@ -10,7 +10,6 @@ template <typename T_in1, typename T_out=T_in1>
 struct set_random {
   set_random() {
     seed_ = getEnv("GRB_SEED", 0);
-    std::cout << seed_ << std::endl;
     srand(seed_);
   }
 
