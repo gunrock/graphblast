@@ -11,7 +11,15 @@
 namespace graphblas {
 namespace algorithm {
 
-// Implementation of maximal independent set algorithm inner loop
+/*!
+ * \brief Implementation of maximal independent set algorithm inner loop
+ * \param v output vector which stores independent set as 1
+ * \param w weight vector with candidates as nonzeroes
+ * \param f temporary vector
+ * \param m temporary vector
+ * \param A adjacency matrix of graph
+ * \param desc pointer to descriptor
+ */
 float misInner(Vector<int>*       v,
                Vector<int>*       w,
                Vector<int>*       f,
@@ -20,6 +28,9 @@ float misInner(Vector<int>*       v,
                Descriptor*        desc) {
   Index A_nrows;
   CHECK(A->nrows(&A_nrows));
+
+  // initialize v
+  CHECK(v->fill(0));
 
   int iter = 1;
   int succ = 0;
@@ -32,7 +43,7 @@ float misInner(Vector<int>*       v,
     gpu_tight.Start();
   do {
     if (desc->descriptor_.debug()) {
-      std::cout << "=====Iteration " << iter - 1 << "=====\n";
+      std::cout << "=====MIS Iteration " << iter - 1 << "=====\n";
       CHECK(v->print());
       CHECK(w->print());
       CHECK(f->print());
@@ -49,7 +60,6 @@ float misInner(Vector<int>*       v,
       }
       gpu_tight.Start();
     }
-
     // find max of neighbors
     vxm<int, int, int, int>(m, w, GrB_NULL,
         MaximumMultipliesSemiring<int>(), w, A, desc);

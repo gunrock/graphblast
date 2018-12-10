@@ -48,7 +48,7 @@ float sssp(Vector<float>*       v,
     gpu_tight.Start();
   do {
     if (desc->descriptor_.debug())
-      std::cout << "=====Iteration " << iter - 1 << "=====\n";
+      std::cout << "=====SSSP Iteration " << iter - 1 << "=====\n";
     if (desc->descriptor_.timing_ == 2) {
       gpu_tight.Stop();
       if (iter > 1) {

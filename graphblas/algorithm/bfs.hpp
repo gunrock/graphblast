@@ -45,7 +45,7 @@ float bfs(Vector<float>*       v,
     gpu_tight.Start();
   do {
     if (desc->descriptor_.debug()) {
-      std::cout << "=====Iteration " << iter - 1 << "=====\n";
+      std::cout << "=====BFS Iteration " << iter - 1 << "=====\n";
       v->print();
       q1.print();
     }

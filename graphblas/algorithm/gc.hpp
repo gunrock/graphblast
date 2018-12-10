@@ -59,7 +59,7 @@ float gcMIS(Vector<int>*       v,
     gpu_tight.Start();
   do {
     if (desc->descriptor_.debug()) {
-      std::cout << "=====Iteration " << iter - 1 << "=====\n";
+      std::cout << "=====GC Iteration " << iter - 1 << "=====\n";
       CHECK(v->print());
       CHECK(w.print());
       CHECK(f.print());
@@ -78,7 +78,7 @@ float gcMIS(Vector<int>*       v,
       unvisited -= succ;
       gpu_tight.Start();
     }
-    temp_w.dup(&w);
+    CHECK(temp_w.dup(&w));
 
     // find maximal independent set f of w on graph A
     misInner(&f, &temp_w, &n, &m, A, desc);
@@ -178,7 +178,7 @@ float gcJP(Vector<int>*       v,
     gpu_tight.Start();
   do {
     if (desc->descriptor_.debug()) {
-      std::cout << "=====Iteration " << iter - 1 << "=====\n";
+      std::cout << "=====GC Iteration " << iter - 1 << "=====\n";
       CHECK(v->print());
       CHECK(w.print());
       CHECK(f.print());

@@ -87,7 +87,7 @@ float lgc(Vector<float>*       p,      // PageRank result
     gpu_tight.Start();
   do {
     if (desc->descriptor_.debug())
-      std::cout << "=====Iteration " << iter << "=====\n";
+      std::cout << "=====LGC Iteration " << iter << "=====\n";
     if (desc->descriptor_.timing_ == 2) {
       gpu_tight.Stop();
       if (iter > 1) {
