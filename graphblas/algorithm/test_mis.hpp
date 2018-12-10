@@ -12,8 +12,7 @@ int SimpleReferenceMis(Index             nrows,
                        const Index*      h_csrRowPtr,
                        const Index*      h_csrColInd,
                        std::vector<int>* h_mis_cpu,
-                       int               seed,
-                       int               max_colors) {
+                       int               seed) {
   // initialize distances
   for (Index i = 0; i < nrows; ++i)
     (*h_mis_cpu)[i] = 0;
@@ -25,10 +24,7 @@ int SimpleReferenceMis(Index             nrows,
   std::iota(order.begin(), order.end(), 0);
   std::shuffle(order.begin(), order.end(), gen);
 
-  /*!
-   * perform Graph Coloring
-   */
-
+  // perform Graph Coloring
   CpuTimer cpu_timer;
   cpu_timer.Start();
 

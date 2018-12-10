@@ -32,6 +32,9 @@ float gcMIS(Vector<int>*       v,
   Vector<int> w(A_nrows);
   CHECK(w.fill(0));
 
+  // Temporary weight vector (w)
+  Vector<int> temp_w(A_nrows);
+
   // Set seed
   setEnv("GRB_SEED", seed);
 
@@ -69,9 +72,10 @@ float gcMIS(Vector<int>*       v,
       unvisited -= succ;
       gpu_tight.Start();
     }
+    temp_w.dup(&w);
 
     // find maximal independent set f of w on graph A
-    misInner(&f, &w, A, desc);
+    misInner(&f, &temp_w, A, desc);
 
     // stop when frontier is empty
     reduce<int, int>(&succ, GrB_NULL, PlusMonoid<int>(), &f, desc);
