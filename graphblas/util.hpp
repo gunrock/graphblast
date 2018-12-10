@@ -68,11 +68,11 @@ void parseArgs(int argc, char**argv, po::variables_map* vm) {
 
     // mxv params
     ("source", po::value<int>()->default_value(0),
-        "Source node traversal is launched from, Seed for probabilistic algorithms such as maximal independent set, graph coloring, etc.") // NOLINT
+        "Source node traversal is launched from, Seed for probabilistic algorithms such as maximal independent set, graph coloring, etc.")  // NOLINT(whitespace/line_length)
     ("mxvmode", po::value<int>()->default_value(1),
         "0: push-pull, 1: push only, 2: pull only")
     ("switchpoint", po::value<float>()->default_value(0.01),
-        "Percentage of nnz needed in order to switch from sparse to dense when mxvmode=0") // NOLINT
+        "Percentage of nnz needed in order to switch from sparse to dense when mxvmode=0")  // NOLINT(whitespace/line_length)
     ("dirinfo", po::value<bool>()->default_value(false),
         "True means show mxvmode direction info, and when switches happen")
     ("struconly", po::value<bool>()->default_value(false),
@@ -82,19 +82,19 @@ void parseArgs(int argc, char**argv, po::variables_map* vm) {
 
     // mxv (spmspv/push) params
     ("memusage", po::value<float>()->default_value(1.0),
-        "Multiple of |E| used to store temporary neighbor list during push phase when using MERGE load-balancing") // NOLINT
+        "Multiple of |E| used to store temporary neighbor list during push phase when using MERGE load-balancing")  // NOLINT(whitespace/line_length)
     ("endbit", po::value<bool>()->default_value(true),
-        "True means do not do radix sort on full 32 bits, False means do it on full 32 bits when using MERGE load-balancing") // NOLINT
+        "True means do not do radix sort on full 32 bits, False means do it on full 32 bits when using MERGE load-balancing")  // NOLINT(whitespace/line_length)
     ("sort", po::value<bool>()->default_value(true),
-        "True means sort, False means do not sort when using MERGE load-balancing and struconly=1") // NOLINT
+        "True means sort, False means do not sort when using MERGE load-balancing and struconly=1")  // NOLINT(whitespace/line_length)
     ("atomic", po::value<bool>()->default_value(false),
-        "True means use atomics, False means do not use atomics when using SIMPLE or TWC load-balancing") // NOLINT
+        "True means use atomics, False means do not use atomics when using SIMPLE or TWC load-balancing")  // NOLINT(whitespace/line_length)
 
     // mxv (spmv/pull) params
     ("earlyexit", po::value<bool>()->default_value(true),
-        "True means use early exit, False means do not use it when using Boolean LogicalOrAndSemiring") // NOLINT
+        "True means use early exit, False means do not use it when using Boolean LogicalOrAndSemiring")  // NOLINT(whitespace/line_length)
     ("fusedmask", po::value<bool>()->default_value(true),
-        "True means use fused mask in pull direction when using LogicalOrAnd semiring, False means do not do it") // NOLINT
+        "True means use fused mask in pull direction when using LogicalOrAnd semiring, False means do not do it")  // NOLINT(whitespace/line_length)
 
     // algorithm-specific params
     ("maxcolors", po::value<int>()->default_value(10000),
