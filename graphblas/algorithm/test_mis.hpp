@@ -22,7 +22,7 @@ int SimpleReferenceMis(Index             nrows,
 
   // initialize candidate list
   std::vector<bool> candidates(nrows, true);
-  
+
   std::vector<Index> order(nrows);
   std::iota(order.begin(), order.end(), 0);
   std::shuffle(order.begin(), order.end(), gen);
