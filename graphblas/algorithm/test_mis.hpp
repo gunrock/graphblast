@@ -6,8 +6,8 @@
 namespace graphblas {
 namespace algorithm {
 
-// A simple CPU-based reference Graph Coloring implementation of the greedy
-// First-Fit Implementation (FFI) algorithm
+// A simple CPU-based reference Maximal Independent Set implementation of the
+// greedy algorithm
 int SimpleReferenceMis(Index             nrows,
                        const Index*      h_csrRowPtr,
                        const Index*      h_csrColInd,
@@ -20,29 +20,29 @@ int SimpleReferenceMis(Index             nrows,
   // initialize random number generator
   std::mt19937 gen(seed);
 
+  // initialize candidate list
+  std::vector<bool> candidates(nrows, true);
+  
   std::vector<Index> order(nrows);
   std::iota(order.begin(), order.end(), 0);
   std::shuffle(order.begin(), order.end(), gen);
 
-  // perform Graph Coloring
+  // perform Maximal Independent Set
   CpuTimer cpu_timer;
   cpu_timer.Start();
 
   for (Index i = 0; i < nrows; ++i) {
     Index row = order[i];
-    std::vector<bool> min_array(max_colors, false);
 
     Index row_start = h_csrRowPtr[row];
     Index row_end   = h_csrRowPtr[row+1];
-    for (; row_start < row_end; ++row_start) {
-      Index col = h_csrColInd[row_start];
-      int color = (*h_mis_cpu)[col];
-      min_array[color] = true;
-    }
-    for (int color = 1; color < max_colors; ++color) {
-      if (!min_array[color]) {
-        (*h_mis_cpu)[row] = color;
-        break;
+    bool viable = candidates[row];
+    if (viable) {
+      (*h_mis_cpu)[row] = 1;
+      candidates[row] = false;
+      for (; row_start < row_end; ++row_start) {
+        Index col = h_csrColInd[row_start];
+        candidates[col] = false;
       }
     }
   }
@@ -50,44 +50,63 @@ int SimpleReferenceMis(Index             nrows,
   cpu_timer.Stop();
   float elapsed = cpu_timer.ElapsedMillis();
 
-  std::cout << "CPU GC finished in " << elapsed << " msec.";
+  std::cout << "CPU MIS finished in " << elapsed << " msec.";
 }
 
+/*!
+ * Verification for Maximal Independent Set must check for 2 things:
+ * 1) that the set is independent
+ *   -i.e. no two vertices marked 1 are neighbours
+ * 2) that the set is maximal
+ *   -i.e. that the set and its neighbors form a cover
+ */
 int SimpleVerifyMis(Index                   nrows,
-                   const Index*            h_csrRowPtr,
-                   const Index*            h_csrColInd,
-                   const std::vector<int>& h_mis_cpu) {
+                    const Index*            h_csrRowPtr,
+                    const Index*            h_csrColInd,
+                    const std::vector<int>& h_mis_cpu) {
   int flag = 0;
-  int max_color = 0;
+  int set_size = 0;
+  std::vector<bool> discovered(nrows, false);
 
   for (Index row = 0; row < nrows; ++row) {
     int row_color = h_mis_cpu[row];
-    if (row_color > max_color)
-      max_color = row_color;
+    if (row_color == 1) {
+      set_size++;
+      discovered[row] = true;
 
-    if (row_color == 0 && flag == 0)
-      std::cout << "\nINCORRECT: [" << row << "]: has no color.\n";
+      Index row_start = h_csrRowPtr[row];
+      Index row_end   = h_csrRowPtr[row+1];
+      for (; row_start < row_end; ++row_start) {
+        Index col = h_csrColInd[row_start];
+        int col_color = h_mis_cpu[col];
+        if (col_color == row_color && flag == 0) {
+          std::cout << "\nINCORRECT: [" << row << "]: ";
+          std::cout << row_color << " == " << col_color << " [" << col <<
+            "]\n";
+        }
 
-    Index row_start = h_csrRowPtr[row];
-    Index row_end   = h_csrRowPtr[row+1];
-    for (; row_start < row_end; ++row_start) {
-      Index col = h_csrColInd[row_start];
-      int col_color = h_mis_cpu[col];
-      if (col_color == row_color && flag == 0) {
-        std::cout << "\nINCORRECT: [" << row << "]: ";
-        std::cout << row_color << " == " << col_color << " [" << col <<
-          "]\n";
+        if (col_color == row_color)
+          flag++;
+
+        discovered[col] = true;
       }
-
-      if (col_color == row_color)
-        flag++;
     }
   }
+  for (Index row = 0; row < nrows; ++row) {
+    if (!discovered[row] && flag == 0) {
+      std::cout << "\nINCORRECT: [" << row << "]: ";
+      std::cout << "Vertex not found!\n";
+    }
+
+    if (!discovered[row])
+      flag++;
+  }
+
   if (flag == 0)
     std::cout << "\nCORRECT\n";
   else
     std::cout << flag << " errors occurred.\n";
-  std::cout << "Graph coloring found with " << max_color << " colors.\n";
+  std::cout << "Maximal independent set found with " << set_size << " elements.\n";
 }
 }  // namespace algorithm
 }  // namespace graphblas

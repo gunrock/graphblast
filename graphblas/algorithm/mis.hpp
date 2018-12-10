@@ -14,12 +14,15 @@ namespace algorithm {
 // Implementation of maximal independent set algorithm inner loop
 float misInner(Vector<int>*       v,
                Vector<int>*       w,
+               Vector<int>*       f,
+               Vector<int>*       m,
                const Matrix<int>* A,
                Descriptor*        desc) {
   Index A_nrows;
   CHECK(A->nrows(&A_nrows));
 
   int iter = 1;
+  int succ = 0;
   int min_color = 0;
   Index unvisited = A_nrows;
   backend::GpuTimer gpu_tight;
@@ -31,15 +34,16 @@ float misInner(Vector<int>*       v,
     if (desc->descriptor_.debug()) {
       std::cout << "=====Iteration " << iter - 1 << "=====\n";
       CHECK(v->print());
-      CHECK(w.print());
-      CHECK(f.print());
+      CHECK(w->print());
+      CHECK(f->print());
     }
     if (desc->descriptor_.timing_ == 2) {
       gpu_tight.Stop();
       if (iter > 1) {
         std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
             "push" : "pull";
-        std::cout << iter - 1 << ", " << unvisited << ", " << vxm_mode << ", "
+        std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+            << unvisited << ", " << vxm_mode << ", "
             << gpu_tight.ElapsedMillis() << "\n";
         gpu_tight_time += gpu_tight.ElapsedMillis();
       }
@@ -47,27 +51,41 @@ float misInner(Vector<int>*       v,
     }
 
     // find max of neighbors
-    vxm<int, int, int, int>(&m, weight_set, GrB_NULL,
-        MaximumMultipliesSemiring<int>(), weight_set, A, desc);
+    vxm<int, int, int, int>(m, w, GrB_NULL,
+        MaximumMultipliesSemiring<int>(), w, A, desc);
 
     // find all largest nodes are candidates
     // eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,
     //     PlusGreaterSemiring<float>(), &w, &m, desc);
-    eWiseAdd<int, int, int, int>(&f, GrB_NULL, GrB_NULL,
-        GreaterPlusSemiring<int>(), &w, &m, desc);
+    eWiseAdd<int, int, int, int>(f, GrB_NULL, GrB_NULL,
+        GreaterPlusSemiring<int>(), w, m, desc);
+
+    // assign new members (frontier) to independent set v
+    assign<int, int>(v, f, GrB_NULL, static_cast<int>(1), GrB_ALL, A_nrows,
+        desc);
+
+    // get rid of new members in candidate list
+    assign<int, int>(w, f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
+        desc);
+
+    // check for stopping condition
+    reduce<int, int>(&succ, GrB_NULL, PlusMonoid<int>(), f, desc);
+    if (succ == 0)
+        break;
+
+    // remove neighbors of new members from candidates
+    vxm<int, int, int, int>(m, w, GrB_NULL,
+        LogicalOrAndSemiring<int>(), f, A,  desc);
+    assign<int, int>(w, m, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
+        desc);
   } while (succ > 0);
   if (desc->descriptor_.timing_ > 0) {
     gpu_tight.Stop();
-    v->vector_.dense_.gpuToCpu(true);
-    w.vector_.dense_.gpuToCpu(true);
-    for (int i = 0; i < A_nrows; ++i) {
-      if (v->vector_.dense_.h_val_[i] == 0)
-        std::cout << i << " " << w.vector_.dense_.h_val_[i] << std::endl;
-    }
     std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
         "push" : "pull";
     if (desc->descriptor_.timing_ == 2)
-      std::cout << iter << ", " << unvisited << ", " << vxm_mode << ", "
+      std::cout << iter << ", " << succ << "/" << A_nrows << ", "
+          << unvisited << ", " << vxm_mode << ", "
           << gpu_tight.ElapsedMillis() << "\n";
     gpu_tight_time += gpu_tight.ElapsedMillis();
     return gpu_tight_time;
@@ -91,6 +109,12 @@ float mis(Vector<int>*       v,
   Vector<int> w(A_nrows);
   CHECK(w.fill(0));
 
+  // Frontier vector (f)
+  Vector<int> f(A_nrows);
+
+  // Neighbor max (m)
+  Vector<int> m(A_nrows);
+
   // Set seed
   setEnv("GRB_SEED", seed);
 
@@ -99,7 +123,7 @@ float mis(Vector<int>*       v,
   desc->set(GrB_BACKEND, GrB_CUDA);
 
   // find maximal independent set f of w on graph A
-  float gpu_tight = misInner(v, &w, A, desc);
+  float gpu_tight = misInner(v, &w, &f, &m, A, desc);
 
   if (desc->descriptor_.timing_ > 0)
     return gpu_tight;

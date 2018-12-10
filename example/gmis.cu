@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
   std::vector<int> h_mis_cpu(nrows, 0);
   int depth = 10000;
   mis_cpu.Start();
-  int d = graphblas::algorithm::misCpu(source, &a, h_mis_cpu);
+  int d = graphblas::algorithm::misCpu(source, &a, &h_mis_cpu);
   mis_cpu.Stop();
   graphblas::algorithm::verifyMis(&a, h_mis_cpu);
 

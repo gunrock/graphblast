@@ -35,6 +35,12 @@ float gcMIS(Vector<int>*       v,
   // Temporary weight vector (w)
   Vector<int> temp_w(A_nrows);
 
+  // Buffer vector (m)
+  Vector<int> m(A_nrows);
+
+  // Buffer vector (n)
+  Vector<int> n(A_nrows);
+
   // Set seed
   setEnv("GRB_SEED", seed);
 
@@ -75,7 +81,7 @@ float gcMIS(Vector<int>*       v,
     temp_w.dup(&w);
 
     // find maximal independent set f of w on graph A
-    misInner(&f, &temp_w, A, desc);
+    misInner(&f, &temp_w, &n, &m, A, desc);
 
     // stop when frontier is empty
     reduce<int, int>(&succ, GrB_NULL, PlusMonoid<int>(), &f, desc);
@@ -100,12 +106,6 @@ float gcMIS(Vector<int>*       v,
   } while (succ > 0);
   if (desc->descriptor_.timing_ > 0) {
     gpu_tight.Stop();
-    v->vector_.dense_.gpuToCpu(true);
-    w.vector_.dense_.gpuToCpu(true);
-    for (int i = 0; i < A_nrows; ++i) {
-      if (v->vector_.dense_.h_val_[i] == 0)
-        std::cout << i << " " << w.vector_.dense_.h_val_[i] << std::endl;
-    }
     std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
         "push" : "pull";
     if (desc->descriptor_.timing_ == 2)
@@ -257,12 +257,6 @@ float gcJP(Vector<int>*       v,
   } while (succ > 0);
   if (desc->descriptor_.timing_ > 0) {
     gpu_tight.Stop();
-    v->vector_.dense_.gpuToCpu(true);
-    w.vector_.dense_.gpuToCpu(true);
-    for (int i = 0; i < A_nrows; ++i) {
-      if (v->vector_.dense_.h_val_[i] == 0)
-        std::cout << i << " " << w.vector_.dense_.h_val_[i] << std::endl;
-    }
     std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
         "push" : "pull";
     if (desc->descriptor_.timing_ == 2)
