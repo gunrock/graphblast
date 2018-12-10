@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
   std::vector<int> h_gc_cpu(nrows, 0);
   int depth = 10000;
   gc_cpu.Start();
-  int d = graphblas::algorithm::gcCpu(source, &a, h_gc_cpu, max_colors);
+  int d = graphblas::algorithm::gcCpu(source, &a, &h_gc_cpu, max_colors);
   gc_cpu.Stop();
   graphblas::algorithm::verifyGc(&a, h_gc_cpu);
 

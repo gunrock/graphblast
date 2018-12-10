@@ -1,26 +1,15 @@
 #ifndef GRAPHBLAS_ALGORITHM_GC_HPP_
 #define GRAPHBLAS_ALGORITHM_GC_HPP_
 
-#include "graphblas/algorithm/testGc.hpp"
+#include <string>
+#include <vector>
+
+#include "graphblas/algorithm/test_gc.hpp"
 #include "graphblas/algorithm/mis.hpp"
+#include "graphblas/algorithm/common.hpp"
 #include "graphblas/backend/cuda/util.hpp"
 
 namespace graphblas {
-
-template <typename T_in1, typename T_out=T_in1>
-struct set_random {
-  set_random() {
-    seed_ = getEnv("GRB_SEED", 0);
-    srand(seed_);
-  }
-
-  inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs) {
-    return rand();
-  }
-
-  int seed_;
-};
-
 namespace algorithm {
 
 // Implementation of Maximal Independent Set graph coloring algorithm
@@ -95,11 +84,13 @@ float gcMIS(Vector<int>*       v,
     assign<int, int>(v, &f, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
 
     // get rid of colored nodes in candidate list
-    assign<int, int>(&w, &f, GrB_NULL, (int)0, GrB_ALL, A_nrows, desc);
+    assign<int, int>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
+        desc);
 
     iter++;
     if (desc->descriptor_.debug())
-      std::cout << "succ: " << succ << " " << (int)succ << std::endl;
+      std::cout << "succ: " << succ << " " << static_cast<int>(succ) <<
+          std::endl;
     if (iter > desc->descriptor_.max_niter_)
       break;
   } while (succ > 0);
@@ -160,7 +151,7 @@ float gcJP(Vector<int>*       v,
 
   // Ascending array (ascending)
   Vector<int> ascending(max_colors);
-  CHECK( ascending.fillAscending(max_colors) );
+  CHECK(ascending.fillAscending(max_colors));
 
   // Array for finding smallest color (min_array)
   Vector<int> min_array(max_colors);
@@ -202,7 +193,7 @@ float gcJP(Vector<int>*       v,
       unvisited -= succ;
       gpu_tight.Start();
     }
-    
+
     // find max of neighbors
     vxm<int, int, int, int>(&m, &w, GrB_NULL,
         MaximumMultipliesSemiring<int>(), &w, A, desc);
@@ -232,7 +223,8 @@ float gcJP(Vector<int>*       v,
     CHECK(d.fill(0));
 
     // scatter nodes into a dense array
-    scatter<int, int, int, int>(&d, GrB_NULL, &n, (int)max_colors, desc);
+    scatter<int, int, int, int>(&d, GrB_NULL, &n, static_cast<int>(max_colors),
+        desc);
 
     // TODO(@ctcyang): this eWiseMult and reduce could be changed into single
     // reduce with argmin Monoid
@@ -249,11 +241,13 @@ float gcJP(Vector<int>*       v,
     assign<int, int>(v, &f, GrB_NULL, min_color, GrB_ALL, A_nrows, desc);
 
     // get rid of colored nodes in candidate list
-    assign<int, int>(&w, &f, GrB_NULL, (int)0, GrB_ALL, A_nrows, desc);
+    assign<int, int>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
+        desc);
 
     iter++;
     if (desc->descriptor_.debug())
-      std::cout << "succ: " << succ << " " << (int)succ << std::endl;
+      std::cout << "succ: " << succ << " " << static_cast<int>(succ) <<
+          std::endl;
     if (iter > desc->descriptor_.max_niter_)
       break;
   } while (succ > 0);
@@ -280,7 +274,7 @@ float gcJP(Vector<int>*       v,
 template <typename a>
 int gcCpu(Index             seed,
           Matrix<a>*        A,
-          std::vector<int>& h_gc_cpu,
+          std::vector<int>* h_gc_cpu,
           int               max_colors) {
   SimpleReferenceGc(A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
       A->matrix_.sparse_.h_csrColInd_, h_gc_cpu, seed, max_colors);
@@ -289,7 +283,7 @@ int gcCpu(Index             seed,
 template <typename a>
 int verifyGc(const Matrix<a>*        A,
              const std::vector<int>& h_gc_cpu) {
-  SimpleVerifyGc( A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+  SimpleVerifyGc(A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
       A->matrix_.sparse_.h_csrColInd_, h_gc_cpu);
 }
 }  // namespace algorithm

@@ -1,36 +1,24 @@
 #ifndef GRAPHBLAS_ALGORITHM_MIS_HPP_
 #define GRAPHBLAS_ALGORITHM_MIS_HPP_
 
-#include "graphblas/algorithm/testMis.hpp"
+#include <string>
+#include <vector>
+
+#include "graphblas/algorithm/test_mis.hpp"
+#include "graphblas/algorithm/common.hpp"
 #include "graphblas/backend/cuda/util.hpp"
 
 namespace graphblas {
-
-template <typename T_in1, typename T_out=T_in1>
-struct set_random {
-  set_random() {
-    seed_ = getEnv("GRB_SEED", 0);
-    srand(seed_);
-  }
-
-  inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs) {
-    return rand();
-  }
-
-  int seed_;
-};
-
 namespace algorithm {
 
 // Implementation of maximal independent set algorithm inner loop
 void misInner(Vector<int>*       ind_set,
               Vector<int>*       weight_set,
               const Matrix<int>* A,
-              Descriptor*        desc)
-{
-	// find max of neighbors
-	vxm<int, int, int, int>(&m, weight_set, GrB_NULL,
-			MaximumMultipliesSemiring<int>(), weight_set, A, desc);
+              Descriptor*        desc) {
+  // find max of neighbors
+  vxm<int, int, int, int>(&m, weight_set, GrB_NULL,
+      MaximumMultipliesSemiring<int>(), weight_set, A, desc);
 
   // find all largest nodes that are uncolored
   // eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,
@@ -110,11 +98,13 @@ float mis(Vector<int>*       v,
     assign<int, int>(v, &f, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
 
     // get rid of colored nodes in candidate list
-    assign<int, int>(&w, &f, GrB_NULL, (int)0, GrB_ALL, A_nrows, desc);
+    assign<int, int>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
+        desc);
 
     iter++;
     if (desc->descriptor_.debug())
-      std::cout << "succ: " << succ << " " << (int)succ << std::endl;
+      std::cout << "succ: " << succ << " " << static_cast<int>(succ) <<
+          std::endl;
     if (iter > desc->descriptor_.max_niter_)
       break;
   } while (succ > 0);
@@ -141,18 +131,18 @@ float mis(Vector<int>*       v,
 template <typename a>
 int misCpu(Index             seed,
            Matrix<a>*        A,
-           std::vector<int>& h_gc_cpu) {
-  SimpleReferenceGc(A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+           std::vector<int>* h_gc_cpu) {
+  SimpleReferenceMis(A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
       A->matrix_.sparse_.h_csrColInd_, h_gc_cpu, seed, max_colors);
 }
 
 template <typename a>
 int verifyMis(const Matrix<a>*        A,
               const std::vector<int>& h_gc_cpu) {
-  SimpleVerifyMis( A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+  SimpleVerifyMis(A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
       A->matrix_.sparse_.h_csrColInd_, h_gc_cpu);
 }
 }  // namespace algorithm
 }  // namespace graphblas
 
-#endif  // GRAPHBLAS_ALGORITHM_GC_HPP_
+#endif  // GRAPHBLAS_ALGORITHM_MIS_HPP_

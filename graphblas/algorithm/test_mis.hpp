@@ -1,23 +1,22 @@
-#ifndef GRAPHBLAS_ALGORITHM_TESTMIS_HPP_
-#define GRAPHBLAS_ALGORITHM_TESTMIS_HPP_
+#ifndef GRAPHBLAS_ALGORITHM_TEST_MIS_HPP_
+#define GRAPHBLAS_ALGORITHM_TEST_MIS_HPP_
 
-#define MARK_PREDECESSORS 0
+#include <vector>
 
 namespace graphblas {
 namespace algorithm {
 
 // A simple CPU-based reference Graph Coloring implementation of the greedy
 // First-Fit Implementation (FFI) algorithm
-int SimpleReferenceGc( Index             nrows, 
-                       const Index*      h_csrRowPtr, 
+int SimpleReferenceMis(Index             nrows,
+                       const Index*      h_csrRowPtr,
                        const Index*      h_csrColInd,
-                       std::vector<int>& h_gc_cpu,
+                       std::vector<int>* h_mis_cpu,
                        int               seed,
-                       int               max_colors )
-{
+                       int               max_colors) {
   // initialize distances
   for (Index i = 0; i < nrows; ++i)
-    h_gc_cpu[i] = 0;
+    (*h_mis_cpu)[i] = 0;
 
   // initialize random number generator
   std::mt19937 gen(seed);
@@ -33,24 +32,20 @@ int SimpleReferenceGc( Index             nrows,
   CpuTimer cpu_timer;
   cpu_timer.Start();
 
-  for (Index i = 0; i < nrows; ++i)
-  {
+  for (Index i = 0; i < nrows; ++i) {
     Index row = order[i];
     std::vector<bool> min_array(max_colors, false);
 
     Index row_start = h_csrRowPtr[row];
     Index row_end   = h_csrRowPtr[row+1];
-    for (; row_start < row_end; ++row_start)
-    {
+    for (; row_start < row_end; ++row_start) {
       Index col = h_csrColInd[row_start];
-      int color = h_gc_cpu[col];
+      int color = (*h_mis_cpu)[col];
       min_array[color] = true;
     }
-    for (int color = 1; color < max_colors; ++color)
-    {
-      if (!min_array[color])
-      {
-        h_gc_cpu[row] = color;
+    for (int color = 1; color < max_colors; ++color) {
+      if (!min_array[color]) {
+        (*h_mis_cpu)[row] = color;
         break;
       }
     }
@@ -60,34 +55,29 @@ int SimpleReferenceGc( Index             nrows,
   float elapsed = cpu_timer.ElapsedMillis();
 
   std::cout << "CPU GC finished in " << elapsed << " msec.";
-  
 }
 
-int SimpleVerifyGc( Index                   nrows,
-                    const Index*            h_csrRowPtr,
-                    const Index*            h_csrColInd,
-                    const std::vector<int>& h_gc_cpu )
-{
+int SimpleVerifyMis(Index                   nrows,
+                   const Index*            h_csrRowPtr,
+                   const Index*            h_csrColInd,
+                   const std::vector<int>& h_mis_cpu) {
   int flag = 0;
   int max_color = 0;
 
-  for (Index row = 0; row < nrows; ++row)
-  {
-    int row_color = h_gc_cpu[row];
+  for (Index row = 0; row < nrows; ++row) {
+    int row_color = h_mis_cpu[row];
     if (row_color > max_color)
       max_color = row_color;
 
     if (row_color == 0 && flag == 0)
       std::cout << "\nINCORRECT: [" << row << "]: has no color.\n";
-    
+
     Index row_start = h_csrRowPtr[row];
     Index row_end   = h_csrRowPtr[row+1];
-    for (; row_start < row_end; ++row_start)
-    {
+    for (; row_start < row_end; ++row_start) {
       Index col = h_csrColInd[row_start];
-      int col_color = h_gc_cpu[col];
-      if (col_color == row_color && flag == 0)
-      {
+      int col_color = h_mis_cpu[col];
+      if (col_color == row_color && flag == 0) {
         std::cout << "\nINCORRECT: [" << row << "]: ";
         std::cout << row_color << " == " << col_color << " [" << col <<
           "]\n";
@@ -103,8 +93,7 @@ int SimpleVerifyGc( Index                   nrows,
     std::cout << flag << " errors occurred.\n";
   std::cout << "Graph coloring found with " << max_color << " colors.\n";
 }
-
 }  // namespace algorithm
 }  // namespace graphblas
 
-#endif  // GRB_ALGORITHM_TESTMIS_HPP_
+#endif  // GRAPHBLAS_ALGORITHM_TEST_MIS_HPP_
