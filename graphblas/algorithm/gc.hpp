@@ -2,6 +2,7 @@
 #define GRAPHBLAS_ALGORITHM_GC_HPP_
 
 #include "graphblas/algorithm/testGc.hpp"
+#include "graphblas/algorithm/mis.hpp"
 #include "graphblas/backend/cuda/util.hpp"
 
 namespace graphblas {
@@ -42,28 +43,6 @@ float gcMIS(Vector<int>*       v,
   Vector<int> w(A_nrows);
   CHECK(w.fill(0));
 
-  // Temp weight vector (temp_w)
-  Vector<int> temp_w(A_nrows);
-  CHECK(temp_w.fill(0));
-  Vector<int> temp_w2(A_nrows);
-  CHECK(temp_w2.fill(0));
-
-  // Neighbor max (m)
-  Vector<int> m(A_nrows);
-
-  // Neighbor color (n)
-  Vector<int> n(A_nrows);
-
-  // Dense array (d)
-  Vector<int> d(max_colors);
-
-  // Ascending array (ascending)
-  Vector<int> ascending(max_colors);
-  CHECK( ascending.fillAscending(max_colors) );
-
-  // Array for finding smallest color (min_array)
-  Vector<int> min_array(max_colors);
-
   // Set seed
   setEnv("GRB_SEED", seed);
 
@@ -101,16 +80,9 @@ float gcMIS(Vector<int>*       v,
       unvisited -= succ;
       gpu_tight.Start();
     }
-    
-    // find max of neighbors
-    vxm<int, int, int, int>(&m, &w, GrB_NULL,
-        MaximumMultipliesSemiring<int>(), &w, A, desc);
 
-    // find all largest nodes that are uncolored
-    // eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,
-    //     PlusGreaterSemiring<float>(), &w, &m, desc);
-    eWiseAdd<int, int, int, int>(&f, GrB_NULL, GrB_NULL,
-        GreaterPlusSemiring<int>(), &w, &m, desc);
+    // find maximal independent set f of w on graph A
+    misInner(&f, &w, A, desc);
 
     // stop when frontier is empty
     reduce<int, int>(&succ, GrB_NULL, PlusMonoid<int>(), &f, desc);
@@ -119,33 +91,8 @@ float gcMIS(Vector<int>*       v,
       break;
     }
 
-    // find neighbors of frontier
-    vxm<int, int, int, int>(&m, v, GrB_NULL,
-        LogicalOrAndSemiring<int>(), &f, A, desc);
-
-    // get color
-    eWiseMult<int, int, int, int>(&n, GrB_NULL, GrB_NULL,
-        PlusMultipliesSemiring<int, int, int>(), &m, v, desc);
-
-    // prepare dense array
-    CHECK(d.fill(0));
-
-    // scatter nodes into a dense array
-    scatter<int, int, int, int>(&d, GrB_NULL, &n, (int)max_colors, desc);
-
-    // TODO(@ctcyang): this eWiseMult and reduce could be changed into single
-    // reduce with argmin Monoid
-    // map boolean bit array to element id
-    eWiseMult<int, int, int, int>(&min_array, GrB_NULL, GrB_NULL,
-        MinimumPlusSemiring<int>(), &d, &ascending, desc);
-    CHECK(min_array.setElement(max_colors, 0));
-
-    // compute min color
-    reduce<int, int>(&min_color, GrB_NULL, MinimumMonoid<int>(),
-        &min_array, desc);
-
     // assign new color
-    assign<int, int>(v, &f, GrB_NULL, min_color, GrB_ALL, A_nrows, desc);
+    assign<int, int>(v, &f, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
 
     // get rid of colored nodes in candidate list
     assign<int, int>(&w, &f, GrB_NULL, (int)0, GrB_ALL, A_nrows, desc);
