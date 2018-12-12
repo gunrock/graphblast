@@ -64,8 +64,7 @@ Single Source-Shortest Path (Bellman-Ford SSSP) example (see the [graphblas/algo
 graphblas::Info ssspSimple( Vector<float>*       v,
                             const Matrix<float>* A,
                             Index                s,
-                            Descriptor*          desc )
-{
+                            Descriptor*          desc ) {
   // Get number of vertices
   graphblas::Index A_nrows;
   A->nrows(&A_nrows);
@@ -87,8 +86,7 @@ graphblas::Info ssspSimple( Vector<float>*       v,
   float succ_last = 0.f;
   float succ = 1.f;
 
-  do
-  {
+  do {
     succ_last = succ;
     
     // v = v + v * A^T (do relaxation on distance vector v)
