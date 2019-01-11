@@ -1,4 +1,4 @@
-#define GRB_USE_APSPIE
+#define GRB_USE_CUDA
 #define private public
 
 #include <iostream>
@@ -11,7 +11,7 @@
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
-#include "graphblas/backend/apspie/util.hpp"  // GpuTimer
+#include "graphblas/backend/cuda/util.hpp"  // GpuTimer
 #include "test/test.hpp"
 
 int main( int argc, char** argv )
@@ -34,14 +34,14 @@ int main( int argc, char** argv )
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
-    parseArgs( argc, argv, vm );
+    parseArgs(argc, argv, &vm);
     debug     = vm["debug"    ].as<bool>();
     transpose = vm["transpose"].as<bool>();
     mtxinfo   = vm["mtxinfo"  ].as<bool>();
     directed  = vm["directed" ].as<int>();
     niter     = vm["niter"    ].as<int>();
-    readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, directed, mtxinfo );
+    readMtx(argv[argc-1], &row_indices, &col_indices, &values, &nrows, &ncols, 
+        &nvals, directed, mtxinfo);
   }
   // Descriptor desc
   graphblas::Descriptor desc;

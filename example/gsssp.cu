@@ -1,4 +1,4 @@
-#define GRB_USE_APSPIE
+#define GRB_USE_CUDA
 #define private public
 
 #include <iostream>
@@ -8,8 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-//#include <cuda_profiler_api.h>
-
+// #include <cuda_profiler_api.h>
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
@@ -19,8 +18,7 @@
 bool debug_;
 bool memory_;
 
-int main( int argc, char** argv )
-{
+int main(int argc, char** argv) {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
@@ -40,8 +38,8 @@ int main( int argc, char** argv )
   if (argc < 2) {
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
-  } else { 
-    parseArgs( argc, argv, vm );
+  } else {
+    parseArgs(argc, argv, &vm);
     debug     = vm["debug"    ].as<bool>();
     transpose = vm["transpose"].as<bool>();
     mtxinfo   = vm["mtxinfo"  ].as<bool>();
@@ -49,38 +47,40 @@ int main( int argc, char** argv )
     niter     = vm["niter"    ].as<int>();
     source    = vm["source"   ].as<int>();
 
-    // This is an imperfect solution, because this should happen in 
-    // desc.loadArgs(vm) instead of application code!
-    // TODO: fix this
-    readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, directed, mtxinfo, &dat_name );
+    /*!
+     * This is an imperfect solution, because this should happen in
+     * desc.loadArgs(vm) instead of application code!
+     * TODO(@ctcyang): fix this
+     */
+    readMtx(argv[argc-1], &row_indices, &col_indices, &values, &nrows, &ncols,
+        &nvals, directed, mtxinfo, &dat_name);
   }
 
   // Descriptor desc
   graphblas::Descriptor desc;
-  CHECK( desc.loadArgs(vm) );
-  if( transpose )
-    CHECK( desc.toggle(graphblas::GrB_INP1) );
+  CHECK(desc.loadArgs(vm));
+  if (transpose)
+    CHECK(desc.toggle(graphblas::GrB_INP1));
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  CHECK( a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, 
-      dat_name) );
-  CHECK( a.nrows(&nrows) );
-  CHECK( a.ncols(&ncols) );
-  CHECK( a.nvals(&nvals) );
-  if( debug ) CHECK( a.print() );
+  CHECK(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
+      dat_name));
+  CHECK(a.nrows(&nrows));
+  CHECK(a.ncols(&ncols));
+  CHECK(a.nvals(&nvals));
+  if (debug) CHECK(a.print());
 
   // Vector v
   graphblas::Vector<float> v(nrows);
 
   // Cpu BFS
   CpuTimer sssp_cpu;
-  float* h_sssp_cpu = (float*)malloc(nrows*sizeof(float));
+  float* h_sssp_cpu = reinterpret_cast<float*>(malloc(nrows*sizeof(float)));
   int depth = 10000;
   sssp_cpu.Start();
-  int d = graphblas::algorithm::ssspCpu( source, &a, h_sssp_cpu, depth, 
-      transpose );
+  int d = graphblas::algorithm::ssspCpu(source, &a, h_sssp_cpu, depth,
+      transpose);
   sssp_cpu.Stop();
 
   // Warmup
@@ -90,22 +90,21 @@ int main( int argc, char** argv )
   warmup.Stop();
 
   std::vector<float> h_sssp_gpu;
-  CHECK( v.extractTuples(&h_sssp_gpu, &nrows) );
-  BOOST_ASSERT_LIST_FLOAT( h_sssp_cpu, h_sssp_gpu, nrows );
+  CHECK(v.extractTuples(&h_sssp_gpu, &nrows));
+  BOOST_ASSERT_LIST_FLOAT(h_sssp_cpu, h_sssp_gpu, nrows);
 
   // Benchmark
   graphblas::Vector<float> y(nrows);
   CpuTimer vxm_gpu;
-  //cudaProfilerStart();
+  // cudaProfilerStart();
   vxm_gpu.Start();
   float tight = 0.f;
   float val;
-  for( int i=0; i<niter; i++ )
-  {
+  for (int i = 0; i < niter; i++) {
     val = graphblas::algorithm::sssp(&y, &a, source, &desc);
     tight += val;
   }
-  //cudaProfilerStop();
+  // cudaProfilerStop();
   vxm_gpu.Stop();
 
   float flop = 0;
@@ -116,11 +115,10 @@ int main( int argc, char** argv )
   std::cout << "tight, " << tight/niter << "\n";
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
-  if( niter )
-  {
+  if (niter) {
     std::vector<float> h_sssp_gpu2;
-    CHECK( y.extractTuples(&h_sssp_gpu2, &nrows) );
-    BOOST_ASSERT_LIST_FLOAT( h_sssp_cpu, h_sssp_gpu2, nrows );
+    CHECK(y.extractTuples(&h_sssp_gpu2, &nrows));
+    BOOST_ASSERT_LIST_FLOAT(h_sssp_cpu, h_sssp_gpu2, nrows);
   }
 
   return 0;

@@ -1,4 +1,4 @@
-#define GRB_USE_APSPIE
+#define GRB_USE_CUDA
 #define private public
 
 #include <iostream>
@@ -40,7 +40,7 @@ int main( int argc, char** argv )
     fprintf(stderr, "Usage: %s [matrix-market-filename]\n", argv[0]);
     exit(1);
   } else { 
-    parseArgs( argc, argv, vm );
+    parseArgs(argc, argv, &vm);
     debug     = vm["debug"    ].as<bool>();
     transpose = vm["transpose"].as<bool>();
     mtxinfo   = vm["mtxinfo"  ].as<bool>();
@@ -51,8 +51,8 @@ int main( int argc, char** argv )
     // This is an imperfect solution, because this should happen in 
     // desc.loadArgs(vm) instead of application code!
     // TODO: fix this
-    readMtx( argv[argc-1], row_indices, col_indices, values, nrows, ncols, 
-        nvals, directed, mtxinfo );
+    readMtx(argv[argc-1], &row_indices, &col_indices, &values, &nrows, &ncols,
+        &nvals, directed, mtxinfo );
   }
 
   // Descriptor desc

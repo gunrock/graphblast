@@ -1,4 +1,4 @@
-#define GRB_USE_APSPIE
+#define GRB_USE_CUDA
 
 #include <vector>
 #include <iostream>
@@ -28,7 +28,8 @@ BOOST_AUTO_TEST_CASE( mmio1 )
 
   // Read in test_cc.mtx
   char const *argv = "data/small/simulated_blockmodel_graph_50_nodes.mtx";
-  readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
+  readMtx(argv, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals,
+      true );
 
   int rhs[12] = {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2};
   //for( int i=0; i<12; i++ ) std::cout << row_indices[i] << "\n";
@@ -47,7 +48,8 @@ BOOST_AUTO_TEST_CASE( mmio2 )
 
   // Read in chesapeake.mtx
   char const *argv = "data/small/simulated_blockmodel_graph_100_nodes.mtx";
-  readMtx( argv, row_indices, col_indices, values, nrows, ncols, nvals, true );
+  readMtx(argv, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals,
+      true );
 
   int rhs[12] = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1};
   //for( int i=0; i<12; i++ ) std::cout << row_indices[i] << "\n";
