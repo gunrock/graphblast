@@ -95,6 +95,8 @@ int main(int argc, char** argv) {
     graphblas::algorithm::gcJP(&v, &a, source, max_colors, &desc);
   else if (gc_algo == 1)
     graphblas::algorithm::gcMIS(&v, &a, source, max_colors, &desc);
+  else if (gc_algo == 2)
+    graphblas::algorithm::gcIS(&v, &a, source, max_colors, &desc);
   else
     std::cout << "Error: Invalid graph coloring algorithm selected!\n";
   warmup.Stop();
@@ -115,6 +117,8 @@ int main(int argc, char** argv) {
       val = graphblas::algorithm::gcJP(&v, &a, source, max_colors, &desc);
     } else if (gc_algo == 1) {
       val = graphblas::algorithm::gcMIS(&v, &a, source, max_colors, &desc);
+    } else if (gc_algo == 2) {
+      val = graphblas::algorithm::gcIS(&v, &a, source, max_colors, &desc);
     } else {
       std::cout << "Error: Invalid graph coloring algorithm selected!\n";
       break;
