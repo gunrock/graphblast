@@ -34,7 +34,7 @@ float bfsSimple(Vector<float>*       v,
     assign<float, float>(v, &q1, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
     CHECK(desc->toggle(GrB_MASK));
     vxm<float, float, float, float>(&q2, v, GrB_NULL,
-        PlusMultipliesSemiring<float>(), &q1, A, desc);
+        LogicalOrAndSemiring<float>(), &q1, A, desc);
     CHECK(desc->toggle(GrB_MASK));
     CHECK(q2.swap(&q1));
     reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &q1, desc);

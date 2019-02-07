@@ -74,8 +74,10 @@ float gcIS(Vector<int>*       v,
     }
 
     // find max of neighbors
-    vxm<int, int, int, int>(&m, &w, GrB_NULL,
+    vxm<int, int, int, int>(&m, GrB_NULL, GrB_NULL,
         MaximumMultipliesSemiring<int>(), &w, A, desc);
+    //vxm<int, int, int, int>(&m, &w, GrB_NULL,
+    //    MaximumMultipliesSemiring<int>(), &w, A, desc);
 
     // find all largest nodes that are uncolored
     // eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,
