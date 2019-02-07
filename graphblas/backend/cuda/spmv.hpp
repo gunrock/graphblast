@@ -84,6 +84,15 @@ Info spmv(DenseVector<W>*        w,
   auto add_op = extractAdd(op);
   int functor = add_op(3, 5);
 
+  if (desc->debug()) {
+    std::cout << "Fused mask: " << desc->fusedmask() << std::endl;
+    std::cout << "Functor:    " << functor << std::endl;
+  }
+
+  if (desc->struconly() && functor != 1)
+    std::cout << "Warning: Using structure-only mode and not using logical or "
+        << "semiring may result in unintended behaviour. Is this intended?\n";
+
   if (use_mask && desc->fusedmask() && functor == 1) {
     // Mask type
     // 1) Dense mask

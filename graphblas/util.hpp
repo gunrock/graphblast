@@ -69,6 +69,10 @@ void parseArgs(int argc, char**argv, po::variables_map* vm) {
     // mxv params
     ("source", po::value<int>()->default_value(0),
         "Source node traversal is launched from, Seed for probabilistic algorithms such as maximal independent set, graph coloring, etc.")  // NOLINT(whitespace/line_length)
+    ("source_start", po::value<int>()->default_value(0),
+        "Source node range begin")
+    ("source_end", po::value<int>()->default_value(1),
+        "Source node range end")
     ("mxvmode", po::value<int>()->default_value(1),
         "0: push-pull, 1: push only, 2: pull only")
     ("switchpoint", po::value<float>()->default_value(0.01),
