@@ -1,14 +1,12 @@
-# Gunrock-GrB: Gunrock GraphBLAS on GPU
+# GraphBLAST
 
-[GraphBLAS](https://graphblas.org) is an open standard for building blocks of graph algorithms in the language of linear algebra. By virtue of it being an open standard, it gives data scientists who have no GPU programming experience the power to implement graph algorithms on the GPU. [Gunrock](https://github.com/gunrock/gunrock) is the fastest GPU graph framework in the world. Gunrock is featured on NVIDIA's [list of GPU Accelerated Libraries](https://developer.nvidia.com/gpu-accelerated-libraries) as the only non-NVIDIA library for GPU graph analytics. 
-
-Our project seeks to combine the elegance of the GraphBLAS interface with the best-in-class performance Gunrock provides. Our goal is to be the leading graph framework in the following metrics:
+GraphBLAST is a GPU implementation of [GraphBLAS](https://graphblas.org), an open standard for building blocks of graph algorithms. It gives data scientists without GPU programming experience the power to implement graph algorithms on the GPU. We are the leading graph framework in the following metrics:
 
 - **Performance**: The first high-performance GPU implementation of GraphBLAS
-- **Expressible**: A graph algorithm library containing commonly used graph algorithms
+- **Composable**: A library with building blocks for expressing most graph algorithms
 - **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 25 lines of code gets 3.68 GTEPS on a single NVIDIA V100 GPU (which would place 2nd in [Graph500](https://graph500.org/?page_id=384) for SSSP as of Oct. 2018)
 - **Portable**: Algorithms implemented using other GraphBLAS backends ([GBTL](https://github.com/cmu-sei/gbtl), [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html), [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas))  can be ported to performance-centric GPU backend
-- **Innovative**: Combines state-of-the-art [graph optimizations](https://escholarship.org/uc/item/021076bn) from Gunrock with the automatic direction-optimization heuristic of [Ligra](https://github.com/jshun/ligra)
+- **Innovative**: Combines state-of-the-art [graph optimizations](https://escholarship.org/uc/item/021076bn) from [Gunrock](https://github.com/gunrock/gunrock) with the automatic direction-optimization heuristic of [Ligra](https://github.com/jshun/ligra)
 
 ## Prerequisites
 
@@ -29,7 +27,7 @@ A step by step series of instructions that tell you have to get a development en
 1. First, you must download the software:
 
 ```
-git clone --recursive https://github.com/gunrock/gunrock-grb.git
+git clone --recursive https://github.com/gunrock/graphblast.git
 ```
 
 2. The current library is set up as a header-only library. To install this library, copy the graphblas directory, its subdirectories and the specific platform subdirectory (sans the platform's test directories) to a location in your include path. However, there are 2 source files that need to be compiled with your program (`ext/moderngpu/src/mgpucontext.cu` and `ext/moderngpu/src/mgpuutil.cpp`).
@@ -39,14 +37,14 @@ We provide two sample build paths using `Makefile` and `CMake`.
 ### Using Makefile
 
 ```
-cd gunrock-grb
+cd graphblast
 make -j16
 ```
 
 ### Using CMake
 
 ```
-cd gunrock-grb
+cd graphblast
 mkdir build
 cd build
 cmake ..
@@ -133,7 +131,7 @@ An operation is the memory access pattern common to most graph algorithms (equiv
 - `eWiseAdd`: elementwise addition (VertexMap)
 - `eWiseMult`: elementwise multiplication (VertexMap)
 
-See [graphblas/operations.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/operations.hpp) for a complete list of operations.
+See [graphblas/operations.hpp](https://github.com/gunrock/graphblast/blob/master/graphblas/operations.hpp) for a complete list of operations.
 
 ### Semiring
 
@@ -149,7 +147,7 @@ The most frequently used semirings (with their common usage in brackets) are:
 - `MinimumPlus`: tropical min-plus semiring (shortest path)
 - `MaximumMultipliesSemiring`: tropical max-times semiring (maximal independent set)
 
-See [graphblas/stddef.hpp](https://github.com/gunrock/gunrock-grb/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
+See [graphblas/stddef.hpp](https://github.com/gunrock/graphblast/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
 
 ## Publications
 
@@ -173,4 +171,4 @@ This work was funded by the DARPA HIVE program under AFRL Contract FA8650-18-2-7
 
 ## Copyright and Software License
 
-Gunrock-GrB is copyright under the Regents of the University of California, 2015–2018. The library, examples, and all source code are released under [Apache 2.0](LICENSE.md).
+GraphBLAST is copyright under the Regents of the University of California, 2015–2019. The library, examples, and all source code are released under [Apache 2.0](LICENSE.md).
