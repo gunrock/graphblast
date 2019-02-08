@@ -104,7 +104,8 @@ void parseArgs(int argc, char**argv, po::variables_map* vm) {
     ("maxcolors", po::value<int>()->default_value(10000),
         "Upper bound on colors when graph coloring algorithm is used")
     ("gcalgo", po::value<int>()->default_value(0),
-        "0: Jones-Plassman, 1: Maximal independent set, 2: Independent set")
+        "0: Jones-Plassman, 1: Maximal independent set, 2: Independent set,
+         3: Fused apply-vxm")
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128),
