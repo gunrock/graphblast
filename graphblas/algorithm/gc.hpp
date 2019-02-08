@@ -12,6 +12,33 @@
 namespace graphblas {
 namespace algorithm {
 
+// cuSPARSE implementation
+float gcCusparse(Vector<int>*       v,
+                 const Matrix<float>* A,
+                 int                seed,
+                 int                max_colors,
+                 Descriptor*        desc) {
+  Index A_nrows;
+  CHECK(A->nrows(&A_nrows));
+
+  // Colors vector (v)
+  // 0: no color, 1 ... n: color
+  CHECK(v->fill(0));
+
+  backend::GpuTimer gpu_tight;
+  float gpu_tight_time = 0.f;
+
+  if (desc->descriptor_.timing_ > 0)
+    gpu_tight.Start();
+  graphColor(v, A, desc);
+  if (desc->descriptor_.timing_ > 0) {
+    gpu_tight.Stop();
+    gpu_tight_time += gpu_tight.ElapsedMillis();
+    return gpu_tight_time;
+  }
+  return 0.f;  
+}
+
 // Implementation of Independent Set graph coloring algorithm
 float gcIS(Vector<int>*       v,
            const Matrix<int>* A,
@@ -388,9 +415,10 @@ int gcCpu(Index             seed,
 
 template <typename a>
 int verifyGc(const Matrix<a>*        A,
-             const std::vector<int>& h_gc_cpu) {
+             const std::vector<int>& h_gc_cpu,
+             bool                    suppress_zero = false) {
   SimpleVerifyGc(A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
-      A->matrix_.sparse_.h_csrColInd_, h_gc_cpu);
+      A->matrix_.sparse_.h_csrColInd_, h_gc_cpu, suppress_zero);
 }
 }  // namespace algorithm
 }  // namespace graphblas

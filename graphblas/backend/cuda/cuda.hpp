@@ -6,6 +6,7 @@
 #include "graphblas/backend/cuda/vector.hpp"
 #include "graphblas/backend/cuda/matrix.hpp"
 #include "graphblas/backend/cuda/transpose.hpp"
+#include "graphblas/backend/cuda/color.hpp"
 #include "graphblas/backend/cuda/spgemm.hpp"
 #include "graphblas/backend/cuda/spmm.hpp"
 #include "graphblas/backend/cuda/gemm.hpp"

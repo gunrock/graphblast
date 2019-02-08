@@ -57,7 +57,8 @@ int SimpleReferenceGc(Index             nrows,
 int SimpleVerifyGc(Index                   nrows,
                    const Index*            h_csrRowPtr,
                    const Index*            h_csrColInd,
-                   const std::vector<int>& h_gc_cpu) {
+                   const std::vector<int>& h_gc_cpu,
+                   bool                    suppress_zero) {
   int flag = 0;
   int max_color = 0;
 
@@ -66,7 +67,7 @@ int SimpleVerifyGc(Index                   nrows,
     if (row_color > max_color)
       max_color = row_color;
 
-    if (row_color == 0 && flag == 0)
+    if (row_color == 0 && flag == 0 && !suppress_zero)
       std::cout << "\nINCORRECT: [" << row << "]: has no color.\n";
 
     Index row_start = h_csrRowPtr[row];

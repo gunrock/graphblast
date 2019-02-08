@@ -11,7 +11,7 @@ INC += -I$(MGPU_DIR) -I$(CUB_DIR) -I$(BOOST_DIR) -I$(GRB_DIR)
 # Dependency Lists
 #-------------------------------------------------------------------------------
 
-all: gbfs gdiameter gsssp glgc gmis ggc
+all: gbfs gdiameter gsssp glgc gmis ggc ggc_cusparse
 
 gbfs: example/*
 	mkdir -p bin
@@ -37,8 +37,12 @@ ggc: example/*
 	mkdir -p bin
 	nvcc -g $(ARCH) $(OPTIONS) -o bin/ggc example/ggc.cu $(INC) $(GRB_DEPS) $(LIBS)
 
+ggc_cusparse: example/*
+	mkdir -p bin
+	nvcc -g $(ARCH) $(OPTIONS) -o bin/ggc_cusparse example/ggc_cusparse.cu $(INC) $(GRB_DEPS) $(LIBS)
+
 clean:
-	rm -f bin/gbfs bin/gdiameter bin/gsssp bin/glgc bin/gmis bin/ggc
+	rm -f bin/gbfs bin/gdiameter bin/gsssp bin/glgc bin/gmis bin/ggc bin/ggc_cusparse
 
 lint:
 	scripts/lint.py graphblas cpp $(GRB_DIR)example $(GRB_DIR)graphblas $(GRB_DIR)test --exclude_path $(GRB_DIR)graphblas/backend/sequential

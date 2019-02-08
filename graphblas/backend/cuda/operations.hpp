@@ -834,6 +834,24 @@ Info scatter(Vector<W>*       w,
   }
   return GrB_SUCCESS;
 }
+
+template <typename W, typename a>
+Info graphColor(Vector<W>*       w,
+                const Matrix<a>* A,
+                Descriptor*      desc) {
+  if (desc->debug())
+    std::cout << "===Begin cuSPARSE graph color===\n";
+
+  CHECK(w->setStorage(GrB_DENSE));
+  
+  cusparse_color(&w->dense_, &A->sparse_, desc);
+
+  if (desc->debug()) {
+    std::cout << "===End cuSPARSE graph color===\n";
+    CHECK(w->print());
+  }
+  return GrB_SUCCESS;
+}
 }  // namespace backend
 }  // namespace graphblas
 

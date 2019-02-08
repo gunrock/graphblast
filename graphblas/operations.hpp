@@ -590,6 +590,18 @@ Info scatter(Vector<W>*       w,
 
   return backend::scatter(&w->vector_, mask_t, &u->vector_, val, desc_t);
 }
+
+template <typename W, typename a>
+Info graphColor(Vector<W>*       w,
+                const Matrix<a>* A,
+                Descriptor*      desc) {
+  if (A == NULL || w == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::graphColor(&w->vector_, &A->matrix_, desc_t);
+}
 }  // namespace graphblas
 
 #endif  // GRAPHBLAS_OPERATIONS_HPP_
