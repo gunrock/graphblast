@@ -5,7 +5,7 @@ GraphBLAST is a GPU implementation of [GraphBLAS](https://graphblas.org), an ope
 - **Performance**: The first high-performance GPU implementation of GraphBLAS
 - **Composable**: A library with building blocks for expressing most graph algorithms
 - **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 25 lines of code gets 3.68 GTEPS on a single NVIDIA V100 GPU (which would place 2nd in [Graph500](https://graph500.org/?page_id=384) for SSSP as of Oct. 2018)
-- **Portable**: Algorithms implemented using other GraphBLAS backends ([GBTL](https://github.com/cmu-sei/gbtl), [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html), [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas))  can be ported to performance-centric GPU backend
+- **Portable**: Algorithms implemented using API can be run on any GraphBLAS implementation
 - **Innovative**: Combines state-of-the-art [graph optimizations](https://escholarship.org/uc/item/021076bn) from [Gunrock](https://github.com/gunrock/gunrock) with the automatic direction-optimization heuristic of [Ligra](https://github.com/jshun/ligra)
 
 ## Prerequisites
@@ -168,6 +168,15 @@ See [graphblas/stddef.hpp](https://github.com/gunrock/graphblast/blob/master/gra
 We would like to thank the following people: [Yangzihao Wang](https://yzhwang.github.io) for teaching me how to write high-performance graph frameworks, [Yuechao Pan's](https://sites.google.com/site/panyuechao/home) for his valuable insights into BFS optimizations, [Scott McMillan](https://github.com/sei-smcmillan) for [his library](https://github.com/cmu-sei/gbtl) which inspired our code organization and teaching me how to implement the semiring object using macros, [Ben Johnson](https://github.com/bkj) for helping me catch several bugs, and [John D. Owens](https://www.ece.ucdavis.edu/~jowens/) and [Aydın Buluç](https://people.eecs.berkeley.edu/~aydin/) for their guidance and belief in me.
 
 This work was funded by the DARPA HIVE program under AFRL Contract FA8650-18-2-7835, the DARPA XDATA program under AFRL Contract FA8750-13-C-0002, by NSF awards OAC-1740333, CCF-1629657, OCI-1032859, and CCF-1017399, by DARPA STTR award D14PC00023, by DARPA SBIR award W911NF-16-C-0020, Applied Mathematics program of the DOE Office of Advanced Scientific Computing Research under Contract No. DE-AC02-05CH11231, and by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of the U.S. Department of Energy Office of Science and the National Nuclear Security Administration. 
+
+## Other GraphBLAS Backends
+
+If you are interested in other backends, please check out these high-quality open-source implementations of GraphBLAS:
+
+- [GraphBLAS Template Library: GBTL](https://github.com/cmu-sei/gbtl)
+- [SuiteSparse GraphBLAS](http://faculty.cse.tamu.edu/davis/suitesparse.html)
+- [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas)
+- [PostgreSQL GraphBLAS: pggraphblas](https://github.com/michelp/pggraphblas)
 
 ## Copyright and Software License
 
