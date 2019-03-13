@@ -163,20 +163,20 @@ See [graphblas/stddef.hpp](https://github.com/gunrock/graphblast/blob/master/gra
 
 2. SIAM Minisymposium 2016, **Design Considerations for a GraphBLAS Compliant Graph Library on Clusters of GPUs**, July 2016. [[slides](http://www.ece.ucdavis.edu/~ctcyang/pub/siam-slides2016.pdf)]
 
-## Acknowledgments
-
-We would like to thank the following people: [Yangzihao Wang](https://yzhwang.github.io) for teaching me how to write high-performance graph frameworks, [Yuechao Pan's](https://sites.google.com/site/panyuechao/home) for his valuable insights into BFS optimizations, [Scott McMillan](https://github.com/sei-smcmillan) for [his library](https://github.com/cmu-sei/gbtl) which inspired our code organization and teaching me how to implement the semiring object using macros, [Ben Johnson](https://github.com/bkj) for helping me catch several bugs, and [John D. Owens](https://www.ece.ucdavis.edu/~jowens/) and [Aydın Buluç](https://people.eecs.berkeley.edu/~aydin/) for their guidance and belief in me.
-
-This work was funded by the DARPA HIVE program under AFRL Contract FA8650-18-2-7835, the DARPA XDATA program under AFRL Contract FA8750-13-C-0002, by NSF awards OAC-1740333, CCF-1629657, OCI-1032859, and CCF-1017399, by DARPA STTR award D14PC00023, by DARPA SBIR award W911NF-16-C-0020, Applied Mathematics program of the DOE Office of Advanced Scientific Computing Research under Contract No. DE-AC02-05CH11231, and by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of the U.S. Department of Energy Office of Science and the National Nuclear Security Administration. 
-
 ## Other GraphBLAS Backends
 
-If you are interested in other backends, please check out these high-quality open-source implementations of GraphBLAS:
+If you are interested in other GraphBLAS backends, please check out these high-quality open-source implementations of GraphBLAS:
 
 - [GraphBLAS Template Library: GBTL](https://github.com/cmu-sei/gbtl)
 - [SuiteSparse GraphBLAS](http://faculty.cse.tamu.edu/davis/suitesparse.html)
 - [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas)
 - [PostgreSQL GraphBLAS: pggraphblas](https://github.com/michelp/pggraphblas)
+
+## Acknowledgments
+
+We would like to thank the following people: [Yangzihao Wang](https://yzhwang.github.io) for teaching me how to write high-performance graph frameworks, [Yuechao Pan's](https://sites.google.com/site/panyuechao/home) for his valuable insights into BFS optimizations, [Scott McMillan](https://github.com/sei-smcmillan) for [his library](https://github.com/cmu-sei/gbtl) which inspired our code organization and teaching me how to implement the semiring object using macros, [Ben Johnson](https://github.com/bkj) for helping me catch several bugs, and [John D. Owens](https://www.ece.ucdavis.edu/~jowens/) and [Aydın Buluç](https://people.eecs.berkeley.edu/~aydin/) for their guidance and belief in me.
+
+This work was funded by the DARPA HIVE program under AFRL Contract FA8650-18-2-7835, the DARPA XDATA program under AFRL Contract FA8750-13-C-0002, by NSF awards OAC-1740333, CCF-1629657, OCI-1032859, and CCF-1017399, by DARPA STTR award D14PC00023, by DARPA SBIR award W911NF-16-C-0020, Applied Mathematics program of the DOE Office of Advanced Scientific Computing Research under Contract No. DE-AC02-05CH11231, and by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of the U.S. Department of Energy Office of Science and the National Nuclear Security Administration. 
 
 ## Copyright and Software License
 
