@@ -22,7 +22,7 @@ Optional:
 
 ## Install
 
-A step by step series of instructions that tell you have to get a development env running.
+A step by step series of instructions that tell you how to get a development environment running GraphBLAST.
 
 1. First, you must download the software:
 
