@@ -142,9 +142,9 @@ A semiring is the computation on vertex and edge of the graph. In standard matri
 
 The most frequently used semirings (with their common usage in brackets) are:
 
-- `PlusMultiplies`: arithmetic semiring (classical linear algebra)
+- `PlusMultipliesSemiring`: arithmetic semiring (classical linear algebra)
 - `LogicalOrAndSemiring`: Boolean semiring (graph connectivity)
-- `MinimumPlus`: tropical min-plus semiring (shortest path)
+- `MinimumPlusSemiring`: tropical min-plus semiring (shortest path)
 - `MaximumMultipliesSemiring`: tropical max-times semiring (maximal independent set)
 
 See [graphblas/stddef.hpp](https://github.com/gunrock/graphblast/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
