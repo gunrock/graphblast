@@ -32,16 +32,16 @@ git clone --recursive https://github.com/gunrock/graphblast.git
 
 2. The current library is set up as a header-only library. To install this library, copy the graphblas directory, its subdirectories and the specific platform subdirectory (sans the platform's test directories) to a location in your include path. However, there are 2 source files that need to be compiled with your program (`ext/moderngpu/src/mgpucontext.cu` and `ext/moderngpu/src/mgpuutil.cpp`).
 
-We provide two sample build paths using `Makefile` and `CMake`.
+We provide two build toolchains using `Makefile` and `CMake`. The user can choose either of them.
 
-### Using Makefile
+### Option 1: Using Makefile
 
 ```
 cd graphblast
 make -j16
 ```
 
-### Using CMake
+### Option 2: Using CMake
 
 ```
 cd graphblast
