@@ -5,8 +5,8 @@ GraphBLAST is a GPU implementation of [GraphBLAS](https://graphblas.org), an ope
 - **Performance**: The first high-performance GPU implementation of GraphBLAS
 - **Composable**: A library with building blocks for expressing most graph algorithms
 - **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 25 lines of code gets 3.68 GTEPS on a single NVIDIA V100 GPU (which would place 2nd in [Graph500](https://graph500.org/?page_id=384) for SSSP as of Oct. 2018)
-- **Portable**: Algorithms implemented using other GraphBLAS backends ([GBTL](https://github.com/cmu-sei/gbtl), [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html), [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas))  can be ported to performance-centric GPU backend
-- **Innovative**: Combines state-of-the-art [graph optimizations](https://escholarship.org/uc/item/021076bn) from [Gunrock](https://github.com/gunrock/gunrock) with the automatic direction-optimization heuristic of [Ligra](https://github.com/jshun/ligra)
+- **Portable**: Algorithms implemented using API can be run on any GraphBLAS implementation
+- **Innovative**: Combines state-of-the-art [graph optimizations](https://escholarship.org/uc/item/021076bn) from [Gunrock](https://github.com/gunrock/gunrock) with the direction-optimization heuristic of [Ligra](https://github.com/jshun/ligra)
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ Optional:
 
 ## Install
 
-A step by step series of instructions that tell you have to get a development env running.
+A step by step series of instructions that tell you how to get a development environment running GraphBLAST.
 
 1. First, you must download the software:
 
@@ -32,16 +32,16 @@ git clone --recursive https://github.com/gunrock/graphblast.git
 
 2. The current library is set up as a header-only library. To install this library, copy the graphblas directory, its subdirectories and the specific platform subdirectory (sans the platform's test directories) to a location in your include path. However, there are 2 source files that need to be compiled with your program (`ext/moderngpu/src/mgpucontext.cu` and `ext/moderngpu/src/mgpuutil.cpp`).
 
-We provide two sample build paths using `Makefile` and `CMake`.
+We provide two build toolchains using `Makefile` and `CMake`. The user can choose either of them.
 
-### Using Makefile
+### Option 1: Using Makefile
 
 ```
 cd graphblast
 make -j16
 ```
 
-### Using CMake
+### Option 2: Using CMake
 
 ```
 cd graphblast
@@ -142,9 +142,9 @@ A semiring is the computation on vertex and edge of the graph. In standard matri
 
 The most frequently used semirings (with their common usage in brackets) are:
 
-- `PlusMultiplies`: arithmetic semiring (classical linear algebra)
+- `PlusMultipliesSemiring`: arithmetic semiring (classical linear algebra)
 - `LogicalOrAndSemiring`: Boolean semiring (graph connectivity)
-- `MinimumPlus`: tropical min-plus semiring (shortest path)
+- `MinimumPlusSemiring`: tropical min-plus semiring (shortest path)
 - `MaximumMultipliesSemiring`: tropical max-times semiring (maximal independent set)
 
 See [graphblas/stddef.hpp](https://github.com/gunrock/graphblast/blob/master/graphblas/stddef.hpp) for a complete list of semirings.
@@ -162,6 +162,15 @@ See [graphblas/stddef.hpp](https://github.com/gunrock/graphblast/blob/master/gra
 1. SC Doctoral Showcase 2018, **Linear Algebra is the Right Way to Think About Graphs**, November 2018. [[slides](http://www.ece.ucdavis.edu/~ctcyang/pub/sc-slides2018.pdf) | [poster](http://www.ece.ucdavis.edu/~ctcyang/pub/sc-poster2018.pdf)]
 
 2. SIAM Minisymposium 2016, **Design Considerations for a GraphBLAS Compliant Graph Library on Clusters of GPUs**, July 2016. [[slides](http://www.ece.ucdavis.edu/~ctcyang/pub/siam-slides2016.pdf)]
+
+## Other GraphBLAS Backends
+
+If you are interested in other GraphBLAS backends, please check out these high-quality open-source implementations of GraphBLAS:
+
+- [GraphBLAS Template Library: GBTL](https://github.com/cmu-sei/gbtl)
+- [SuiteSparse GraphBLAS](http://faculty.cse.tamu.edu/davis/suitesparse.html)
+- [IBM GraphBLAS](https://github.com/IBM/ibmgraphblas)
+- [PostgreSQL GraphBLAS: pggraphblas](https://github.com/michelp/pggraphblas)
 
 ## Acknowledgments
 
