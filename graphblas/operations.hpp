@@ -602,6 +602,45 @@ Info graphColor(Vector<W>*       w,
 
   return backend::graphColor(&w->vector_, &A->matrix_, desc_t);
 }
+
+/*!
+ * Fused apply & vector-matrix product
+ *   w^T = w^T + mask^T .* (u^T * A)    +: accum
+ *                                      *: op
+ *                                     .*: Boolean and
+ */
+template <typename W, typename M, typename U, typename a,
+          typename BinaryOpT, typename SemiringT>
+Info applyVxm(Vector<W>*       w,
+              const Vector<M>* mask,
+              BinaryOpT        accum,
+              SemiringT        op,
+              const Vector<U>* u,
+              const Matrix<a>* A,
+              Descriptor*      desc) {
+  // Null pointer check
+  if (w == NULL || u == NULL || A == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  Index u_nvals = 0;
+  CHECK(u->nvals(&u_nvals));
+  if (u_nvals == 0)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Case 1: u*A
+  CHECK(checkDimRowSize(A,  u,    "A.nrows != u.size"));
+  CHECK(checkDimColSize(A,  w,    "A.ncols != w.size"));
+  CHECK(checkDimSizeSize(w, mask, "w.size  != mask.size"));
+
+  // Case 2: u*AT
+  const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::applyVxm<W, U, a, M>(&w->vector_, mask_t, accum, op,
+      &u->vector_, &A->matrix_, desc_t);
+}
+
 }  // namespace graphblas
 
 #endif  // GRAPHBLAS_OPERATIONS_HPP_

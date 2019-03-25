@@ -119,6 +119,9 @@ int main(int argc, char** argv) {
       val = graphblas::algorithm::gcMIS(&v, &a, source, max_colors, &desc);
     } else if (gc_algo == 2) {
       val = graphblas::algorithm::gcIS(&v, &a, source, max_colors, &desc);
+    } else if (gc_algo == 3) {
+      val = graphblas::algorithm::gcISfusedApply(&v, &a, source, max_colors,
+          &desc);
     } else {
       std::cout << "Error: Invalid graph coloring algorithm selected!\n";
       break;
