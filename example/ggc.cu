@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   bool mtxinfo;
   int  directed;
   int  niter;
-  int  source;
+  int  seed;
   int  max_colors;
   int  gc_algo;
   char* dat_name;
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     mtxinfo    = vm["mtxinfo"  ].as<bool>();
     directed   = vm["directed" ].as<int>();
     niter      = vm["niter"    ].as<int>();
-    source     = vm["source"   ].as<int>();
+    seed     = vm["seed"   ].as<int>();
     max_colors = vm["maxcolors"].as<int>();
     gc_algo    = vm["gcalgo"   ].as<int>();
 
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
   std::vector<int> h_gc_cpu(nrows, 0);
   int depth = 10000;
   gc_cpu.Start();
-  int d = graphblas::algorithm::gcCpu(source, &a, &h_gc_cpu, max_colors);
+  int d = graphblas::algorithm::gcCpu(seed, &a, &h_gc_cpu, max_colors);
   gc_cpu.Stop();
   graphblas::algorithm::verifyGc(&a, h_gc_cpu);
 
@@ -92,11 +92,11 @@ int main(int argc, char** argv) {
   CpuTimer warmup;
   warmup.Start();
   if (gc_algo == 0)
-    graphblas::algorithm::gcJP(&v, &a, source, max_colors, &desc);
+    graphblas::algorithm::gcJP(&v, &a, seed, max_colors, &desc);
   else if (gc_algo == 1)
-    graphblas::algorithm::gcMIS(&v, &a, source, max_colors, &desc);
+    graphblas::algorithm::gcMIS(&v, &a, seed, max_colors, &desc);
   else if (gc_algo == 2)
-    graphblas::algorithm::gcIS(&v, &a, source, max_colors, &desc);
+    graphblas::algorithm::gcIS(&v, &a, seed, max_colors, &desc);
   else
     std::cout << "Error: Invalid graph coloring algorithm selected!\n";
   warmup.Stop();
@@ -114,11 +114,11 @@ int main(int argc, char** argv) {
   float val;
   for (int i = 0; i < niter; i++) {
     if (gc_algo == 0) {
-      val = graphblas::algorithm::gcJP(&v, &a, source, max_colors, &desc);
+      val = graphblas::algorithm::gcJP(&v, &a, seed, max_colors, &desc);
     } else if (gc_algo == 1) {
-      val = graphblas::algorithm::gcMIS(&v, &a, source, max_colors, &desc);
+      val = graphblas::algorithm::gcMIS(&v, &a, seed, max_colors, &desc);
     } else if (gc_algo == 2) {
-      val = graphblas::algorithm::gcIS(&v, &a, source, max_colors, &desc);
+      val = graphblas::algorithm::gcIS(&v, &a, seed, max_colors, &desc);
     } else {
       std::cout << "Error: Invalid graph coloring algorithm selected!\n";
       break;

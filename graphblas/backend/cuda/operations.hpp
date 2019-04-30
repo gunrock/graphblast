@@ -665,7 +665,33 @@ Info apply(Matrix<c>*       C,
            UnaryOpT         op,
            const Matrix<a>* A,
            Descriptor*      desc) {
-  std::cout << "Error: apply matrix variant not implemented yet!\n";
+  Matrix<a>* A_t = const_cast<Matrix<a>*>(A);
+
+  if (desc->debug()) {
+    std::cout << "===Begin apply===\n";
+    CHECK(A_t->print());
+  }
+
+  Storage A_mat_type;
+  CHECK(A->getStorage(&A_mat_type));
+
+  // sparse variant
+  if (A_mat_type == GrB_SPARSE) {
+    CHECK(C->setStorage(GrB_SPARSE));
+    applySparse(&C->sparse_, mask, accum, op, &A_t->sparse_, desc);
+  // dense variant
+  } else if (A_mat_type == GrB_DENSE) {
+    CHECK(C->setStorage(GrB_DENSE));
+    applyDense(&C->dense_, mask, accum, op, &A_t->dense_, desc);
+  } else {
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End apply===\n";
+    CHECK(C->print());
+  }
+  return GrB_SUCCESS;
 }
 
 template <typename W, typename a, typename M,

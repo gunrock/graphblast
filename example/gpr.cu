@@ -9,11 +9,11 @@
 #include <cstdlib>
 
 // #include <cuda_profiler_api.h>
+
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
-#include "graphblas/algorithm/sssp.hpp"
-#include "graphblas/algorithm/common.hpp"
+#include "graphblas/algorithm/pr.hpp"
 #include "test/test.hpp"
 
 bool debug_;
@@ -31,8 +31,7 @@ int main(int argc, char** argv) {
   bool mtxinfo;
   int  directed;
   int  niter;
-  int  source;
-  int  seed;
+  int  max_niter;
   char* dat_name;
   po::variables_map vm;
 
@@ -47,11 +46,10 @@ int main(int argc, char** argv) {
     mtxinfo   = vm["mtxinfo"  ].as<bool>();
     directed  = vm["directed" ].as<int>();
     niter     = vm["niter"    ].as<int>();
-    source    = vm["source"   ].as<int>();
-    seed      = vm["seed"     ].as<int>();
+    max_niter = vm["max_niter"].as<int>();
 
     /*!
-     * This is an imperfect solution, because this should happen in
+     * This is an imperfect solution, because this should happen in 
      * desc.loadArgs(vm) instead of application code!
      * TODO(@ctcyang): fix this
      */
@@ -67,6 +65,8 @@ int main(int argc, char** argv) {
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
+  values.clear();
+  values.insert(values.begin(), nvals, 1.f);
   CHECK(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
       dat_name));
   CHECK(a.nrows(&nrows));
@@ -74,37 +74,27 @@ int main(int argc, char** argv) {
   CHECK(a.nvals(&nvals));
   if (debug) CHECK(a.print());
 
-  // For SSSP, do uniform random distance between 1 and 64
-  // Set seed
-  setEnv("GRB_SEED", seed);
-  setEnv("GRB_UNIFORM_START", 1);
-  setEnv("GRB_UNIFORM_END", 64);
-  desc.set(GrB_BACKEND, GrB_SEQUENTIAL);
-  graphblas::apply<float, float, float>(&a, GrB_NULL, GrB_NULL, set_uniform_random<float>(), &a, &desc);
-  desc.set(GrB_BACKEND, GrB_CUDA);
-  if (debug) CHECK(a.print());
-
   // Vector v
   graphblas::Vector<float> v(nrows);
+  float alpha = 0.85;
+  float eps   = 1e-5;
 
-  // Cpu BFS
-  CpuTimer sssp_cpu;
-  float* h_sssp_cpu = reinterpret_cast<float*>(malloc(nrows*sizeof(float)));
-  int depth = 10000;
-  sssp_cpu.Start();
-  int d = graphblas::algorithm::ssspCpu(source, &a, h_sssp_cpu, depth,
-      transpose);
-  sssp_cpu.Stop();
+  // Cpu PR
+  CpuTimer pr_cpu;
+  float* h_pr_cpu = reinterpret_cast<float*>(malloc(nrows*sizeof(float)));
+  pr_cpu.Start();
+  graphblas::algorithm::prCpu(h_pr_cpu, &a, alpha, eps, max_niter, transpose);
+  pr_cpu.Stop();
 
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::algorithm::sssp(&v, &a, source, &desc);
+  graphblas::algorithm::pr(&v, &a, alpha, eps, &desc);
   warmup.Stop();
 
-  std::vector<float> h_sssp_gpu;
-  CHECK(v.extractTuples(&h_sssp_gpu, &nrows));
-  BOOST_ASSERT_LIST_FLOAT(h_sssp_cpu, h_sssp_gpu, nrows);
+  std::vector<float> h_pr_gpu;
+  CHECK(v.extractTuples(&h_pr_gpu, &nrows));
+  BOOST_ASSERT_LIST_FLOAT(h_pr_cpu, h_pr_gpu, nrows);
 
   // Benchmark
   graphblas::Vector<float> y(nrows);
@@ -114,14 +104,14 @@ int main(int argc, char** argv) {
   float tight = 0.f;
   float val;
   for (int i = 0; i < niter; i++) {
-    val = graphblas::algorithm::sssp(&y, &a, source, &desc);
+    val = graphblas::algorithm::pr(&y, &a, alpha, eps, &desc);
     tight += val;
   }
   // cudaProfilerStop();
   vxm_gpu.Stop();
 
   float flop = 0;
-  std::cout << "cpu, " << sssp_cpu.ElapsedMillis() << ", \n";
+  std::cout << "cpu, " << pr_cpu.ElapsedMillis() << ", \n";
   std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
   float elapsed_vxm = vxm_gpu.ElapsedMillis();
@@ -129,9 +119,9 @@ int main(int argc, char** argv) {
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
   if (niter) {
-    std::vector<float> h_sssp_gpu2;
-    CHECK(y.extractTuples(&h_sssp_gpu2, &nrows));
-    BOOST_ASSERT_LIST_FLOAT(h_sssp_cpu, h_sssp_gpu2, nrows);
+    std::vector<float> h_pr_gpu2;
+    CHECK(y.extractTuples(&h_pr_gpu2, &nrows));
+    BOOST_ASSERT_LIST_FLOAT(h_pr_cpu, h_pr_gpu2, nrows);
   }
 
   return 0;

@@ -447,7 +447,22 @@ Info apply(Matrix<c>*       C,
            UnaryOpT         op,
            const Matrix<a>* A,
            Descriptor*      desc) {
-  std::cout << "Error: apply matrix variant not implemented yet!\n";
+  // Null pointer check
+  if (A == NULL || C == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  CHECK(checkDimRowRow(A, C,    "A.nrows != C.nrows"));
+  CHECK(checkDimColCol(A, C,    "A.ncols != C.ncols"));
+  CHECK(checkDimRowRow(A, mask, "A.nrows != mask.nrows"));
+  CHECK(checkDimColCol(A, mask, "A.ncols != mask.ncols"));
+  CHECK(checkDimRowRow(C, mask, "C.nrows != mask.nrows"));
+  CHECK(checkDimColCol(C, mask, "C.ncols != mask.ncols"));
+
+  const backend::Matrix<m>* mask_t = (mask == NULL) ? NULL : &mask->matrix_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::apply(&C->matrix_, mask_t, accum, op, &A->matrix_, desc_t);
 }
 
 /*!

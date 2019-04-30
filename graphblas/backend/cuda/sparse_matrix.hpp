@@ -80,7 +80,7 @@ class SparseMatrix {
 
   // Handy methods
   const T operator[](Index ind);
-  Info print(bool force_update = false);
+  Info print(bool force_update);
   Info check();
   Info setNrows(Index nrows);
   Info setNcols(Index ncols);
