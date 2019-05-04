@@ -37,8 +37,10 @@ float sssp(Vector<float>*       v,
     CHECK(v->build(&indices, &values, 1, GrB_NULL));
   }
 
+  // Previous iteration visited vector
+  Vector<float> v_prev(A_nrows);
+
   Index iter = 1;
-  float succ_last = 0.f;
   float succ = 1.f;
   Index unvisited = A_nrows;
 
@@ -62,7 +64,9 @@ float sssp(Vector<float>*       v,
       unvisited -= static_cast<int>(succ);
       gpu_tight.Start();
     }
-    succ_last = succ;
+    v_prev = *v;
+    if (desc->descriptor_.debug())
+      CHECK(v_prev.print());
 
     // TODO(@ctcyang): add inplace + accumulate version
     vxm<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
@@ -70,16 +74,18 @@ float sssp(Vector<float>*       v,
     eWiseAdd<float, float, float, float>(v, GrB_NULL, GrB_NULL,
         MinimumPlusSemiring<float>(), v, &w, desc);
 
+    if (desc->descriptor_.debug())
+      CHECK(v_prev.print());
     eWiseAdd<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
-        LessPlusSemiring<float>(), v, &zero, desc);
+        NotEqualToPlusSemiring<float>(), v, &v_prev, desc);
     reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &w, desc);
     iter++;
 
     if (desc->descriptor_.debug())
-      std::cout << "succ: " << succ_last << std::endl;
+      std::cout << "succ: " << succ << std::endl;
     if (iter > desc->descriptor_.max_niter_)
       break;
-  } while (succ_last != succ);
+  } while (succ > 0);
   if (desc->descriptor_.timing_ > 0) {
     gpu_tight.Stop();
     std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?

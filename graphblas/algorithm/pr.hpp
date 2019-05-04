@@ -101,7 +101,7 @@ float pr(Vector<float>*       p,
 
     // error = l2loss(p, p_prev)
     eWiseMult<float, float, float, float>(&r, GrB_NULL, GrB_NULL,
-        PlusLessSemiring<float>(), p, &p_prev, desc);
+        PlusMinusSemiring<float>(), p, &p_prev, desc);
     eWiseAdd<float, float, float, float>(&r_temp, GrB_NULL, GrB_NULL,
         MultipliesMultipliesSemiring<float>(), &r, &r, desc);
     reduce<float, float>(&error, GrB_NULL, PlusMonoid<float>(), &r_temp, desc);

@@ -287,12 +287,14 @@ Info SparseVector<T>::fill(Index nvals) {
 
 template <typename T>
 Info SparseVector<T>::print(bool force_update) {
+  std::cout << "===Begin SparseVector Print===\n";
   CUDA_CALL(cudaDeviceSynchronize());
   CHECK(gpuToCpu(force_update));
   printArray("ind", h_ind_, std::min(nvals_, 40));
   printArray("val", h_val_, std::min(nvals_, 40));
   if (nvals_ == 0)
     std::cout << "Error: SparseVector is empty!\n";
+  std::cout << "===SparseVector Print===\n";
   return GrB_SUCCESS;
 }
 

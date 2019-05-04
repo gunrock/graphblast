@@ -104,12 +104,9 @@ Info applySparse(SparseMatrix<c>* C,
       std::cout << "Error: SpMat apply masked not implemented yet!\n";
     } else {
       CHECK(A->gpuToCpu());
-      if (!A->symmetric_) {
-        std::cout << "Error: SpMat apply for non-symmetric matrices not";
-        std::cout << "implemented yet!\n";
-      }
       for (Index i = 0; i < A->nvals_; ++i)
         C->h_csrVal_[i] = op(A->h_csrVal_[i]);
+      CHECK(C->syncCpu());
       CHECK(C->cpuToGpu());
     }
   } else {

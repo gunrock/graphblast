@@ -124,7 +124,9 @@ Info eWiseAddInner(DenseVector<W>*        w,
 
   // Get number of elements
   Index u_nvals;
+  Index v_nvals;
   u->nvals(&u_nvals);
+  v->nvals(&v_nvals);
 
   if (use_mask) {
     std::cout << "Error: Masked eWiseAdd sparse-dense not implemented yet!\n";
@@ -136,12 +138,16 @@ Info eWiseAddInner(DenseVector<W>*        w,
     NT.x = nt;
     NT.y = 1;
     NT.z = 1;
-    NB.x = (u_nvals + nt - 1) / nt;
+    NB.x = (v_nvals + nt - 1) / nt;
     NB.y = 1;
     NB.z = 1;
 
+    eWiseAddDenseConstantKernel<<<NB, NT>>>(w->d_val_, extractAdd(op),
+        op.identity(), v_nvals);
+
+    NB.x = (u_nvals + nt - 1) / nt;
     eWiseAddSparseDenseKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op),
-        u->d_ind_, u->d_val_, u_nvals);
+        u->d_ind_, u->d_val_, v->d_val_, u_nvals);
   }
   w->need_update_ = true;
   return GrB_SUCCESS;

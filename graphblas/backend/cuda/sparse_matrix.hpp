@@ -103,13 +103,15 @@ class SparseMatrix {
   Info cpuToGpu();
   Info gpuToCpu(bool force_update = false);
 
+  Info syncCpu();   // synchronizes CSR and CSC representations
+
  private:
   const T kcap_ratio_    = 1.2f;  // Note: nasty bug if this is set to 1.f!
   const T kresize_ratio_ = 1.2f;
 
   Index nrows_;
   Index ncols_;
-  Index nvals_;    // 3 ways to set: (1) dup (2) build (3) nnew
+  Index nvals_;     // 3 ways to set: (1) dup (2) build (3) nnew
   Index ncapacity_;
   Index nempty_;
 
@@ -129,6 +131,23 @@ class SparseMatrix {
 
   // GPU variables
   bool need_update_;
+  // Symmetric can mean 2 things:
+  // 1) structure is symmetric i.e. d_cscColPtr_/d_cscRowInd_ are same as 
+  //    d_csrRowPtr_/d_csrColInd_, so d_cscColPtr_ and d_cscRowInd_ can be freed
+  // 2) values are symmetric i.e.
+  //    [0 1 2]     [0 1 2]
+  //    [1 0 0] vs. [3 0 4]
+  //    [2 0 0]     [5 6 0]
+  //
+  //    In the case on the left, d_cscVal_ is same d_csrVal_ and can be freed,
+  //    but this is not true for the case on the right and cannot be freed
+  //
+  // TODO(@ctcyang): Ideally, we would like to avoid csr2csc when reading
+  // symmetric_ matrix that has been saved in .dat file. However for now, turn
+  // off symmetric_ field, because it is conflating these two.
+  // 1) force getSymmetry() to return false always
+  // 2) comment out the half memory cases (i.e. GrB_SPARSE_MATRIX_CSRONLY and
+  //    GrB_SPARSE_MATRIX_CSRCSC)
   bool symmetric_;
 
   SparseMatrixFormat format_;
@@ -143,7 +162,8 @@ SparseMatrix<T>::~SparseMatrix() {
   if (d_csrColInd_ != NULL) CUDA_CALL(cudaFree(d_csrColInd_));
   if (d_csrVal_    != NULL) CUDA_CALL(cudaFree(d_csrVal_   ));
 
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  //if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
     if (h_cscColPtr_ != NULL) free(h_cscColPtr_);
     if (h_cscRowInd_ != NULL) free(h_cscRowInd_);
     if (h_cscVal_    != NULL) free(h_cscVal_);
@@ -181,7 +201,8 @@ Info SparseMatrix<T>::dup(const SparseMatrix* rhs) {
   CUDA_CALL(cudaMemcpy(d_csrVal_,    rhs->d_csrVal_,    nvals_*sizeof(T),
       cudaMemcpyDeviceToDevice));
 
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  //if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
     CUDA_CALL(cudaMemcpy(d_cscColPtr_, rhs->d_cscColPtr_, (ncols_+1)*
         sizeof(Index), cudaMemcpyDeviceToDevice));
     CUDA_CALL(cudaMemcpy(d_cscRowInd_, rhs->d_cscRowInd_, nvals_*sizeof(Index),
@@ -213,7 +234,8 @@ Info SparseMatrix<T>::clear() {
   d_csrColInd_ = NULL;
   d_csrVal_    = NULL;
 
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  //if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
     if (h_cscColPtr_ != NULL) free(h_cscColPtr_);
     if (h_cscRowInd_ != NULL) free(h_cscRowInd_);
     if (h_cscVal_    != NULL) free(h_cscVal_);
@@ -265,7 +287,8 @@ Info SparseMatrix<T>::build(const std::vector<Index>* row_indices,
   coo2csr(h_csrRowPtr_, h_csrColInd_, h_csrVal_,
           *row_indices, *col_indices, *values, nrows_, ncols_);
 
-  if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY) {
+  if (format_ == GrB_SPARSE_MATRIX_CSRONLY) {
+  //if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY) {
     free(h_cscColPtr_);
     free(h_cscRowInd_);
     free(h_cscVal_);
@@ -333,7 +356,8 @@ Info SparseMatrix<T>::build(char* dat_name) {
       for (Index i = 0; i < nvals_; i++)
         h_csrVal_[i] = static_cast<T>(1);
 
-      if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY) {
+      if (format_ == GrB_SPARSE_MATRIX_CSRONLY) {
+      //if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY) {
         free(h_cscColPtr_);
         free(h_cscRowInd_);
         free(h_cscVal_);
@@ -519,6 +543,7 @@ Info SparseMatrix<T>::getFormat(SparseMatrixFormat* format) const {
 template <typename T>
 Info SparseMatrix<T>::getSymmetry(bool* symmetry) const {
   *symmetry = symmetric_;
+  *symmetry = false;
   return GrB_SUCCESS;
 }
 
@@ -620,7 +645,8 @@ Info SparseMatrix<T>::allocateGpu() {
     CUDA_CALL(cudaMalloc(&d_csrVal_, ncapacity_*sizeof(T)));
     printMemory("csrVal");
   }
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  //if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
     if (nrows_ > 0 && d_cscColPtr_ == NULL)
       CUDA_CALL(cudaMalloc(&d_cscColPtr_, (ncols_+1)*sizeof(Index)));
     if (nvals_ > 0 && d_cscRowInd_ == NULL)
@@ -703,7 +729,8 @@ Info SparseMatrix<T>::cpuToGpu() {
   CUDA_CALL(cudaMemcpy(d_csrVal_,    h_csrVal_,    nvals_*sizeof(T),
       cudaMemcpyHostToDevice));
 
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  //if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
     CUDA_CALL(cudaMemcpy(d_cscColPtr_, h_cscColPtr_, (ncols_+1)*sizeof(Index),
         cudaMemcpyHostToDevice));
     CUDA_CALL(cudaMemcpy(d_cscRowInd_, h_cscRowInd_, nvals_*sizeof(Index),
@@ -730,7 +757,8 @@ Info SparseMatrix<T>::gpuToCpu(bool force_update) {
     CUDA_CALL(cudaMemcpy(h_csrVal_,    d_csrVal_,    nvals_*sizeof(T),
         cudaMemcpyDeviceToHost));
 
-    if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+    if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+    //if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
       CUDA_CALL(cudaMemcpy(h_cscColPtr_, d_cscColPtr_, (ncols_+1)*sizeof(Index),
           cudaMemcpyDeviceToHost));
       CUDA_CALL(cudaMemcpy(h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
@@ -742,6 +770,18 @@ Info SparseMatrix<T>::gpuToCpu(bool force_update) {
     CUDA_CALL(cudaDeviceSynchronize());
   }
   need_update_ = false;
+  return GrB_SUCCESS;
+}
+
+// Synchronizes CSR with CSC representation
+template <typename T>
+Info SparseMatrix<T>::syncCpu() {
+  if (h_csrRowPtr_ && h_csrColInd_ && h_csrVal_ && 
+      h_cscColPtr_ && h_cscRowInd_ && h_cscVal_)
+    csr2csc(h_cscColPtr_, h_cscRowInd_, h_cscVal_,
+            h_csrRowPtr_, h_csrColInd_, h_csrVal_, nrows_, ncols_);
+  else
+    return GrB_INVALID_OBJECT;
   return GrB_SUCCESS;
 }
 }  // namespace backend

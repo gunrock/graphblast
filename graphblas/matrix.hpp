@@ -59,7 +59,7 @@ class Matrix {
                      Index* n);
 
   // Handy methods
-  void operator=(const Matrix* rhs);
+  void operator=(const Matrix& rhs);
   const T operator[](Index ind);
   Info print(bool force_update = false);
   Info check();
@@ -189,9 +189,8 @@ Info Matrix<T>::extractTuples(std::vector<T>* values,
 
 // Handy methods
 template <typename T>
-void Matrix<T>::operator=(const Matrix* rhs) {
-  if (rhs == NULL) return;
-  matrix_.dup(rhs->matrix_);
+void Matrix<T>::operator=(const Matrix& rhs) {
+  matrix_.dup(&rhs.matrix_);
 }
 
 template <typename T>
