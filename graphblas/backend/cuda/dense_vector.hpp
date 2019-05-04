@@ -155,10 +155,10 @@ Info DenseVector<T>::computeNnz(Index* nnz_t, T identity, Descriptor* desc) {
   Index* d_nnz = reinterpret_cast<Index*>(desc->d_buffer_)+nvals_;
 
   size_t temp_storage_bytes = 0;
+  plus<Index> op;
 
   CUDA_CALL(cub::DeviceReduce::Reduce(NULL, temp_storage_bytes,
-      reinterpret_cast<Index*>(desc->d_buffer_), d_nnz, nvals_, plus<Index>,
-      0));
+      reinterpret_cast<Index*>(desc->d_buffer_), d_nnz, nvals_, op, 0));
 
   CHECK(desc->resize(temp_storage_bytes, "temp"));
   if (desc->debug()) {
@@ -167,10 +167,10 @@ Info DenseVector<T>::computeNnz(Index* nnz_t, T identity, Descriptor* desc) {
   }
 
   CUDA_CALL(cub::DeviceReduce::Reduce(desc->d_temp_, temp_storage_bytes,
-      reinterpret_cast<Index*>(desc->d_buffer_), d_nnz, nvals_, plus<Index>,
-      0));
+      reinterpret_cast<Index*>(desc->d_buffer_), d_nnz, nvals_, op, 0));
   CUDA_CALL(cudaMemcpy(&nnz_, d_nnz, sizeof(Index), cudaMemcpyDeviceToHost));
 
+  nnz_ = nvals_ - nnz_;
   *nnz_t = nnz_;
   return GrB_SUCCESS;
 }

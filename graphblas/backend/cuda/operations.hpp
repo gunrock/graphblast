@@ -445,12 +445,13 @@ Info eWiseAdd(Vector<W>*       w,
     CHECK(eWiseAddInner(&w->dense_, mask, accum, op, &u->dense_,
         &v->dense_, desc));
   } else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE) {
+    // The boolean here keeps track of whether operators have been reversed.
+    // This is important for non-commutative ops i.e. op(a,b) != op(b,a)
     CHECK(eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
-        &v->dense_, desc));
+        &v->dense_, false, desc));
   } else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE) {
-    // TODO(@ctcyang): Fix for non-commutative ops
     CHECK(eWiseAddInner(&w->dense_, mask, accum, op, &v->sparse_,
-        &u->dense_, desc));
+        &u->dense_, true, desc));
   } else {
     std::cout << "Error: eWiseAdd backend invalid choice!\n";
     return GrB_INVALID_OBJECT;

@@ -52,10 +52,12 @@ template <typename W, typename T,
 __global__ void eWiseAddDenseConstantKernel(W*       w_val,
                                             BinaryOp op,
                                             T        identity,
+                                            bool     reverse,
                                             Index    w_nvals) {
   Index row = blockIdx.x * blockDim.x + threadIdx.x;
   for (; row < w_nvals; row += blockDim.x * gridDim.x) {
-    w_val[row] = op(w_val[row], identity);
+    w_val[row] = (reverse) ? op(identity, w_val[row]) : 
+                             op(w_val[row], identity);
     __syncwarp();
   }
 }

@@ -71,12 +71,16 @@ float sssp(Vector<float>*       v,
     vxm<float, float, float, float>(&f2, GrB_NULL, GrB_NULL,
         MinimumPlusSemiring<float>(), &f1, A, desc);
 
+    //eWiseMult<float, float, float, float>(&m, GrB_NULL, GrB_NULL,
+    //    PlusLessSemiring<float>(), &f2, v, desc);
     eWiseAdd<float, float, float, float>(&m, GrB_NULL, GrB_NULL,
         LessPlusSemiring<float>(), &f2, v, desc);
 
     eWiseAdd<float, float, float, float>(v, GrB_NULL, GrB_NULL,
         MinimumPlusSemiring<float>(), v, &f2, desc);
 
+    // Similar to BFS, except we need to filter out the unproductive vertices
+    // here rather than as part of masked vxm
     CHECK(desc->toggle(GrB_MASK));
     assign<float, float>(&f2, &m, GrB_NULL, std::numeric_limits<float>::max(),
         GrB_ALL, A_nrows, desc);

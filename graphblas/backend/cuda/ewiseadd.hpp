@@ -96,6 +96,7 @@ Info eWiseAddInner(DenseVector<W>*        w,
                    SemiringT              op,
                    const SparseVector<U>* u,
                    const DenseVector<V>*  v,
+                   bool                   reverse,
                    Descriptor*            desc) {
   // Get descriptor parameters for SCMP, REPL
   Desc_value scmp_mode, repl_mode;
@@ -142,8 +143,9 @@ Info eWiseAddInner(DenseVector<W>*        w,
     NB.y = 1;
     NB.z = 1;
 
+    // Need to consider cases where op(a,b) != op (b,a) e.g. LessMonoid
     eWiseAddDenseConstantKernel<<<NB, NT>>>(w->d_val_, extractAdd(op),
-        op.identity(), v_nvals);
+        op.identity(), reverse, v_nvals);
 
     NB.x = (u_nvals + nt - 1) / nt;
     eWiseAddSparseDenseKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op),
