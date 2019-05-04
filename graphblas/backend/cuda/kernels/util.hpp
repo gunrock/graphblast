@@ -203,6 +203,18 @@ __global__ void scatter(T*           w_val,
     w_val[ind] = val;
   }
 }
+
+template <typename T>
+__global__ void countZero(Index*       w_val,
+                          T            identity,
+                          const T*     u_val,
+                          Index        u_nvals) {
+  int gid = blockIdx.x*blockDim.x + threadIdx.x;
+  if (gid < u_nvals) {
+    T val = u_val[gid];
+    w_val[gid] = (val == identity) ? 1 : 0;
+  }
+}
 }  // namespace backend
 }  // namespace graphblas
 

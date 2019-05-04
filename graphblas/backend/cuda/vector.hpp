@@ -297,6 +297,7 @@ Info Vector<T>::convert(T identity, Descriptor* desc) {
     CHECK(sparse_.size(&nsize_t));
   } else if (vec_type_ == GrB_DENSE) {
     CHECK(dense_.nnz(&nvals_t));
+    CHECK(dense_.computeNnz(&nvals_t, identity, desc));
     CHECK(dense_.nvals(&nsize_t));
   } else {
     return GrB_UNINITIALIZED_OBJECT;

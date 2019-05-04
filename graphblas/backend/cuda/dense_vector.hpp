@@ -39,6 +39,7 @@ class DenseVector {
   inline Info size(Index* nsize_) const;
   inline Info nvals(Index* nvals_) const;
   inline Info nnz(Index* nnz_) const;
+  Info computeNnz(Index* nnz, T identity, Descriptor* desc);
   template <typename BinaryOpT>
   Info build(const std::vector<Index>* indices,
              const std::vector<T>*     values,
@@ -129,6 +130,47 @@ inline Info DenseVector<T>::nvals(Index* nvals_t) const {
 
 template <typename T>
 inline Info DenseVector<T>::nnz(Index* nnz_t) const {
+  *nnz_t = nnz_;
+  return GrB_SUCCESS;
+}
+
+template <typename T>
+Info DenseVector<T>::computeNnz(Index* nnz_t, T identity, Descriptor* desc) {
+  CHECK(desc->resize(nvals_+1, "buffer"));
+
+	// Get descriptor parameters for nthreads
+	Desc_value nt_mode;
+	CHECK(desc->get(GrB_NT, &nt_mode));
+	const int nt = static_cast<int>(nt_mode);
+	dim3 NT, NB;
+	NT.x = nt;
+	NT.y = 1;
+	NT.z = 1;
+	NB.x = (nvals_+nt-1)/nt;
+	NB.y = 1;
+	NB.z = 1;
+
+  countZero<<<NB, NT>>>(reinterpret_cast<Index*>(desc->d_buffer_), identity,
+      d_val_, nvals_);
+  Index* d_nnz = reinterpret_cast<Index*>(desc->d_buffer_)+nvals_;
+
+  size_t temp_storage_bytes = 0;
+
+  CUDA_CALL(cub::DeviceReduce::Reduce(NULL, temp_storage_bytes,
+      reinterpret_cast<Index*>(desc->d_buffer_), d_nnz, nvals_, plus<Index>,
+      0));
+
+  CHECK(desc->resize(temp_storage_bytes, "temp"));
+  if (desc->debug()) {
+    std::cout << temp_storage_bytes << " <= " << desc->d_temp_size_ <<
+        std::endl;
+  }
+
+  CUDA_CALL(cub::DeviceReduce::Reduce(desc->d_temp_, temp_storage_bytes,
+      reinterpret_cast<Index*>(desc->d_buffer_), d_nnz, nvals_, plus<Index>,
+      0));
+  CUDA_CALL(cudaMemcpy(&nnz_, d_nnz, sizeof(Index), cudaMemcpyDeviceToHost));
+
   *nnz_t = nnz_;
   return GrB_SUCCESS;
 }

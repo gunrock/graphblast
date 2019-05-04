@@ -18,29 +18,32 @@ float sssp(Vector<float>*       v,
            Descriptor*          desc) {
   Index A_nrows;
   CHECK(A->nrows(&A_nrows));
-  CHECK(v->clear());
 
-  graphblas::Vector<float> w(A_nrows);
-  graphblas::Vector<float> zero(A_nrows);
-  zero.fill(std::numeric_limits<float>::max());
+  // Visited vector (use float for now)
+  CHECK(v->fill(std::numeric_limits<float>::max()));
+  CHECK(v->setElement(0.f, s));
+
+  // Frontier vectors (use float for now)
+  Vector<float> f1(A_nrows);
+  Vector<float> f2(A_nrows);
 
   Desc_value desc_value;
   CHECK(desc->get(GrB_MXVMODE, &desc_value));
 
   // Visited vector (use float for now)
   if (desc_value == GrB_PULLONLY) {
-    CHECK(v->fill(std::numeric_limits<float>::max()));
-    CHECK(v->setElement(0.f, s));
+    CHECK(f1.fill(std::numeric_limits<float>::max()));
+    CHECK(f1.setElement(0.f, s));
   } else {
     std::vector<Index> indices(1, s);
     std::vector<float>  values(1, 0.f);
-    CHECK(v->build(&indices, &values, 1, GrB_NULL));
+    CHECK(f1.build(&indices, &values, 1, GrB_NULL));
   }
 
-  // Previous iteration visited vector
-  Vector<float> v_prev(A_nrows);
+  // Mask vector
+  Vector<float> m(A_nrows);
 
-  Index iter = 1;
+  Index iter;
   float succ = 1.f;
   Index unvisited = A_nrows;
 
@@ -48,7 +51,7 @@ float sssp(Vector<float>*       v,
   float gpu_tight_time = 0.f;
   if (desc->descriptor_.timing_ > 0)
     gpu_tight.Start();
-  do {
+  for (iter = 1; iter <= desc->descriptor_.max_niter_; ++iter) {
     if (desc->descriptor_.debug())
       std::cout << "=====SSSP Iteration " << iter - 1 << "=====\n";
     if (desc->descriptor_.timing_ == 2) {
@@ -64,28 +67,30 @@ float sssp(Vector<float>*       v,
       unvisited -= static_cast<int>(succ);
       gpu_tight.Start();
     }
-    v_prev = *v;
-    if (desc->descriptor_.debug())
-      CHECK(v_prev.print());
-
     // TODO(@ctcyang): add inplace + accumulate version
-    vxm<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
-        MinimumPlusSemiring<float>(), v, A, desc);
-    eWiseAdd<float, float, float, float>(v, GrB_NULL, GrB_NULL,
-        MinimumPlusSemiring<float>(), v, &w, desc);
+    vxm<float, float, float, float>(&f2, GrB_NULL, GrB_NULL,
+        MinimumPlusSemiring<float>(), &f1, A, desc);
 
-    if (desc->descriptor_.debug())
-      CHECK(v_prev.print());
-    eWiseAdd<float, float, float, float>(&w, GrB_NULL, GrB_NULL,
-        NotEqualToPlusSemiring<float>(), v, &v_prev, desc);
-    reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &w, desc);
-    iter++;
+    eWiseAdd<float, float, float, float>(&m, GrB_NULL, GrB_NULL,
+        LessPlusSemiring<float>(), &f2, v, desc);
+
+    eWiseAdd<float, float, float, float>(v, GrB_NULL, GrB_NULL,
+        MinimumPlusSemiring<float>(), v, &f2, desc);
+
+    CHECK(desc->toggle(GrB_MASK));
+    assign<float, float>(&f2, &m, GrB_NULL, std::numeric_limits<float>::max(),
+        GrB_ALL, A_nrows, desc);
+    CHECK(desc->toggle(GrB_MASK));
+
+    f2.swap(&f1);
+
+    reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &m, desc);
 
     if (desc->descriptor_.debug())
       std::cout << "succ: " << succ << std::endl;
-    if (iter > desc->descriptor_.max_niter_)
+    if (succ == 0)
       break;
-  } while (succ > 0);
+  }
   if (desc->descriptor_.timing_ > 0) {
     gpu_tight.Stop();
     std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
