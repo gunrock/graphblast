@@ -4,8 +4,7 @@ GraphBLAST is a GPU implementation of [GraphBLAS](https://graphblas.org), an ope
 
 - **Performance**: The first high-performance GPU implementation of GraphBLAS
 - **Composable**: A library with building blocks for expressing most graph algorithms
-- **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 25 lines of code gets 3.68 GTEPS on a single NVIDIA V100 GPU (which would place 2nd in [Graph500](https://graph500.org/?page_id=384) for SSSP as of Oct. 2018)
-- **Portable**: Algorithms implemented using API can be run on any GraphBLAS implementation
+- **Concise**: Single-source shortest path (SSSP) on GPU can be expressed in a mere 25 lines of code
 - **Innovative**: Combines state-of-the-art [graph optimizations](https://escholarship.org/uc/item/021076bn) from [Gunrock](https://github.com/gunrock/gunrock) with the direction-optimization heuristic of [Ligra](https://github.com/jshun/ligra)
 
 ## Prerequisites
