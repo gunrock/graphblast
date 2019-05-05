@@ -22,6 +22,9 @@ Info reduceInner(T*                     val,
   T* d_val = reinterpret_cast<T*>(desc->d_buffer_);
   size_t temp_storage_bytes = 0;
 
+  if (u->nvals_ == 0)
+    return GrB_INVALID_OBJECT;
+
   if (!desc->split())
     CUDA_CALL(cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, u->d_val_,
         d_val, u->nvals_, op, op.identity()));
@@ -30,6 +33,7 @@ Info reduceInner(T*                     val,
 
   CHECK(desc->resize(temp_storage_bytes, "temp"));
   if (desc->debug()) {
+    std::cout << "u_nvals: " << u->nvals_ << std::endl;
     std::cout << temp_storage_bytes << " <= " << desc->d_temp_size_ <<
         std::endl;
   }
@@ -40,8 +44,8 @@ Info reduceInner(T*                     val,
 
   // If doing reduce on DenseVector, then we might as well write the nnz
   // to the internal variable
-  DenseVector<U>* u_t = const_cast<DenseVector<U>*>(u);
-  u_t->nnz_ = *val;
+  //DenseVector<U>* u_t = const_cast<DenseVector<U>*>(u);
+  //u_t->nnz_ = *val;
   return GrB_SUCCESS;
 }
 
@@ -59,6 +63,9 @@ Info reduceInner(T*                     val,
     T* d_val = reinterpret_cast<T*>(desc->d_buffer_);
     desc->resize(sizeof(T), "buffer");
     size_t temp_storage_bytes = 0;
+
+    if (u->nvals_ == 0)
+      return GrB_INVALID_OBJECT;
 
     if (!desc->split())
       CUDA_CALL(cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, u->d_val_,
@@ -110,6 +117,9 @@ Info reduceInner(DenseVector<W>*        w,
     // Use CUB
     size_t temp_storage_bytes = 0;
 
+    if (A->nrows_ == 0)
+      return GrB_INVALID_OBJECT;
+    
     if (!desc->split())
       CUDA_CALL(cub::DeviceSegmentedReduce::Reduce(NULL, temp_storage_bytes,
           A->d_csrVal_, w->d_val_, A->nrows_, A->d_csrRowPtr_,

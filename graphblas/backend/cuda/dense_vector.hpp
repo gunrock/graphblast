@@ -157,6 +157,14 @@ Info DenseVector<T>::computeNnz(Index* nnz_t, T identity, Descriptor* desc) {
   size_t temp_storage_bytes = 0;
   plus<Index> op;
 
+  if (nvals_ == 0)
+    return GrB_INVALID_OBJECT;
+
+  if (desc->debug()) {
+    printDevice("zeros", reinterpret_cast<Index*>(desc->d_buffer_), nvals_);
+    std::cout << "nvals_: " << nvals_ << std::endl;
+  }
+
   CUDA_CALL(cub::DeviceReduce::Reduce(NULL, temp_storage_bytes,
       reinterpret_cast<Index*>(desc->d_buffer_), d_nnz, nvals_, op, 0));
 
@@ -303,7 +311,7 @@ Info DenseVector<T>::fill(T val) {
 
 template <typename T>
 Info DenseVector<T>::fillAscending(Index nvals) {
-  for (Index i = 0; i < nvals; i++)
+  for (Index i = 0; i < nvals_; i++)
     h_val_[i] = i;
 
   CHECK(cpuToGpu());

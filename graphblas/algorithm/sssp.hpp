@@ -45,11 +45,12 @@ float sssp(Vector<float>*       v,
 
   Index iter;
   Index f1_nvals = 1;
+  float succ = 1.f;
 
   backend::GpuTimer gpu_tight;
   float gpu_tight_time = 0.f;
   gpu_tight.Start();
-  for (iter = 1; iter <= desc->descriptor_.max_niter_ && f1_nvals > 0; ++iter) {
+  for (iter = 1; iter <= desc->descriptor_.max_niter_; ++iter) {
     if (desc->descriptor_.debug())
       std::cout << "=====SSSP Iteration " << iter - 1 << "=====\n";
     gpu_tight.Stop();
@@ -63,7 +64,7 @@ float sssp(Vector<float>*       v,
       gpu_tight_time += gpu_tight.ElapsedMillis();
     }
     gpu_tight.Start();
-    // TODO(@ctcyang): add inplace + accumulate version
+
     vxm<float, float, float, float>(&f2, GrB_NULL, GrB_NULL,
         MinimumPlusSemiring<float>(), &f1, A, desc);
 
@@ -82,10 +83,15 @@ float sssp(Vector<float>*       v,
         GrB_ALL, A_nrows, desc);
     CHECK(desc->toggle(GrB_MASK));
 
-    f2.swap(&f1);
+    CHECK(f2.swap(&f1));
 
     CHECK(f1.nvals(&f1_nvals));
-    //reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &m, desc);
+    reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &m, desc);
+
+    if (desc->descriptor_.debug())
+      std::cout << succ << std::endl;
+    if (f1_nvals == 0 || succ == 0)
+      break;
   }
   gpu_tight.Stop();
   std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
