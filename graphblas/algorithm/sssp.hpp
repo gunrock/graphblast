@@ -44,29 +44,25 @@ float sssp(Vector<float>*       v,
   Vector<float> m(A_nrows);
 
   Index iter;
-  float succ = 1.f;
-  Index unvisited = A_nrows;
+  Index f1_nvals = 1;
 
   backend::GpuTimer gpu_tight;
   float gpu_tight_time = 0.f;
-  if (desc->descriptor_.timing_ > 0)
-    gpu_tight.Start();
-  for (iter = 1; iter <= desc->descriptor_.max_niter_; ++iter) {
+  gpu_tight.Start();
+  for (iter = 1; iter <= desc->descriptor_.max_niter_ && f1_nvals > 0; ++iter) {
     if (desc->descriptor_.debug())
       std::cout << "=====SSSP Iteration " << iter - 1 << "=====\n";
-    if (desc->descriptor_.timing_ == 2) {
-      gpu_tight.Stop();
-      if (iter > 1) {
+    gpu_tight.Stop();
+    if (iter > 1) {
+      if (desc->descriptor_.timing_ == 1) {
         std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
-            "push" : "pull";
-        std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
-            << unvisited << ", " << vxm_mode << ", "
-            << gpu_tight.ElapsedMillis() << "\n";
-        gpu_tight_time += gpu_tight.ElapsedMillis();
+          "push" : "pull";
+        std::cout << iter - 1 << ", " << f1_nvals << "/" << A_nrows << ", "
+            << vxm_mode << ", " << gpu_tight.ElapsedMillis() << "\n";
       }
-      unvisited -= static_cast<int>(succ);
-      gpu_tight.Start();
+      gpu_tight_time += gpu_tight.ElapsedMillis();
     }
+    gpu_tight.Start();
     // TODO(@ctcyang): add inplace + accumulate version
     vxm<float, float, float, float>(&f2, GrB_NULL, GrB_NULL,
         MinimumPlusSemiring<float>(), &f1, A, desc);
@@ -74,7 +70,7 @@ float sssp(Vector<float>*       v,
     //eWiseMult<float, float, float, float>(&m, GrB_NULL, GrB_NULL,
     //    PlusLessSemiring<float>(), &f2, v, desc);
     eWiseAdd<float, float, float, float>(&m, GrB_NULL, GrB_NULL,
-        LessPlusSemiring<float>(), &f2, v, desc);
+        CustomLessPlusSemiring<float>(), &f2, v, desc);
 
     eWiseAdd<float, float, float, float>(v, GrB_NULL, GrB_NULL,
         MinimumPlusSemiring<float>(), v, &f2, desc);
@@ -88,24 +84,16 @@ float sssp(Vector<float>*       v,
 
     f2.swap(&f1);
 
-    reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &m, desc);
-
-    if (desc->descriptor_.debug())
-      std::cout << "succ: " << succ << std::endl;
-    if (succ == 0)
-      break;
+    CHECK(f1.nvals(&f1_nvals));
+    //reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &m, desc);
   }
-  if (desc->descriptor_.timing_ > 0) {
-    gpu_tight.Stop();
-    std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
-        "push" : "pull";
-    std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
-        << unvisited << ", " << vxm_mode << ", "
-        << gpu_tight.ElapsedMillis() << "\n";
-    gpu_tight_time += gpu_tight.ElapsedMillis();
-    return gpu_tight_time;
-  }
-  return 0.f;
+  gpu_tight.Stop();
+  std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+      "push" : "pull";
+  std::cout << iter - 1 << ", " << f1_nvals << "/" << A_nrows << ", "
+      << vxm_mode << ", " << gpu_tight.ElapsedMillis() << "\n";
+  gpu_tight_time += gpu_tight.ElapsedMillis();
+  return gpu_tight_time;
 }
 
 template <typename T, typename a>

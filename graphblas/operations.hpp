@@ -365,7 +365,7 @@ Info assign(Matrix<c>*                C,
 template <typename W, typename M, typename T,
           typename BinaryOpT>
 Info assign(Vector<W>*                w,
-            const Vector<M>*          mask,
+            Vector<M>*                mask,
             BinaryOpT                 accum,
             T                         val,
             const std::vector<Index>* indices,

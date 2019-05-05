@@ -158,7 +158,10 @@ REGISTER_MONOID(LogicalAndMonoid, logical_and, false)
 
 // New monoids
 REGISTER_MONOID(GreaterMonoid, greater, std::numeric_limits<T_out>::min());
-REGISTER_MONOID(LessMonoid, less, std::numeric_limits<T_out>::max());
+// Less is not a monoid because:
+// 1) has different left and right identity
+// 2) not associative
+REGISTER_MONOID(CustomLessMonoid, less, std::numeric_limits<T_out>::max());
 REGISTER_MONOID(NotEqualToMonoid, not_equal_to, std::numeric_limits<T_out>::max())
 }  // namespace graphblas
 
@@ -192,8 +195,8 @@ REGISTER_SEMIRING(PlusDividesSemiring, PlusMonoid, divides)
 REGISTER_SEMIRING(PlusGreaterSemiring, PlusMonoid, greater)
 REGISTER_SEMIRING(GreaterPlusSemiring, GreaterMonoid, plus)
 REGISTER_SEMIRING(PlusMinusSemiring, PlusMonoid, minus)
-REGISTER_SEMIRING(LessPlusSemiring, LessMonoid, plus)
 REGISTER_SEMIRING(PlusLessSemiring, PlusMonoid, less)
+REGISTER_SEMIRING(CustomLessPlusSemiring, CustomLessMonoid, plus)
 REGISTER_SEMIRING(MinimumMultipliesSemiring, MinimumMonoid, multiplies)
 REGISTER_SEMIRING(MultipliesMultipliesSemiring, MultipliesMonoid, multiplies)
 REGISTER_SEMIRING(NotEqualToPlusSemiring, NotEqualToMonoid, plus)

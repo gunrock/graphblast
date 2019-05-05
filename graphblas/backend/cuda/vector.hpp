@@ -68,7 +68,7 @@ class Vector {
   Info countUnique(Index* count);
   inline Info setStorage(Storage  vec_type);
   inline Info getStorage(Storage* vec_type) const;
-  Info convert(T identity, Descriptor* desc);
+  Info convert(T identity, float switchpoint, Descriptor* desc);
   Info sparse2dense(T identity, Descriptor* desc = NULL);
   Info dense2sparse(T identity, Descriptor* desc);
   Info swap(Vector* rhs);
@@ -289,7 +289,7 @@ inline Info Vector<T>::getStorage(Storage* vec_type) const {
 // a) if more elements than desc->switchpoint(), convert SpVec->DeVec
 // b) if less elements than desc->switchpoint(), convert DeVec->SpVec
 template <typename T>
-Info Vector<T>::convert(T identity, Descriptor* desc) {
+Info Vector<T>::convert(T identity, float switchpoint, Descriptor* desc) {
   Index nvals_t;
   Index nsize_t;
   if (vec_type_ == GrB_SPARSE) {
@@ -306,15 +306,15 @@ Info Vector<T>::convert(T identity, Descriptor* desc) {
   float ratio = static_cast<float>(nvals_t)/nsize_t;
   if (desc->dirinfo())
     std::cout << "Nnz ratio: " << ratio << " Switch point: "
-        << desc->switchpoint() << std::endl;
+        << switchpoint << std::endl;
 
   if (vec_type_ == GrB_SPARSE) {
-    if (ratio > desc->switchpoint() && ratio > ratio_)
+    if (ratio > switchpoint && ratio > ratio_)
       CHECK(sparse2dense(identity, desc));
     else
       ratio_ = ratio;
   } else if (vec_type_ == GrB_DENSE) {
-    if (ratio <= desc->switchpoint() && ratio < ratio_)
+    if (ratio <= switchpoint && ratio < ratio_)
       CHECK(dense2sparse(identity, desc));
     else
       ratio_ = ratio;

@@ -85,7 +85,6 @@ __global__ void eWiseMultKernel(W*       w_val,
   }
 }
 
-// dense-dense sparse mask vector variant
 // sparse-dense dense no mask vector variant
 // TODO(@ctcyang): add scmp, accum, repl, mask
 // template <bool UseScmp, bool UseAccum, bool UseRepl,
@@ -99,7 +98,8 @@ __global__ void eWiseMultKernel(Index*       w_ind,
                                 const Index* u_ind,
                                 const U*     u_val,
                                 Index        u_nvals,
-                                const V*     v_val) {
+                                const V*     v_val,
+                                bool         reverse) {
   Index row = blockIdx.x * blockDim.x + threadIdx.x;
   for (; row < u_nvals; row += blockDim.x * gridDim.x) {
     Index ind = u_ind[row];
@@ -107,7 +107,7 @@ __global__ void eWiseMultKernel(Index*       w_ind,
 
     if (u_t != identity) {
       V      v_t = v_val[ind];
-      w_val[row] = mul_op(u_t, v_t);
+      w_val[row] = (reverse) ? mul_op(v_t, u_t) : mul_op(u_t, v_t);
     } else {
       w_val[row] = 0;
     }
@@ -132,7 +132,8 @@ __global__ void eWiseMultKernel(Index*       w_ind,
                                 const Index* u_ind,
                                 const U*     u_val,
                                 Index        u_nvals,
-                                const V*     v_val) {
+                                const V*     v_val,
+                                bool         reverse) {
   Index row = blockIdx.x * blockDim.x + threadIdx.x;
   for (; row < mask_nvals; row += blockDim.x * gridDim.x) {
     Index ind = mask_ind[row];
@@ -146,7 +147,7 @@ __global__ void eWiseMultKernel(Index*       w_ind,
         Index u_found = binarySearch(u_ind, ind, 0, u_nvals);
         if (u_found != -1) {
           U u_t = u_val[u_found];
-          w_t   = mul_op(u_t, v_t);
+          w_t   = (reverse) ? mul_op(v_t, u_t) : mul_op(u_t, v_t);
         }
       }
     }

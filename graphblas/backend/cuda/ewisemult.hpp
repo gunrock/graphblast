@@ -177,6 +177,7 @@ Info eWiseMultInner(SparseVector<W>*       w,
                     SemiringT              op,
                     const SparseVector<U>* u,
                     const DenseVector<V>*  v,
+                    bool                   reverse,
                     Descriptor*            desc) {
   // Get descriptor parameters for SCMP, REPL
   Desc_value scmp_mode, repl_mode;
@@ -231,7 +232,7 @@ Info eWiseMultInner(SparseVector<W>*       w,
 
     eWiseMultKernel<<<NB, NT>>>(w->d_ind_, w->d_val_, mask_sparse->d_ind_,
         mask_sparse->d_val_, mask_nvals, NULL, op.identity(),
-        extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_);
+        extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_, reverse);
 
     // Mask size is upper bound on output memory allocation
     w->nvals_ = mask_nvals;
@@ -247,8 +248,8 @@ Info eWiseMultInner(SparseVector<W>*       w,
     NB.y = 1;
     NB.z = 1;
 
-    eWiseMultKernel<<<NB, NT>>>(w_ind, w_val, NULL, op.identity(),
-        extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_);
+      eWiseMultKernel<<<NB, NT>>>(w_ind, w_val, NULL, op.identity(),
+          extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_, reverse);
 
     // u size is upper bound on output memory allocation
     w->nvals_ = u_nvals;

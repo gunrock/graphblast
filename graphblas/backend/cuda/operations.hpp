@@ -118,7 +118,7 @@ Info vxm(Vector<W>*       w,
     if (u_vec_type == GrB_DENSE)
       CHECK(u_t->dense2sparse(op.identity(), desc));
   } else if (vxm_mode == GrB_PUSHPULL) {
-    CHECK(u_t->convert(op.identity(), desc));
+    CHECK(u_t->convert(op.identity(), desc->switchpoint(), desc));
   } else if (vxm_mode == GrB_PUSHONLY && u_vec_type == GrB_DENSE) {
     CHECK(u_t->dense2sparse(op.identity(), desc));
   } else if (vxm_mode == GrB_PULLONLY && u_vec_type == GrB_SPARSE) {
@@ -244,7 +244,7 @@ Info mxv(Vector<W>*       w,
     if (u_vec_type == GrB_SPARSE)
       CHECK(u_t->sparse2dense(op.identity(), desc));
   } else if (mxv_mode == GrB_PUSHPULL) {
-    CHECK(u_t->convert(op.identity(), desc));
+    CHECK(u_t->convert(op.identity(), desc->switchpoint(), desc));
   } else if (mxv_mode == GrB_PUSHONLY && u_vec_type == GrB_DENSE) {
     CHECK(u_t->dense2sparse(op.identity(), desc));
   } else if (mxv_mode == GrB_PULLONLY && u_vec_type == GrB_SPARSE) {
@@ -364,14 +364,15 @@ Info eWiseMult(Vector<W>*       w,
           &v->dense_, desc));
     }
   } else if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_DENSE) {
+    // The boolean here keeps track of whether operators have been reversed.
+    // This is important for non-commutative ops i.e. op(a,b) != op(b,a)
     CHECK(w->setStorage(GrB_SPARSE));
     CHECK(eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
-        &v->dense_, desc));
+        &v->dense_, false, desc));
   } else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_SPARSE) {
-    // TODO(@ctcyang): Fix for non-commutative ops
     CHECK(w->setStorage(GrB_SPARSE));
     CHECK(eWiseMultInner(&w->sparse_, mask, accum, op, &v->sparse_,
-        &u->dense_, desc));
+        &u->dense_, true, desc));
   } else {
     return GrB_INVALID_OBJECT;
   }
@@ -572,7 +573,7 @@ Info assign(Matrix<c>*                C,
 template <typename W, typename T, typename M,
           typename BinaryOpT>
 Info assign(Vector<W>*                w,
-            const Vector<M>*          mask,
+            Vector<M>*                mask,
             BinaryOpT                 accum,
             T                         val,
             const std::vector<Index>* indices,

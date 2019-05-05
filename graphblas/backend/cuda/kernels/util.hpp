@@ -46,6 +46,9 @@ __global__ void zeroDenseIdentityKernel(const M* mask,
   }
 }
 
+// Sets d_flag to:
+//   0 if element matches identity
+//   1 if element does not match identity
 template <typename U>
 __global__ void updateFlagKernel(Index*   d_flag,
                                  U        identity,

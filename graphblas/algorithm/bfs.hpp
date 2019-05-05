@@ -72,9 +72,8 @@ float bfs(Vector<float>*       v,
     reduce<float, float>(&succ, GrB_NULL, PlusMonoid<float>(), &f1, desc);
 
     if (desc->descriptor_.debug())
-      std::cout << "succ: " << succ << " " << static_cast<int>(succ) <<
-          std::endl;
-    if (succ > 0)
+      std::cout << "succ: " << succ << std::endl;
+    if (succ == 0)
       break;
   }
   if (desc->descriptor_.timing_ > 0) {

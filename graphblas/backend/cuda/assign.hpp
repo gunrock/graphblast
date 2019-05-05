@@ -12,7 +12,7 @@ namespace backend {
 template <typename W, typename T, typename M,
           typename BinaryOpT>
 Info assignDense(DenseVector<W>*           w,
-                 const Vector<M>*          mask,
+                 Vector<M>*                mask,
                  BinaryOpT                 accum,
                  T                         val,
                  const std::vector<Index>* indices,
@@ -107,7 +107,7 @@ Info assignDense(DenseVector<W>*           w,
 template <typename W, typename T, typename M,
           typename BinaryOpT>
 Info assignSparse(SparseVector<W>*          w,
-                  const Vector<M>*          mask,
+                  Vector<M>*                mask,
                   BinaryOpT                 accum,
                   T                         val,
                   const std::vector<Index>* indices,
@@ -126,7 +126,7 @@ Info assignSparse(SparseVector<W>*          w,
   // values in GrB_assign instead of passing them through
   bool use_mask  = (mask != NULL);
   bool use_accum = (accum_type.size() > 1);
-  bool use_scmp  = (scmp_mode != GrB_SCMP);
+  bool use_scmp  = (scmp_mode == GrB_SCMP);
   bool use_allowdupl;
 
   if (desc->debug())
@@ -169,21 +169,31 @@ Info assignSparse(SparseVector<W>*          w,
   assert(mask->dense_.nvals_ >= temp_nvals);
 
   // =====Part 3: AssignSparse=====
+  // If mask is sparse, use temporary workaround of converting it to dense
+	if (mask_vec_type == GrB_SPARSE) {
+    mask->convert(static_cast<M>(0), 0.3, desc);
+    //mask->sparse2dense(static_cast<M>(0), desc);
+	  CHECK(mask->getStorage(&mask_vec_type));
+  }
 	// For visited nodes, assign val (0.f) to vector
 	// For GrB_DENSE mask, need to add parameter for mask_identity to user
 	// Scott: this is not necessary. Checking castable to (bool)1 is enough
 	if (mask_vec_type == GrB_DENSE) {
 		if (use_scmp)
 			assignSparseKernel<true, true, true><<<NB, NT>>>(w->d_ind_, w->d_val_,
-					w_nvals, (mask->dense_).d_val_, NULL, val,
+					w_nvals, (mask->dense_).d_val_, NULL, static_cast<W>(val),
 					reinterpret_cast<Index*>(NULL), nindices);
 		else
 			assignSparseKernel<false, true, true><<<NB, NT>>>(w->d_ind_, w->d_val_,
-					w_nvals, (mask->dense_).d_val_, NULL, val,
+					w_nvals, (mask->dense_).d_val_, NULL, static_cast<W>(val),
 					reinterpret_cast<Index*>(NULL), nindices);
 	} else if (mask_vec_type == GrB_SPARSE) {
-		std::cout << "SpVec Assign Constant Sparse Mask\n";
-		std::cout << "Error: Feature not implemented yet!\n";
+    // TODO(@ctcyang): Adding sparse mask may be faster than skipping it
+    // altogether which is what is currently done
+    if (desc->debug()) {
+		  std::cout << "SpVec Assign Constant Sparse Mask\n";
+		  std::cout << "Error: Feature not implemented yet!\n";
+    }
 	} else {
 		return GrB_UNINITIALIZED_OBJECT;
 	}
@@ -200,7 +210,7 @@ Info assignSparse(SparseVector<W>*          w,
 	Index* d_scan = reinterpret_cast<Index*>(desc->d_buffer_)+3*nindices;
 	Index* d_temp = reinterpret_cast<Index*>(desc->d_buffer_)+4*nindices;
 
-	updateFlagKernel<<<NB, NT>>>(d_flag, (W)val, w->d_val_, temp_nvals);
+	updateFlagKernel<<<NB, NT>>>(d_flag, (W)val, w->d_val_, w_nvals);
 	mgpu::ScanPrealloc<mgpu::MgpuScanTypeExc>(d_flag, w_nvals, (Index)0,
 			mgpu::plus<Index>(),  // NOLINT(build/include_what_you_use)
 			reinterpret_cast<Index*>(0), &temp_nvals, d_scan,
@@ -213,7 +223,7 @@ Info assignSparse(SparseVector<W>*          w,
 		std::cout << "Frontier size: " << temp_nvals << std::endl;
 	}
 
-	streamCompactSparseKernel<<<NB, NT>>>(temp_ind, temp_val, d_scan, (W)0,
+	streamCompactSparseKernel<<<NB, NT>>>(temp_ind, temp_val, d_scan, (W)val,
 			w->d_ind_, w->d_val_, w_nvals);
 
   CUDA_CALL(cudaMemcpy(w->d_ind_, temp_ind, temp_nvals*sizeof(Index),
@@ -221,6 +231,7 @@ Info assignSparse(SparseVector<W>*          w,
   CUDA_CALL(cudaMemcpy(w->d_val_, temp_val, temp_nvals*sizeof(W),
       cudaMemcpyDeviceToDevice));
 
+  w->nvals_ = temp_nvals;
 	if (desc->debug()) {
 		printDevice("w_ind", w->d_ind_, w->nvals_);
 		printDevice("w_val", w->d_val_, w->nvals_);

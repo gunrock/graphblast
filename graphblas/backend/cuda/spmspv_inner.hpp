@@ -223,7 +223,7 @@ Info spmspvApspieMerge(Index*       w_ind,
   int endbit = sizeof(Index)*8;
   if (desc->endbit())
     endbit = std::min(endbit,
-        static_cast<int>(log2(static_cast<float>(A_nrows))+1));
+        static_cast<int>(log2(static_cast<float>(A_nrows)))+1);
 
   if (desc->struconly()) {
     if (desc->sort()) {
