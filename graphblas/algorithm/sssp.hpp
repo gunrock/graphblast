@@ -60,7 +60,6 @@ float sssp(Vector<float>*       v,
       if (desc->descriptor_.timing_ == 1)
         std::cout << iter - 1 << ", " << f1_nvals << "/" << A_nrows << ", "
             << vxm_mode << ", " << gpu_tight.ElapsedMillis() << "\n";
-      }
       gpu_tight_time += gpu_tight.ElapsedMillis();
     }
     gpu_tight.Start();
