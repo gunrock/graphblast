@@ -589,7 +589,7 @@ Info eWiseAdd(Vector<W>*       w,
               Descriptor*      desc) {
   Vector<U>* u_t = const_cast<Vector<U>*>(u);
   if (desc->debug()) {
-    std::cout << "===Begin eWiseMult===\n";
+    std::cout << "===Begin eWiseAdd===\n";
     CHECK(u_t->print());
     std::cout << "val: " << val << std::endl;
   }
@@ -603,7 +603,7 @@ Info eWiseAdd(Vector<W>*       w,
       std::cout << "Error: Feature not implemented yet!\n";
     } else {
       CHECK(w->setStorage(GrB_DENSE));
-      CHECK(eWiseMultInner(&w->dense_, mask, accum, op, &u->dense_,
+      CHECK(eWiseAddInner(&w->dense_, mask, accum, op, &u->dense_,
           val, desc));
     }
   } else if (u_vec_type == GrB_SPARSE) {
@@ -611,16 +611,18 @@ Info eWiseAdd(Vector<W>*       w,
       std::cout << "eWiseAdd Sparse Vector-Scalar Mask\n";
       std::cout << "Error: Feature not implemented yet!\n";
     } else {
-      CHECK(w->setStorage(GrB_SPARSE));
-      CHECK(eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
-          val, desc));
+      std::cout << "eWiseAdd Sparse Vector-Scalar\n";
+      std::cout << "Error: Feature not implemented yet!\n";
+      //CHECK(w->setStorage(GrB_DENSE));
+      //CHECK(eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
+      //    val, desc));
     }
   } else {
     return GrB_INVALID_OBJECT;
   }
 
   if (desc->debug()) {
-    std::cout << "===End eWiseMult===\n";
+    std::cout << "===End eWiseAdd===\n";
     CHECK(w->print());
   }
   return GrB_SUCCESS;

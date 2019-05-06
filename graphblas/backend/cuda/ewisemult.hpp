@@ -155,8 +155,8 @@ Info eWiseMultInner(SparseVector<W>*       w,
     NB.z = 1;
 
     eWiseMultKernel<<<NB, NT>>>(w->d_ind_, w->d_val_, mask->d_ind_,
-          mask->d_val_, mask_nvals, NULL, op.identity(), extractMul(op),
-          u->d_val_, v->d_val_);
+        mask->d_val_, mask_nvals, NULL, op.identity(), extractMul(op),
+        u->d_val_, v->d_val_);
 
     w->nvals_ = mask_nvals;
   } else {
@@ -248,8 +248,8 @@ Info eWiseMultInner(SparseVector<W>*       w,
     NB.y = 1;
     NB.z = 1;
 
-      eWiseMultKernel<<<NB, NT>>>(w_ind, w_val, NULL, op.identity(),
-          extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_, reverse);
+    eWiseMultKernel<<<NB, NT>>>(w_ind, w_val, NULL, op.identity(),
+        extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_, reverse);
 
     // u size is upper bound on output memory allocation
     w->nvals_ = u_nvals;
@@ -307,7 +307,8 @@ Info eWiseMultInner(SparseMatrix<c>*       C,
     std::cout << "eWiseMult Sparse Matrix Broadcast Scalar with Mask\n";
     std::cout << "Error: Feature not implemented yet!\n";
   } else {
-    CHECK(C->dup(A));
+    if (A != C)
+      CHECK(C->dup(A));
 
     dim3 NT, NB;
     NT.x = nt;
@@ -318,19 +319,212 @@ Info eWiseMultInner(SparseMatrix<c>*       C,
     NB.z = 1;
 
     eWiseMultKernel<<<NB, NT>>>(C->d_csrVal_, NULL, extractMul(op),
-        A->d_csrVal_, A_nvals);
+        C->d_csrVal_, A_nvals, val);
 
-    bool A_symmetric;
-    CHECK(A->getSymmetry(&A_symmetric));
-    if (A_symmetric && A->format_ == GrB_SPARSE_MATRIX_CSRCSC)
+    if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC)
       eWiseMultKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
-          A->d_cscVal_, A_nvals);
-
+          C->d_cscVal_, A_nvals, val);
   }
   C->need_update_ = true;
 
   return GrB_SUCCESS;
 }
+
+// Sparse vector x Broadcast scalar (no mask)
+template <typename W, typename U, typename V, typename M,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseMultInner(SparseVector<W>*       w,
+                    const Vector<M>*       mask,
+                    BinaryOpT              accum,
+                    SemiringT              op,
+                    const SparseVector<U>* u,
+                    V                      val,
+                    Descriptor*            desc) {
+  // Get descriptor parameters for SCMP, REPL
+  Desc_value scmp_mode, repl_mode;
+  CHECK(desc->get(GrB_MASK, &scmp_mode));
+  CHECK(desc->get(GrB_OUTP, &repl_mode));
+
+  std::string accum_type = typeid(accum).name();
+  // TODO(@ctcyang): add accum and replace support
+  // -have masked variants as separate kernel
+  // -have scmp as template parameter
+  // -accum and replace as parts in flow
+  bool use_mask  = (mask != NULL);
+  bool use_accum = (accum_type.size() > 1);
+  bool use_scmp  = (scmp_mode == GrB_SCMP);
+  bool use_repl  = (repl_mode == GrB_REPLACE);
+
+  if (desc->debug()) {
+    std::cout << "Executing eWiseMult sparse matrix-scalar\n";
+    printState(use_mask, use_accum, use_scmp, use_repl, 0);
+  }
+
+  // Get descriptor parameters for nthreads
+  Desc_value nt_mode;
+  CHECK(desc->get(GrB_NT, &nt_mode));
+  const int nt = static_cast<int>(nt_mode);
+
+  // Get number of elements
+  Index u_nvals;
+  u->nvals(&u_nvals);
+
+  if (use_mask) {
+    std::cout << "eWiseMult Sparse Matrix Broadcast Scalar with Mask\n";
+    std::cout << "Error: Feature not implemented yet!\n";
+  } else {
+    if (u != w)
+      CHECK(w->dup(u));
+
+    dim3 NT, NB;
+    NT.x = nt;
+    NT.y = 1;
+    NT.z = 1;
+    NB.x = (u_nvals + nt - 1) / nt;
+    NB.y = 1;
+    NB.z = 1;
+
+    eWiseMultKernel<<<NB, NT>>>(w->d_val_, NULL, extractMul(op),
+        w->d_val_, u_nvals, val);
+  }
+  w->need_update_ = true;
+
+  return GrB_SUCCESS;
+}
+
+// Dense vector x Broadcast scalar (no mask)
+template <typename W, typename U, typename V, typename M,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseMultInner(DenseVector<W>*       w,
+                    const Vector<M>*      mask,
+                    BinaryOpT             accum,
+                    SemiringT             op,
+                    const DenseVector<U>* u,
+                    V                     val,
+                    Descriptor*           desc) {
+  // Get descriptor parameters for SCMP, REPL
+  Desc_value scmp_mode, repl_mode;
+  CHECK(desc->get(GrB_MASK, &scmp_mode));
+  CHECK(desc->get(GrB_OUTP, &repl_mode));
+
+  std::string accum_type = typeid(accum).name();
+  // TODO(@ctcyang): add accum and replace support
+  // -have masked variants as separate kernel
+  // -have scmp as template parameter
+  // -accum and replace as parts in flow
+  bool use_mask  = (mask != NULL);
+  bool use_accum = (accum_type.size() > 1);
+  bool use_scmp  = (scmp_mode == GrB_SCMP);
+  bool use_repl  = (repl_mode == GrB_REPLACE);
+
+  if (desc->debug()) {
+    std::cout << "Executing eWiseMult sparse matrix-scalar\n";
+    printState(use_mask, use_accum, use_scmp, use_repl, 0);
+  }
+
+  // Get descriptor parameters for nthreads
+  Desc_value nt_mode;
+  CHECK(desc->get(GrB_NT, &nt_mode));
+  const int nt = static_cast<int>(nt_mode);
+
+  // Get number of elements
+  Index u_size;
+  u->size(&u_size);
+
+  if (use_mask) {
+    std::cout << "eWiseMult Sparse Matrix Broadcast Scalar with Mask\n";
+    std::cout << "Error: Feature not implemented yet!\n";
+  } else {
+    if (u != w)
+      CHECK(w->dup(u));
+
+    dim3 NT, NB;
+    NT.x = nt;
+    NT.y = 1;
+    NT.z = 1;
+    NB.x = (u_size + nt - 1) / nt;
+    NB.y = 1;
+    NB.z = 1;
+
+    eWiseMultKernel<<<NB, NT>>>(w->d_val_, NULL, extractMul(op),
+        w->d_val_, u_size, val);
+  }
+  w->need_update_ = true;
+
+  return GrB_SUCCESS;
+}
+
+// Sparse matrix x Broadcast column vector (no mask)
+template <typename c, typename a, typename b, typename m,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseMultInner(SparseMatrix<c>*       C,
+                    const Matrix<m>*       mask,
+                    BinaryOpT              accum,
+                    SemiringT              op,
+                    const SparseMatrix<a>* A,
+                    const DenseVector<b>*  B,
+                    Descriptor*            desc) {
+  // Get descriptor parameters for SCMP, REPL
+  Desc_value scmp_mode, repl_mode;
+  CHECK(desc->get(GrB_MASK, &scmp_mode));
+  CHECK(desc->get(GrB_OUTP, &repl_mode));
+
+  std::string accum_type = typeid(accum).name();
+  // TODO(@ctcyang): add accum and replace support
+  // -have masked variants as separate kernel
+  // -have scmp as template parameter
+  // -accum and replace as parts in flow
+  bool use_mask  = (mask != NULL);
+  bool use_accum = (accum_type.size() > 1);
+  bool use_scmp  = (scmp_mode == GrB_SCMP);
+  bool use_repl  = (repl_mode == GrB_REPLACE);
+
+  if (desc->debug()) {
+    std::cout << "Executing eWiseMult sparse matrix-scalar\n";
+    printState(use_mask, use_accum, use_scmp, use_repl, 0);
+  }
+
+  // Get descriptor parameters for nthreads
+  Desc_value nt_mode;
+  CHECK(desc->get(GrB_NT, &nt_mode));
+  const int nt = static_cast<int>(nt_mode);
+
+  // Get number of elements
+  Index A_nrows, A_ncols;
+  A->nrows(&A_nrows);
+  A->ncols(&A_ncols);
+
+  if (use_mask) {
+    std::cout << "eWiseMult Sparse Matrix Broadcast Scalar with Mask\n";
+    std::cout << "Error: Feature not implemented yet!\n";
+  } else {
+    if (A != C)
+      CHECK(C->dup(A));
+
+    dim3 NT, NB;
+    NT.x = nt;
+    NT.y = 1;
+    NT.z = 1;
+    NB.x = (A_nrows + nt - 1) / nt * 32;
+    NB.y = 1;
+    NB.z = 1;
+
+    // Assign values for CSR value array
+    eWiseMultCSRKernel<<<NB, NT>>>(C->d_csrVal_, NULL, extractMul(op),
+        C->d_csrRowPtr_, C->d_csrVal_, A_nrows, B->d_val_);
+
+    NB.x = (A_ncols + nt - 1) / nt * 32;
+
+    // Assign values for CSC value array
+    if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC)
+      eWiseMultCSCKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
+          C->d_cscColPtr_, C->d_cscRowInd_, C->d_cscVal_, A_ncols, B->d_val_);
+  }
+  C->need_update_ = true;
+
+  return GrB_SUCCESS;
+}
+
 }  // namespace backend
 }  // namespace graphblas
 

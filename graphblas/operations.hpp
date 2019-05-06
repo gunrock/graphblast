@@ -319,7 +319,7 @@ Info eWiseAdd(Vector<W>*       w,
               V                val,
               Descriptor*      desc) {
   // Null pointer check
-  if (w == NULL || mask == NULL || u == NULL || desc == NULL)
+  if (w == NULL || u == NULL || desc == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
   // Dimension check

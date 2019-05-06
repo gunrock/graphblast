@@ -51,23 +51,22 @@ float pr(Vector<float>*       p,
   float gpu_tight_time = 0.f;
   if (desc->descriptor_.timing_ > 0)
     gpu_tight.Start();
-  for (iter = 1; error < eps && iter <= desc->descriptor_.max_niter_;
+  for (iter = 1; error > eps && iter <= desc->descriptor_.max_niter_;
       ++iter) {
     if (desc->descriptor_.debug())
       std::cout << "=====PR Iteration " << iter - 1 << "=====\n";
-    if (desc->descriptor_.timing_ == 2) {
-      gpu_tight.Stop();
-      if (iter > 1) {
-        std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
-            "push" : "pull";
+    gpu_tight.Stop();
+    if (iter > 1) {
+      std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+          "push" : "pull";
+      if (desc->descriptor_.timing_ == 2)
         std::cout << iter - 1 << ", " << error << "/" << A_nrows << ", "
             << unvisited << ", " << vxm_mode << ", "
             << gpu_tight.ElapsedMillis() << "\n";
-        gpu_tight_time += gpu_tight.ElapsedMillis();
-      }
-      unvisited -= static_cast<int>(error);
-      gpu_tight.Start();
+      gpu_tight_time += gpu_tight.ElapsedMillis();
     }
+    unvisited -= static_cast<int>(error);
+    gpu_tight.Start();
     error_last = error;
     p_prev = *p;
 
@@ -88,17 +87,15 @@ float pr(Vector<float>*       p,
     if (desc->descriptor_.debug())
       std::cout << "error: " << error_last << std::endl;
   }
-  if (desc->descriptor_.timing_ > 0) {
-    gpu_tight.Stop();
-    std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
-        "push" : "pull";
+  gpu_tight.Stop();
+  std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+      "push" : "pull";
+  if (desc->descriptor_.timing_ > 0)
     std::cout << iter - 1 << ", " << error << "/" << A_nrows << ", "
         << unvisited << ", " << vxm_mode << ", "
         << gpu_tight.ElapsedMillis() << "\n";
-    gpu_tight_time += gpu_tight.ElapsedMillis();
-    return gpu_tight_time;
-  }
-  return 0.f;
+  gpu_tight_time += gpu_tight.ElapsedMillis();
+  return gpu_tight_time;
 }
 
 template <typename T, typename a>
