@@ -397,6 +397,102 @@ Info eWiseMult(Matrix<c>*       C,
   std::cout << "Error: eWiseMult matrix variant not implemented yet!\n";
 }
 
+/*!
+ * Extension Method
+ * Element-wise multiply of a matrix and scalar which gets broadcasted
+ */
+template <typename c, typename a, typename b, typename m,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseMult(Matrix<c>*       C,
+               const Matrix<m>* mask,
+               BinaryOpT        accum,
+               SemiringT        op,
+               const Matrix<a>* A,
+               b                val,
+               Descriptor*      desc) {
+  if (desc->debug()) {
+    std::cout << "===Begin eWiseMult===\n";
+    std::cout << "val: " << val << std::endl;
+  }
+
+  Storage A_mat_type;
+  CHECK(A->getStorage(&A_mat_type));
+
+  if (A_mat_type == GrB_DENSE) {
+    std::cout << "eWiseMult Dense Matrix Broadcast Scalar\n";
+    std::cout << "Error: Feature not implemented yet!\n";
+  } else if (A_mat_type == GrB_SPARSE) {
+    // depending on whether mask is present or not
+    if (mask != NULL) {
+      std::cout << "eWiseMult Sparse Matrix Broadcast Scalar with Mask\n";
+      std::cout << "Error: Feature not implemented yet!\n";
+    } else {
+      CHECK(C->setStorage(GrB_SPARSE));
+      CHECK(eWiseMultInner(&C->sparse_, mask, accum, op, &A->sparse_,
+          val, desc));
+    }
+  } else {
+    return GrB_INVALID_OBJECT;
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End eWiseMult===\n";
+  }
+  return GrB_SUCCESS;
+}
+
+/*!
+ * Extension Method
+ * Element-wise multiply of a matrix and column vector which gets broadcasted
+ */
+template <typename c, typename a, typename b, typename m,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseMult(Matrix<c>*       C,
+               const Matrix<m>* mask,
+               BinaryOpT        accum,
+               SemiringT        op,
+               const Matrix<a>* A,
+               const Vector<b>* B,
+               Descriptor*      desc) {
+  Vector<b>* B_t = const_cast<Vector<b>*>(B);
+  if (desc->debug()) {
+    std::cout << "===Begin eWiseMult===\n";
+    CHECK(B_t->print());
+  }
+
+  Storage A_mat_type;
+  Storage B_vec_type;
+  CHECK(A->getStorage(&A_mat_type));
+  CHECK(B->getStorage(&B_vec_type));
+
+  if (A_mat_type == GrB_DENSE) {
+    std::cout << "eWiseMult Dense Matrix Broadcast Vector\n";
+    std::cout << "Error: Feature not implemented yet!\n";
+  } else if (A_mat_type == GrB_SPARSE) {
+    // depending on whether mask is present or not
+    if (mask != NULL) {
+      std::cout << "eWiseMult Sparse Matrix Broadcast Vector with Mask\n";
+      std::cout << "Error: Feature not implemented yet!\n";
+    } else {
+      CHECK(C->setStorage(GrB_SPARSE));
+      if (B_vec_type == GrB_SPARSE) {
+        std::cout << "eWiseMult Sparse Matrix Broadcast Sparse Vector\n";
+        std::cout << "Error: Feature not implemented yet!\n";
+      } else {
+        CHECK(eWiseMultInner(&C->sparse_, mask, accum, op, &A->sparse_,
+            &B->dense_, desc));
+      }
+    }
+  } else {
+    return GrB_INVALID_OBJECT;
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End eWiseMult===\n";
+  }
+  return GrB_SUCCESS;
+}
+
 template <typename W, typename U, typename V, typename M,
           typename BinaryOpT,     typename SemiringT>
 Info eWiseAdd(Vector<W>*       w,
@@ -476,6 +572,58 @@ Info eWiseAdd(Matrix<c>*       C,
               Descriptor*      desc) {
   // Use either op->operator() or op->add() as the case may be
   std::cout << "Error: eWiseAdd matrix variant not implemented yet!\n";
+}
+
+/*!
+ * Extension Method
+ * Element-wise addition of a vector and scalar which gets broadcasted
+ */
+template <typename W, typename U, typename V, typename M,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseAdd(Vector<W>*       w,
+              const Vector<M>* mask,
+              BinaryOpT        accum,
+              SemiringT        op,
+              const Vector<U>* u,
+              V                val,
+              Descriptor*      desc) {
+  Vector<U>* u_t = const_cast<Vector<U>*>(u);
+  if (desc->debug()) {
+    std::cout << "===Begin eWiseMult===\n";
+    CHECK(u_t->print());
+    std::cout << "val: " << val << std::endl;
+  }
+
+  Storage u_vec_type;
+  CHECK(u->getStorage(&u_vec_type));
+
+  if (u_vec_type == GrB_DENSE) {
+    if (mask != NULL) {
+      std::cout << "eWiseAdd Dense Vector-Scalar with Mask\n";
+      std::cout << "Error: Feature not implemented yet!\n";
+    } else {
+      CHECK(w->setStorage(GrB_DENSE));
+      CHECK(eWiseMultInner(&w->dense_, mask, accum, op, &u->dense_,
+          val, desc));
+    }
+  } else if (u_vec_type == GrB_SPARSE) {
+    if (mask != NULL) {
+      std::cout << "eWiseAdd Sparse Vector-Scalar Mask\n";
+      std::cout << "Error: Feature not implemented yet!\n";
+    } else {
+      CHECK(w->setStorage(GrB_SPARSE));
+      CHECK(eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
+          val, desc));
+    }
+  } else {
+    return GrB_INVALID_OBJECT;
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End eWiseMult===\n";
+    CHECK(w->print());
+  }
+  return GrB_SUCCESS;
 }
 
 template <typename W, typename U, typename M,

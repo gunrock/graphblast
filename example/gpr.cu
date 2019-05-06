@@ -63,6 +63,10 @@ int main(int argc, char** argv) {
   if (transpose)
     CHECK(desc.toggle(graphblas::GrB_INP1));
 
+  // PageRank Parameters
+  float alpha = 0.85;
+  float eps   = 1e-5;
+
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
   values.clear();
@@ -72,12 +76,31 @@ int main(int argc, char** argv) {
   CHECK(a.nrows(&nrows));
   CHECK(a.ncols(&ncols));
   CHECK(a.nvals(&nvals));
+
+  // Compute outdegrees
+  graphblas::Vector<float> outdegrees(nrows);
+  graphblas::reduce<float, float, float>(&outdegrees, GrB_NULL, GrB_NULL,
+      graphblas::PlusMonoid<float>(), &a, &desc);
+
+  // A = alpha*A/outdegrees (broadcast variant)
+  graphblas::eWiseMult<float, float, float, float>(&a, GrB_NULL, GrB_NULL,
+      PlusMultipliesSemiring<float>(), &a, alpha, &desc);
+  graphblas::eWiseMult<float, float, float, float>(&a, GrB_NULL, GrB_NULL,
+      PlusDividesSemiring<float>(), &a, &outdegrees, &desc);
+
+  /*// Diagonalize outdegrees
+  Matrix<float> diag_outdegrees(A_nrows, A_nrows);
+  diag<float, float>(&diag_outdegrees, &outdegrees, desc);
+
+  // A = alpha*A*diag(outdegrees)
+  Matrix<float> A_temp(A_nrows, A_nrows);
+  scale<float, float, float>(&A_temp, MultipliesMonoid<float>(), A, alpha,
+      desc);*/
+
   if (debug) CHECK(a.print());
 
   // Vector v
   graphblas::Vector<float> v(nrows);
-  float alpha = 0.85;
-  float eps   = 1e-5;
 
   // Cpu PR
   CpuTimer pr_cpu;

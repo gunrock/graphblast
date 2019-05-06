@@ -13,35 +13,13 @@ namespace algorithm {
 
 // Use float for now for both v and A
 float pr(Vector<float>*       p,
-         const Matrix<float>* A,
+         const Matrix<float>* A,     // column stochastic matrix
          float                alpha, // teleportation constant
          float                eps,   // threshold
          Descriptor*          desc) {
   // Get number of vertices
   Index A_nrows;
   CHECK(A->nrows(&A_nrows));
-
-  // Compute outdegrees
-  Vector<float> outdegrees(A_nrows);
-  reduce<float, float, float>(&outdegrees, GrB_NULL, GrB_NULL,
-      PlusMonoid<float>(), A, desc);
-
-  // A = alpha*A/outdegrees (broadcast variant)
-  // TODO(@ctcyang): add inplace variant if have trouble storing graph in memory
-  Matrix<float> A_temp(A_nrows, A_nrows);
-  eWiseMult<float, float, float, float>(&A_temp, GrB_NULL, GrB_NULL, 
-      PlusMultipliesSemiring<float>(), A, alpha, desc);
-  eWiseMult<float, float, float, float>(A, GrB_NULL, GrB_NULL,
-      PlusDividesSemiring<float>(), &A_temp, outdegrees, desc);
-
-  /*// Diagonalize outdegrees
-  Matrix<float> diag_outdegrees(A_nrows, A_nrows);
-  diag<float, float>(&diag_outdegrees, &outdegrees, desc);
-
-  // A = alpha*A*diag(outdegrees)
-  Matrix<float> A_temp(A_nrows, A_nrows);
-  scale<float, float, float>(&A_temp, MultipliesMonoid<float>(), A, alpha,
-      desc);*/
 
   // Pagerank vector (p)
   CHECK(p->clear());
@@ -91,7 +69,7 @@ float pr(Vector<float>*       p,
       gpu_tight.Start();
     }
     error_last = error;
-    p_prev = p;
+    p_prev = *p;
 
     // p = A*p + (1-alpha)*1
     vxm<float, float, float, float>(&p_swap, GrB_NULL, GrB_NULL,

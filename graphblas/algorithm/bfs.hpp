@@ -41,27 +41,28 @@ float bfs(Vector<float>*       v,
   Index unvisited = A_nrows;
   backend::GpuTimer gpu_tight;
   float gpu_tight_time = 0.f;
-  if (desc->descriptor_.timing_ > 0)
-    gpu_tight.Start();
+  gpu_tight.Start();
+
   for (iter = 1; iter <= desc->descriptor_.max_niter_; ++iter) {
     if (desc->descriptor_.debug()) {
       std::cout << "=====BFS Iteration " << iter - 1 << "=====\n";
       v->print();
       f1.print();
     }
-    if (desc->descriptor_.timing_ == 2) {
-      gpu_tight.Stop();
-      if (iter > 1) {
+    gpu_tight.Stop();
+    if (iter > 1) {
+      if (desc->descriptor_.timing_ == 1) {
         std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
             "push" : "pull";
         std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
             << unvisited << ", " << vxm_mode << ", "
             << gpu_tight.ElapsedMillis() << "\n";
-        gpu_tight_time += gpu_tight.ElapsedMillis();
       }
-      unvisited -= static_cast<int>(succ);
-      gpu_tight.Start();
+      gpu_tight_time += gpu_tight.ElapsedMillis();
     }
+    unvisited -= static_cast<int>(succ);
+    gpu_tight.Start();
+
     assign<float, float>(v, &f1, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
     CHECK(desc->toggle(GrB_MASK));
     vxm<float, float, float, float>(&f2, v, GrB_NULL,
@@ -76,18 +77,15 @@ float bfs(Vector<float>*       v,
     if (succ == 0)
       break;
   }
-  if (desc->descriptor_.timing_ > 0) {
-    gpu_tight.Stop();
-    std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
-        "push" : "pull";
-    if (desc->descriptor_.timing_ == 2)
-      std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
-          << unvisited << ", " << vxm_mode << ", "
-          << gpu_tight.ElapsedMillis() << "\n";
-    gpu_tight_time += gpu_tight.ElapsedMillis();
-    return gpu_tight_time;
-  }
-  return 0.f;
+  gpu_tight.Stop();
+  std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+      "push" : "pull";
+  if (desc->descriptor_.timing_ == 1)
+    std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+        << unvisited << ", " << vxm_mode << ", "
+        << gpu_tight.ElapsedMillis() << "\n";
+  gpu_tight_time += gpu_tight.ElapsedMillis();
+  return gpu_tight_time;
 }
 
 template <typename T, typename a>

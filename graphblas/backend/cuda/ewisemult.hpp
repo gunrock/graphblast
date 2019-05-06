@@ -26,7 +26,7 @@ Info eWiseMultInner(SparseVector<W>*       w,
   return GrB_SUCCESS;
 }
 
-// Dense x dense vector (no mask)
+// Dense x dense vector (no mask and dense mask)
 template <typename W, typename U, typename V, typename M,
           typename BinaryOpT,     typename SemiringT>
 Info eWiseMultInner(DenseVector<W>*       w,
@@ -261,6 +261,74 @@ Info eWiseMultInner(SparseVector<W>*       w,
     }
   }
   w->need_update_ = true;
+  return GrB_SUCCESS;
+}
+
+// Sparse matrix x Broadcast scalar (no mask)
+template <typename c, typename a, typename b, typename m,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseMultInner(SparseMatrix<c>*       C,
+                    const Matrix<m>*       mask,
+                    BinaryOpT              accum,
+                    SemiringT              op,
+                    const SparseMatrix<a>* A,
+                    b                      val,
+                    Descriptor*            desc) {
+  // Get descriptor parameters for SCMP, REPL
+  Desc_value scmp_mode, repl_mode;
+  CHECK(desc->get(GrB_MASK, &scmp_mode));
+  CHECK(desc->get(GrB_OUTP, &repl_mode));
+
+  std::string accum_type = typeid(accum).name();
+  // TODO(@ctcyang): add accum and replace support
+  // -have masked variants as separate kernel
+  // -have scmp as template parameter
+  // -accum and replace as parts in flow
+  bool use_mask  = (mask != NULL);
+  bool use_accum = (accum_type.size() > 1);
+  bool use_scmp  = (scmp_mode == GrB_SCMP);
+  bool use_repl  = (repl_mode == GrB_REPLACE);
+
+  if (desc->debug()) {
+    std::cout << "Executing eWiseMult sparse matrix-scalar\n";
+    printState(use_mask, use_accum, use_scmp, use_repl, 0);
+  }
+
+  // Get descriptor parameters for nthreads
+  Desc_value nt_mode;
+  CHECK(desc->get(GrB_NT, &nt_mode));
+  const int nt = static_cast<int>(nt_mode);
+
+  // Get number of elements
+  Index A_nvals;
+  A->nvals(&A_nvals);
+
+  if (use_mask) {
+    std::cout << "eWiseMult Sparse Matrix Broadcast Scalar with Mask\n";
+    std::cout << "Error: Feature not implemented yet!\n";
+  } else {
+    CHECK(C->dup(A));
+
+    dim3 NT, NB;
+    NT.x = nt;
+    NT.y = 1;
+    NT.z = 1;
+    NB.x = (A_nvals + nt - 1) / nt;
+    NB.y = 1;
+    NB.z = 1;
+
+    eWiseMultKernel<<<NB, NT>>>(C->d_csrVal_, NULL, extractMul(op),
+        A->d_csrVal_, A_nvals);
+
+    bool A_symmetric;
+    CHECK(A->getSymmetry(&A_symmetric));
+    if (A_symmetric && A->format_ == GrB_SPARSE_MATRIX_CSRCSC)
+      eWiseMultKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
+          A->d_cscVal_, A_nvals);
+
+  }
+  C->need_update_ = true;
+
   return GrB_SUCCESS;
 }
 }  // namespace backend
