@@ -32,14 +32,14 @@ struct logical_xor {
   }
 };
 
-template <typename T_in1, typename T_in2, typename T_out = bool>
+template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>
 struct equal {
   inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) {
     return lhs == rhs;
   }
 };
 
-template <typename T_in1, typename T_in2 = T_in1, typename T_out = bool>
+template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>
 struct not_equal_to {
   inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) {
     return lhs != rhs;
@@ -153,13 +153,16 @@ REGISTER_MONOID(PlusMonoid, plus, 0)
 REGISTER_MONOID(MultipliesMonoid, multiplies, 1)
 REGISTER_MONOID(MinimumMonoid, minimum, std::numeric_limits<T_out>::max())
 REGISTER_MONOID(MaximumMonoid, maximum, 0)
-// REGISTER_MONOID(MaximumMonoid, maximum, std::numeric_limits<T_out>::min())
 REGISTER_MONOID(LogicalOrMonoid, logical_or, false)
 REGISTER_MONOID(LogicalAndMonoid, logical_and, false)
 
 // New monoids
 REGISTER_MONOID(GreaterMonoid, greater, std::numeric_limits<T_out>::min());
-REGISTER_MONOID(LessMonoid, less, std::numeric_limits<T_out>::max());
+// Less is not a monoid because:
+// 1) has different left and right identity
+// 2) not associative
+REGISTER_MONOID(CustomLessMonoid, less, std::numeric_limits<T_out>::max());
+REGISTER_MONOID(NotEqualToMonoid, not_equal_to, std::numeric_limits<T_out>::max())
 }  // namespace graphblas
 
 // Semiring generator macro provided by Scott McMillan
@@ -191,9 +194,12 @@ REGISTER_SEMIRING(MaximumMultipliesSemiring, MaximumMonoid, multiplies)
 REGISTER_SEMIRING(PlusDividesSemiring, PlusMonoid, divides)
 REGISTER_SEMIRING(PlusGreaterSemiring, PlusMonoid, greater)
 REGISTER_SEMIRING(GreaterPlusSemiring, GreaterMonoid, plus)
-REGISTER_SEMIRING(LessPlusSemiring, LessMonoid, plus)
+REGISTER_SEMIRING(PlusMinusSemiring, PlusMonoid, minus)
 REGISTER_SEMIRING(PlusLessSemiring, PlusMonoid, less)
+REGISTER_SEMIRING(CustomLessPlusSemiring, CustomLessMonoid, plus)
 REGISTER_SEMIRING(MinimumMultipliesSemiring, MinimumMonoid, multiplies)
+REGISTER_SEMIRING(MultipliesMultipliesSemiring, MultipliesMonoid, multiplies)
+REGISTER_SEMIRING(NotEqualToPlusSemiring, NotEqualToMonoid, plus)
 
 // AddOp and MulOp extraction provided by Peter Zhang
 template <typename SemiringT>

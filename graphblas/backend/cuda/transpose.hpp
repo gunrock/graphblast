@@ -55,6 +55,24 @@ Info cusparseTranspose(SparseMatrix<b>*       B,
     return GrB_DIMENSION_MISMATCH;
   }
 
+  cusparseTransposeInner(A_nrows, A_ncols, A_nvals, 
+      A->d_csrVal_, A->d_csrRowPtr_, A->d_csrColInd_,
+      B->d_csrVal_, B->d_csrColInd_, B->d_csrRowPtr_);
+
+  B->need_update_ = true;
+  return GrB_SUCCESS;
+}
+
+template <typename a, typename b>
+void cusparseTransposeInner(Index        A_nrows,
+                            Index        A_ncols,
+                            Index        A_nvals,
+                            const a*     A_csrVal,
+                            const Index* A_csrRowPtr,
+                            const Index* A_csrColInd,
+                            b*           B_csrVal,
+                            const Index* B_csrRowPtr,
+                            const Index* B_csrColInd) {
   // Matrix transpose
   cusparseHandle_t handle;
   cusparseCreate(&handle);
@@ -64,8 +82,8 @@ Info cusparseTranspose(SparseMatrix<b>*       B,
   // For CUDA 5.0+
   status = cusparseScsr2csc(
       handle, A_nrows, A_ncols, A_nvals,
-      A->d_csrVal_, A->d_csrRowPtr_, A->d_csrColInd_,
-      B->d_csrVal_, B->d_csrColInd_, B->d_csrRowPtr_,
+      A_csrVal, A_csrRowPtr, A_csrColInd,
+      B_csrVal, B_csrColInd, B_csrRowPtr,
       CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO);
 
   switch (status) {
@@ -93,9 +111,6 @@ Info cusparseTranspose(SparseMatrix<b>*       B,
   }
   // Important: destroy handle
   cusparseDestroy(handle);
-
-  B->need_update_ = true;
-  return GrB_SUCCESS;
 }
 }  // namespace backend
 }  // namespace graphblas

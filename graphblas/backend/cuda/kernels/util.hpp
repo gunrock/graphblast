@@ -46,6 +46,9 @@ __global__ void zeroDenseIdentityKernel(const M* mask,
   }
 }
 
+// Sets d_flag to:
+//   0 if element matches identity
+//   1 if element does not match identity
 template <typename U>
 __global__ void updateFlagKernel(Index*   d_flag,
                                  U        identity,
@@ -201,6 +204,18 @@ __global__ void scatter(T*           w_val,
     T     val = u_val[gid];
 
     w_val[ind] = val;
+  }
+}
+
+template <typename T>
+__global__ void countZero(Index*       w_val,
+                          T            identity,
+                          const T*     u_val,
+                          Index        u_nvals) {
+  int gid = blockIdx.x*blockDim.x + threadIdx.x;
+  if (gid < u_nvals) {
+    T val = u_val[gid];
+    w_val[gid] = (val == identity) ? 1 : 0;
   }
 }
 }  // namespace backend

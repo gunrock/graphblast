@@ -48,7 +48,7 @@ class Vector {
                      Index*          n);
 
   // Some handy methods
-  void operator=(Vector* rhs);
+  void operator=(const Vector& rhs);
   const T& operator[](Index ind);
   Info resize(Index nvals);
   Info fill(T val);
@@ -154,9 +154,8 @@ Info Vector<T>::extractTuples(std::vector<T>* values,
 }
 
 template <typename T>
-void Vector<T>::operator=(Vector* rhs) {
-  if (rhs == NULL) return;
-  vector_.dup(&rhs->vector_);
+void Vector<T>::operator=(const Vector& rhs) {
+  vector_.dup(&rhs.vector_);
 }
 
 template <typename T>

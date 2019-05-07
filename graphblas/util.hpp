@@ -58,7 +58,7 @@ void parseArgs(int argc, char**argv, po::variables_map* vm) {
     ("directed", po::value<int>()->default_value(0),
         "0: follow mtx, 1: force undirected graph to be directed, 2: force directed graph to be undirected") // NOLINT
     ("timing", po::value<int>()->default_value(1),
-        "0: outer loop timing, 1: inner loop timing, 2: per graphblas operation timing") // NOLINT
+        "0: do not display per iteration timing, 1: display per iteration timing") // NOLINT
     ("transpose", po::value<bool>()->default_value(false),
         "True means use transpose graph")
     ("mtxinfo", po::value<bool>()->default_value(true),
@@ -105,6 +105,8 @@ void parseArgs(int argc, char**argv, po::variables_map* vm) {
         "Upper bound on colors when graph coloring algorithm is used")
     ("gcalgo", po::value<int>()->default_value(0),
         "0: Jones-Plassman, 1: Maximal independent set, 2: Independent set")
+    ("seed", po::value<int>()->default_value(-1),
+        "Random number generator seed for algorithms with random component i.e. SSSP for determining edge weight, GC for determining random vertex weight")  // NOLINT(whitespace/line_length)
 
     // GPU params
     ("nthread", po::value<int>()->default_value(128),

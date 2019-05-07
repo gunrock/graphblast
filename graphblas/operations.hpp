@@ -147,9 +147,8 @@ Info eWiseMult(Vector<W>*       w,
 
   // Dimension check
   CHECK(checkDimSizeSize(u, v,    "u.size != v.size"));
-  CHECK(checkDimSizeSize(u, mask, "u.size != mask.size"));
-  CHECK(checkDimSizeSize(v, mask, "v.size != mask.size"));
-  CHECK(checkDimSizeSize(w, mask, "w.size != mask.size"));
+  CHECK(checkDimSizeSize(u, w,    "u.size != mask.size"));
+  CHECK(checkDimSizeSize(u, mask, "v.size != mask.size"));
 
   const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
   backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
@@ -175,6 +174,78 @@ Info eWiseMult(Matrix<c>*       C,
                Descriptor*      desc) {
   // Use either op->operator() or op->mul() as the case may be
   std::cout << "Error: eWiseMult matrix variant not implemented yet!\n";
+}
+
+/*!
+ * Extension Method
+ * Element-wise multiply of a matrix and scalar which gets broadcasted
+ *   C = C + mask .* (A .* val)  +: accum
+ *                 2     1    1).*: op (semiring multiply)
+ *                            2).*: Boolean and
+ *
+ * TODO(@ctcyang): add scalar .* matrix variant for non-commutative semiring
+ * multiply
+ */
+template <typename c, typename m, typename a, typename b,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseMult(Matrix<c>*       C,
+               const Matrix<m>* mask,
+               BinaryOpT        accum,
+               SemiringT        op,
+               const Matrix<a>* A,
+               b                val,
+               Descriptor*      desc) {
+  // Null pointer check
+  if (C == NULL || A == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  CHECK(checkDimRowRow(A, C,    "A.nrows != C.nrows"));
+  CHECK(checkDimColCol(A, C,    "A.ncols != C.ncols"));
+  CHECK(checkDimRowRow(A, mask, "A.nrows != mask.nrows"));
+  CHECK(checkDimColCol(A, mask, "A.ncols != mask.ncols"));
+
+  const backend::Matrix<m>* mask_t = (mask == NULL) ? NULL : &mask->matrix_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::eWiseMult(&C->matrix_, mask_t, accum, op, &A->matrix_,
+      val, desc_t);
+}
+
+/*!
+ * Extension Method
+ * Element-wise multiply of a matrix and column vector which gets broadcasted
+ *   C = C + mask .* (A .* u)    +: accum
+ *                 2     1    1).*: op (semiring multiply)
+ *                            2).*: Boolean and
+ *
+ * TODO(@ctcyang): add row vector variant for broadcasting by replicating rows
+ */
+template <typename c, typename m, typename a, typename b,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseMult(Matrix<c>*       C,
+               const Matrix<m>* mask,
+               BinaryOpT        accum,
+               SemiringT        op,
+               const Matrix<a>* A,
+               const Vector<b>* B,
+               Descriptor*      desc) {
+  // Null pointer check
+  if (C == NULL || A == NULL || B == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  CHECK(checkDimRowSize(A, B,    "A.nrows != B.size"));
+  CHECK(checkDimRowRow( A, C,    "A.nrows != C.nrows"));
+  CHECK(checkDimColCol( A, C,    "A.ncols != C.ncols"));
+  CHECK(checkDimRowRow( A, mask, "A.nrows != mask.nrows"));
+  CHECK(checkDimColCol( A, mask, "A.ncols != mask.ncols"));
+
+  const backend::Matrix<m>* mask_t = (mask == NULL) ? NULL : &mask->matrix_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::eWiseMult(&C->matrix_, mask_t, accum, op, &A->matrix_,
+      &B->vector_, desc_t);
 }
 
 /*!
@@ -226,6 +297,40 @@ Info eWiseAdd(Matrix<c>*       C,
               Descriptor*      desc) {
   // Use either op->operator() or op->add() as the case may be
   std::cout << "Error: eWiseAdd matrix variant not implemented yet!\n";
+}
+
+/*!
+ * Extension Method
+ * Element-wise addition of a vector and scalar which gets broadcasted
+ *   w = w + mask .* (u + val)  +: accum
+ *                             .+: op (semiring add)
+ *                             .*: Boolean and
+ *
+ * TODO(@ctcyang): add scalar .+ vector variant for non-commutative semiring
+ * multiply
+ */
+template <typename W, typename M, typename U, typename V,
+          typename BinaryOpT,     typename SemiringT>
+Info eWiseAdd(Vector<W>*       w,
+              const Vector<M>* mask,
+              BinaryOpT        accum,
+              SemiringT        op,
+              const Vector<U>* u,
+              V                val,
+              Descriptor*      desc) {
+  // Null pointer check
+  if (w == NULL || u == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  CHECK(checkDimSizeSize(u, w,    "u.size != mask.size"));
+  CHECK(checkDimSizeSize(u, mask, "v.size != mask.size"));
+
+  const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::eWiseAdd(&w->vector_, mask_t, accum, op, &u->vector_,
+      val, desc_t);
 }
 
 /*!
@@ -365,7 +470,7 @@ Info assign(Matrix<c>*                C,
 template <typename W, typename M, typename T,
           typename BinaryOpT>
 Info assign(Vector<W>*                w,
-            const Vector<M>*          mask,
+            Vector<M>*                mask,
             BinaryOpT                 accum,
             T                         val,
             const std::vector<Index>* indices,
@@ -447,7 +552,22 @@ Info apply(Matrix<c>*       C,
            UnaryOpT         op,
            const Matrix<a>* A,
            Descriptor*      desc) {
-  std::cout << "Error: apply matrix variant not implemented yet!\n";
+  // Null pointer check
+  if (A == NULL || C == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  CHECK(checkDimRowRow(A, C,    "A.nrows != C.nrows"));
+  CHECK(checkDimColCol(A, C,    "A.ncols != C.ncols"));
+  CHECK(checkDimRowRow(A, mask, "A.nrows != mask.nrows"));
+  CHECK(checkDimColCol(A, mask, "A.ncols != mask.ncols"));
+  CHECK(checkDimRowRow(C, mask, "C.nrows != mask.nrows"));
+  CHECK(checkDimColCol(C, mask, "C.ncols != mask.ncols"));
+
+  const backend::Matrix<m>* mask_t = (mask == NULL) ? NULL : &mask->matrix_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::apply(&C->matrix_, mask_t, accum, op, &A->matrix_, desc_t);
 }
 
 /*!

@@ -26,21 +26,38 @@ __global__ void eWiseAddDenseDenseKernel(W*       w_val,
 // sparse-dense dense no mask vector variant
 // TODO(@ctcyang): add scmp, accum, repl, mask
 // template <bool UseScmp, bool UseAccum, bool UseRepl,
-template <typename W, typename U,
+template <typename W, typename U, typename V,
           typename AccumOp, typename AddOp>
 __global__ void eWiseAddSparseDenseKernel(W*           w_val,
                                           AccumOp      accum_op,
                                           AddOp        add_op,
                                           const Index* u_ind,
                                           const U*     u_val,
+                                          const V*     v_val,
                                           Index        u_nvals) {
   Index row = blockIdx.x * blockDim.x + threadIdx.x;
   for (; row < u_nvals; row += blockDim.x * gridDim.x) {
     Index ind = u_ind[row];
     U     u_t = u_val[row];
-
-    W     w_t = w_val[ind];
-    w_val[ind] = add_op(u_t, w_t);
+    V     v_t = v_val[ind];
+    w_val[ind] = add_op(u_t, v_t);
+    __syncwarp();
+  }
+}
+// constant dense no mask vector variant
+// TODO(@ctcyang): add scmp, accum, repl, mask
+// template <bool UseScmp, bool UseAccum, bool UseRepl,
+template <typename W, typename T,
+          typename BinaryOp>
+__global__ void eWiseAddDenseConstantKernel(W*       w_val,
+                                            BinaryOp op,
+                                            T        identity,
+                                            bool     reverse,
+                                            Index    w_nvals) {
+  Index row = blockIdx.x * blockDim.x + threadIdx.x;
+  for (; row < w_nvals; row += blockDim.x * gridDim.x) {
+    w_val[row] = (reverse) ? op(identity, w_val[row]) : 
+                             op(w_val[row], identity);
     __syncwarp();
   }
 }

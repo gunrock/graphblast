@@ -10,7 +10,7 @@ export GRB_SPARSE_MATRIX_FORMAT=1
 ## Sparse matrix storage format
 
 * GRB_SPARSE_MATRIX_FORMAT
-  - Values: 0 (CSRCSC), 1 (CSRONLY) ```(default=1)```
+  - Values: 0 (CSRCSC), 1 (CSRONLY) ```(default=0)```
   - The storage format that is used to store sparse matrix. CSRCSC will double t
 he storage requirements, but may allow more optimizations such as direction-opti
 mization when doing mxv and vxm. This overrides mxvmode settings in Descriptor, because missing CSC data structure makes column-based mxv and row-based vxm impossible without materializing this data structure, which is both memory-intensive and inefficient.
