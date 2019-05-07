@@ -85,6 +85,7 @@ int main(int argc, char** argv) {
   // A = alpha*A/outdegrees (broadcast variant)
   graphblas::eWiseMult<float, float, float, float>(&a, GrB_NULL, GrB_NULL,
       PlusMultipliesSemiring<float>(), &a, alpha, &desc);
+  if (debug) CHECK(a.print());
   graphblas::eWiseMult<float, float, float, float>(&a, GrB_NULL, GrB_NULL,
       PlusDividesSemiring<float>(), &a, &outdegrees, &desc);
 

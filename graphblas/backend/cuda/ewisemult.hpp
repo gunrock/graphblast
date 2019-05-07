@@ -319,11 +319,11 @@ Info eWiseMultInner(SparseMatrix<c>*       C,
     NB.z = 1;
 
     eWiseMultKernel<<<NB, NT>>>(C->d_csrVal_, NULL, extractMul(op),
-        C->d_csrVal_, A_nvals, val);
+        A->d_csrVal_, A_nvals, val);
 
     if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC)
       eWiseMultKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
-          C->d_cscVal_, A_nvals, val);
+          A->d_cscVal_, A_nvals, val);
   }
   C->need_update_ = true;
 
@@ -480,7 +480,7 @@ Info eWiseMultInner(SparseMatrix<c>*       C,
   bool use_repl  = (repl_mode == GrB_REPLACE);
 
   if (desc->debug()) {
-    std::cout << "Executing eWiseMult sparse matrix-scalar\n";
+    std::cout << "Executing eWiseMult sparse matrix-vector\n";
     printState(use_mask, use_accum, use_scmp, use_repl, 0);
   }
 
@@ -495,7 +495,7 @@ Info eWiseMultInner(SparseMatrix<c>*       C,
   A->ncols(&A_ncols);
 
   if (use_mask) {
-    std::cout << "eWiseMult Sparse Matrix Broadcast Scalar with Mask\n";
+    std::cout << "eWiseMult Sparse Matrix Broadcast Vector with Mask\n";
     std::cout << "Error: Feature not implemented yet!\n";
   } else {
     if (A != C)
@@ -511,14 +511,14 @@ Info eWiseMultInner(SparseMatrix<c>*       C,
 
     // Assign values for CSR value array
     eWiseMultCSRKernel<<<NB, NT>>>(C->d_csrVal_, NULL, extractMul(op),
-        C->d_csrRowPtr_, C->d_csrVal_, A_nrows, B->d_val_);
+        A->d_csrRowPtr_, A->d_csrVal_, A_nrows, B->d_val_);
 
     NB.x = (A_ncols + nt - 1) / nt * 32;
 
     // Assign values for CSC value array
     if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC)
       eWiseMultCSCKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
-          C->d_cscColPtr_, C->d_cscRowInd_, C->d_cscVal_, A_ncols, B->d_val_);
+          A->d_cscColPtr_, A->d_cscRowInd_, A->d_cscVal_, A_ncols, B->d_val_);
   }
   C->need_update_ = true;
 

@@ -198,8 +198,8 @@ Info eWiseAddInner(DenseVector<W>*        w,
     std::cout << "eWiseMult Sparse Matrix Broadcast Scalar with Mask\n";
     std::cout << "Error: Feature not implemented yet!\n";
   } else {
-    if (u != w)
-      CHECK(w->dup(u));
+    auto add_op = extractAdd(op);
+    w->fill(add_op(op.identity(), val));
 
     dim3 NT, NB;
     NT.x = nt;
@@ -209,8 +209,8 @@ Info eWiseAddInner(DenseVector<W>*        w,
     NB.y = 1;
     NB.z = 1;
 
-    eWiseMultKernel<<<NB, NT>>>(w->d_val_, NULL, extractMul(op),
-        w->d_val_, u_nvals, val);
+    eWiseAddSparseDenseKernel<<<NB, NT>>>(w->d_val_, NULL, extractAdd(op),
+        u->d_ind_, u->d_val_, w->d_val_, u_nvals);
   }
   w->need_update_ = true;
 

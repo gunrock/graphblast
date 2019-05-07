@@ -611,11 +611,9 @@ Info eWiseAdd(Vector<W>*       w,
       std::cout << "eWiseAdd Sparse Vector-Scalar Mask\n";
       std::cout << "Error: Feature not implemented yet!\n";
     } else {
-      std::cout << "eWiseAdd Sparse Vector-Scalar\n";
-      std::cout << "Error: Feature not implemented yet!\n";
-      //CHECK(w->setStorage(GrB_DENSE));
-      //CHECK(eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
-      //    val, desc));
+      CHECK(w->setStorage(GrB_DENSE));
+      CHECK(eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
+          val, desc));
     }
   } else {
     return GrB_INVALID_OBJECT;

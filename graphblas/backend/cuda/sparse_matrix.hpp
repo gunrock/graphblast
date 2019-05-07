@@ -142,13 +142,8 @@ class SparseMatrix {
   //    In the case on the left, d_cscVal_ is same d_csrVal_ and can be freed,
   //    but this is not true for the case on the right and cannot be freed
   //
-  // TODO(@ctcyang): Ideally, we would like to avoid csr2csc when reading
-  // symmetric_ matrix that has been saved in .dat file. However for now, turn
-  // off symmetric_ field, because it is conflating these two.
-  // 1) force getSymmetry() to return false always
-  // 2) comment out the half memory cases (i.e. GrB_SPARSE_MATRIX_CSRONLY and
-  //    GrB_SPARSE_MATRIX_CSRCSC)
-  // 
+  // 3) user requests GRB_SPARSE_MATRIX_FORMAT = CSRONLY
+  //
   // Current plan:
   // Detect Case 1 (when structure is symmetric)
   // -keep h_cscColPtr_ and h_cscRowInd_ (needed for csr2csc)
@@ -156,6 +151,9 @@ class SparseMatrix {
   //
   // No specialization for Case 2 (when value is also symmetric)
   // -since cost savings of free'ing d_cscVal_ is not as big
+  //
+  // Memory efficient for Case 3
+  // -free d_cscVal_ in addition to d_cscColPtr_ and d_cscRowInd_
   bool symmetric_;
 
   SparseMatrixFormat format_;
@@ -163,21 +161,23 @@ class SparseMatrix {
 
 template <typename T>
 SparseMatrix<T>::~SparseMatrix() {
-  if (h_csrRowPtr_ != NULL) free(h_csrRowPtr_);
-  if (h_csrColInd_ != NULL) free(h_csrColInd_);
-  if (h_csrVal_    != NULL) free(h_csrVal_);
-  if (d_csrRowPtr_ != NULL) CUDA_CALL(cudaFree(d_csrRowPtr_));
-  if (d_csrColInd_ != NULL) CUDA_CALL(cudaFree(d_csrColInd_));
-  if (d_csrVal_    != NULL) CUDA_CALL(cudaFree(d_csrVal_   ));
+  if (h_csrRowPtr_) free(h_csrRowPtr_);
+  if (h_csrColInd_) free(h_csrColInd_);
+  if (h_csrVal_   ) free(h_csrVal_);
+  if (d_csrRowPtr_) CUDA_CALL(cudaFree(d_csrRowPtr_));
+  if (d_csrColInd_) CUDA_CALL(cudaFree(d_csrColInd_));
+  if (d_csrVal_   ) CUDA_CALL(cudaFree(d_csrVal_   ));
 
-  if (h_cscColPtr_ != NULL) free(h_cscColPtr_);
-  if (h_cscRowInd_ != NULL) free(h_cscRowInd_);
-  if (h_cscVal_    != NULL) free(h_cscVal_);
-  if (d_cscVal_    != NULL) CUDA_CALL(cudaFree(d_cscVal_));
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+    if (h_cscColPtr_) free(h_cscColPtr_);
+    if (h_cscRowInd_) free(h_cscRowInd_);
+    if (h_cscVal_   ) free(h_cscVal_);
+    if (d_cscVal_   ) CUDA_CALL(cudaFree(d_cscVal_));
 
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-    if (d_cscColPtr_ != NULL) CUDA_CALL(cudaFree(d_cscColPtr_));
-    if (d_cscRowInd_ != NULL) CUDA_CALL(cudaFree(d_cscRowInd_));
+    if (!symmetric_) {
+      if (d_cscColPtr_) CUDA_CALL(cudaFree(d_cscColPtr_));
+      if (d_cscRowInd_) CUDA_CALL(cudaFree(d_cscRowInd_));
+    }
   }
 }
 
@@ -208,13 +208,15 @@ Info SparseMatrix<T>::dup(const SparseMatrix* rhs) {
   CUDA_CALL(cudaMemcpy(d_csrVal_,    rhs->d_csrVal_,    nvals_*sizeof(T),
       cudaMemcpyDeviceToDevice));
 
-  CUDA_CALL(cudaMemcpy(d_cscVal_,    rhs->d_cscVal_,    nvals_*sizeof(T),
-      cudaMemcpyDeviceToDevice));
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-    CUDA_CALL(cudaMemcpy(d_cscColPtr_, rhs->d_cscColPtr_, (ncols_+1)*
-        sizeof(Index), cudaMemcpyDeviceToDevice));
-    CUDA_CALL(cudaMemcpy(d_cscRowInd_, rhs->d_cscRowInd_, nvals_*sizeof(Index),
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+    CUDA_CALL(cudaMemcpy(d_cscVal_, rhs->d_cscVal_, nvals_*sizeof(T),
         cudaMemcpyDeviceToDevice));
+    if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+      CUDA_CALL(cudaMemcpy(d_cscColPtr_, rhs->d_cscColPtr_, 
+          (ncols_+1)*sizeof(Index), cudaMemcpyDeviceToDevice));
+      CUDA_CALL(cudaMemcpy(d_cscRowInd_, rhs->d_cscRowInd_,
+          nvals_*sizeof(Index), cudaMemcpyDeviceToDevice));
+    }
   }
 
   need_update_ = true;
@@ -226,12 +228,12 @@ Info SparseMatrix<T>::clear() {
   nvals_     = 0;
   ncapacity_ = 0;
 
-  if (h_csrRowPtr_ != NULL) free(h_csrRowPtr_);
-  if (h_csrColInd_ != NULL) free(h_csrColInd_);
-  if (h_csrVal_    != NULL) free(h_csrVal_   );
-  if (d_csrRowPtr_ != NULL) CUDA_CALL(cudaFree(d_csrRowPtr_));
-  if (d_csrColInd_ != NULL) CUDA_CALL(cudaFree(d_csrColInd_));
-  if (d_csrVal_    != NULL) CUDA_CALL(cudaFree(d_csrVal_));
+  if (h_csrRowPtr_) free(h_csrRowPtr_);
+  if (h_csrColInd_) free(h_csrColInd_);
+  if (h_csrVal_   ) free(h_csrVal_);
+  if (d_csrRowPtr_) CUDA_CALL(cudaFree(d_csrRowPtr_));
+  if (d_csrColInd_) CUDA_CALL(cudaFree(d_csrColInd_));
+  if (d_csrVal_   ) CUDA_CALL(cudaFree(d_csrVal_));
 
   h_csrRowPtr_ = NULL;
   h_csrColInd_ = NULL;
@@ -240,14 +242,16 @@ Info SparseMatrix<T>::clear() {
   d_csrColInd_ = NULL;
   d_csrVal_    = NULL;
 
-  if (h_cscColPtr_ != NULL) free(h_cscColPtr_);
-  if (h_cscRowInd_ != NULL) free(h_cscRowInd_);
-  if (h_cscVal_    != NULL) free(h_cscVal_);
-  if (d_cscVal_    != NULL) CUDA_CALL(cudaFree(d_cscVal_));
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+    if (h_cscColPtr_) free(h_cscColPtr_);
+    if (h_cscRowInd_) free(h_cscRowInd_);
+    if (h_cscVal_   ) free(h_cscVal_);
+    if (d_cscVal_   ) CUDA_CALL(cudaFree(d_cscVal_));
 
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-    if (d_cscColPtr_ != NULL) CUDA_CALL(cudaFree(d_cscColPtr_));
-    if (d_cscRowInd_ != NULL) CUDA_CALL(cudaFree(d_cscRowInd_));
+    if (!symmetric_) {
+      if (d_cscColPtr_) CUDA_CALL(cudaFree(d_cscColPtr_));
+      if (d_cscRowInd_) CUDA_CALL(cudaFree(d_cscRowInd_));
+    }
   }
   return GrB_SUCCESS;
 }
@@ -650,15 +654,17 @@ Info SparseMatrix<T>::allocateGpu() {
     CUDA_CALL(cudaMalloc(&d_csrVal_, ncapacity_*sizeof(T)));
     printMemory("csrVal");
   }
-  if (nvals_ > 0 && d_cscVal_ == NULL) {
-    CUDA_CALL(cudaMalloc(&d_cscVal_, ncapacity_*sizeof(T)));
-    printMemory("cscVal");
-  //if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-    if (nrows_ > 0 && d_cscColPtr_ == NULL)
-      CUDA_CALL(cudaMalloc(&d_cscColPtr_, (ncols_+1)*sizeof(Index)));
-    if (nvals_ > 0 && d_cscRowInd_ == NULL)
-      CUDA_CALL(cudaMalloc(&d_cscRowInd_, ncapacity_*sizeof(Index)));
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+    if (nvals_ > 0 && d_cscVal_ == NULL) {
+      CUDA_CALL(cudaMalloc(&d_cscVal_, ncapacity_*sizeof(T)));
+      printMemory("cscVal");
+
+    if (!symmetric_) {
+      if (nrows_ > 0 && d_cscColPtr_ == NULL)
+        CUDA_CALL(cudaMalloc(&d_cscColPtr_, (ncols_+1)*sizeof(Index)));
+      if (nvals_ > 0 && d_cscRowInd_ == NULL)
+        CUDA_CALL(cudaMalloc(&d_cscRowInd_, ncapacity_*sizeof(Index)));
+      }
     }
   }
 
@@ -734,17 +740,19 @@ Info SparseMatrix<T>::cpuToGpu() {
   CUDA_CALL(cudaMemcpy(d_csrVal_,    h_csrVal_,    nvals_*sizeof(T),
       cudaMemcpyHostToDevice));
 
-  CUDA_CALL(cudaMemcpy(d_cscVal_,    h_cscVal_,    nvals_*sizeof(T),
-      cudaMemcpyHostToDevice));
-  //if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-  if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-    CUDA_CALL(cudaMemcpy(d_cscColPtr_, h_cscColPtr_, (ncols_+1)*sizeof(Index),
+  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+    CUDA_CALL(cudaMemcpy(d_cscVal_, h_cscVal_, nvals_*sizeof(T),
         cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(d_cscRowInd_, h_cscRowInd_, nvals_*sizeof(Index),
-        cudaMemcpyHostToDevice));
-  } else {
-    d_cscColPtr_ = d_csrRowPtr_;
-    d_cscRowInd_ = d_csrColInd_;
+
+    if (!symmetric_) {
+      CUDA_CALL(cudaMemcpy(d_cscColPtr_, h_cscColPtr_, (ncols_+1)*sizeof(Index),
+          cudaMemcpyHostToDevice));
+      CUDA_CALL(cudaMemcpy(d_cscRowInd_, h_cscRowInd_, nvals_*sizeof(Index),
+          cudaMemcpyHostToDevice));
+    } else {
+      d_cscColPtr_ = d_csrRowPtr_;
+      d_cscRowInd_ = d_csrColInd_;
+    }
   }
 
   return GrB_SUCCESS;
@@ -761,14 +769,15 @@ Info SparseMatrix<T>::gpuToCpu(bool force_update) {
     CUDA_CALL(cudaMemcpy(h_csrVal_,    d_csrVal_,    nvals_*sizeof(T),
         cudaMemcpyDeviceToHost));
 
-    CUDA_CALL(cudaMemcpy(h_cscVal_,    d_cscVal_,    nvals_*sizeof(T),
-        cudaMemcpyDeviceToHost));
-    //if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-    if (!symmetric_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-      CUDA_CALL(cudaMemcpy(h_cscColPtr_, d_cscColPtr_, (ncols_+1)*sizeof(Index),
+    if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+      CUDA_CALL(cudaMemcpy(h_cscVal_, d_cscVal_, nvals_*sizeof(T),
           cudaMemcpyDeviceToHost));
-      CUDA_CALL(cudaMemcpy(h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
-          cudaMemcpyDeviceToHost));
+      if (!symmetric_) {
+        CUDA_CALL(cudaMemcpy(h_cscColPtr_, d_cscColPtr_,
+            (ncols_+1)*sizeof(Index), cudaMemcpyDeviceToHost));
+        CUDA_CALL(cudaMemcpy(h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
+            cudaMemcpyDeviceToHost));
+      }
     }
 
     CUDA_CALL(cudaDeviceSynchronize());
