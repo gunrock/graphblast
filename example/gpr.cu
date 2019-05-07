@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 
   // PageRank Parameters
   float alpha = 0.85;
-  float eps   = 1e-5;
+  float eps   = 1e-8;
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);

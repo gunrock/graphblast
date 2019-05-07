@@ -38,10 +38,6 @@ float pr(Vector<float>*       p,
   // Temporary residual (r_temp)
   Vector<float> r_temp(A_nrows);
 
-  /*// (1-alpha)*1 (one_minus_alpha)
-  Vector<float> one_minus_alpha(A_nrows);
-  one_minus_alpha.fill(1.f-alpha);*/
-
   int iter;
   float error_last = 0.f;
   float error = 1.f;
@@ -49,17 +45,16 @@ float pr(Vector<float>*       p,
 
   backend::GpuTimer gpu_tight;
   float gpu_tight_time = 0.f;
-  if (desc->descriptor_.timing_ > 0)
-    gpu_tight.Start();
-  for (iter = 1; error > eps && iter <= desc->descriptor_.max_niter_;
-      ++iter) {
+  gpu_tight.Start();
+
+  for (iter = 1; error > eps && iter <= desc->descriptor_.max_niter_; ++iter) {
     if (desc->descriptor_.debug())
       std::cout << "=====PR Iteration " << iter - 1 << "=====\n";
     gpu_tight.Stop();
     if (iter > 1) {
       std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
           "push" : "pull";
-      if (desc->descriptor_.timing_ == 2)
+      if (desc->descriptor_.timing_ == 1)
         std::cout << iter - 1 << ", " << error << "/" << A_nrows << ", "
             << unvisited << ", " << vxm_mode << ", "
             << gpu_tight.ElapsedMillis() << "\n";
@@ -74,7 +69,7 @@ float pr(Vector<float>*       p,
     vxm<float, float, float, float>(&p_swap, GrB_NULL, GrB_NULL,
         PlusMultipliesSemiring<float>(), &p_prev, A, desc);
     eWiseAdd<float, float, float, float>(p, GrB_NULL, GrB_NULL,
-        PlusMultipliesSemiring<float>(), &p_swap, 1.f-alpha, desc);
+        PlusMultipliesSemiring<float>(), &p_swap, (1.f-alpha)/A_nrows, desc);
 
     // error = l2loss(p, p_prev)
     eWiseMult<float, float, float, float>(&r, GrB_NULL, GrB_NULL,

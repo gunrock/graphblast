@@ -54,7 +54,7 @@ int SimpleReferencePr(Index        nrows,
         pagerank[neighbor] += alpha*contrib;
       }
     }
-    printArray("cpu_pagerank", pagerank, nrows);
+    //printArray("cpu_pagerank", pagerank, nrows);
 
     resultant = 0.f;
     for (Index node = 0; node < nrows; ++node) {

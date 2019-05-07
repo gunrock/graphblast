@@ -136,7 +136,9 @@ inline Info DenseVector<T>::nnz(Index* nnz_t) const {
 
 template <typename T>
 Info DenseVector<T>::computeNnz(Index* nnz_t, T identity, Descriptor* desc) {
-  CHECK(desc->resize(nvals_+1, "buffer"));
+  // Nasty bug if you pass in the length of array rather than size of array in
+  // bytes!
+  CHECK(desc->resize((nvals_+1)*sizeof(T), "buffer"));
 
 	// Get descriptor parameters for nthreads
 	Desc_value nt_mode;
