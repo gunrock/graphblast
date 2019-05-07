@@ -30,7 +30,7 @@ class SparseMatrix {
         d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
         d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
         need_update_(0), symmetric_(0) {
-    format_ = getEnv("GRB_SPARSE_MATRIX_FORMAT", GrB_SPARSE_MATRIX_CSRONLY);
+    format_ = getEnv("GRB_SPARSE_MATRIX_FORMAT", GrB_SPARSE_MATRIX_CSRCSC);
   }
 
   explicit SparseMatrix(Index nrows, Index ncols)
@@ -40,7 +40,7 @@ class SparseMatrix {
         d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
         d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
         need_update_(0), symmetric_(0) {
-    format_ = getEnv("GRB_SPARSE_MATRIX_FORMAT", GrB_SPARSE_MATRIX_CSRONLY);
+    format_ = getEnv("GRB_SPARSE_MATRIX_FORMAT", GrB_SPARSE_MATRIX_CSRCSC);
   }
 
   ~SparseMatrix();

@@ -1,4 +1,4 @@
-TEST="0"
+TEST="1"
 DATA="/data-2/gunrock_dataset/large"
 DATA2="/data-2/topc-datasets"
 
@@ -13,8 +13,8 @@ done
 for file in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004 rmat_n22_e64 rmat_n23_e32 rmat_n24_e16 rgg_n24_0.000548 road_usa
 do
   if [ "$TEST" = "1" ] ; then
-    echo bin/gpr --timing 1 --mxvmode 0 --niter 5 --max_niter 10 $DATA2/$file/$file.mtx
-    bin/gpr --timing 1 --mxvmode 0 --niter 5 --max_niter 10 $DATA2/$file/$file.mtx
+    echo bin/gpr --timing 1 --mxvmode 0 --niter 5 --max_niter 10 $DATA2/$file.mtx
+    bin/gpr --timing 1 --mxvmode 0 --niter 5 --max_niter 10 $DATA2/$file.mtx
   fi
 done
 

@@ -12,7 +12,7 @@ done
 for file in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004 rmat_n22_e64 rmat_n23_e32 rmat_n24_e16 rgg_n24_0.000548 road_usa
 do
   if [ "$TEST" = "1" ] ; then
-    bin/gbfs --timing 1 --earlyexit 1 --mxvmode 0 --struconly 1 --niter 0 --opreuse 1 $DATA2/$file/$file.mtx
+    bin/gbfs --timing 1 --earlyexit 1 --mxvmode 0 --struconly 1 --niter 0 --opreuse 1 $DATA2/$file.mtx
   fi
 done
 

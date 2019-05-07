@@ -10,13 +10,20 @@ do
   fi
 done
 
-for file in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004 rmat_n22_e64 rmat_n23_e32 rmat_n24_e16
+for file in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004
 do
   if [ "$TEST" = "1" ] ; then
-    echo bin/gsssp --timing 1 --mxvmode 0 --niter 5 --directed 2 --memusage 0.2 --switchpoint 0.1 $DATA/$file.mtx
-    bin/gsssp --timing 1 --mxvmode 0 --niter 5 --directed 2 --memusage 0.2 --switchpoint 0.1 $DATA2/$file.mtx
+    for switch in 0.2 0.15 0.1 0.5 0.01
+    do
+      echo bin/gsssp --timing 1 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint $switch $DATA/$file.mtx
+      bin/gsssp --timing 1 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint $switch $DATA2/$file.mtx
+    done
   fi
 done
+
+for file in rmat_n22_e64 rmat_n23_e32 rmat_n24_e16
+do
+  if [ "$TEST" = "1" ] ; then 
 
 for file in rgg_n24_0.000548 road_usa
 do
