@@ -22,7 +22,7 @@ bool memory_;
 int main(int argc, char** argv) {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
-  std::vector<float> values;
+  std::vector<int> values;
   graphblas::Index nrows, ncols, nvals;
 
   // Parse arguments
@@ -63,40 +63,28 @@ int main(int argc, char** argv) {
   if (transpose)
     CHECK(desc.toggle(graphblas::GrB_INP1));
 
-  // PageRank Parameters
-  float alpha = 0.85;
-  float eps   = 1e-8;
+  // Filter out so only lower triangular remains
+  graphblas::Index start = 0;
+  for (graphblas::Index i = 0; i < nvals; ++i) {
+    if (row_indices[i] <= col_indices[i]) {
+      start++;
+    } else {
+      row_indices[i-start] = row_indices[i];
+      col_indices[i-start] = col_indices[i];
+    }
+  }
+  nvals = nvals - start;
 
-  // Matrix A
-  graphblas::Matrix<float> a(nrows, ncols);
   values.clear();
   values.insert(values.begin(), nvals, 1.f);
+
+  // Matrix A
+  graphblas::Matrix<int> a(nrows, ncols);
   CHECK(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
       dat_name));
   CHECK(a.nrows(&nrows));
   CHECK(a.ncols(&ncols));
   CHECK(a.nvals(&nvals));
-
-  // Compute outdegrees
-  graphblas::Vector<float> outdegrees(nrows);
-  graphblas::reduce<float, float, float>(&outdegrees, GrB_NULL, GrB_NULL,
-      graphblas::PlusMonoid<float>(), &a, &desc);
-
-  // A = alpha*A/outdegrees (broadcast variant)
-  graphblas::eWiseMult<float, float, float, float>(&a, GrB_NULL, GrB_NULL,
-      PlusMultipliesSemiring<float>(), &a, alpha, &desc);
-  if (debug) CHECK(a.print());
-  graphblas::eWiseMult<float, float, float, float>(&a, GrB_NULL, GrB_NULL,
-      PlusDividesSemiring<float>(), &a, &outdegrees, &desc);
-
-  /*// Diagonalize outdegrees
-  Matrix<float> diag_outdegrees(A_nrows, A_nrows);
-  diag<float, float>(&diag_outdegrees, &outdegrees, desc);
-
-  // A = alpha*A*diag(outdegrees)
-  Matrix<float> A_temp(A_nrows, A_nrows);
-  scale<float, float, float>(&A_temp, MultipliesMonoid<float>(), A, alpha,
-      desc);*/
 
   if (debug) CHECK(a.print());
 
