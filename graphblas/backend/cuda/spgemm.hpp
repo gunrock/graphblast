@@ -17,15 +17,90 @@ class DenseMatrix;
 
 template <typename c, typename a, typename b, typename m,
           typename BinaryOpT,     typename SemiringT>
-Info spgemm(SparseMatrix<c>*       C,
-            const Matrix<m>*       mask,
-            BinaryOpT              accum,
-            SemiringT              op,
-            const SparseMatrix<a>* A,
-            const SparseMatrix<b>* B,
-            Descriptor*            desc) {
-  std::cout << "SpGEMM\n";
-  std::cout << "Error: Feature not implemented yet!\n";
+Info spgemmMasked(SparseMatrix<c>*       C,
+                  const Matrix<m>*       mask,
+                  BinaryOpT              accum,
+                  SemiringT              op,
+                  const SparseMatrix<a>* A,
+                  const SparseMatrix<b>* B,
+                  Descriptor*            desc) {
+  Desc_value scmp_mode, inp0_mode, inp1_mode;
+  CHECK(desc->get(GrB_MASK, &scmp_mode));
+  CHECK(desc->get(GrB_INP0, &inp0_mode));
+  CHECK(desc->get(GrB_INP1, &inp1_mode));
+
+  bool use_mask   = (mask != NULL);
+  bool use_scmp   = (scmp_mode == GrB_SCMP);
+  bool use_tran_A = inp0_mode == GrB_TRAN;
+  bool use_tran_B = inp1_mode == GrB_TRAN;
+
+  // A Transpose (default is CSR):
+  const Index* A_csrRowPtr = (use_tran_A) ? A->d_cscColPtr_ : A->d_csrRowPtr_;
+  const Index* A_csrColInd = (use_tran_A) ? A->d_cscRowInd_ : A->d_csrColInd_;
+  const a*     A_csrVal    = (use_tran_A) ? A->d_cscVal_    : A->d_csrVal_;
+  const Index  A_nrows     = (use_tran_A) ? A->ncols_       : A->nrows_;
+
+  if (desc->debug()) {
+    std::cout << "cscColPtr: " << A->d_cscColPtr_ << std::endl;
+    std::cout << "cscRowInd: " << A->d_cscRowInd_ << std::endl;
+    std::cout << "cscVal:    " << A->d_cscVal_    << std::endl;
+
+    std::cout << "csrRowPtr: " << A->d_csrRowPtr_ << std::endl;
+    std::cout << "csrColInd: " << A->d_csrColInd_ << std::endl;
+    std::cout << "csrVal:    " << A->d_csrVal_    << std::endl;
+  }
+
+  // B Transpose (default is CSC)
+  const Index* B_cscColPtr = (use_tran_B) ? B->d_csrRowPtr_ : B->d_cscColPtr_;
+  const Index* B_cscRowInd = (use_tran_B) ? B->d_csrColInd_ : B->d_cscRowInd_;
+  const b*     B_cscVal    = (use_tran_B) ? B->d_csrVal_    : B->d_cscVal_;
+  const Index  B_nrows     = (use_tran_B) ? B->ncols_       : B->nrows_;
+
+  if (desc->debug()) {
+    std::cout << "cscColPtr: " << B->d_cscColPtr_ << std::endl;
+    std::cout << "cscRowInd: " << B->d_cscRowInd_ << std::endl;
+    std::cout << "cscVal:    " << B->d_cscVal_    << std::endl;
+
+    std::cout << "csrRowPtr: " << B->d_csrRowPtr_ << std::endl;
+    std::cout << "csrColInd: " << B->d_csrColInd_ << std::endl;
+    std::cout << "csrVal:    " << B->d_csrVal_    << std::endl;
+  }
+
+  // Get descriptor parameters for nthreads
+  Desc_value nt_mode;
+  CHECK(desc->get(GrB_NT, &nt_mode));
+  const int nt = static_cast<int>(nt_mode);
+
+  if (use_mask) {
+    Storage mask_mat_type;
+    CHECK(mask->getStorage(&mask_mat_type));
+    if (mask_mat_type == GrB_DENSE) {
+      std::cout << "SpGEMM with dense mask\n";
+      std::cout << "Error: Feature not implemented yet!\n";
+    } else {
+      // C must share sparsity of pattern of mask
+      if (C != A && C != B)
+        CHECK(C->dup(&mask->sparse_));
+
+      const SparseMatrix<m>* sparse_mask = &mask->sparse_;
+
+      // Simple warp-per-row algorithm
+      dim3 NT, NB;
+      NT.x = nt;
+      NT.y = 1;
+      NT.z = 1;
+      NB.x = (A_nrows + nt - 1) / nt * 32;
+      NB.y = 1;
+      NB.z = 1;
+
+      spgemmMaskedKernel<<<NB, NT>>>(C->d_csrVal_, sparse_mask->d_csrRowPtr_,
+          sparse_mask->d_csrColInd_, sparse_mask->d_csrVal_,
+          extractMul(op), extractAdd(op), op.identity(),
+          A_csrRowPtr, A_csrColInd, A_csrVal,
+          B_cscColPtr, B_cscRowInd, B_cscVal,
+          A_nrows);
+    }
+  }
   return GrB_SUCCESS;
 }
 
