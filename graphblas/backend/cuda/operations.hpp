@@ -1158,6 +1158,33 @@ Info applyVxm(Vector<W>*       w,
   }
   return GrB_SUCCESS;
 }
+
+template <typename c, typename a>
+Info tril(Matrix<c>*  C,
+          Matrix<a>*  A,
+          Descriptor* desc) {
+  if (desc->debug()) {
+    std::cout << "===Begin tril===\n";
+  }
+
+  Storage A_mat_type;
+  CHECK(A->getStorage(&A_mat_type));
+
+  if (C != A)
+    C->dup(A);
+
+  if (A_mat_type == GrB_DENSE) {
+    std::cout << "Error: Dense tril not implemented yet!\n";
+  } else {
+    trilSparse(&C->sparse_, &A->sparse_, desc);
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End tril===\n";
+  }
+
+  return GrB_SUCCESS;
+}
 }  // namespace backend
 }  // namespace graphblas
 
