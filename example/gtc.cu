@@ -1,5 +1,5 @@
 #define GRB_USE_CUDA
-#define tcivate public
+#define private public
 
 #include <iostream>
 #include <algorithm>
@@ -63,18 +63,6 @@ int main(int argc, char** argv) {
   if (transpose)
     CHECK(desc.toggle(graphblas::GrB_INP1));
 
-  // Filter out so only lower triangular remains
-  graphblas::Index start = 0;
-  for (graphblas::Index i = 0; i < nvals; ++i) {
-    if (row_indices[i] <= col_indices[i]) {
-      start++;
-    } else {
-      row_indices[i-start] = row_indices[i];
-      col_indices[i-start] = col_indices[i];
-    }
-  }
-  nvals = nvals - start;
-
   values.clear();
   values.insert(values.begin(), nvals, 1.f);
 
@@ -85,6 +73,11 @@ int main(int argc, char** argv) {
   CHECK(a.nrows(&nrows));
   CHECK(a.ncols(&ncols));
   CHECK(a.nvals(&nvals));
+
+  // Get lower triangular of matrix A
+  CHECK(desc.set(GrB_BACKEND, GrB_SEQUENTIAL));
+  graphblas::tril<int, int>(&a, &a, &desc);
+  CHECK(desc.set(GrB_BACKEND, GrB_CUDA));
 
   if (debug) CHECK(a.print());
 

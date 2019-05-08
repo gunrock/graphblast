@@ -479,6 +479,7 @@ const T SparseMatrix<T>::operator[](Index ind) {
 template <typename T>
 Info SparseMatrix<T>::print(bool force_update) {
   CHECK(gpuToCpu(force_update));
+  std::cout << nrows_ << " x " << ncols_ << ": " << nvals_ << " nnz\n";
   printArray("csrColInd", h_csrColInd_, std::min(nvals_, 40));
   printArray("csrRowPtr", h_csrRowPtr_, std::min(nrows_+1, 40));
   printArray("csrVal",    h_csrVal_,    std::min(nvals_, 40));
