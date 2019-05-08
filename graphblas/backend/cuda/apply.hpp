@@ -41,7 +41,7 @@ Info applyDense(DenseVector<W>*  w,
       CHECK(w->cpuToGpu());
     }
   } else {
-    std::cout << "DeVec apply CPU\n";
+    std::cout << "DeVec apply GPU\n";
     std::cout << "Error: Feature not implemented yet!\n";
   }
 
@@ -110,7 +110,7 @@ Info applySparse(SparseMatrix<c>* C,
       CHECK(C->cpuToGpu());
     }
   } else {
-    std::cout << "DeVec apply CPU\n";
+    std::cout << "SpVec apply GPU\n";
     std::cout << "Error: Feature not implemented yet!\n";
   }
   return GrB_SUCCESS;

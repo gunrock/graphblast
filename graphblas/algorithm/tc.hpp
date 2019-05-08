@@ -36,11 +36,11 @@ float tc(int*               ntris,
     std::cout << "=====TC Iteration " << iter - 1 << "=====\n";
 
   // B = A * A^T
-  mxm<int, int, int, int>(&B, A, GrB_NULL, PlusMultipliesSemiring<int>(),
+/*  mxm<int, int, int, int>(&B, A, GrB_NULL, PlusMultipliesSemiring<int>(),
       A, A, desc);
 
   // ntris = reduce(B)
-  reduce<int, int>(ntris, GrB_NULL, PlusMonoid<int>(), &B, desc);
+  reduce<int, int>(ntris, GrB_NULL, PlusMonoid<int>(), &B, desc);*/
 
   if (desc->descriptor_.debug())
     std::cout << "ntris: " << *ntris << std::endl;
@@ -49,26 +49,22 @@ float tc(int*               ntris,
       "push" : "pull";
   if (desc->descriptor_.timing_ > 0)
     std::cout << iter - 1 << ", " << error << "/" << A_nrows << ", "
-        << unvisited << ", " << vxm_mode << ", "
-        << gpu_tight.ElapsedMillis() << "\n";
+        << vxm_mode << ", " << gpu_tight.ElapsedMillis() << "\n";
   gpu_tight_time += gpu_tight.ElapsedMillis();
   return gpu_tight_time;
 }
 
 template <typename T, typename a>
-int tcCpu(int*       ntris,
+int tcCpu(T*         ntris,
           Matrix<a>* A,
           bool       transpose = false) {
   if (transpose)
-    max_depth = SimpleReferenceTc<T>(A->matrix_.nrows_,
+    return SimpleReferenceTc<T>(A->matrix_.nrows_,
         A->matrix_.sparse_.h_cscColPtr_, A->matrix_.sparse_.h_cscRowInd_,
-        A->matrix_.sparse_.h_cscVal_, ntris);
-  else
-    max_depth = SimpleReferenceTc<T>(A->matrix_.nrows_,
-        A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_,
-        A->matrix_.sparse_.h_csrVal_, ntris);
-
-  return 0;
+        ntris);
+  return SimpleReferenceTc<T>(A->matrix_.nrows_,
+      A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_,
+      ntris);
 }
 }  // namespace algorithm
 }  // namespace graphblas
