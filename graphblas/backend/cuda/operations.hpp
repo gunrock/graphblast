@@ -21,10 +21,13 @@ Info mxm(Matrix<c>*       C,
          const Matrix<a>* A,
          const Matrix<b>* B,
          Descriptor*      desc) {
+  Matrix<a>* A_t = const_cast<Matrix<a>*>(A);
+  Matrix<b>* B_t = const_cast<Matrix<b>*>(B);
+
   if (desc->debug()) {
     std::cout << "===Begin mxm===\n";
-    CHECK(A->print());
-    CHECK(B->print());
+    CHECK(A_t->print());
+    CHECK(B_t->print());
   }
 
   Storage A_mat_type;
@@ -34,8 +37,17 @@ Info mxm(Matrix<c>*       C,
 
   if (A_mat_type == GrB_SPARSE && B_mat_type == GrB_SPARSE) {
     CHECK(C->setStorage(GrB_SPARSE));
-    CHECK(cusparse_spgemm2(&C->sparse_, mask, accum, op, &A->sparse_,
-        &B->sparse_, desc));
+    if (mask) {
+      CHECK(spgemmMasked(&C->sparse_, mask, accum, op, &A->sparse_, &B->sparse_,
+          desc));
+    } else {
+      std::cout << "Unmasked SpGEMM\n";
+      std::cout << "Error: Feature not implemented yet!\n";
+  // Can't use cuSPARSE for unmasked, because of compilation issue involving
+  // conflict between user choosing integer datatypes and cuSPARSE being float
+  // CHECK(cusparse_spgemm2(&C->sparse_, mask, accum, op, &A->sparse_,
+  //     &B->sparse_, desc));
+    }
   } else {
     std::cout << "Error: SpMM and GEMM not implemented yet!\n";
     /*CHECK( C->setStorage( GrB_DENSE ) );
@@ -927,7 +939,26 @@ Info reduce(T*               val,
   if (desc->debug()) {
     std::cout << "===Begin reduce===\n";
   }
-  std::cout << "Error: reduce matrix variant not implemented yet!\n";
+
+  // Get storage:
+  Storage mat_type;
+  CHECK(A->getStorage(&mat_type));
+
+  // 2 cases:
+  // 1) SpMat
+  // 2) DeMat
+  if (mat_type == GrB_SPARSE)
+    CHECK(reduceInner(val, accum, op, &A->sparse_, desc));
+  else if (mat_type == GrB_DENSE)
+    CHECK(reduceInner(val, accum, op, &A->dense_, desc));
+  else
+    return GrB_UNINITIALIZED_OBJECT;
+
+  if (desc->debug()) {
+    std::cout << "===End reduce===\n";
+    std::cout << "Output: " << *val << std::endl;
+  }
+  return GrB_SUCCESS;
 }
 
 template <typename c, typename a, typename m,
