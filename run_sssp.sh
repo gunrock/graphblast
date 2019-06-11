@@ -13,26 +13,34 @@ done
 for file in soc-orkut soc-LiveJournal1 hollywood-2009 indochina-2004
 do
   if [ "$TEST" = "1" ] ; then
-    for switch in 0.2 0.15 0.1 0.5 0.01
-    do
-      echo bin/gsssp --timing 1 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint $switch $DATA/$file.mtx
-      bin/gsssp --timing 1 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint $switch $DATA2/$file.mtx
-    done
+    echo bin/gsssp --timing 0 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint 0.1 $DATA/$file.mtx
+    bin/gsssp --timing 0 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint 0.1 $DATA2/$file.mtx
   fi
 done
 
+if [ "$TEST" = "1" ] ; then
+  echo bin/gsssp --timing 0 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint 0.1 /data/topc-datasets/rmat_n22_e64.mtx
+  bin/gsssp --timing 0 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint 0.1 /data/topc-datasets/rmat_n22_e64.mtx
+
+  echo bin/gsssp --timing 0 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint 0.05 /data/topc-datasets/rmat_n23_e32.mtx
+  bin/gsssp --timing 0 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint 0.05 /data/topc-datasets/rmat_n23_e32.mtx
+
+  echo bin/gsssp --timing 0 --mxvmode 0 --niter 5 --directed 2 --memusage 0.5 --switchpoint 0.025 /data/topc-datasets/rmat_n24_e16.mtx
+  bin/gsssp --timing 0 --mxvmode 0 --niter 5 --directed 2 --memusage 0.3 --switchpoint 0.025 /data/topc-datasets/rmat_n24_e16.mtx
+fi
+
 for file in rgg_n24_0.000548 road_usa
 do
-  if [ "$TEST" = "2" ] ; then
-    echo bin/gsssp --timing 1 --mxvmode 1 --directed 2 --niter 5 $DATA2/$file.mtx
-    bin/gsssp --timing 1 --mxvmode 1 --directed 2 --niter 5 $DATA2/$file.mtx
+  if [ "$TEST" = "3" ] ; then
+    echo bin/gsssp --timing 0 --mxvmode 1 --directed 2 --niter 5 $DATA2/$file.mtx
+    bin/gsssp --timing 0 --mxvmode 1 --directed 2 --niter 5 $DATA2/$file.mtx
   fi
 done
 
 for file in test_bc test_cc test_mesh test_mis test_pr small chesapeake
 do
-  if [ "$TEST" = "3" ] ; then
+  if [ "$TEST" = "4" ] ; then
     echo data/small/$file.mtx
-    bin/gsssp --timing 1 --mxvmode 0 --niter 5 data/small/$file.mtx
+    bin/gsssp --timing 0 --mxvmode 0 --niter 5 data/small/$file.mtx
   fi
 done
