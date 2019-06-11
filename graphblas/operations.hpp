@@ -625,7 +625,12 @@ Info reduce(T*               val,
             MonoidT          op,
             const Matrix<a>* A,
             Descriptor*      desc) {
-  std::cout << "Error: reduce matrix to scalar variant not implemented yet!\n";
+  if (val == NULL || A == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::reduce(val, accum, op, &A->matrix_, desc_t);
 }
 
 /*!

@@ -927,7 +927,28 @@ Info reduce(T*               val,
   if (desc->debug()) {
     std::cout << "===Begin reduce===\n";
   }
-  std::cout << "Error: reduce matrix variant not implemented yet!\n";
+
+  // Get storage:
+  Storage mat_type;
+  CHECK(A->getStorage(&mat_type));
+
+  // 2 cases:
+  // 1) SpMat
+  // 2) DeMat
+  if (mat_type == GrB_SPARSE) {
+    CHECK(reduceInner(val, accum, op, &A->sparse_, desc));
+  } else if (mat_type == GrB_DENSE) {
+    std::cout << "Error: reduce matrix-scalar for dense matrix\n";
+    std::cout << "not implemented yet!\n";
+    // CHECK(reduceInner(val, accum, op, &A->dense_, desc));
+  } else {
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End reduce===\n";
+    std::cout << "Output: " << *val << std::endl;
+  }
 }
 
 template <typename c, typename a, typename m,
