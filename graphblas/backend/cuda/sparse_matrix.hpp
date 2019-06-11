@@ -484,6 +484,8 @@ Info SparseMatrix<T>::print(bool force_update) {
   printArray("csrVal",    h_csrVal_,    std::min(nvals_, 40));
   CHECK(printCSR("pretty print"));
   if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+    if (!h_cscRowInd_ || !h_cscColPtr_ || !h_cscVal_)
+      syncCpu();
     printArray("cscRowInd", h_cscRowInd_, std::min(nvals_, 40));
     printArray("cscColPtr", h_cscColPtr_, std::min(ncols_+1, 40));
     printArray("cscVal",    h_cscVal_,    std::min(nvals_, 40));
@@ -628,12 +630,27 @@ Info SparseMatrix<T>::allocateCpu() {
   if (nvals_ > 0 && h_csrVal_ == NULL)
     h_csrVal_    = reinterpret_cast<T*>(malloc(ncapacity_*sizeof(T)));
 
-  if (ncols_ > 0 && h_cscColPtr_ == NULL)
+  if (ncols_ > 0 && h_cscColPtr_ == NULL) {
     h_cscColPtr_ = reinterpret_cast<Index*>(malloc((ncols_+1)*sizeof(Index)));
-  if (nvals_ > 0 && h_cscRowInd_ == NULL)
+
+    std::cout << "Allocate " << ncols_ + 1 << std::endl;
+  } else {
+    std::cout << "Do not allocate " << ncols_ << " " << h_cscColPtr_ << std::endl;
+  }
+
+  if (nvals_ > 0 && h_cscRowInd_ == NULL) {
     h_cscRowInd_ = reinterpret_cast<Index*>(malloc(ncapacity_*sizeof(Index)));
-  if (nvals_ > 0 && h_cscVal_ == NULL)
+    std::cout << "Allocate " << ncapacity_ << std::endl;
+  } else {
+    std::cout << "Do not allocate " << nvals_ << " " << h_cscRowInd_ << std::endl;
+  }
+
+  if (nvals_ > 0 && h_cscVal_ == NULL) {
     h_cscVal_    = reinterpret_cast<T*>(malloc(ncapacity_*sizeof(T)));
+    std::cout << "Allocate " << ncapacity_ << std::endl;
+  } else {
+    std::cout << "Do not allocate " << nvals_ << " " << h_cscVal_ << std::endl;
+  }
 
   // TODO(@ctcyang): does not need to be so strict since mxm may need to
   // only set storage type, but not allocate yet since nvals_ not known
@@ -770,13 +787,20 @@ Info SparseMatrix<T>::gpuToCpu(bool force_update) {
         cudaMemcpyDeviceToHost));
 
     if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
-      CUDA_CALL(cudaMemcpy(h_cscVal_, d_cscVal_, nvals_*sizeof(T),
-          cudaMemcpyDeviceToHost));
-      if (!symmetric_) {
-        CUDA_CALL(cudaMemcpy(h_cscColPtr_, d_cscColPtr_,
-            (ncols_+1)*sizeof(Index), cudaMemcpyDeviceToHost));
-        CUDA_CALL(cudaMemcpy(h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
+      // Must account for combination of:
+      // 1) CSRCSC
+      // 2) sparse matrix being output of matrix-matrix multiply
+      // In this case, the CSC copy does not exist, which causes an error.
+      if (d_cscVal_ && d_cscColPtr_ && d_cscRowInd_ && 
+          h_cscVal_ && h_cscColPtr_ && h_cscRowInd_) {
+        CUDA_CALL(cudaMemcpy(h_cscVal_, d_cscVal_, nvals_*sizeof(T),
             cudaMemcpyDeviceToHost));
+        if (!symmetric_) {
+          CUDA_CALL(cudaMemcpy(h_cscColPtr_, d_cscColPtr_,
+              (ncols_+1)*sizeof(Index), cudaMemcpyDeviceToHost));
+          CUDA_CALL(cudaMemcpy(h_cscRowInd_, d_cscRowInd_, nvals_*sizeof(Index),
+              cudaMemcpyDeviceToHost));
+        }
       }
     }
 
@@ -789,6 +813,7 @@ Info SparseMatrix<T>::gpuToCpu(bool force_update) {
 // Synchronizes CSR with CSC representation
 template <typename T>
 Info SparseMatrix<T>::syncCpu() {
+  CHECK(allocateCpu());
   if (h_csrRowPtr_ && h_csrColInd_ && h_csrVal_ && 
       h_cscColPtr_ && h_cscRowInd_ && h_cscVal_)
     csr2csc(h_cscColPtr_, h_cscRowInd_, h_cscVal_,

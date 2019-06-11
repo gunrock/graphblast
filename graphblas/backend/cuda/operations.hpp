@@ -21,10 +21,13 @@ Info mxm(Matrix<c>*       C,
          const Matrix<a>* A,
          const Matrix<b>* B,
          Descriptor*      desc) {
+  Matrix<a>* A_t = const_cast<Matrix<a>*>(A);
+  Matrix<b>* B_t = const_cast<Matrix<b>*>(B);
+
   if (desc->debug()) {
     std::cout << "===Begin mxm===\n";
-    CHECK(A->print());
-    CHECK(B->print());
+    CHECK(A_t->print());
+    CHECK(B_t->print());
   }
 
   Storage A_mat_type;
