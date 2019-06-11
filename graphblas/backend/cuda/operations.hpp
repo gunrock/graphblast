@@ -446,7 +446,8 @@ Info eWiseMult(Matrix<c>*       C,
 
 /*!
  * Extension Method
- * Element-wise multiply of a matrix and column vector which gets broadcasted
+ * Element-wise multiply of a matrix and column vector which gets broadcasted.
+ *  * If row vector broadcast is needed instead, set Input 1 to be transposed.
  */
 template <typename c, typename a, typename b, typename m,
           typename BinaryOpT,     typename SemiringT>
@@ -463,31 +464,65 @@ Info eWiseMult(Matrix<c>*       C,
     CHECK(B_t->print());
   }
 
+  // Transpose
+  Desc_value inp0_mode, inp1_mode;
+  CHECK(desc->get(GrB_INP0, &inp0_mode));
+  CHECK(desc->get(GrB_INP1, &inp1_mode));
+  if (inp0_mode != GrB_DEFAULT) return GrB_INVALID_VALUE;
+
   Storage A_mat_type;
   Storage B_vec_type;
   CHECK(A->getStorage(&A_mat_type));
   CHECK(B->getStorage(&B_vec_type));
 
-  if (A_mat_type == GrB_DENSE) {
-    std::cout << "eWiseMult Dense Matrix Broadcast Vector\n";
-    std::cout << "Error: Feature not implemented yet!\n";
-  } else if (A_mat_type == GrB_SPARSE) {
-    // depending on whether mask is present or not
-    if (mask != NULL) {
-      std::cout << "eWiseMult Sparse Matrix Broadcast Vector with Mask\n";
+  // u is column vector which gets broadcasted
+  //   C = mask .* (A .* u)
+  if (inp1_mode != GrB_TRAN) {
+    if (A_mat_type == GrB_DENSE) {
+      std::cout << "eWiseMult Dense Matrix Broadcast Vector\n";
       std::cout << "Error: Feature not implemented yet!\n";
-    } else {
-      CHECK(C->setStorage(GrB_SPARSE));
-      if (B_vec_type == GrB_SPARSE) {
-        std::cout << "eWiseMult Sparse Matrix Broadcast Sparse Vector\n";
+    } else if (A_mat_type == GrB_SPARSE) {
+      // depending on whether mask is present or not
+      if (mask != NULL) {
+        std::cout << "eWiseMult Sparse Matrix Broadcast Vector with Mask\n";
         std::cout << "Error: Feature not implemented yet!\n";
       } else {
-        CHECK(eWiseMultInner(&C->sparse_, mask, accum, op, &A->sparse_,
-            &B->dense_, desc));
+        CHECK(C->setStorage(GrB_SPARSE));
+        if (B_vec_type == GrB_SPARSE) {
+          std::cout << "eWiseMult Sparse Matrix Broadcast Sparse Vector\n";
+          std::cout << "Error: Feature not implemented yet!\n";
+        } else {
+          CHECK(eWiseMultColInner(&C->sparse_, mask, accum, op, &A->sparse_,
+              &B->dense_, desc));
+        }
       }
+    } else {
+      return GrB_INVALID_OBJECT;
     }
+  // u^T is row vector which gets broadcasted
+  //   C = mask .* (A .* u^T)
   } else {
-    return GrB_INVALID_OBJECT;
+    if (A_mat_type == GrB_DENSE) {
+      std::cout << "eWiseMult Dense Matrix Broadcast Vector\n";
+      std::cout << "Error: Feature not implemented yet!\n";
+    } else if (A_mat_type == GrB_SPARSE) {
+      // depending on whether mask is present or not
+      if (mask != NULL) {
+        std::cout << "eWiseMult Sparse Matrix Broadcast Vector with Mask\n";
+        std::cout << "Error: Feature not implemented yet!\n";
+      } else {
+        CHECK(C->setStorage(GrB_SPARSE));
+        if (B_vec_type == GrB_SPARSE) {
+          std::cout << "eWiseMult Sparse Matrix Broadcast Sparse Vector\n";
+          std::cout << "Error: Feature not implemented yet!\n";
+        } else {
+          CHECK(eWiseMultRowInner(&C->sparse_, mask, accum, op, &A->sparse_,
+              &B->dense_, desc));
+        }
+      }
+    } else {
+      return GrB_INVALID_OBJECT;
+    }
   }
 
   if (desc->debug()) {

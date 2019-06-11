@@ -172,8 +172,23 @@ Info eWiseMult(Matrix<c>*       C,
                const Matrix<a>* A,
                const Matrix<b>* B,
                Descriptor*      desc) {
-  // Use either op->operator() or op->mul() as the case may be
-  std::cout << "Error: eWiseMult matrix variant not implemented yet!\n";
+  // Null pointer check
+  if (C == NULL || A == NULL || B == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  CHECK(checkDimRowRow(B, A,    "B.nrows != A.nrows"));
+  CHECK(checkDimColCol(B, A,    "B.ncols != A.ncols"));
+  CHECK(checkDimRowRow(A, C,    "A.nrows != C.nrows"));
+  CHECK(checkDimColCol(A, C,    "A.ncols != C.ncols"));
+  CHECK(checkDimRowRow(C, mask, "C.nrows != mask.nrows"));
+  CHECK(checkDimColCol(C, mask, "C.ncols != mask.ncols"));
+
+  const backend::Matrix<m>* mask_t = (mask == NULL) ? NULL : &mask->matrix_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::eWiseMult(&C->matrix_, mask_t, accum, op, &A->matrix_,
+      &B->matrix_, desc_t);
 }
 
 /*!
@@ -214,12 +229,11 @@ Info eWiseMult(Matrix<c>*       C,
 
 /*!
  * Extension Method
- * Element-wise multiply of a matrix and column vector which gets broadcasted
+ * Element-wise multiply of a matrix and column vector which gets broadcasted.
+ * If row vector broadcast is needed instead, set Input 1 to be transposed.
  *   C = C + mask .* (A .* u)    +: accum
  *                 2     1    1).*: op (semiring multiply)
  *                            2).*: Boolean and
- *
- * TODO(@ctcyang): add row vector variant for broadcasting by replicating rows
  */
 template <typename c, typename m, typename a, typename b,
           typename BinaryOpT,     typename SemiringT>
@@ -235,7 +249,11 @@ Info eWiseMult(Matrix<c>*       C,
     return GrB_UNINITIALIZED_OBJECT;
 
   // Dimension check
-  CHECK(checkDimRowSize(A, B,    "A.nrows != B.size"));
+  //
+  // This check is dependent on whether GrB_INP1 is set to transpose or not, so
+  // we should delegate this check to backend
+  // CHECK(checkDimRowSize(A, B, "A.nrows != B.size"));  // if B transposed
+  // CHECK(checkDimRowSize(A, B, "A.ncols != B.size"));  // if B not transposed
   CHECK(checkDimRowRow( A, C,    "A.nrows != C.nrows"));
   CHECK(checkDimColCol( A, C,    "A.ncols != C.ncols"));
   CHECK(checkDimRowRow( A, mask, "A.nrows != mask.nrows"));
