@@ -1,6 +1,6 @@
-TEST="1"
-DATA="/data-2/gunrock_dataset/large"
-DATA2="/data-2/topc-datasets"
+TEST="3"
+DATA="/data/gunrock_dataset/large"
+DATA2="/data/topc-datasets"
 
 for file in ak2010 belgium_osm coAuthorsDBLP delaunay_n10 delaunay_n13 delaunay_n21 webbase-1M soc-LiveJournal1 kron_g500-logn21
 do
@@ -20,10 +20,6 @@ do
     done
   fi
 done
-
-for file in rmat_n22_e64 rmat_n23_e32 rmat_n24_e16
-do
-  if [ "$TEST" = "1" ] ; then 
 
 for file in rgg_n24_0.000548 road_usa
 do

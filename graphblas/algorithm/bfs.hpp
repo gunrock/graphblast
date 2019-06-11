@@ -51,13 +51,12 @@ float bfs(Vector<float>*       v,
     }
     gpu_tight.Stop();
     if (iter > 1) {
-      if (desc->descriptor_.timing_ == 1) {
-        std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
-            "push" : "pull";
+      std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+          "push" : "pull";
+      if (desc->descriptor_.timing_ == 1)
         std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
             << unvisited << ", " << vxm_mode << ", "
             << gpu_tight.ElapsedMillis() << "\n";
-      }
       gpu_tight_time += gpu_tight.ElapsedMillis();
     }
     unvisited -= static_cast<int>(succ);
@@ -81,7 +80,7 @@ float bfs(Vector<float>*       v,
   std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
       "push" : "pull";
   if (desc->descriptor_.timing_ == 1)
-    std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
+    std::cout << iter << ", " << succ << "/" << A_nrows << ", "
         << unvisited << ", " << vxm_mode << ", "
         << gpu_tight.ElapsedMillis() << "\n";
   gpu_tight_time += gpu_tight.ElapsedMillis();

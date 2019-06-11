@@ -96,7 +96,7 @@ float sssp(Vector<float>*       v,
   std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
       "push" : "pull";
   if (desc->descriptor_.timing_ == 1)
-    std::cout << iter - 1 << ", " << f1_nvals << "/" << A_nrows << ", "
+    std::cout << iter << ", " << f1_nvals << "/" << A_nrows << ", "
         << vxm_mode << ", " << gpu_tight.ElapsedMillis() << "\n";
   gpu_tight_time += gpu_tight.ElapsedMillis();
   return gpu_tight_time;

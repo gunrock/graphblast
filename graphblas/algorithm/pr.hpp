@@ -86,7 +86,7 @@ float pr(Vector<float>*       p,
   std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
       "push" : "pull";
   if (desc->descriptor_.timing_ > 0)
-    std::cout << iter - 1 << ", " << error << "/" << A_nrows << ", "
+    std::cout << iter << ", " << error << "/" << A_nrows << ", "
         << unvisited << ", " << vxm_mode << ", "
         << gpu_tight.ElapsedMillis() << "\n";
   gpu_tight_time += gpu_tight.ElapsedMillis();
