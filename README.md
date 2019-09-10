@@ -1,6 +1,6 @@
 # GraphBLAST
 
-GraphBLAST is a GPU implementation of [GraphBLAS](https://www.graphblas.org), an open standard for building blocks of graph algorithms. It gives data scientists without GPU programming experience the power to implement graph algorithms on the GPU. We are the leading graph framework in the following metrics:
+GraphBLAST is a GPU implementation of [GraphBLAS](http://www.graphblas.org), an open standard for building blocks of graph algorithms. It gives data scientists without GPU programming experience the power to implement graph algorithms on the GPU. We are the leading graph framework in the following metrics:
 
 - **Performance**: The first high-performance GPU implementation of GraphBLAS
 - **Composable**: A library with building blocks for expressing most graph algorithms
