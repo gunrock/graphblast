@@ -271,7 +271,13 @@ Info DenseVector<T>::extractTuples(std::vector<T>* values, Index* n) {
 
 template <typename T>
 const T& DenseVector<T>::operator[](Index ind) {
-  CHECKVOID(gpuToCpu());
+  auto err = gpuToCpu();
+  if (err != graphblas::GrB_SUCCESS) {
+    fprintf(stderr, "Runtime error: %s returned %d at %s:%d\n",
+            "gpuToCup()", err, __FILE__, __LINE__);
+    return T();
+  }
+
   if (ind >= nvals_) std::cout << "Error: Index out of bounds!\n";
   return h_val_[ind];
 }
