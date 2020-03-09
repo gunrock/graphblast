@@ -10,6 +10,7 @@
 #include <tuple>
 #include <algorithm>
 #include <string>
+#include <iostream>
 
 // for commandline arguments
 #include <boost/program_options.hpp>
