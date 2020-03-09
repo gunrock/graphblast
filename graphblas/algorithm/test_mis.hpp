@@ -2,6 +2,7 @@
 #define GRAPHBLAS_ALGORITHM_TEST_MIS_HPP_
 
 #include <vector>
+#include <random>
 
 namespace graphblas {
 namespace algorithm {
