@@ -41,7 +41,7 @@ int main( int argc, char** argv )
       dat_name);
   if(DEBUG) b.print();
 
-  //
+  // Multiply using mtx file.
   graphblas::Matrix<float> c(a_num_rows, b_num_cols);
   graphblas::Descriptor desc;
   desc.descriptor_.debug_ = true;
@@ -56,7 +56,7 @@ int main( int argc, char** argv )
   );
   if(DEBUG) c.print();
 
-  // Multiply using gpu array initialization
+  // Multiply using gpu array initialization.
   graphblas::Matrix<float> A(a_num_rows, a_num_cols);
   graphblas::Matrix<float> B(b_num_rows, b_num_cols);
   graphblas::Matrix<float> C(a_num_rows, b_num_cols);
@@ -69,7 +69,7 @@ int main( int argc, char** argv )
   graphblas::mxm<T, T, T, T>(&C, GrB_NULL, GrB_NULL, graphblas::PlusMultipliesSemiring<float>(),
                              &A, &B, &desc);
 
-  // Multiply using gpu array initialization
+  /* Multiply using cpu array initialization. Expect to fail.
   graphblas::Matrix<float> a_(a_num_rows, a_num_cols);
   graphblas::Matrix<float> b_(b_num_rows, b_num_cols);
   graphblas::Matrix<float> c_(a_num_rows, b_num_cols);
@@ -80,7 +80,7 @@ int main( int argc, char** argv )
   desc.descriptor_.debug_ = true;
 
   graphblas::mxm<T, T, T, T>(&c_, GrB_NULL, GrB_NULL, graphblas::PlusMultipliesSemiring<float>(),
-                             &a_, &b_, &desc);
+                             &a_, &b_, &desc);*/
 
   std::cout << "done" << std::endl;
 }
