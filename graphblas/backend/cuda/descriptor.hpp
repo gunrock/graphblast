@@ -16,7 +16,7 @@ class Descriptor {
   // Descriptions of these default settings are in "graphblas/types.hpp"
   Descriptor() : desc_{ GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT, GrB_DEFAULT,
     GrB_FIXEDROW, GrB_32, GrB_32, GrB_128, GrB_PUSHPULL, GrB_16, GrB_CUDA},
-    d_context_(mgpu::CreateCudaDevice(0)), ta_(0), tb_(0), mode_(""), split_(0),
+    d_context_(mgpu::CreateCudaDevice(cuda_device())), ta_(0), tb_(0), mode_(""), split_(0),
     enable_split_(0), niter_(0), max_niter_(0), directed_(0), timing_(0),
     transpose_(0), mtxinfo_(0), verbose_(0), mxvmode_(0), switchpoint_(0),
     lastmxv_(GrB_PUSHONLY), dirinfo_(0), struconly_(0), opreuse_(0),
@@ -62,6 +62,12 @@ class Descriptor {
  private:
   Info resize(size_t target, std::string field);
   Info clear(std::string field);
+
+  int cuda_device() {
+    int device;
+    CUDA_CALL(cudaGetDevice(&device));
+    return device;
+  }
 
  private:
   Desc_value desc_[GrB_NDESCFIELD];
