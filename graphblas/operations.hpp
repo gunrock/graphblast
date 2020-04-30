@@ -315,6 +315,7 @@ Info eWiseAdd(Matrix<c>*       C,
               Descriptor*      desc) {
   // Use either op->operator() or op->add() as the case may be
   std::cout << "Error: eWiseAdd matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -366,6 +367,7 @@ Info extract(Vector<W>*                w,
              Index                     nindices,
              Descriptor*               desc) {
   std::cout << "Error: extract vector variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -385,6 +387,7 @@ Info extract(Matrix<c>*                C,
              Index                     ncols,
              Descriptor*               desc) {
   std::cout << "Error: extract matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -403,6 +406,7 @@ Info extract(Vector<W>*                w,
              Index                     col_index,
              Descriptor*               desc) {
   std::cout << "Error: extract matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -420,6 +424,7 @@ Info assign(Vector<W>*                w,
             Index                     nindices,
             Descriptor*               desc) {
   std::cout << "Error: assign vector variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -440,6 +445,7 @@ Info assign(Matrix<c>*                C,
             Index                     ncols,
             Descriptor*               desc) {
   std::cout << "Error: assign matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -459,6 +465,7 @@ Info assign(Matrix<c>*                C,
             Index                     col_index,
             Descriptor*               desc) {
   std::cout << "Error: assign matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -478,6 +485,7 @@ Info assign(Matrix<c>*                C,
             Index                     ncols,
             Descriptor*               desc) {
   std::cout << "Error: assign matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -527,6 +535,7 @@ Info assign(Matrix<c>*                C,
             Index                     ncols,
             Descriptor*               desc) {
   std::cout << "Error: assign matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -664,6 +673,7 @@ Info transpose(Matrix<c>*       C,
                const Matrix<a>* A,
                Descriptor*      desc) {
   std::cout << "Error: transpose not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -699,6 +709,7 @@ Info scale(Matrix<b>*       B,
            T                val,
            Descriptor*      desc) {
   std::cout << "Error: scale not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -713,6 +724,7 @@ Info scale(Vector<W>*       w,
            T                val,
            Descriptor*      desc) {
   std::cout << "Error: scale not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!

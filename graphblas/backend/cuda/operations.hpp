@@ -41,6 +41,7 @@ Info mxm(Matrix<c>*       C,
         &B->sparse_, desc));
   } else {
     std::cout << "Error: SpMM and GEMM not implemented yet!\n";
+    return GrB_NOT_IMPLEMENTED;
     /*CHECK( C->setStorage( GrB_DENSE ) );
     if( A_mat_type==GrB_SPARSE && B_mat_type==GrB_DENSE )
     {
@@ -147,12 +148,13 @@ Info vxm(Vector<W>*       w,
         lb_mode == GrB_LOAD_BALANCE_TWC) {
       CHECK(w->setStorage(GrB_DENSE));
       // 1a) Simple SpMSpV no load-balancing codepath
-      if (lb_mode == GrB_LOAD_BALANCE_SIMPLE)
+      if (lb_mode == GrB_LOAD_BALANCE_SIMPLE) {
         std::cout << "Simple SPMSPV not implemented yet!\n";
+        return GrB_NOT_IMPLEMENTED;
         // CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
         //     &u->sparse_, desc) );
       // 1b) Thread-warp-block (single kernel) codepath
-      else if (lb_mode == GrB_LOAD_BALANCE_TWC)
+      } else if (lb_mode == GrB_LOAD_BALANCE_TWC)
         std::cout << "Error: B40C load-balance algorithm not implemented yet!\n";
       if (desc->debug()) {
         CHECK(w->getStorage(&u_vec_type));
@@ -267,13 +269,16 @@ Info mxv(Vector<W>*       w,
         lb_mode == GrB_LOAD_BALANCE_TWC) {
       CHECK(w->setStorage(GrB_DENSE));
       // 1a) Simple SpMSpV no load-balancing codepath
-      if (lb_mode == GrB_LOAD_BALANCE_SIMPLE)
+      if (lb_mode == GrB_LOAD_BALANCE_SIMPLE) {
         std::cout << "Simple SPMSPV not implemented yet!\n";
+        return GrB_NOT_IMPLEMENTED;
         // CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
         //     &u->sparse_, desc) );
       // 1b) Thread-warp-block (single kernel) codepath
-      else if (lb_mode == GrB_LOAD_BALANCE_TWC)
+      } else if (lb_mode == GrB_LOAD_BALANCE_TWC) {
         std::cout << "Error: B40C load-balance algorithm not implemented yet!\n";
+        return GrB_NOT_IMPLEMENTED;
+      }
       if (desc->debug()) {
         CHECK(w->getStorage(&u_vec_type));
         std::cout << "w_vec_type: " << u_vec_type << std::endl;
@@ -398,6 +403,7 @@ Info eWiseMult(Matrix<c>*       C,
                Descriptor*      desc) {
   // Use either op->operator() or op->mul() as the case may be
   std::cout << "Error: eWiseMult matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -424,11 +430,13 @@ Info eWiseMult(Matrix<c>*       C,
   if (A_mat_type == GrB_DENSE) {
     std::cout << "eWiseMult Dense Matrix Broadcast Scalar\n";
     std::cout << "Error: Feature not implemented yet!\n";
+    return GrB_NOT_IMPLEMENTED;
   } else if (A_mat_type == GrB_SPARSE) {
     // depending on whether mask is present or not
     if (mask != NULL) {
       std::cout << "eWiseMult Sparse Matrix Broadcast Scalar with Mask\n";
       std::cout << "Error: Feature not implemented yet!\n";
+      return GrB_NOT_IMPLEMENTED;
     } else {
       CHECK(C->setStorage(GrB_SPARSE));
       CHECK(eWiseMultInner(&C->sparse_, mask, accum, op, &A->sparse_,
@@ -481,16 +489,19 @@ Info eWiseMult(Matrix<c>*       C,
     if (A_mat_type == GrB_DENSE) {
       std::cout << "eWiseMult Dense Matrix Broadcast Vector\n";
       std::cout << "Error: Feature not implemented yet!\n";
+      return GrB_NOT_IMPLEMENTED;
     } else if (A_mat_type == GrB_SPARSE) {
       // depending on whether mask is present or not
       if (mask != NULL) {
         std::cout << "eWiseMult Sparse Matrix Broadcast Vector with Mask\n";
         std::cout << "Error: Feature not implemented yet!\n";
+        return GrB_NOT_IMPLEMENTED;
       } else {
         CHECK(C->setStorage(GrB_SPARSE));
         if (B_vec_type == GrB_SPARSE) {
           std::cout << "eWiseMult Sparse Matrix Broadcast Sparse Vector\n";
           std::cout << "Error: Feature not implemented yet!\n";
+          return GrB_NOT_IMPLEMENTED;
         } else {
           CHECK(eWiseMultColInner(&C->sparse_, mask, accum, op, &A->sparse_,
               &B->dense_, desc));
@@ -505,16 +516,19 @@ Info eWiseMult(Matrix<c>*       C,
     if (A_mat_type == GrB_DENSE) {
       std::cout << "eWiseMult Dense Matrix Broadcast Vector\n";
       std::cout << "Error: Feature not implemented yet!\n";
+      return GrB_NOT_IMPLEMENTED;
     } else if (A_mat_type == GrB_SPARSE) {
       // depending on whether mask is present or not
       if (mask != NULL) {
         std::cout << "eWiseMult Sparse Matrix Broadcast Vector with Mask\n";
         std::cout << "Error: Feature not implemented yet!\n";
+        return GrB_NOT_IMPLEMENTED;
       } else {
         CHECK(C->setStorage(GrB_SPARSE));
         if (B_vec_type == GrB_SPARSE) {
           std::cout << "eWiseMult Sparse Matrix Broadcast Sparse Vector\n";
           std::cout << "Error: Feature not implemented yet!\n";
+          return GrB_NOT_IMPLEMENTED;
         } else {
           CHECK(eWiseMultRowInner(&C->sparse_, mask, accum, op, &A->sparse_,
               &B->dense_, desc));
@@ -610,6 +624,7 @@ Info eWiseAdd(Matrix<c>*       C,
               Descriptor*      desc) {
   // Use either op->operator() or op->add() as the case may be
   std::cout << "Error: eWiseAdd matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 /*!
@@ -639,6 +654,7 @@ Info eWiseAdd(Vector<W>*       w,
     if (mask != NULL) {
       std::cout << "eWiseAdd Dense Vector-Scalar with Mask\n";
       std::cout << "Error: Feature not implemented yet!\n";
+      return GrB_NOT_IMPLEMENTED;
     } else {
       CHECK(w->setStorage(GrB_DENSE));
       CHECK(eWiseAddInner(&w->dense_, mask, accum, op, &u->dense_,
@@ -648,6 +664,7 @@ Info eWiseAdd(Vector<W>*       w,
     if (mask != NULL) {
       std::cout << "eWiseAdd Sparse Vector-Scalar Mask\n";
       std::cout << "Error: Feature not implemented yet!\n";
+      return GrB_NOT_IMPLEMENTED;
     } else {
       CHECK(w->setStorage(GrB_DENSE));
       CHECK(eWiseAddInner(&w->dense_, mask, accum, op, &u->sparse_,
@@ -674,6 +691,7 @@ Info extract(Vector<W>*                w,
              Index                     nindices,
              Descriptor*               desc) {
   std::cout << "Error: extract vector variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 template <typename c, typename a, typename m,
@@ -688,6 +706,7 @@ Info extract(Matrix<c>*                C,
              Index                     ncols,
              Descriptor*               desc) {
   std::cout << "Error: extract matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 template <typename W, typename a, typename M,
@@ -701,6 +720,7 @@ Info extract(Vector<W>*                w,
              Index                     col_index,
              Descriptor*               desc) {
   std::cout << "Error: extract vector variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 template <typename W, typename U, typename M,
@@ -713,7 +733,7 @@ Info assign(Vector<W>*                w,
             Index                     nindices,
             Descriptor*               desc) {
   std::cout << "Error: assign vector variant not implemented yet!\n";
-  return GrB_SUCCESS;
+  return GrB_NOT_IMPLEMENTED;
 }
 
 template <typename c, typename a, typename m,
@@ -728,6 +748,7 @@ Info assign(Matrix<c>*                C,
             Index                     ncols,
             Descriptor*               desc) {
   std::cout << "Error: assign matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 template <typename c, typename U, typename M,
@@ -741,6 +762,7 @@ Info assign(Matrix<c>*                C,
             Index                     col_index,
             Descriptor*               desc) {
   std::cout << "Error: assign matrix column variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 template <typename c, typename U, typename M,
@@ -754,6 +776,7 @@ Info assign(Matrix<c>*                C,
             Index                     ncols,
             Descriptor*               desc) {
   std::cout << "Error: assign matrix row variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 template <typename W, typename T, typename M,
@@ -806,6 +829,7 @@ Info assign(Matrix<c>*                C,
             Index                     ncols,
             Descriptor*               desc) {
   std::cout << "Error: assign matrix variant not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 template <typename W, typename U, typename M,
@@ -911,6 +935,7 @@ Info reduce(Vector<W>*       w,
       return GrB_UNINITIALIZED_OBJECT;
   } else {
     std::cout << "Error: Masked reduce not implemented yet!\n";
+    return GrB_NOT_IMPLEMENTED;
   }
 
   if (desc->debug()) {
@@ -978,6 +1003,7 @@ Info reduce(T*               val,
   } else if (mat_type == GrB_DENSE) {
     std::cout << "Error: reduce matrix-scalar for dense matrix\n";
     std::cout << "not implemented yet!\n";
+    return GrB_NOT_IMPLEMENTED;
     // CHECK(reduceInner(val, accum, op, &A->dense_, desc));
   } else {
     return GrB_UNINITIALIZED_OBJECT;
@@ -1000,6 +1026,7 @@ Info transpose(Matrix<c>*       C,
     std::cout << "===Begin transpose===\n";
   }
   std::cout << "Error: transpose not implemented yet!\n";
+  return GrB_NOT_IMPLEMENTED;
 }
 
 template <typename T, typename a, typename b,
@@ -1026,8 +1053,10 @@ Info traceMxmTranspose(T*               val,
   // 4) DeMat x SpMat
   if (A_mat_type == GrB_SPARSE && B_mat_type == GrB_SPARSE)
     CHECK(traceMxmTransposeInner(val, op, &A->sparse_, &B->sparse_, desc));
-  else
+  else {
     std::cout << "Error: Trace operator not implemented!\n";
+    return GrB_NOT_IMPLEMENTED;
+  }
 
   if (desc->debug()) {
     std::cout << "===End traceMxmTranspose===\n";
@@ -1169,13 +1198,16 @@ Info applyVxm(Vector<W>*       w,
         lb_mode == GrB_LOAD_BALANCE_TWC) {
       CHECK(w->setStorage(GrB_DENSE));
       // 1a) Simple SpMSpV no load-balancing codepath
-      if (lb_mode == GrB_LOAD_BALANCE_SIMPLE)
+      if (lb_mode == GrB_LOAD_BALANCE_SIMPLE){
         std::cout << "Simple SPMSPV not implemented yet!\n";
+        return GrB_NOT_IMPLEMENTED;
         // CHECK( spmspvSimple(&w->dense_, mask, accum, op, &A->sparse_,
         //     &u->sparse_, desc) );
       // 1b) Thread-warp-block (single kernel) codepath
-      else if (lb_mode == GrB_LOAD_BALANCE_TWC)
+      } else if (lb_mode == GrB_LOAD_BALANCE_TWC) {
         std::cout << "Error: B40C load-balance algorithm not implemented yet!\n";
+        return GrB_NOT_IMPLEMENTED;
+      }
       if (desc->debug()) {
         CHECK(w->getStorage(&u_vec_type));
         std::cout << "w_vec_type: " << u_vec_type << std::endl;
