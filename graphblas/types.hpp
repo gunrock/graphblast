@@ -34,6 +34,7 @@ enum Info {GrB_SUCCESS,
            GrB_DIMENSION_MISMATCH,
            GrB_OUTPUT_NOT_EMPTY,
            GrB_NO_VALUE,
+           GrB_NOT_IMPLEMENTED,
            GrB_OUT_OF_MEMORY,         // Execution errors
            GrB_INSUFFICIENT_SPACE,
            GrB_INVALID_OBJECT,

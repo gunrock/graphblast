@@ -98,10 +98,10 @@ Info spmspvApspieMerge(Index*       w_ind,
   int    size        = static_cast<float>(A_nvals)*desc->memusage()+1;
   void* d_temp_nvals = reinterpret_cast<void*>(w_ind);
   void* d_scan       = reinterpret_cast<void*>(w_val);
-  void* d_temp       = desc->d_buffer_+2*A_nrows*sizeof(Index);
+  void* d_temp       = static_cast<char*>(desc->d_buffer_)+2*A_nrows*sizeof(Index);
 
   if (desc->struconly())
-    d_scan = desc->d_buffer_+(A_nrows+size)*sizeof(Index);
+    d_scan = static_cast<char*>(desc->d_buffer_)+(A_nrows+size)*sizeof(Index);
 
   if (desc->debug()) {
     assert(*u_nvals <= A_nrows);
@@ -154,12 +154,12 @@ Info spmspvApspieMerge(Index*       w_ind,
   void* d_csrSwapVal;
 
   if (desc->struconly()) {
-    d_csrSwapInd = desc->d_buffer_+   A_nrows      *sizeof(Index);
-    d_temp       = desc->d_buffer_+(  A_nrows+size)*sizeof(Index);
+    d_csrSwapInd = static_cast<char*>(desc->d_buffer_)+   A_nrows      *sizeof(Index);
+    d_temp       = static_cast<char*>(desc->d_buffer_)+(  A_nrows+size)*sizeof(Index);
   } else {
-    d_csrSwapInd = desc->d_buffer_+ 2*A_nrows        *sizeof(Index);
-    d_csrSwapVal = desc->d_buffer_+(2*A_nrows+  size)*sizeof(Index);
-    d_temp       = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
+    d_csrSwapInd = static_cast<char*>(desc->d_buffer_)+ 2*A_nrows        *sizeof(Index);
+    d_csrSwapVal = static_cast<char*>(desc->d_buffer_)+(2*A_nrows+  size)*sizeof(Index);
+    d_temp       = static_cast<char*>(desc->d_buffer_)+(2*A_nrows+2*size)*sizeof(Index);
   }
 
   if (!desc->struconly_) {
@@ -227,7 +227,7 @@ Info spmspvApspieMerge(Index*       w_ind,
 
   if (desc->struconly()) {
     if (desc->sort()) {
-      d_csrTempInd = desc->d_buffer_+(A_nrows+size)*sizeof(Index);
+      d_csrTempInd = static_cast<char*>(desc->d_buffer_)+(A_nrows+size)*sizeof(Index);
 
       if (!desc->split())
         CUDA_CALL(cub::DeviceRadixSort::SortKeys(NULL, temp_storage_bytes,
@@ -250,8 +250,8 @@ Info spmspvApspieMerge(Index*       w_ind,
             *w_nvals);
     }
   } else {
-    d_csrTempInd = desc->d_buffer_+(2*A_nrows+2*size)*sizeof(Index);
-    d_csrTempVal = desc->d_buffer_+(2*A_nrows+3*size)*sizeof(Index);
+    d_csrTempInd = static_cast<char*>(desc->d_buffer_)+(2*A_nrows+2*size)*sizeof(Index);
+    d_csrTempVal = static_cast<char*>(desc->d_buffer_)+(2*A_nrows+3*size)*sizeof(Index);
 
     if (!desc->split())
       CUDA_CALL(cub::DeviceRadixSort::SortPairs(NULL, temp_storage_bytes,
