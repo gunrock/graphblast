@@ -439,38 +439,6 @@ void testMxm( char const* mtx,
   BOOST_ASSERT_LIST( C_values,      values,      nvals );
 
   BOOST_ASSERT( err==0 );
-}
-
-void testReduce( char const* mtx,
-                 const std::vector<float>& correct, 
-                 const std::vector<float>& correct_t ) 
-{
-  std::vector<graphblas::Index> row_indices;
-  std::vector<graphblas::Index> col_indices;
-  std::vector<float> values;
-  graphblas::Index nrows, ncols, nvals;
-  graphblas::Info err;
-
-  // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false);
-
-  graphblas::Matrix<float> adj(nrows, ncols);
-  err = adj.build( row_indices, col_indices, values, nvals );
-
-  graphblas::Matrix<float> adj_t(nrows, ncols);
-  err = adj_t.build( row_indices, col_indices, values, nvals, true );
-
-  graphblas::Vector<float> vec(nrows);
-  graphblas::Vector<float> vec_t(ncols);
-
-  err = graphblas::reduce( vec, adj );
-  err = graphblas::reduce( vec_t, adj_t );
-
-  err = vec.extract( values );
-  BOOST_ASSERT_LIST( values, correct, nrows );
-
-  err = vec_t.extract( values );
-  BOOST_ASSERT_LIST( values, correct_t, nrows );
 }*/
 
 struct TestMatrix

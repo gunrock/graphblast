@@ -29,15 +29,13 @@ void testReduce( char const* mtx,
   graphblas::Index nrows, ncols, nvals;
   graphblas::Info err;
   graphblas::Descriptor desc;
-  char* dat_name;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, nvals, 0, false,
-      &dat_name);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+          false);
 
   graphblas::Matrix<float> adj(nrows, ncols);
-  err = adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
-      dat_name);
+  err = adj.build(&row_indices, &col_indices, &values, nvals, GrB_NULL);
   adj.print();
 
   std::cout << nrows << " " << ncols << " " << nvals << std::endl;

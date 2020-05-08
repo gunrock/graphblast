@@ -26,18 +26,17 @@ void testVxmDenseSparse( char const*               mtx,
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
   graphblas::Index nrows, ncols, nvals;
-  char* dat_name;
 
   // Read in sparse matrix
-  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, 
-      &nvals, 0, false, &dat_name);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+          false);
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, dat_name);
-  a.nrows(&nrows);
-  a.ncols(&ncols);
-  a.nvals(&nvals);
+  CHECKVOID(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL));
+  CHECKVOID(a.nrows(&nrows));
+  CHECKVOID(a.ncols(&ncols));
+  CHECKVOID(a.nvals(&nvals));
 
   std::vector<float> correct(nrows, 0.f);
   for (graphblas::Index row = 0; row < nrows; ++row)
@@ -89,18 +88,17 @@ void testVxmSparseSparse( char const*                          mtx,
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
   graphblas::Index nrows, ncols, nvals;
-  char* dat_name;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, 
-      nvals, 0, false, &dat_name);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+          false);
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, dat_name);
-  a.nrows(&nrows);
-  a.ncols(&ncols);
-  a.nvals(&nvals);
+  CHECKVOID(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL));
+  CHECKVOID(a.nrows(&nrows));
+  CHECKVOID(a.ncols(&ncols));
+  CHECKVOID(a.nvals(&nvals));
 
   std::vector<float> correct(nrows, 0.f);
   for (graphblas::Index i = 0; i < vec_ind.size(); ++i)
@@ -156,18 +154,17 @@ void testVxmSparseSparseDenseMask(
   std::vector<graphblas::Index> col_indices;
   std::vector<float> values;
   graphblas::Index nrows, ncols, nvals;
-  char* dat_name;
 
   // Read in sparse matrix
-  readMtx(mtx, row_indices, col_indices, values, nrows, ncols, 
-      nvals, 0, false, &dat_name);
+  readMtx(mtx, &row_indices, &col_indices, &values, &nrows, &ncols, &nvals, 0,
+          false);
 
   // Matrix A
   graphblas::Matrix<float> a(nrows, ncols);
-  a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL, dat_name);
-  a.nrows(&nrows);
-  a.ncols(&ncols);
-  a.nvals(&nvals);
+  CHECKVOID(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL));
+  CHECKVOID(a.nrows(&nrows));
+  CHECKVOID(a.ncols(&ncols));
+  CHECKVOID(a.nvals(&nvals));
 
   std::vector<float> correct(nrows, 0.f);
   for (graphblas::Index i = 0; i < vec_ind.size(); ++i)
@@ -299,7 +296,7 @@ BOOST_FIXTURE_TEST_CASE( dup6, TestMatrix )
   std::vector<float>            vec_val{ 13.,7.,1.,4., 4., 5., 4.};
   std::vector<float>            mask_val{1., 1.,0.,1., 0., 0., 1., 0., 0., 1.,
                                          0., 1.,1.,1., 1., 1., 1., 1., 1., 1.};
-  testVxmSparseSparseDenseMask( "data/small/test_sgm.mtx", vec_ind, vec_val, mask_val, 0, vm );
-  testVxmSparseSparseDenseMask( "data/small/test_sgm.mtx", vec_ind, vec_val, mask_val, 1, vm );
+  testVxmSparseSparseDenseMask("data/small/test_sgm.mtx", vec_ind, vec_val, mask_val,
+                               0, vm);
 }
 BOOST_AUTO_TEST_SUITE_END()

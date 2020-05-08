@@ -132,6 +132,10 @@ Info Matrix<T>::build(const std::vector<Index>* row_indices,
   if (row_indices == NULL || col_indices == NULL || values == NULL)
     return GrB_NULL_POINTER;
 
+  if (row_indices->size() == 0 && col_indices->size() == 0 &&
+      values->size() == 0 && dat_name == NULL)
+    return GrB_NO_VALUE;
+
   if (dat_name == NULL || (*row_indices).size() > 0)
     return matrix_.build(row_indices, col_indices, values, nvals, dup,
         dat_name);
