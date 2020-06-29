@@ -5,8 +5,8 @@ DATA2="/data/topc-datasets"
 for file in ak2010 belgium_osm coAuthorsDBLP delaunay_n10 delaunay_n13 delaunay_n21 webbase-1M soc-LiveJournal1 kron_g500-logn21
 do
   if [ "$TEST" = "0" ] ; then
-    echo bin/gtc --timing 1 --mxvmode 0 --directed 2 --niter 0 --skip_cpu_verify 1 $DATA/$file/$file.mtx
-    bin/gtc --timing 1 --mxvmode 0 --directed 2 --niter 0 --skip_cpu_verify 1 $DATA/$file/$file.mtx
+    echo bin/gtc --timing 1 --mxvmode 0 --directed 2 --niter 0 --quick 1 $DATA/$file/$file.mtx
+    bin/gtc --timing 1 --mxvmode 0 --directed 2 --niter 0 --quick 1 $DATA/$file/$file.mtx
   fi
 done
 
@@ -14,8 +14,8 @@ done
 for file in rmat_n24_e16 rmat_n23_e32
 do
   if [ "$TEST" = "1" ] ; then
-    echo bin/gtc --timing 1 --mxvmode 0 --directed 2 --niter 0 --skip_cpu_verify 1 $DATA2/$file.mtx
-    bin/gtc --timing 1 --mxvmode 0 --directed 2 --niter 0 --skip_cpu_verify 1 $DATA2/$file.mtx
+    echo bin/gtc --timing 1 --mxvmode 0 --directed 2 --niter 0 --quick 1 $DATA2/$file.mtx
+    bin/gtc --timing 1 --mxvmode 0 --directed 2 --niter 0 --quick 1 $DATA2/$file.mtx
   fi
 done
 

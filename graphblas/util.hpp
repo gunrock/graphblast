@@ -66,7 +66,7 @@ void parseArgs(int argc, char**argv, po::variables_map* vm) {
         "True means show matrix MTX info")
     ("verbose", po::value<bool>()->default_value(true),
         "0: timing output only, 1: timing output and correctness indicator")
-    ("skip_cpu_verify", po::value<bool>()->default_value(false),
+    ("quick", po::value<bool>()->default_value(false),
         "0: run CPU verification, 1: skip CPU algorithm verification")
 
     // mxv params

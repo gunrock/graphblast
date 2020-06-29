@@ -142,7 +142,7 @@ Info reduceInner(DenseVector<W>*        w,
   return GrB_SUCCESS;
 }
 
-// TODO(@ctcyang): Dense matrix to scalar variant
+// TODO(@ctcyang): Dense matrix variant
 template <typename T, typename a,
           typename BinaryOpT,     typename MonoidT>
 Info reduceInner(T*                    val,

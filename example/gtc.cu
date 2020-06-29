@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   bool debug;
   bool transpose;
   bool mtxinfo;
-  bool skip_cpu_verify;
+  bool quick;
   int  directed;
   int  niter;
   int  max_niter;
@@ -42,13 +42,13 @@ int main(int argc, char** argv) {
     exit(1);
   } else {
     parseArgs(argc, argv, &vm);
-    debug           = vm["debug"          ].as<bool>();
-    transpose       = vm["transpose"      ].as<bool>();
-    mtxinfo         = vm["mtxinfo"        ].as<bool>();
-    skip_cpu_verify = vm["skip_cpu_verify"].as<bool>();
-    directed        = vm["directed"       ].as<int>();
-    niter           = vm["niter"          ].as<int>();
-    max_niter       = vm["max_niter"      ].as<int>();
+    debug     = vm["debug"    ].as<bool>();
+    transpose = vm["transpose"].as<bool>();
+    mtxinfo   = vm["mtxinfo"  ].as<bool>();
+    quick     = vm["quick"    ].as<bool>();
+    directed  = vm["directed" ].as<int>();
+    niter     = vm["niter"    ].as<int>();
+    max_niter = vm["max_niter"].as<int>();
 
     /*!
      * This is an imperfect solution, because this should happen in 
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   // Cpu PR
   CpuTimer tc_cpu;
   int ntris_cpu;
-  if (!skip_cpu_verify) {
+  if (!quick) {
     tc_cpu.Start();
     graphblas::algorithm::tcCpu(&ntris_cpu, &a, transpose);
     tc_cpu.Stop();
@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
   warmup.Start();
   graphblas::algorithm::tc(&ntris_gpu, &a, &b, &desc);
   warmup.Stop();
-  if (!skip_cpu_verify)
+  if (!quick)
     VERIFY(ntris_cpu, ntris_gpu);
 
   // Benchmark
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
   std::cout << "tight, " << tight/niter << "\n";
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
-  if (niter && !skip_cpu_verify) {
+  if (niter && !quick) {
     VERIFY(ntris_cpu, ntris_gpu);
   }
 
