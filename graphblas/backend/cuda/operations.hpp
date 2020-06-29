@@ -2,7 +2,6 @@
 #define GRAPHBLAS_BACKEND_CUDA_OPERATIONS_HPP_
 
 #include <vector>
-#include <typeinfo>
 
 namespace graphblas {
 namespace backend {
@@ -41,13 +40,13 @@ Info mxm(Matrix<c>*       C,
     if (mask) {
       CHECK(spgemmMasked(&C->sparse_, mask, accum, op, &A->sparse_, &B->sparse_,
           desc));
-    } else if (typeid(c) == typeid(float) && typeid(a) == typeid(float) &&
-               typeid(b) == typeid(float)) {
-      CHECK(cusparse_spgemm2(&C->sparse_, mask, accum, op, &A->sparse_,
-            &B->sparse_, desc));
     } else {
-      std::cout << "Error: Unmasked SpGEMM not implemented yet!\n";
-      return GrB_NOT_IMPLEMENTED;
+      std::cout << "Unmasked SpGEMM\n";
+      std::cout << "Error: Feature not implemented yet!\n";
+  // Can't use cuSPARSE for unmasked, because of compilation issue involving
+  // conflict between user choosing integer datatypes and cuSPARSE being float
+  // CHECK(cusparse_spgemm2(&C->sparse_, mask, accum, op, &A->sparse_,
+  //     &B->sparse_, desc));
     }
   } else {
     std::cout << "Error: SpMM and GEMM not implemented yet!\n";
