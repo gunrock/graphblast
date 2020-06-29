@@ -1,6 +1,8 @@
 #ifndef GRAPHBLAS_BACKEND_CUDA_SPGEMM_HPP_
 #define GRAPHBLAS_BACKEND_CUDA_SPGEMM_HPP_
 
+#include "graphblas/backend/cuda/sparse_matrix.hpp"
+
 #include <cuda.h>
 #include <cusparse.h>
 
@@ -279,6 +281,17 @@ Info cusparse_spgemm2(SparseMatrix<c>*       C,
                       const SparseMatrix<a>* A,
                       const SparseMatrix<b>* B,
                       Descriptor*            desc) {
+  return GrB_NOT_IMPLEMENTED;
+}
+
+template <typename m, typename BinaryOpT, typename SemiringT>
+Info cusparse_spgemm2(SparseMatrix<float>*       C,
+                      const Matrix<m>*           mask,
+                      BinaryOpT                  accum,
+                      SemiringT                  op,
+                      const SparseMatrix<float>* A,
+                      const SparseMatrix<float>* B,
+                      Descriptor*                desc) {
   Index A_nrows, A_ncols, A_nvals;
   Index B_nrows, B_ncols, B_nvals;
   Index C_nrows, C_ncols, C_nvals;
@@ -309,8 +322,8 @@ Info cusparse_spgemm2(SparseMatrix<c>*       C,
   size_t bufferSize;
 
   // nnzTotalDevHostPtr points to host memory
-  c alpha = 1.0;
-  c* beta = NULL;
+  float alpha = 1.0;
+  float* beta = NULL;
   cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
 
   cusparseMatDescr_t descr;
@@ -432,7 +445,7 @@ Info cusparse_spgemm2(SparseMatrix<c>*       C,
       CUDA_CALL(cudaFree(C->d_csrVal_));
     }
     CUDA_CALL(cudaMalloc(&C->d_csrColInd_, C_nvals*sizeof(Index)));
-    CUDA_CALL(cudaMalloc(&C->d_csrVal_, C_nvals*sizeof(c)));
+    CUDA_CALL(cudaMalloc(&C->d_csrVal_, C_nvals*sizeof(float)));
 
     if (C->h_csrColInd_ != NULL) {
       free(C->h_csrColInd_);
