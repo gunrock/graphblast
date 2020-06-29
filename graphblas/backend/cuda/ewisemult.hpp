@@ -501,7 +501,6 @@ Info eWiseMultColInner(SparseMatrix<c>*       C,
     if (A != C)
       CHECK(C->dup(A));
 
-    // Simple warp-per-row algorithm
     dim3 NT, NB;
     NT.x = nt;
     NT.y = 1;

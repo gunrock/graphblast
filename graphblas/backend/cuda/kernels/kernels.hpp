@@ -6,7 +6,6 @@
 #include "graphblas/backend/cuda/kernels/util.hpp"
 #include "graphblas/backend/cuda/kernels/spmv.hpp"
 #include "graphblas/backend/cuda/kernels/spmspv.hpp"
-#include "graphblas/backend/cuda/kernels/spgemm.hpp"
 #include "graphblas/backend/cuda/kernels/ewisemult.hpp"
 #include "graphblas/backend/cuda/kernels/ewiseadd.hpp"
 #include "graphblas/backend/cuda/kernels/trace.hpp"

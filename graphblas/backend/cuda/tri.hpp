@@ -25,7 +25,7 @@ Info trilSparse(SparseMatrix<c>* C,
       Index edge_start = A->h_csrRowPtr_[row];
       Index edge_end = A->h_csrRowPtr_[row+1];
 
-      // csrRowPtr_ update must only be done after row loads edge_start
+      // csrRowPtr_ update must be done after row loads edge_start
       A->h_csrRowPtr_[row] -= remove;
 
       for (Index edge = edge_start; edge < edge_end; ++edge) {
@@ -38,8 +38,6 @@ Info trilSparse(SparseMatrix<c>* C,
         }
       }
     }
-    // csrRowPtr_ update must be done for last element, which is equivalent to
-    // nvals_
     A->h_csrRowPtr_[A->nrows_] -= remove;
     A->nvals_ -= remove;
 

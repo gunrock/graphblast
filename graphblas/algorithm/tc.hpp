@@ -14,11 +14,12 @@ namespace algorithm {
 // Use int for ntris and A
 float tc(int*               ntris,
          const Matrix<int>* A,     // lower triangular matrix
-         Matrix<int>*       B,     // buffer matrix
          Descriptor*        desc) {
   // Get number of vertices
   Index A_nrows;
   CHECK(A->nrows(&A_nrows));
+
+  Matrix<int> B(A_nrows, A_nrows);
 
   // Set second input to be transposed
   CHECK(desc->toggle(graphblas::GrB_INP1));
@@ -35,11 +36,11 @@ float tc(int*               ntris,
     std::cout << "=====TC Iteration " << iter - 1 << "=====\n";
 
   // B = A * A^T
-  mxm<int, int, int, int>(B, A, GrB_NULL, PlusMultipliesSemiring<int>(),
+/*  mxm<int, int, int, int>(&B, A, GrB_NULL, PlusMultipliesSemiring<int>(),
       A, A, desc);
 
   // ntris = reduce(B)
-  reduce<int, int>(ntris, GrB_NULL, PlusMonoid<int>(), B, desc);
+  reduce<int, int>(ntris, GrB_NULL, PlusMonoid<int>(), &B, desc);*/
 
   if (desc->descriptor_.debug())
     std::cout << "ntris: " << *ntris << std::endl;

@@ -29,7 +29,6 @@ int main(int argc, char** argv) {
   bool debug;
   bool transpose;
   bool mtxinfo;
-  bool quick;
   int  directed;
   int  niter;
   int  max_niter;
@@ -45,7 +44,6 @@ int main(int argc, char** argv) {
     debug     = vm["debug"    ].as<bool>();
     transpose = vm["transpose"].as<bool>();
     mtxinfo   = vm["mtxinfo"  ].as<bool>();
-    quick     = vm["quick"    ].as<bool>();
     directed  = vm["directed" ].as<int>();
     niter     = vm["niter"    ].as<int>();
     max_niter = vm["max_niter"].as<int>();
@@ -83,25 +81,20 @@ int main(int argc, char** argv) {
 
   if (debug) CHECK(a.print());
 
-  graphblas::Matrix<int> b(nrows, ncols);
-
   // Cpu PR
   CpuTimer tc_cpu;
   int ntris_cpu;
-  if (!quick) {
-    tc_cpu.Start();
-    graphblas::algorithm::tcCpu(&ntris_cpu, &a, transpose);
-    tc_cpu.Stop();
-  }
+  tc_cpu.Start();
+  graphblas::algorithm::tcCpu(&ntris_cpu, &a, transpose);
+  tc_cpu.Stop();
 
   // Warmup
   CpuTimer warmup;
   int ntris_gpu;
   warmup.Start();
-  graphblas::algorithm::tc(&ntris_gpu, &a, &b, &desc);
+  graphblas::algorithm::tc(&ntris_gpu, &a, &desc);
   warmup.Stop();
-  if (!quick)
-    VERIFY(ntris_cpu, ntris_gpu);
+  VERIFY(ntris_cpu, ntris_gpu);
 
   // Benchmark
   ntris_gpu = 0;
@@ -111,7 +104,7 @@ int main(int argc, char** argv) {
   float tight = 0.f;
   float val;
   for (int i = 0; i < niter; i++) {
-    val = graphblas::algorithm::tc(&ntris_gpu, &a, &b, &desc);
+    val = graphblas::algorithm::tc(&ntris_gpu, &a, &desc);
     tight += val;
   }
   // cudaProfilerStop();
@@ -125,7 +118,7 @@ int main(int argc, char** argv) {
   std::cout << "tight, " << tight/niter << "\n";
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
-  if (niter && !quick) {
+  if (niter) {
     VERIFY(ntris_cpu, ntris_gpu);
   }
 

@@ -37,17 +37,8 @@ Info mxm(Matrix<c>*       C,
 
   if (A_mat_type == GrB_SPARSE && B_mat_type == GrB_SPARSE) {
     CHECK(C->setStorage(GrB_SPARSE));
-    if (mask) {
-      CHECK(spgemmMasked(&C->sparse_, mask, accum, op, &A->sparse_, &B->sparse_,
-          desc));
-    } else {
-      std::cout << "Unmasked SpGEMM\n";
-      std::cout << "Error: Feature not implemented yet!\n";
-  // Can't use cuSPARSE for unmasked, because of compilation issue involving
-  // conflict between user choosing integer datatypes and cuSPARSE being float
-  // CHECK(cusparse_spgemm2(&C->sparse_, mask, accum, op, &A->sparse_,
-  //     &B->sparse_, desc));
-    }
+    CHECK(cusparse_spgemm2(&C->sparse_, mask, accum, op, &A->sparse_,
+        &B->sparse_, desc));
   } else {
     std::cout << "Error: SpMM and GEMM not implemented yet!\n";
     return GrB_NOT_IMPLEMENTED;
@@ -1022,7 +1013,6 @@ Info reduce(T*               val,
     std::cout << "===End reduce===\n";
     std::cout << "Output: " << *val << std::endl;
   }
-  return GrB_SUCCESS;
 }
 
 template <typename c, typename a, typename m,
