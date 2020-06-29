@@ -65,9 +65,9 @@ float gcIS(Vector<int>*       v,
   // Set seed
   setEnv("GRB_SEED", seed);
 
-  CHECK(desc->set(GrB_BACKEND, GrB_SEQUENTIAL));
+  desc->set(GrB_BACKEND, GrB_SEQUENTIAL);
   apply<int, int, int>(&w, GrB_NULL, GrB_NULL, set_random<int>(), &w, desc);
-  CHECK(desc->set(GrB_BACKEND, GrB_CUDA));
+  desc->set(GrB_BACKEND, GrB_CUDA);
 
   int iter = 1;
   int succ = 0;

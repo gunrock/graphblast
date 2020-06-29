@@ -677,7 +677,6 @@ Info transpose(Matrix<c>*       C,
 }
 
 /*!
- * Extension method
  * Trace of matrix-matrix product
  *   val = Tr(A * B^T)    *: op
  *
@@ -729,7 +728,6 @@ Info scale(Vector<W>*       w,
 }
 
 /*!
- * Extension method
  * Scatter constant to indices (vector u) to another vector w
  *   w[u] = val
  */
@@ -761,7 +759,6 @@ Info graphColor(Vector<W>*       w,
 }
 
 /*!
- * Extension method
  * Fused apply & vector-matrix product
  *   w^T = w^T + mask^T .* (u^T * A)    +: accum
  *                                      *: op
@@ -799,26 +796,6 @@ Info applyVxm(Vector<W>*       w,
       &u->vector_, &A->matrix_, desc_t);
 }
 
-/*!
- * Extension method
- * Zeroes out matrix above main diagonal
- */
-template <typename c, typename a>
-Info tril(Matrix<c>*  C,
-          Matrix<a>*  A,
-          Descriptor* desc) {
-  // Null pointer check
-  if (C == NULL || A == NULL || desc == NULL)
-    return GrB_UNINITIALIZED_OBJECT;
-
-  // Dimension check
-  CHECK(checkDimRowRow(A, C, "A.nrows != C.nrows"));
-  CHECK(checkDimColCol(A, C, "A.ncols != C.ncols"));
-
-  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
-
-  return backend::tril(&C->matrix_, &A->matrix_, desc_t);
-}
 }  // namespace graphblas
 
 #endif  // GRAPHBLAS_OPERATIONS_HPP_

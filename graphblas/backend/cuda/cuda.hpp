@@ -21,7 +21,6 @@
 #include "graphblas/backend/cuda/trace.hpp"
 #include "graphblas/backend/cuda/assign.hpp"
 #include "graphblas/backend/cuda/apply.hpp"
-#include "graphblas/backend/cuda/tri.hpp"
 #include "graphblas/backend/cuda/descriptor.hpp"
 #include "graphblas/backend/cuda/sparse_vector.hpp"
 #include "graphblas/backend/cuda/dense_vector.hpp"
