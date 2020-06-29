@@ -10,7 +10,7 @@
 
 // #include <cuda_tcofiler_api.h>
 
-#include <boost/program_options.hpp>
+#include <boost/tcogram_options.hpp>
 
 #include "graphblas/graphblas.hpp"
 #include "graphblas/algorithm/tc.hpp"
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
   warmup.Start();
   graphblas::algorithm::tc(&ntris_gpu, &a, &desc);
   warmup.Stop();
-  VERIFY(ntris_cpu, ntris_gpu);
+  BOOST_ASSERT(ntris_cpu == ntris_gpu);
 
   // Benchmark
   ntris_gpu = 0;
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
   if (niter) {
-    VERIFY(ntris_cpu, ntris_gpu);
+    BOOST_ASSERT(ntris_cpu == ntris_gpu);
   }
 
   return 0;

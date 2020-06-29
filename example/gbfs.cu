@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
 
   std::vector<float> h_bfs_gpu;
   CHECK(v.extractTuples(&h_bfs_gpu, &nrows));
-  VERIFY_LIST(h_bfs_cpu, h_bfs_gpu, nrows);
+  BOOST_ASSERT_LIST(h_bfs_cpu, h_bfs_gpu, nrows);
 
   // Benchmark
   graphblas::Vector<float> y(nrows);
@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
   if (niter) {
     std::vector<float> h_bfs_gpu2;
     CHECK(y.extractTuples(&h_bfs_gpu2, &nrows));
-    VERIFY_LIST(h_bfs_cpu, h_bfs_gpu2, nrows);
+    BOOST_ASSERT_LIST(h_bfs_cpu, h_bfs_gpu2, nrows);
   }
 
   return 0;
