@@ -154,40 +154,6 @@ Info reduceInner(T*                    val,
   return GrB_SUCCESS;
 }
 
-// Sparse matrix variant
-template <typename T, typename a,
-          typename BinaryOpT,     typename MonoidT>
-Info reduceInner(T*                     val,
-                 BinaryOpT              accum,
-                 MonoidT                op,
-                 const SparseMatrix<a>* A,
-                 Descriptor*            desc) {
-  if (desc->struconly()) {
-    *val = A->nvals_;
-  } else {
-    T* d_val = reinterpret_cast<T*>(desc->d_buffer_);
-    desc->resize(sizeof(T), "buffer");
-    size_t temp_storage_bytes = 0;
-
-    if (A->nvals_ == 0)
-      return GrB_INVALID_OBJECT;
-
-    if (!desc->split())
-      CUDA_CALL(cub::DeviceReduce::Reduce(NULL, temp_storage_bytes,
-          A->d_csrVal_, d_val, A->nvals_, op, op.identity()));
-    else
-      temp_storage_bytes = desc->d_temp_size_;
-
-    desc->resize(temp_storage_bytes, "temp");
-    CUDA_CALL(cub::DeviceReduce::Reduce(desc->d_temp_, temp_storage_bytes,
-        A->d_csrVal_, d_val, A->nvals_, op, op.identity()));
-
-    CUDA_CALL(cudaMemcpy(val, d_val, sizeof(T), cudaMemcpyDeviceToHost));
-  }
-
-  return GrB_SUCCESS;
-}
-
 }  // namespace backend
 }  // namespace graphblas
 
