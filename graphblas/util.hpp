@@ -221,6 +221,7 @@ void readTuplesWithType(std::vector<graphblas::Index>* row_indices,
 
       u = fscanf(f, type_str, &raw_value);
       value = static_cast<T>(raw_value);
+      std::cout << row_ind << "," << col_ind << "," << value << std::endl;
 
       values->push_back(value);
     }
