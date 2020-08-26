@@ -191,11 +191,11 @@ void customSort(std::vector<graphblas::Index>* row_indices,
 }
 
 template<typename T, typename mtxT>
-void readTuples(std::vector<graphblas::Index>* row_indices,
-                std::vector<graphblas::Index>* col_indices,
-                std::vector<T>*                values,
-                graphblas::Index               nvals,
-                FILE*                          f) {
+void readTuplesWithType(std::vector<graphblas::Index>* row_indices,
+                        std::vector<graphblas::Index>* col_indices,
+                        std::vector<T>*                values,
+                        graphblas::Index               nvals,
+                        FILE*                          f) {
   graphblas::Index row_ind, col_ind;
   T value;
   mtxT raw_value;
@@ -309,9 +309,11 @@ void removeSelfloop(std::vector<graphblas::Index>* row_indices,
       for (; back <= *nvals; shift++) {
         back = i+shift;
         if ((*col_indices)[back] != -1) {
-          (*col_indices)[i] = (*col_indices)[back];
-          (*row_indices)[i] = (*row_indices)[back];
+          std::swap((*col_indices)[i], (*col_indices)[back]);
+          std::swap((*row_indices)[i], (*row_indices)[back]);
+          std::swap((*values)[i], (*values)[back]);
           (*col_indices)[back] = -1;
+          (*values)[back] = 0.0;
           break;
         }
       }
@@ -408,9 +410,9 @@ int readMtx(const char*                    fname,
     }
   } else {
     if (mm_is_integer(matcode))
-      readTuples<T, int>(row_indices, col_indices, values, *nvals, f);
+      readTuplesWithType<T, int>(row_indices, col_indices, values, *nvals, f);
     else if (mm_is_real(matcode))
-      readTuples<T, float>(row_indices, col_indices, values, *nvals, f);
+      readTuplesWithType<T, float>(row_indices, col_indices, values, *nvals, f);
     else if (mm_is_pattern(matcode))
       readTuples<T>(row_indices, col_indices, values, *nvals, f);
 

@@ -76,12 +76,12 @@ int main(int argc, char** argv) {
 
   // For SSSP, do uniform random distance between 1 and 64
   // Set seed
-  setEnv("GRB_SEED", seed);
+  /*setEnv("GRB_SEED", seed);
   setEnv("GRB_UNIFORM_START", 1);
   setEnv("GRB_UNIFORM_END", 64);
   desc.set(GrB_BACKEND, GrB_SEQUENTIAL);
   graphblas::apply<float, float, float>(&a, GrB_NULL, GrB_NULL, set_uniform_random<float>(), &a, &desc);
-  desc.set(GrB_BACKEND, GrB_CUDA);
+  desc.set(GrB_BACKEND, GrB_CUDA);*/
   if (debug) CHECK(a.print());
 
   // Vector v

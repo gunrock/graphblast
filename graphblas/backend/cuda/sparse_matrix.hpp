@@ -309,7 +309,7 @@ Info SparseMatrix<T>::build(const std::vector<Index>* row_indices,
             *row_indices, *col_indices, *values, nrows_, ncols_);
   }
 
-  if (dat_name != NULL) {
+  /*if (dat_name != NULL) {
     if (!exists(dat_name)) {
       std::ofstream ofs(dat_name, std::ios::out | std::ios::binary);
       if (ofs.fail()) {
@@ -328,7 +328,7 @@ Info SparseMatrix<T>::build(const std::vector<Index>* row_indices,
       }
     }
     free(dat_name);
-  }
+  }*/
 
   CHECK(cpuToGpu());
   return GrB_SUCCESS;
