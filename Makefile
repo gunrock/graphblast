@@ -11,7 +11,7 @@ INC += -I$(MGPU_DIR) -I$(CUB_DIR) -I$(BOOST_DIR) -I$(GRB_DIR)
 # Dependency Lists
 #-------------------------------------------------------------------------------
 
-all: gbfs gdiameter gsssp glgc gmis ggc ggc_cusparse gpr gtc
+all: gbfs gdiameter gsssp glgc gmis ggc ggc_cusparse gpr gtc gcc
 
 gbfs: example/*
 	mkdir -p bin
@@ -48,6 +48,10 @@ gpr: example/*
 gtc: example/*
 	mkdir -p bin
 	nvcc -g $(ARCH) $(OPTIONS) -o bin/gtc example/gtc.cu $(INC) $(GRB_DEPS) $(LIBS)
+
+gcc: example/*
+	mkdir -p bin
+	nvcc -g $(ARCH) $(OPTIONS) -o bin/gcc example/gcc.cu $(INC) $(GRB_DEPS) $(LIBS)
 
 clean:
 	rm -f bin/gbfs bin/gdiameter bin/gsssp bin/glgc bin/gmis bin/ggc bin/ggc_cusparse bin/gpr bin/gtc
