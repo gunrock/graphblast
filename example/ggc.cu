@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     mtxinfo    = vm["mtxinfo"  ].as<bool>();
     directed   = vm["directed" ].as<int>();
     niter      = vm["niter"    ].as<int>();
-    seed     = vm["seed"   ].as<int>();
+    seed       = vm["seed"   ].as<int>();
     max_colors = vm["maxcolors"].as<int>();
     gc_algo    = vm["gcalgo"   ].as<int>();
 

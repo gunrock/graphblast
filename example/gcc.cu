@@ -22,7 +22,7 @@ bool memory_;
 int main(int argc, char** argv) {
   std::vector<graphblas::Index> row_indices;
   std::vector<graphblas::Index> col_indices;
-  std::vector<float> values;
+  std::vector<int> values;
   graphblas::Index nrows, ncols, nvals;
 
   // Parse arguments
@@ -31,7 +31,8 @@ int main(int argc, char** argv) {
   bool mtxinfo;
   int  directed;
   int  niter;
-  int  max_niter;
+  int  seed;
+  int  cc_algo;
   char* dat_name;
   po::variables_map vm;
 
@@ -41,18 +42,17 @@ int main(int argc, char** argv) {
     exit(1);
   } else {
     parseArgs(argc, argv, &vm);
-    debug     = vm["debug"    ].as<bool>();
-    transpose = vm["transpose"].as<bool>();
-    mtxinfo   = vm["mtxinfo"  ].as<bool>();
-    directed  = vm["directed" ].as<int>();
-    niter     = vm["niter"    ].as<int>();
-    max_niter = vm["max_niter"].as<int>();
+    debug      = vm["debug"    ].as<bool>();
+    transpose  = vm["transpose"].as<bool>();
+    mtxinfo    = vm["mtxinfo"  ].as<bool>();
+    directed   = vm["directed" ].as<int>();
+    niter      = vm["niter"    ].as<int>();
+    seed       = vm["seed"   ].as<int>();
+    cc_algo    = vm["ccalgo"   ].as<int>();
 
-    /*!
-     * This is an imperfect solution, because this should happen in 
-     * desc.loadArgs(vm) instead of application code!
-     * TODO(@ctcyang): fix this
-     */
+    // This is an imperfect solution, because this should happen in
+    // desc.loadArgs(vm) instead of application code!
+    // TODO(@ctcyang): fix this
     readMtx(argv[argc-1], &row_indices, &col_indices, &values, &nrows, &ncols,
         &nvals, directed, mtxinfo, &dat_name);
   }
@@ -63,79 +63,76 @@ int main(int argc, char** argv) {
   if (transpose)
     CHECK(desc.toggle(graphblas::GrB_INP1));
 
-  // PageRank Parameters
-  float alpha = 0.85;
-  float eps   = 1e-8;
-
   // Matrix A
-  graphblas::Matrix<float> a(nrows, ncols);
+  graphblas::Matrix<int> a(nrows, ncols);
   values.clear();
-  values.insert(values.begin(), nvals, 1.f);
+  values.resize(nvals, 1.f);
   CHECK(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
       dat_name));
   CHECK(a.nrows(&nrows));
   CHECK(a.ncols(&ncols));
   CHECK(a.nvals(&nvals));
-
-  // Compute outdegrees
-  graphblas::Vector<float> outdegrees(nrows);
-  graphblas::reduce<float, float, float>(&outdegrees, GrB_NULL, GrB_NULL,
-      graphblas::PlusMonoid<float>(), &a, &desc);
-
-  // A = alpha*A/outdegrees (broadcast variant)
-  graphblas::eWiseMult<float, float, float, float>(&a, GrB_NULL, GrB_NULL,
-      PlusMultipliesSemiring<float>(), &a, alpha, &desc);
-  if (debug) CHECK(a.print());
-  graphblas::eWiseMult<float, float, float, float>(&a, GrB_NULL, GrB_NULL,
-      PlusDividesSemiring<float>(), &a, &outdegrees, &desc);
-
-  /*// Diagonalize outdegrees
-  Matrix<float> diag_outdegrees(A_nrows, A_nrows);
-  diag<float, float>(&diag_outdegrees, &outdegrees, desc);
-
-  // A = alpha*A*diag(outdegrees)
-  Matrix<float> A_temp(A_nrows, A_nrows);
-  scale<float, float, float>(&A_temp, MultipliesMonoid<float>(), A, alpha,
-      desc);*/
-
   if (debug) CHECK(a.print());
 
   // Vector v
-  graphblas::Vector<float> v(nrows);
+  graphblas::Vector<int> v(nrows);
 
-  // Cpu PR
-  CpuTimer pr_cpu;
-  float* h_pr_cpu = reinterpret_cast<float*>(malloc(nrows*sizeof(float)));
-  pr_cpu.Start();
-  graphblas::algorithm::ccCpu(h_pr_cpu, &a, alpha, eps, max_niter, transpose);
-  pr_cpu.Stop();
+  // Cpu connected components.
+  CpuTimer cc_cpu;
+  std::vector<int> h_cc_cpu(nrows, 0);
+  int depth = 10000;
+  cc_cpu.Start();
+  int d = graphblas::algorithm::ccCpu(seed, &a, &h_cc_cpu);
+  cc_cpu.Stop();
+  graphblas::algorithm::verifyCc(&a, h_cc_cpu);
 
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  graphblas::algorithm::cc(&v, &a, alpha, eps, &desc);
+  if (cc_algo == 0) {
+    graphblas::algorithm::cc(&v, &a, seed, &desc);
+  } else if (cc_algo == 1) {
+    std::cout << "Error: CC algorithm 1 not implemented!\n";
+    //graphblas::algorithm::ccMIS(&v, &a, seed, &desc);
+  } else if (cc_algo == 2) {
+    std::cout << "Error: CC algorithm 2 not implemented!\n";
+    //graphblas::algorithm::ccIS(&v, &a, seed, &desc);
+  } else {
+    std::cout << "Error: Invalid connected components algorithm selected!\n";
+  }
   warmup.Stop();
 
-  std::vector<float> h_pr_gpu;
-  CHECK(v.extractTuples(&h_pr_gpu, &nrows));
-  VERIFY_LIST_FLOAT(h_pr_cpu, h_pr_gpu, nrows);
+  std::vector<int> h_cc_gpu;
+  CHECK(v.extractTuples(&h_cc_gpu, &nrows));
+  graphblas::algorithm::verifyCc(&a, h_cc_gpu);
 
   // Benchmark
-  graphblas::Vector<float> y(nrows);
+  graphblas::Vector<int> y(nrows);
   CpuTimer vxm_gpu;
   // cudaProfilerStart();
   vxm_gpu.Start();
   float tight = 0.f;
   float val;
   for (int i = 0; i < niter; i++) {
-    val = graphblas::algorithm::cc(&y, &a, alpha, eps, &desc);
+    if (cc_algo == 0) {
+      val = graphblas::algorithm::cc(&v, &a, seed, &desc);
+    } else if (cc_algo == 1) {
+      std::cout << "Error: CC algorithm 1 not implemented!\n";
+      //val = graphblas::algorithm::ccMIS(&v, &a, seed, &desc);
+    } else if (cc_algo == 2) {
+      std::cout << "Error: CC algorithm 2 not implemented!\n";
+      //val = graphblas::algorithm::ccIS(&v, &a, seed, &desc);
+    } else {
+      std::cout << "Error: Invalid connected components algorithm selected!\n";
+      break;
+    }
     tight += val;
   }
   // cudaProfilerStop();
   vxm_gpu.Stop();
 
   float flop = 0;
-  std::cout << "cpu, " << pr_cpu.ElapsedMillis() << ", \n";
+  std::cout << "cpu, " << cc_cpu.ElapsedMillis() << ", \n";
   std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
   float elapsed_vxm = vxm_gpu.ElapsedMillis();
@@ -143,9 +140,8 @@ int main(int argc, char** argv) {
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
   if (niter) {
-    std::vector<float> h_pr_gpu2;
-    CHECK(y.extractTuples(&h_pr_gpu2, &nrows));
-    VERIFY_LIST_FLOAT(h_pr_cpu, h_pr_gpu2, nrows);
+    std::vector<int> h_cc_gpu2;
+    graphblas::algorithm::verifyCc(&a, h_cc_gpu);
   }
 
   return 0;

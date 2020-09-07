@@ -13,11 +13,11 @@ namespace graphblas {
 namespace algorithm {
 
 // cuSPARSE implementation
-float gcCusparse(Vector<int>*       v,
+float gcCusparse(Vector<int>*         v,
                  const Matrix<float>* A,
-                 int                seed,
-                 int                max_colors,
-                 Descriptor*        desc) {
+                 int                  seed,
+                 int                  max_colors,
+                 Descriptor*          desc) {
   Index A_nrows;
   CHECK(A->nrows(&A_nrows));
 

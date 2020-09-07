@@ -1,81 +1,95 @@
 #ifndef GRAPHBLAS_ALGORITHM_TEST_CC_HPP_
 #define GRAPHBLAS_ALGORITHM_TEST_CC_HPP_
 
-#include <queue>
-#include <limits>
-#include <utility>
 #include <vector>
-#include <functional>
+#include <random>
 
 namespace graphblas {
 namespace algorithm {
 
-// A simple CPU-based reference CC implementation
-template <typename T>
-int SimpleReferenceCc(Index        nrows,
-                      const Index* h_rowPtr,
-                      const Index* h_colInd,
-                      T*           h_val,
-                      T*           source_path,
-                      float        alpha,
-                      float        eps,
-                      int          max_niter) {
-  // Initialize distances
+// Runs simple CPU-based reference Connected Components (CC) implementation.
+// Returns number of components and the connected component label of each node
+// in h_cc_cpu starting from 1.
+int SimpleReferenceCc(Index             nrows,
+                      const Index*      h_csrRowPtr,
+                      const Index*      h_csrColInd,
+                      std::vector<int>* h_cc_cpu,
+                      int               seed) {
+  // Initialize labels to 0 (unlabeled).
   for (Index i = 0; i < nrows; ++i)
-    source_path[i] = 1.f/nrows;
-  Index search_depth = 0;
+    (*h_cc_cpu)[i] = 0;
 
-  // Initialize out-degrees array
-  std::vector<T> outdegrees(nrows, 0.f);
-  for (Index i = 0; i < nrows; ++i)
-    outdegrees[i] = h_rowPtr[i+1] - h_rowPtr[i];
-
-  // Initialize pagerank
-  std::vector<T> pagerank(nrows, 0.f);
-  T resultant = 0.f;
-
-  // Perform CC 
   CpuTimer cpu_timer;
   cpu_timer.Start();
-  for (int i = 0; i < max_niter; ++i) {
-    for (Index node = 0; node < nrows; ++node)
-      pagerank[node] = (1.f-alpha)/nrows;
 
-    for (Index node = 0; node < nrows; ++node) {
-      // Contribution
-      T contrib = source_path[node]/outdegrees[node];
+  int current_label = 1;
+  for (Index i = 0; i < nrows; ++i) {
+    int current_node_color = (*h_cc_cpu)[i];
+    if (current_node_color == 0) {
+      std::stack<Index> work_stack;
+      work_stack.push(i);
+      while (!work_stack.empty()) {
+        Index current = work_stack.top();
+        work_stack.pop();
+        (*h_cc_cpu)[i] = current_label;
 
-      // Locate adjacency list
-      Index edges_begin = h_rowPtr[node];
-      Index edges_end   = h_rowPtr[node + 1];
-
-      for (Index edge = edges_begin; edge < edges_end; ++edge) {
-        Index neighbor = h_colInd[edge];
-        pagerank[neighbor] += alpha*contrib;
+        Index row_start = h_csrRowPtr[current];
+        Index row_end   = h_csrRowPtr[current+1];
+        for (; row_start < row_end; ++row_start) {
+          Index col = h_csrColInd[row_start];
+          int label = (*h_cc_cpu)[col];
+          if (label == 0) {
+            work_stack.push(col);
+          }
+        }
       }
+      current_label++;
     }
-    //printArray("cpu_pagerank", pagerank, nrows);
-
-    resultant = 0.f;
-    for (Index node = 0; node < nrows; ++node) {
-      T diff = source_path[node] - pagerank[node];
-      resultant += diff*diff;
-      source_path[node] = pagerank[node];
-    }
-
-    if (fabs(resultant) < eps)
-      break;
-
-    search_depth++;
   }
 
   cpu_timer.Stop();
   float elapsed = cpu_timer.ElapsedMillis();
 
-  printArray("output", source_path, nrows);
-  printf("CPU CC finished in %lf msec. Search depth is: %d. Resultant: %f\n", elapsed, search_depth, resultant);
+  std::cout << "CPU CC finished in " << elapsed << " msec.";
+}
 
-  return search_depth;
+int SimpleVerifyCc(Index                   nrows,
+                   const Index*            h_csrRowPtr,
+                   const Index*            h_csrColInd,
+                   const std::vector<int>& h_cc_cpu,
+                   bool                    suppress_zero) {
+  int num_error = 0;
+  int max_label = 0;
+
+  for (Index row = 0; row < nrows; ++row) {
+    int row_label = h_cc_cpu[row];
+    if (row_label > max_label)
+      max_label = row_label;
+
+    if (row_label == 0 && num_error == 0 && !suppress_zero)
+      std::cout << "\nINCORRECT: [" << row << "]: has no component.\n";
+
+    Index row_start = h_csrRowPtr[row];
+    Index row_end   = h_csrRowPtr[row+1];
+    for (; row_start < row_end; ++row_start) {
+      Index col = h_csrColInd[row_start];
+      int col_label = h_cc_cpu[col];
+      if (col_label != row_label) {
+        if (num_error == 0) {
+          std::cout << "\nINCORRECT: [" << row << "]: ";
+          std::cout << row_label << " != " << col_label << " [" << col <<
+            "]\n";
+        }
+        num_error++;
+      }
+    }
+  }
+  if (num_error == 0)
+    std::cout << "\nCORRECT\n";
+  else
+    std::cout << num_error << " errors occurred.\n";
+  std::cout << "Connected component complete with " << max_label;
+  std::cout << " components.\n";
 }
 }  // namespace algorithm
 }  // namespace graphblas

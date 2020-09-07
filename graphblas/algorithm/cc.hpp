@@ -11,107 +11,126 @@
 namespace graphblas {
 namespace algorithm {
 
-// Use float for now for both v and A
-float cc(Vector<float>*       p,
-         const Matrix<float>* A,     // column stochastic matrix
-         float                alpha, // teleportation constant
-         float                eps,   // threshold
+float cc(Vector<int>*         v,
+         const Matrix<float>* A,
+         int                  seed,
          Descriptor*          desc) {
-  // Get number of vertices
   Index A_nrows;
   CHECK(A->nrows(&A_nrows));
 
-  // Pagerank vector (p)
-  CHECK(p->clear());
-  CHECK(p->fill(1.f/A_nrows));
+  // Colors vector (v)
+  // 0: no color, 1 ... n: color
+  CHECK(v->fill(0));
 
-  // Previous pagerank vector (p_prev)
-  Vector<float> p_prev(A_nrows);
+  // Frontier vector (f)
+  Vector<int> f(A_nrows);
 
-  // Temporary pagerank (p_temp)
-  Vector<float> p_swap(A_nrows);
+  // Weight vectors (w)
+  Vector<int> w(A_nrows);
+  CHECK(w.fill(0));
 
-  // Residual vector (r)
-  Vector<float> r(A_nrows);
-  r.fill(1.f);
+  // Neighbor max (m)
+  Vector<int> m(A_nrows);
 
-  // Temporary residual (r_temp)
-  Vector<float> r_temp(A_nrows);
+  // Set seed
+  setEnv("GRB_SEED", seed);
 
-  int iter;
-  float error_last = 0.f;
-  float error = 1.f;
+  CHECK(desc->set(GrB_BACKEND, GrB_SEQUENTIAL));
+  apply<int, int, int>(&w, GrB_NULL, GrB_NULL, set_random<int>(), &w, desc);
+  CHECK(desc->set(GrB_BACKEND, GrB_CUDA));
+
+  int iter = 1;
+  int succ = 0;
+  int min_color = 0;
   Index unvisited = A_nrows;
-
   backend::GpuTimer gpu_tight;
   float gpu_tight_time = 0.f;
-  gpu_tight.Start();
 
-  for (iter = 1; error > eps && iter <= desc->descriptor_.max_niter_; ++iter) {
-    if (desc->descriptor_.debug())
-      std::cout << "=====CC Iteration " << iter - 1 << "=====\n";
-    gpu_tight.Stop();
-    if (iter > 1) {
-      std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
-          "push" : "pull";
-      if (desc->descriptor_.timing_ == 1)
-        std::cout << iter - 1 << ", " << error << "/" << A_nrows << ", "
+  if (desc->descriptor_.timing_ > 0)
+    gpu_tight.Start();
+  do {
+    if (desc->descriptor_.debug()) {
+      std::cout << "=====GC Iteration " << iter - 1 << "=====\n";
+      CHECK(v->print());
+      CHECK(w.print());
+      CHECK(f.print());
+      CHECK(m.print());
+    }
+    if (desc->descriptor_.timing_ == 2) {
+      gpu_tight.Stop();
+      if (iter > 1) {
+        std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+            "push" : "pull";
+        std::cout << iter - 1 << ", " << succ << "/" << A_nrows << ", "
             << unvisited << ", " << vxm_mode << ", "
             << gpu_tight.ElapsedMillis() << "\n";
-      gpu_tight_time += gpu_tight.ElapsedMillis();
+        gpu_tight_time += gpu_tight.ElapsedMillis();
+      }
+      unvisited -= succ;
+      gpu_tight.Start();
     }
-    unvisited -= static_cast<int>(error);
-    gpu_tight.Start();
-    error_last = error;
-    p_prev = *p;
 
-    // p = A*p + (1-alpha)*1
-    vxm<float, float, float, float>(&p_swap, GrB_NULL, GrB_NULL,
-        PlusMultipliesSemiring<float>(), &p_prev, A, desc);
-    eWiseAdd<float, float, float, float>(p, GrB_NULL, GrB_NULL,
-        PlusMultipliesSemiring<float>(), &p_swap, (1.f-alpha)/A_nrows, desc);
+    // find max of neighbors
+    vxm<int, int, int, int>(&m, GrB_NULL, GrB_NULL,
+        MaximumMultipliesSemiring<int>(), &w, A, desc);
+    //vxm<int, int, int, int>(&m, &w, GrB_NULL,
+    //    MaximumMultipliesSemiring<int>(), &w, A, desc);
 
-    // error = l2loss(p, p_prev)
-    eWiseMult<float, float, float, float>(&r, GrB_NULL, GrB_NULL,
-        PlusMinusSemiring<float>(), p, &p_prev, desc);
-    eWiseAdd<float, float, float, float>(&r_temp, GrB_NULL, GrB_NULL,
-        MultipliesMultipliesSemiring<float>(), &r, &r, desc);
-    reduce<float, float>(&error, GrB_NULL, PlusMonoid<float>(), &r_temp, desc);
-    error = sqrt(error);
+    // find all largest nodes that are uncolored
+    // eWiseMult<float, float, float, float>(&f, GrB_NULL, GrB_NULL,
+    //     PlusGreaterSemiring<float>(), &w, &m, desc);
+    eWiseAdd<int, int, int, int>(&f, GrB_NULL, GrB_NULL,
+        GreaterPlusSemiring<int>(), &w, &m, desc);
 
+    // stop when frontier is empty
+    reduce<int, int>(&succ, GrB_NULL, PlusMonoid<int>(), &f, desc);
+
+    if (succ == 0) {
+      break;
+    }
+
+    // assign new color
+    assign<int, int>(v, &f, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
+
+    // get rid of colored nodes in candidate list
+    assign<int, int>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
+        desc);
+
+    iter++;
     if (desc->descriptor_.debug())
-      std::cout << "error: " << error_last << std::endl;
+      std::cout << "succ: " << succ << " " << static_cast<int>(succ) <<
+          std::endl;
+    if (iter > desc->descriptor_.max_niter_)
+      break;
+  } while (succ > 0);
+  if (desc->descriptor_.timing_ > 0) {
+    gpu_tight.Stop();
+    std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
+        "push" : "pull";
+    if (desc->descriptor_.timing_ == 2)
+      std::cout << iter << ", " << succ << "/" << A_nrows << ", "
+          << unvisited << ", " << vxm_mode << ", "
+          << gpu_tight.ElapsedMillis() << "\n";
+    gpu_tight_time += gpu_tight.ElapsedMillis();
+    return gpu_tight_time;
   }
-  gpu_tight.Stop();
-  std::string vxm_mode = (desc->descriptor_.lastmxv_ == GrB_PUSHONLY) ?
-      "push" : "pull";
-  if (desc->descriptor_.timing_ > 0)
-    std::cout << iter << ", " << error << "/" << A_nrows << ", "
-        << unvisited << ", " << vxm_mode << ", "
-        << gpu_tight.ElapsedMillis() << "\n";
-  gpu_tight_time += gpu_tight.ElapsedMillis();
-  return gpu_tight_time;
+  return 0.f;
 }
 
-template <typename T, typename a>
-int ccCpu(T*         h_pr_cpu,
-          Matrix<a>* A,
-          float      alpha,               // teleportation constant
-          float      eps,                 // threshold
-          int        max_niter,
-          bool       transpose = false) {
-  int max_depth;
+template <typename a>
+int ccCpu(Index             seed,
+          Matrix<a>*        A,
+          std::vector<int>* h_cc_cpu) {
+  SimpleReferenceCc(A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+      A->matrix_.sparse_.h_csrColInd_, h_cc_cpu, seed);
+}
 
-  if (transpose)
-    max_depth = SimpleReferenceCc<T>(A->matrix_.nrows_,
-        A->matrix_.sparse_.h_cscColPtr_, A->matrix_.sparse_.h_cscRowInd_,
-        A->matrix_.sparse_.h_cscVal_, h_pr_cpu, alpha, eps, max_niter);
-  else
-    max_depth = SimpleReferenceCc<T>(A->matrix_.nrows_,
-        A->matrix_.sparse_.h_csrRowPtr_, A->matrix_.sparse_.h_csrColInd_,
-        A->matrix_.sparse_.h_csrVal_, h_pr_cpu, alpha, eps, max_niter);
-
-  return max_depth;
+template <typename a>
+int verifyCc(const Matrix<a>*        A,
+             const std::vector<int>& h_cc_cpu,
+             bool                    suppress_zero = false) {
+  SimpleVerifyCc(A->matrix_.nrows_, A->matrix_.sparse_.h_csrRowPtr_,
+      A->matrix_.sparse_.h_csrColInd_, h_cc_cpu, suppress_zero);
 }
 }  // namespace algorithm
 }  // namespace graphblas
