@@ -11,10 +11,10 @@
 namespace graphblas {
 namespace algorithm {
 
-float cc(Vector<int>*         v,
-         const Matrix<float>* A,
-         int                  seed,
-         Descriptor*          desc) {
+float cc(Vector<int>*       v,
+         const Matrix<int>* A,
+         int                seed,
+         Descriptor*        desc) {
   Index A_nrows;
   CHECK(A->nrows(&A_nrows));
 
@@ -34,10 +34,6 @@ float cc(Vector<int>*         v,
 
   // Set seed
   setEnv("GRB_SEED", seed);
-
-  CHECK(desc->set(GrB_BACKEND, GrB_SEQUENTIAL));
-  apply<int, int, int>(&w, GrB_NULL, GrB_NULL, set_random<int>(), &w, desc);
-  CHECK(desc->set(GrB_BACKEND, GrB_CUDA));
 
   int iter = 1;
   int succ = 0;

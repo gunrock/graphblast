@@ -2,7 +2,7 @@
 #define GRAPHBLAS_ALGORITHM_TEST_CC_HPP_
 
 #include <vector>
-#include <random>
+#include <stack>
 
 namespace graphblas {
 namespace algorithm {
@@ -22,17 +22,19 @@ int SimpleReferenceCc(Index             nrows,
   CpuTimer cpu_timer;
   cpu_timer.Start();
 
-  int current_label = 1;
+  int current_label = 0;
+  std::stack<Index> work_stack;
   for (Index i = 0; i < nrows; ++i) {
-    int current_node_color = (*h_cc_cpu)[i];
-    if (current_node_color == 0) {
-      std::stack<Index> work_stack;
-      work_stack.push(i);
-      while (!work_stack.empty()) {
-        Index current = work_stack.top();
-        work_stack.pop();
-        (*h_cc_cpu)[i] = current_label;
+    if ((*h_cc_cpu)[i] == 0) {
+      current_label++;
+    }
+    work_stack.push(i);
+    while (!work_stack.empty()) {
+      Index current = work_stack.top();
+      work_stack.pop();
 
+      if ((*h_cc_cpu)[current] == 0) {
+        (*h_cc_cpu)[current] = current_label;
         Index row_start = h_csrRowPtr[current];
         Index row_end   = h_csrRowPtr[current+1];
         for (; row_start < row_end; ++row_start) {
@@ -43,7 +45,6 @@ int SimpleReferenceCc(Index             nrows,
           }
         }
       }
-      current_label++;
     }
   }
 
@@ -75,11 +76,11 @@ int SimpleVerifyCc(Index                   nrows,
       Index col = h_csrColInd[row_start];
       int col_label = h_cc_cpu[col];
       if (col_label != row_label) {
-        if (num_error == 0) {
+        //if (num_error == 0) {
           std::cout << "\nINCORRECT: [" << row << "]: ";
           std::cout << row_label << " != " << col_label << " [" << col <<
             "]\n";
-        }
+        //}
         num_error++;
       }
     }
@@ -88,7 +89,7 @@ int SimpleVerifyCc(Index                   nrows,
     std::cout << "\nCORRECT\n";
   else
     std::cout << num_error << " errors occurred.\n";
-  std::cout << "Connected component complete with " << max_label;
+  std::cout << "Connected components found with " << max_label;
   std::cout << " components.\n";
 }
 }  // namespace algorithm
