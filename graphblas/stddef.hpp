@@ -129,9 +129,16 @@ struct divides {
     return lhs / rhs;
   }
 };
+
+template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>
+struct select_second {
+  inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) {
+    return rhs;
+  }
+};
 }  // namespace graphblas
 
-// Monoid generator macro provided by Scott McMillan
+// Monoid generator macro provided by Scott McMillan.
 #define REGISTER_MONOID(M_NAME, BINARYOP, IDENTITY)                          \
 template <typename T_out>                                                    \
 struct M_NAME                                                                \
@@ -200,8 +207,11 @@ REGISTER_SEMIRING(CustomLessPlusSemiring, CustomLessMonoid, plus)
 REGISTER_SEMIRING(MinimumMultipliesSemiring, MinimumMonoid, multiplies)
 REGISTER_SEMIRING(MultipliesMultipliesSemiring, MultipliesMonoid, multiplies)
 REGISTER_SEMIRING(NotEqualToPlusSemiring, NotEqualToMonoid, plus)
+REGISTER_SEMIRING(MinimumSelectSecondSemiring, MinimumMonoid, select_second)
+REGISTER_SEMIRING(PlusNotEqualToSemiring, PlusMonoid, not_equal_to)
 
-// AddOp and MulOp extraction provided by Peter Zhang
+// AddOp and MulOp extraction provided by Peter Zhang:
+//   www.github.com/cmu-sei/gbtl/
 template <typename SemiringT>
 struct AdditiveMonoidFromSemiring {
  public:

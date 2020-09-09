@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     mtxinfo    = vm["mtxinfo"  ].as<bool>();
     directed   = vm["directed" ].as<int>();
     niter      = vm["niter"    ].as<int>();
-    seed       = vm["seed"   ].as<int>();
+    seed       = vm["seed"     ].as<int>();
     cc_algo    = vm["ccalgo"   ].as<int>();
 
     // This is an imperfect solution, because this should happen in
@@ -64,15 +64,15 @@ int main(int argc, char** argv) {
     CHECK(desc.toggle(graphblas::GrB_INP1));
 
   // Matrix A
-  graphblas::Matrix<int> a(nrows, ncols);
+  graphblas::Matrix<int> A(nrows, ncols);
   values.clear();
   values.resize(nvals, 1.f);
-  CHECK(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
+  CHECK(A.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
       dat_name));
-  CHECK(a.nrows(&nrows));
-  CHECK(a.ncols(&ncols));
-  CHECK(a.nvals(&nvals));
-  if (debug) CHECK(a.print());
+  CHECK(A.nrows(&nrows));
+  CHECK(A.ncols(&ncols));
+  CHECK(A.nvals(&nvals));
+  if (debug) CHECK(A.print());
 
   // Vector v
   graphblas::Vector<int> v(nrows);
@@ -82,21 +82,21 @@ int main(int argc, char** argv) {
   std::vector<int> h_cc_cpu(nrows, 0);
   int depth = 10000;
   cc_cpu.Start();
-  int d = graphblas::algorithm::ccCpu(seed, &a, &h_cc_cpu);
+  int d = graphblas::algorithm::ccCpu(seed, &A, &h_cc_cpu);
   cc_cpu.Stop();
-  graphblas::algorithm::verifyCc(&a, h_cc_cpu);
+  graphblas::algorithm::verifyCc(&A, h_cc_cpu);
 
   // Warmup
   CpuTimer warmup;
   warmup.Start();
   if (cc_algo == 0) {
-    graphblas::algorithm::cc(&v, &a, seed, &desc);
+    graphblas::algorithm::cc(&v, &A, seed, &desc);
   } else if (cc_algo == 1) {
     std::cout << "Error: CC algorithm 1 not implemented!\n";
-    //graphblas::algorithm::ccMIS(&v, &a, seed, &desc);
+    //graphblas::algorithm::ccMIS(&v, &A, seed, &desc);
   } else if (cc_algo == 2) {
     std::cout << "Error: CC algorithm 2 not implemented!\n";
-    //graphblas::algorithm::ccIS(&v, &a, seed, &desc);
+    //graphblas::algorithm::ccIS(&v, &A, seed, &desc);
   } else {
     std::cout << "Error: Invalid connected components algorithm selected!\n";
   }
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
 
   std::vector<int> h_cc_gpu;
   CHECK(v.extractTuples(&h_cc_gpu, &nrows));
-  graphblas::algorithm::verifyCc(&a, h_cc_gpu);
+  graphblas::algorithm::verifyCc(&A, h_cc_gpu);
 
   // Benchmark
   graphblas::Vector<int> y(nrows);
@@ -115,13 +115,13 @@ int main(int argc, char** argv) {
   float val;
   for (int i = 0; i < niter; i++) {
     if (cc_algo == 0) {
-      val = graphblas::algorithm::cc(&v, &a, seed, &desc);
+      val = graphblas::algorithm::cc(&v, &A, seed, &desc);
     } else if (cc_algo == 1) {
       std::cout << "Error: CC algorithm 1 not implemented!\n";
-      //val = graphblas::algorithm::ccMIS(&v, &a, seed, &desc);
+      //val = graphblas::algorithm::ccMIS(&v, &A, seed, &desc);
     } else if (cc_algo == 2) {
       std::cout << "Error: CC algorithm 2 not implemented!\n";
-      //val = graphblas::algorithm::ccIS(&v, &a, seed, &desc);
+      //val = graphblas::algorithm::ccIS(&v, &A, seed, &desc);
     } else {
       std::cout << "Error: Invalid connected components algorithm selected!\n";
       break;
@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
 
   if (niter) {
     std::vector<int> h_cc_gpu2;
-    graphblas::algorithm::verifyCc(&a, h_cc_gpu);
+    graphblas::algorithm::verifyCc(&A, h_cc_gpu);
   }
 
   return 0;

@@ -76,11 +76,11 @@ int SimpleVerifyCc(Index                   nrows,
       Index col = h_csrColInd[row_start];
       int col_label = h_cc_cpu[col];
       if (col_label != row_label) {
-        //if (num_error == 0) {
+        if (num_error == 0) {
           std::cout << "\nINCORRECT: [" << row << "]: ";
           std::cout << row_label << " != " << col_label << " [" << col <<
             "]\n";
-        //}
+        }
         num_error++;
       }
     }
