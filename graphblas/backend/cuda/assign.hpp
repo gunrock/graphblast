@@ -11,13 +11,13 @@ namespace backend {
 
 template <typename W, typename T, typename M,
           typename BinaryOpT>
-Info assignDense(DenseVector<W>*           w,
-                 Vector<M>*                mask,
-                 BinaryOpT                 accum,
-                 T                         val,
-                 const std::vector<Index>* indices,
-                 Index                     nindices,
-                 Descriptor*               desc) {
+Info assignDense(DenseVector<W>*      w,
+                 Vector<M>*           mask,
+                 BinaryOpT            accum,
+                 T                    val,
+                 const Vector<Index>* indices,
+                 Index                nindices,
+                 Descriptor*          desc) {
   // Get descriptor parameters for SCMP, REPL, TRAN
   Desc_value scmp_mode, repl_mode;
   CHECK(desc->get(GrB_MASK, &scmp_mode));
@@ -106,13 +106,13 @@ Info assignDense(DenseVector<W>*           w,
 
 template <typename W, typename T, typename M,
           typename BinaryOpT>
-Info assignSparse(SparseVector<W>*          w,
-                  Vector<M>*                mask,
-                  BinaryOpT                 accum,
-                  T                         val,
-                  const std::vector<Index>* indices,
-                  Index                     nindices,
-                  Descriptor*               desc) {
+Info assignSparse(SparseVector<W>*     w,
+                  Vector<M>*           mask,
+                  BinaryOpT            accum,
+                  T                    val,
+                  const Vector<Index>* indices,
+                  Index                nindices,
+                  Descriptor*          desc) {
   // Get descriptor parameters for SCMP, REPL
   Desc_value scmp_mode, repl_mode;
   CHECK(desc->get(GrB_MASK, &scmp_mode));

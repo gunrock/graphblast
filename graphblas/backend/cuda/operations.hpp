@@ -735,15 +735,35 @@ Info extract(Vector<W>*                w,
 
 template <typename W, typename U, typename M,
           typename BinaryOpT>
-Info assign(Vector<W>*                w,
-            const Vector<M>*          mask,
-            BinaryOpT                 accum,
-            const Vector<U>*          u,
-            const std::vector<Index>* indices,
-            Index                     nindices,
-            Descriptor*               desc) {
-  std::cout << "Error: assign vector variant not implemented yet!\n";
-  return GrB_NOT_IMPLEMENTED;
+Info assignIndexed(Vector<W>*           w,
+                   const Vector<M>*     mask,
+                   BinaryOpT            accum,
+                   const Vector<U>*     u,
+                   const Vector<Index>* indices,
+                   Index                nindices,
+                   Descriptor*          desc) {
+  Vector<U>* u_t = const_cast<Vector<U>*>(u);
+
+  if (desc->debug()) {
+    std::cout << "===Begin assign===\n";
+    CHECK(u_t->print());
+  }
+
+  Storage u_vec_type;
+  Storage indices_vec_type;
+  CHECK(u_t->getStorage(&u_vec_type));
+  if (u_vec_type != GrB_DENSE && u_vec_type != GrB_SPARSE) {
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+  CHECK(u_t->setStorage(GrB_DENSE));
+  CHECK(w->setStorage(GrB_DENSE));
+  scatterIndexed(&w->dense_, mask, accum, &u->dense_, indices, nindices, desc);
+
+  if (desc->debug()) {
+    std::cout << "===End assign===\n";
+    CHECK(w->print());
+  }
+  return GrB_SUCCESS;
 }
 
 template <typename c, typename a, typename m,
@@ -791,13 +811,13 @@ Info assign(Matrix<c>*                C,
 
 template <typename W, typename T, typename M,
           typename BinaryOpT>
-Info assign(Vector<W>*                w,
-            Vector<M>*                mask,
-            BinaryOpT                 accum,
-            T                         val,
-            const std::vector<Index>* indices,
-            Index                     nindices,
-            Descriptor*               desc) {
+Info assign(Vector<W>*           w,
+            Vector<M>*           mask,
+            BinaryOpT            accum,
+            T                    val,
+            const Vector<Index>* indices,
+            Index                nindices,
+            Descriptor*          desc) {
   if (desc->debug()) {
     std::cout << "===Begin assign===\n";
     std::cout << "Input: " << val << std::endl;

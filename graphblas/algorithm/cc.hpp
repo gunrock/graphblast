@@ -13,7 +13,7 @@ namespace algorithm {
 
 // mask = NULL, accumulator = GrB_MIN_UINT64, descriptor = NULL
 Info reduce_assign(Vector<int>*              w,
-                   const Vector<int>*        src,
+                   Vector<int>*              src,
                    const std::vector<Index>* index,
                    Index                     num_elements) {
   Index nw = 0;
@@ -26,7 +26,7 @@ Info reduce_assign(Vector<int>*              w,
   CHECK(w->extractTuples(&ind, &w_val, &nw));
   CHECK(src->extractTuples(&ind, &src_val, &ns));
   for (Index i = 0; i < num_elements; ++i) {
-    if (src_val[i] < w_val[index[i]]) {
+    if (src_val[i] < w_val[(*index)[i]]) {
       w_val[(*index)[i]] = src_val[i];
     }
   }
@@ -86,7 +86,11 @@ float cc(Vector<int>*       v,
 
   // Output vectors I and V in LAGraph respectively.
   std::vector<Index> index(A_nrows, 0);
-  std::vector<int> value(A_nrows, 0);
+  std::vector<Index> value(A_nrows, 0);
+  Vector<Index> index_vec(A_nrows);
+  Vector<Index> value_vec(A_nrows);
+  CHECK(index_vec.fill(0));
+  CHECK(value_vec.fill(0));
 
   // semiring & monoid
   /*GrB_Monoid Min, Add;
@@ -137,9 +141,9 @@ float cc(Vector<int>*       v,
     mxv<int, int, int, int>(&min_neighbor_parent, GrB_NULL, GrB_NULL,
         MinimumSelectSecondSemiring<int>(), A, &parent, desc);
     CHECK(mask.clear());
-    eWiseMult<int, int, int, int>(&mask, &star, GrB_NULL,
+    eWiseMult<bool, bool, int, int>(&mask, &star, GrB_NULL,
         PlusLessSemiring<int>(), &min_neighbor_parent, &parent, desc);
-    assign<int, int>(&hook_min_neighbor_parent, &mask, GrB_NULL,
+    assign<int, bool>(&hook_min_neighbor_parent, &mask, GrB_NULL,
         static_cast<int>(0), GrB_ALL, A_nrows, desc);
     CHECK(min_neighbor_parent.clear());
     CHECK(hook_parent.nvals(&num_hooks));
@@ -152,24 +156,27 @@ float cc(Vector<int>*       v,
     CHECK(temp.clear());
 
     // Modify the star vector.
-    // TODO(ctcyang): Need to implement assign variant.
-    assign<int, int>(&star, GrB_NULL, GrB_NULL, false, &num_hooks, &value,
-        desc);
+    // TODO(ctcyang): Need to implement constant assign variant.
+    CHECK(value_vec.build(&value, num_hooks));
+    assign<bool, bool, bool>(&star, GrB_NULL, GrB_NULL, false, &value_vec,
+        num_hooks, desc);
     // Extract modified parent.
     // TODO(ctcyang): Need to implement extract variant.
     extract<int, int, int>(&temp, GrB_NULL, GrB_NULL, &parent, &value,
         num_hooks, desc);
     CHECK(temp.extractTuples(&index, &value, &num_hooks));
-    // TODO(ctcyang): Need to implement assign variant.
-    assign<int, int>(&star, GrB_NULL, GrB_NULL, false, &num_hooks, &value,
-        desc);
+    // TODO(ctcyang): Need to implement constant assign variant.
+    CHECK(value_vec.build(&value, num_hooks));
+    assign<bool, bool, bool>(&star, GrB_NULL, GrB_NULL, false, &value_vec,
+        num_hooks, desc);
     CHECK(parent.extractTuples(&index, &value, &A_nrows));
     // TODO(ctcyang): Need to implement extract variant.
-    extract<int, int, int>(&mask, GrB_NULL, GrB_NULL, &star, &value, A_nrows,
+    extract<bool, bool>(&mask, GrB_NULL, GrB_NULL, &star, &value, A_nrows,
         desc);
     // TODO(ctcyang): Need to check assign variant with logical_and as the
     // accumulate function exists.
-    assign<int, int>(&star, GrB_NULL, GrB_LAND, &mask, GrB_ALL, A_nrows, desc);
+    assignIndexed<bool, bool>(&star, GrB_NULL, logical_and<bool>(), &mask,
+        GrB_ALL, A_nrows, desc);
     // Clean up.
     CHECK(hook_min_neighbor_parent.clear());
     CHECK(hook_parent.clear());
@@ -177,20 +184,21 @@ float cc(Vector<int>*       v,
     // ---------------------------------------------------------
     // UnCondHook(A, parent, star);
     // ---------------------------------------------------------
-    assign<int, int>(&nonstar_parent, GrB_NULL, GrB_NULL, &parent, GrB_ALL,
-        A_nrows, desc);
-    assign<int, int>(&nonstar_parent, &star, GrB_NULL,
+    // TODO(ctcyang): Add vector assign indices variant
+    assignIndexed<int, int>(&nonstar_parent, GrB_NULL, GrB_NULL, &parent,
+        GrB_ALL, A_nrows, desc);
+    assign<int, bool, int>(&nonstar_parent, &star, GrB_NULL,
         static_cast<int>(A_nrows), GrB_ALL, A_nrows, desc);
-    mxv<int, int, int, int>(&hook_min_neighbor_parent, &star, GrB_NULL,
+    mxv<int, bool, int, int>(&hook_min_neighbor_parent, &star, GrB_NULL,
         MinimumSelectSecondSemiring<int>(), A, &nonstar_parent, desc);
     // Select the valid elements (i.e. less than A_nrows) of
     // hook_min_neighbor_parent.
-    assign<int ,int>(&nonstar_parent, GrB_NULL, GrB_NULL, A_nrows, GrB_ALL,
+    assign<int, int>(&nonstar_parent, GrB_NULL, GrB_NULL, A_nrows, GrB_ALL,
         A_nrows, desc);
-    eWiseMult<int, int, int, int>(&mask, GrB_NULL, GrB_NULL,
-        PlusLessSemiring<int>(), &hook_min_neighbor_parent, &nonstar_parent,
-        desc);
-    eWiseMult<int, int, int, int>(&hook_parent, &mask, GrB_NULL,
+    eWiseMult<bool, int, int, int>(&mask, GrB_NULL, GrB_NULL,
+        PlusLessSemiring<int, int, bool>(), &hook_min_neighbor_parent,
+        &nonstar_parent, desc);
+    eWiseMult<int, bool, int, int>(&hook_parent, &mask, GrB_NULL,
         MinimumSelectSecondSemiring<int>(), &hook_min_neighbor_parent, &parent,
         desc);
     CHECK(hook_parent.nvals(&num_hooks));
@@ -199,22 +207,27 @@ float cc(Vector<int>*       v,
     extract<int, int, int>(&temp, GrB_NULL, GrB_NULL, &hook_min_neighbor_parent,
         &index, num_hooks, desc);
     // !!
-    assign<int, int>(&parent, GrB_NULL, GrB_NULL, static_cast<int>(A_nrows),
-        &value, num_hooks, desc);
+    CHECK(value_vec.build(&value, num_hooks));
+    assign<int, int, int>(&parent, GrB_NULL, GrB_NULL,
+        static_cast<int>(A_nrows), &value_vec, num_hooks, desc);
     reduce_assign(&parent, &temp, &value, num_hooks);
 
     // Modify the star vector.
-    assign<int, int>(&star, GrB_NULL, GrB_NULL, false, &value, num_hooks, desc);
+    // TODO(ctcyang): Add vector assign constant variant without GrB_ALL.
+    CHECK(value_vec.build(&value, num_hooks));
+    assign<bool, bool>(&star, GrB_NULL, GrB_NULL, false, &value_vec, num_hooks,
+        desc);
     CHECK(parent.extractTuples(&index, &value, &A_nrows));
-    extract<int, int, int>(&mask, GrB_NULL, GrB_NULL, &star, &values, A_nrows,
+    extract<bool, bool>(&mask, GrB_NULL, GrB_NULL, &star, &value, A_nrows,
         desc);
     // TODO(ctcyang): Need to check assign variant with logical_and as the
     // accumulate function exists.
-    assign<int, int>(&star, GrB_NULL, GrB_LAND, &mask, GrB_ALL, A_nrows, desc);
+    assignIndexed<bool, bool>(&star, GrB_NULL, logical_and<int>(), &mask,
+        GrB_ALL, A_nrows, desc);
 
     // Check termination.
-    reduce<int, int>(&num_stars, GrB_NULL, PlusMonoid<int>(), &star, desc);
-    if (num_stars == n) {
+    reduce<int, bool>(&num_stars, GrB_NULL, PlusMonoid<int>(), &star, desc);
+    if (num_stars == A_nrows) {
       break;
     }
 
@@ -226,58 +239,43 @@ float cc(Vector<int>*       v,
     // ---------------------------------------------------------
     // Shortcut(parent);
     // ---------------------------------------------------------
-    CHECK(parent.extractTuples(&index, &value, &n));
+    CHECK(parent.extractTuples(&index, &value, &A_nrows));
     extract<int, int, int>(&grandparent, GrB_NULL, GrB_NULL, &parent, &value,
         A_nrows, desc);
-    assign<int, int>(&parent, GrB_NULL, GrB_NULL, &grandparent, GrB_ALL,
+    assignIndexed<int, int>(&parent, GrB_NULL, GrB_NULL, &grandparent, GrB_ALL,
         A_nrows, desc);
     // ---------------------------------------------------------
     // StarCheck(parent, star);
     // ---------------------------------------------------------
     // Calculate grandparent.
-    CHECK(parent.extractTuples(&index, &value, &n));
+    CHECK(parent.extractTuples(&index, &value, &A_nrows));
     extract<int, int, int>(&grandparent, GrB_NULL, GrB_NULL, &parent, &value,
         A_nrows, desc);
     
     // Identify vertices whose parent and grandparent are different.
-    eWiseMult<int, int, int, int>(&mask, GrB_NULL, GrB_NULL,
-        PlusNotEqualToSemiring<int>(), &grandparent, &parent, desc);
+    eWiseMult<bool, int, int, int>(&mask, GrB_NULL, GrB_NULL,
+        PlusNotEqualToSemiring<int, int, bool>(), &grandparent, &parent, desc);
     CHECK(nonstar_grandparent.nnew(A_nrows));
-    assign<int, int>(&nonstar_grandparent, &mask, GrB_NULL, &grandparent,
-        GrB_ALL, A_nrows, desc);
+    assignIndexed<int, bool, int>(&nonstar_grandparent, &mask, GrB_NULL,
+        &grandparent, GrB_ALL, A_nrows, desc);
     
     // Extract indices and values for assign.
     CHECK(nonstar_grandparent.nvals(&num_nonstars));
     CHECK(nonstar_grandparent.extractTuples(&index, &value, &num_nonstars));
     CHECK(star.fill(true));
+    CHECK(value_vec.build(&value, num_nonstars));
+    CHECK(index_vec.build(&index, num_nonstars));
     assign<bool, int>(&star, GrB_NULL, GrB_NULL, static_cast<bool>(false),
-        &index, num_nonstars, desc);
+        &index_vec, num_nonstars, desc);
     assign<bool, int>(&star, GrB_NULL, GrB_NULL, static_cast<bool>(false),
-        &value, num_nonstars, desc);
+        &value_vec, num_nonstars, desc);
 
     // Extract indices and values for assign
-    CHECK(parent.extractTuples(&index, &value, &n));
-    extract<int, bool, int>(&mask, GrB_NULL, GrB_NULL, &star, &value, A_nrows,
+    CHECK(parent.extractTuples(&index, &value, &A_nrows));
+    extract<bool, bool>(&mask, GrB_NULL, GrB_NULL, &star, &value, A_nrows,
         desc);
-    assign<bool, int>(&star, GrB_NULL, GrB_LAND, &mask, GrB_ALL, A_nrows, desc);
-
-    // find max of neighbors
-    /*vxm<int, int, int, int>(&m, GrB_NULL, GrB_NULL,
-        MaximumMultipliesSemiring<int>(), &w, A, desc);
-
-    // find all largest nodes that are uncolored
-    eWiseAdd<int, int, int, int>(&f, GrB_NULL, GrB_NULL,
-        GreaterPlusSemiring<int>(), &w, &m, desc);
-
-    // stop when frontier is empty
-    reduce<int, int>(&succ, GrB_NULL, PlusMonoid<int>(), &f, desc);
-
-    // assign new color
-    assign<int, int>(v, &f, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
-
-    // get rid of colored nodes in candidate list
-    assign<int, int>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
-        desc);*/
+    assignIndexed<bool, bool>(&star, GrB_NULL, logical_and<bool>(), &mask,
+        GrB_ALL, A_nrows, desc);
 
     if (succ == 0) {
       break;
