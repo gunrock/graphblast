@@ -357,10 +357,15 @@ Info eWiseMult(Vector<W>*       w,
    * 4) dense  x sparse
    */
   if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE) {
-    CHECK(w->setStorage(GrB_SPARSE));
+    CHECK(u_t->setStorage(GrB_DENSE));
+    
+    // TODO(ctcyang): Add true sparse-sparse eWiseMult.
+    // For now, use dense-sparse.
+    /*CHECK(w->setStorage(GrB_SPARSE));
     CHECK(eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
-        &v->sparse_, desc));
-  } else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE) {
+        &v->sparse_, desc));*/
+  }
+  if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE) {
     // depending on whether sparse mask is present or not
     if (mask != NULL) {
       Storage mask_type;
@@ -735,13 +740,13 @@ Info extract(Vector<W>*                w,
 
 template <typename W, typename U, typename M,
           typename BinaryOpT>
-Info assignIndexed(Vector<W>*           w,
-                   const Vector<M>*     mask,
-                   BinaryOpT            accum,
-                   const Vector<U>*     u,
-                   const Vector<Index>* indices,
-                   Index                nindices,
-                   Descriptor*          desc) {
+Info assignIndexed(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   int*             indices,
+                   Index            nindices,
+                   Descriptor*      desc) {
   Vector<U>* u_t = const_cast<Vector<U>*>(u);
 
   if (desc->debug()) {

@@ -86,7 +86,7 @@ Info scatterIndexed(DenseVector<W>*       w,
                     const Vector<M>*      mask,
                     BinaryOpT             accum,
                     const DenseVector<U>* u,
-                    const Vector<Index>*  indices,
+                    int*                  indices,
                     Index                 nindices,
                     Descriptor*           desc) {
   bool use_mask = (mask != NULL);
@@ -113,8 +113,10 @@ Info scatterIndexed(DenseVector<W>*       w,
     if (indices == NULL) {
       scatterIndexedKernel<<<NB, NT>>>(w->d_val_, w_nvals, u->d_val_);
     } else {
-      scatterIndexedKernel<<<NB, NT>>>(w->d_val_, w_nvals,
-          (indices->dense_).d_val_, nindices, u->d_val_);
+      // TODO(ctcyang): implement non-GrB_ALL variant of this kernel.
+      //scatterIndexedKernel<<<NB, NT>>>(w->d_val_, w_nvals,
+      //    (indices->dense_).d_val_, nindices, u->d_val_);
+      return GrB_NOT_IMPLEMENTED;
     }
   }
   w->need_update_ = true;

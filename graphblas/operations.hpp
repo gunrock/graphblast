@@ -416,13 +416,13 @@ Info extract(Vector<W>*                w,
  */
 template <typename W, typename M, typename U,
           typename BinaryOpT>
-Info assignIndexed(Vector<W>*           w,
-                   const Vector<M>*     mask,
-                   BinaryOpT            accum,
-                   const Vector<U>*     u,
-                   const Vector<Index>* indices,
-                   Index                nindices,
-                   Descriptor*          desc) {
+Info assignIndexed(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   int*             indices,
+                   Index            nindices,
+                   Descriptor*      desc) {
   // Null pointer check
   if (w == NULL || u == NULL || desc == NULL)
     return GrB_UNINITIALIZED_OBJECT;
@@ -433,10 +433,9 @@ Info assignIndexed(Vector<W>*           w,
 
   auto                 mask_t = (mask == NULL) ? NULL : &mask->vector_;
   backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
-  auto              indices_t = (indices == NULL) ? NULL : &indices->vector_;
 
   return backend::assignIndexed(&w->vector_, mask_t, accum, &u->vector_,
-      indices_t, nindices, desc_t);
+      indices, nindices, desc_t);
 }
 
 /*!
@@ -505,15 +504,15 @@ Info assign(Matrix<c>*                C,
  *   w[indices] = w[indices] + val   +: accum
  *                                  .*: Boolean and
  */
-template <typename W, typename M, typename T,
+template <typename W, typename M, typename T, typename I,
           typename BinaryOpT>
-Info assign(Vector<W>*           w,
-            Vector<M>*           mask,
-            BinaryOpT            accum,
-            T                    val,
-            const Vector<Index>* indices,
-            Index                nindices,
-            Descriptor*          desc) {
+Info assign(Vector<W>*       w,
+            Vector<M>*       mask,
+            BinaryOpT        accum,
+            T                val,
+            const Vector<I>* indices,
+            Index            nindices,
+            Descriptor*      desc) {
   // Null pointer check
   if (w == NULL || desc == NULL)
     return GrB_UNINITIALIZED_OBJECT;

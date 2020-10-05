@@ -9,15 +9,15 @@
 namespace graphblas {
 namespace backend {
 
-template <typename W, typename T, typename M,
+template <typename W, typename T, typename M, typename I,
           typename BinaryOpT>
-Info assignDense(DenseVector<W>*      w,
-                 Vector<M>*           mask,
-                 BinaryOpT            accum,
-                 T                    val,
-                 const Vector<Index>* indices,
-                 Index                nindices,
-                 Descriptor*          desc) {
+Info assignDense(DenseVector<W>*  w,
+                 Vector<M>*       mask,
+                 BinaryOpT        accum,
+                 T                val,
+                 const Vector<I>* indices,
+                 Index            nindices,
+                 Descriptor*      desc) {
   // Get descriptor parameters for SCMP, REPL, TRAN
   Desc_value scmp_mode, repl_mode;
   CHECK(desc->get(GrB_MASK, &scmp_mode));

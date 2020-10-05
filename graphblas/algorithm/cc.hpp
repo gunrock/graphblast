@@ -77,10 +77,8 @@ float cc(Vector<int>*       v,
   Vector<int> nonstar_grandparent(A_nrows);
 
   // Initialize parent and min_neighbor_parent to:
-  // [0]:1 [1]:2 [2]:3 [3]:4 [4]:5, etc.
+  // [0]:0 [1]:1 [2]:2 [3]:3 [4]:4, etc.
   CHECK(parent.fillAscending(A_nrows));
-  eWiseAdd<int, int, int, int>(&parent, GrB_NULL, GrB_NULL,
-      PlusMultipliesSemiring<int>(), &parent, 1, desc);
   CHECK(min_neighbor_parent.dup(&parent));
   CHECK(star.fill(true));
 
@@ -143,7 +141,7 @@ float cc(Vector<int>*       v,
     CHECK(mask.clear());
     eWiseMult<bool, bool, int, int>(&mask, &star, GrB_NULL,
         PlusLessSemiring<int>(), &min_neighbor_parent, &parent, desc);
-    assign<int, bool>(&hook_min_neighbor_parent, &mask, GrB_NULL,
+    assign<int, bool, int, Index>(&hook_min_neighbor_parent, &mask, GrB_NULL,
         static_cast<int>(0), GrB_ALL, A_nrows, desc);
     CHECK(min_neighbor_parent.clear());
     CHECK(hook_parent.nvals(&num_hooks));
@@ -187,14 +185,14 @@ float cc(Vector<int>*       v,
     // TODO(ctcyang): Add vector assign indices variant
     assignIndexed<int, int>(&nonstar_parent, GrB_NULL, GrB_NULL, &parent,
         GrB_ALL, A_nrows, desc);
-    assign<int, bool, int>(&nonstar_parent, &star, GrB_NULL,
+    assign<int, bool, int, Index>(&nonstar_parent, &star, GrB_NULL,
         static_cast<int>(A_nrows), GrB_ALL, A_nrows, desc);
     mxv<int, bool, int, int>(&hook_min_neighbor_parent, &star, GrB_NULL,
         MinimumSelectSecondSemiring<int>(), A, &nonstar_parent, desc);
     // Select the valid elements (i.e. less than A_nrows) of
     // hook_min_neighbor_parent.
-    assign<int, int>(&nonstar_parent, GrB_NULL, GrB_NULL, A_nrows, GrB_ALL,
-        A_nrows, desc);
+    assign<int, bool, int, Index>(&nonstar_parent, GrB_NULL, GrB_NULL, A_nrows,
+        GrB_ALL, A_nrows, desc);
     eWiseMult<bool, int, int, int>(&mask, GrB_NULL, GrB_NULL,
         PlusLessSemiring<int, int, bool>(), &hook_min_neighbor_parent,
         &nonstar_parent, desc);
