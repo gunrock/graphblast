@@ -248,8 +248,13 @@ Info eWiseMultInner(SparseVector<W>*       w,
     NB.y = 1;
     NB.z = 1;
 
+    printDevice("u_ind", u->d_ind_, u_nvals);
+    printDevice("u_val", u->d_val_, u_nvals);
+    printDevice("v_val", v->d_val_, u_nvals);
     eWiseMultKernel<<<NB, NT>>>(w_ind, w_val, NULL, op.identity(),
         extractMul(op), u->d_ind_, u->d_val_, u_nvals, v->d_val_, reverse);
+    printDevice("w_ind", w_ind, u_nvals);
+    printDevice("w_val", w_val, u_nvals);
 
     // u size is upper bound on output memory allocation
     w->nvals_ = u_nvals;

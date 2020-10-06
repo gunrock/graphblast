@@ -140,9 +140,12 @@ float cc(Vector<int>*       v,
         MinimumSelectSecondSemiring<int>(), A, &parent, desc);
     CHECK(mask.clear());
     eWiseMult<bool, bool, int, int>(&mask, &star, GrB_NULL,
-        PlusLessSemiring<int>(), &min_neighbor_parent, &parent, desc);
+        CustomLessLessSemiring<int>(), &min_neighbor_parent, &parent, desc);
     assign<int, bool, int, Index>(&hook_min_neighbor_parent, &mask, GrB_NULL,
         static_cast<int>(0), GrB_ALL, A_nrows, desc);
+    eWiseMult<bool,>(&hook_parent, GrB_NULL, GrB_NULL,
+        MinimumSelectSecondSemiring<int>(), &hook_min_neighbor_parent, &parent,
+        desc);
     CHECK(min_neighbor_parent.clear());
     CHECK(hook_parent.nvals(&num_hooks));
     CHECK(hook_parent.extractTuples(&index, &value, &num_hooks));

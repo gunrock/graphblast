@@ -209,6 +209,7 @@ REGISTER_SEMIRING(MultipliesMultipliesSemiring, MultipliesMonoid, multiplies)
 REGISTER_SEMIRING(NotEqualToPlusSemiring, NotEqualToMonoid, plus)
 REGISTER_SEMIRING(MinimumSelectSecondSemiring, MinimumMonoid, select_second)
 REGISTER_SEMIRING(PlusNotEqualToSemiring, PlusMonoid, not_equal_to)
+REGISTER_SEMIRING(CustomLessLessSemiring, CustomLessMonoid, less)
 
 // AddOp and MulOp extraction provided by Peter Zhang:
 //   www.github.com/cmu-sei/gbtl/

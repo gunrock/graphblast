@@ -357,7 +357,7 @@ Info eWiseMult(Vector<W>*       w,
    * 4) dense  x sparse
    */
   if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE) {
-    CHECK(u_t->setStorage(GrB_DENSE));
+    CHECK(v_t->setStorage(GrB_DENSE));
     
     // TODO(ctcyang): Add true sparse-sparse eWiseMult.
     // For now, use dense-sparse.
@@ -365,6 +365,8 @@ Info eWiseMult(Vector<W>*       w,
     CHECK(eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
         &v->sparse_, desc));*/
   }
+  CHECK(u->getStorage(&u_vec_type));
+  CHECK(v->getStorage(&v_vec_type));
   if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE) {
     // depending on whether sparse mask is present or not
     if (mask != NULL) {

@@ -116,7 +116,7 @@ __global__ void eWiseMultKernel(Index*       w_ind,
   }
 }
 
-// sparse-dense dense mask vector variant
+// sparse-dense sparse mask vector variant
 // TODO(@ctcyang): add scmp, accum, repl, mask
 // template <bool UseScmp, bool UseAccum, bool UseRepl,
 template <typename W, typename M, typename T, typename U, typename V,
