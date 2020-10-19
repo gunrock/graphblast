@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
   cc_cpu.Start();
   int d = graphblas::algorithm::ccCpu(seed, &A, &h_cc_cpu);
   cc_cpu.Stop();
-  graphblas::algorithm::verifyCc(&A, h_cc_cpu);
+  graphblas::algorithm::verifyCc(&A, h_cc_cpu, /*suppress_zero=*/true);
 
   // Warmup
   CpuTimer warmup;
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
 
   std::vector<int> h_cc_gpu;
   CHECK(v.extractTuples(&h_cc_gpu, &nrows));
-  graphblas::algorithm::verifyCc(&A, h_cc_gpu);
+  graphblas::algorithm::verifyCc(&A, h_cc_gpu, /*suppress_zero=*/true);
 
   // Benchmark
   graphblas::Vector<int> y(nrows);
@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
 
   if (niter) {
     std::vector<int> h_cc_gpu2;
-    graphblas::algorithm::verifyCc(&A, h_cc_gpu);
+    graphblas::algorithm::verifyCc(&A, h_cc_gpu, /*suppress_zero=*/true);
   }
 
   return 0;

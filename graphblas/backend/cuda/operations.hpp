@@ -774,49 +774,6 @@ Info assignIndexed(Vector<W>*       w,
   return GrB_SUCCESS;
 }
 
-template <typename W, typename U, typename M, typename I,
-          typename BinaryOpT>
-Info assignScatter(Vector<W>*       w,
-                   const Vector<M>* mask,
-                   BinaryOpT        accum,
-                   const Vector<U>* u,
-                   const Vector<I>* indices,
-                   Index            nindices,
-                   Descriptor*      desc) {
-  Vector<U>* u_t = const_cast<Vector<U>*>(u);
-  Vector<I>* indices_t = const_cast<Vector<I>*>(indices);
-
-  if (desc->debug()) {
-    std::cout << "===Begin assign===\n";
-    CHECK(u_t->print());
-    CHECK(indices_t->print());
-  }
-
-  Storage u_vec_type;
-  Storage indices_vec_type;
-  Storage w_vec_type;
-  CHECK(u_t->getStorage(&u_vec_type));
-  CHECK(indices_t->getStorage(&indices_vec_type));
-  CHECK(w->getStorage(&w_vec_type));
-  if (u_vec_type == GrB_DENSE && indices_vec_type != GrB_DENSE &&
-      w_vec_type == GrB_DENSE) {
-    scatterIndexed(&w->dense_, mask, accum, u->dense_.d_val_,
-        indices->dense_.d_val_, nindices, desc);
-  } else if (u_vec_type == GrB_SPARSE && indices_vec_type == GrB_SPARSE &&
-      w_vec_type == GrB_DENSE) {
-    scatterIndexed(&w->dense_, mask, accum, u->sparse_.d_val_,
-        indices->sparse_.d_val_, nindices, desc);
-  } else {
-    std::cout << "Error: assign scatter not implemented for this config!\n";
-  }
-
-  if (desc->debug()) {
-    std::cout << "===End assign===\n";
-    CHECK(w->print());
-  }
-  return GrB_SUCCESS;
-}
-
 template <typename c, typename a, typename m,
           typename BinaryOpT>
 Info assign(Matrix<c>*                C,
@@ -1180,6 +1137,116 @@ Info scatter(Vector<W>*       w,
 
   if (desc->debug()) {
     std::cout << "===End scatter===\n";
+    CHECK(w->print());
+  }
+  return GrB_SUCCESS;
+}
+
+template <typename W, typename U, typename M, typename I,
+          typename BinaryOpT>
+Info assignScatter(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Descriptor*      desc) {
+  Vector<U>* u_t = const_cast<Vector<U>*>(u);
+  Vector<I>* indices_t = const_cast<Vector<I>*>(indices);
+
+  if (desc->debug()) {
+    std::cout << "===Begin assignScatter===\n";
+    CHECK(u_t->print());
+    CHECK(indices_t->print());
+  }
+  Index nindices;
+  CHECK(indices_t->nvals(&nindices));
+
+  Storage u_vec_type;
+  Storage indices_vec_type;
+  Storage w_vec_type;
+  CHECK(u_t->getStorage(&u_vec_type));
+  CHECK(indices_t->getStorage(&indices_vec_type));
+  CHECK(w->getStorage(&w_vec_type));
+
+  if (indices_vec_type != u_vec_type) {
+    CHECK(indices_t->setStorage(u_vec_type));
+    CHECK(indices_t->getStorage(&indices_vec_type));
+  }
+  if (w_vec_type != u_vec_type) {
+    CHECK(w->setStorage(u_vec_type));
+    CHECK(w->getStorage(&w_vec_type));
+  }
+  if (u_vec_type == GrB_DENSE && indices_vec_type == GrB_DENSE &&
+      w_vec_type == GrB_DENSE) {
+    scatterIndexed(&w->dense_, mask, accum, u->dense_.d_val_,
+        indices_t->dense_.d_val_, nindices, desc);
+  } else if (u_vec_type == GrB_SPARSE && indices_vec_type == GrB_SPARSE &&
+      w_vec_type == GrB_DENSE) {
+    scatterIndexed(&w->dense_, mask, accum, u->sparse_.d_val_,
+        indices_t->sparse_.d_val_, nindices, desc);
+  } else {
+    std::cout << "w: " << w_vec_type << " u: " << u_vec_type <<
+        " indices: " << indices_vec_type << std::endl;
+    std::cout << "Error: assign scatter not implemented for this config!\n";
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End assignScatter===\n";
+    CHECK(w->print());
+  }
+  return GrB_SUCCESS;
+}
+
+template <typename W, typename U, typename M, typename I,
+          typename BinaryOpT>
+Info extractGather(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Descriptor*      desc) {
+  Vector<U>* u_t = const_cast<Vector<U>*>(u);
+  Vector<I>* indices_t = const_cast<Vector<I>*>(indices);
+
+  if (desc->debug()) {
+    std::cout << "===Begin extractGather===\n";
+    CHECK(u_t->print());
+    CHECK(indices_t->print());
+  }
+  Index nindices;
+  CHECK(indices_t->nvals(&nindices));
+
+  Storage u_vec_type;
+  Storage indices_vec_type;
+  Storage w_vec_type;
+  CHECK(u_t->getStorage(&u_vec_type));
+  CHECK(indices_t->getStorage(&indices_vec_type));
+  CHECK(w->getStorage(&w_vec_type));
+
+  if (u_vec_type != indices_vec_type) {
+    CHECK(indices_t->setStorage(u_vec_type));
+    CHECK(indices_t->getStorage(&indices_vec_type));
+  }
+  if (w_vec_type != u_vec_type) {
+    CHECK(w->setStorage(u_vec_type));
+    CHECK(w->getStorage(&w_vec_type));
+  }
+  if (u_vec_type == GrB_DENSE && indices_vec_type == GrB_DENSE &&
+      w_vec_type == GrB_DENSE) {
+    gatherIndexed(&w->dense_, mask, accum, u->dense_.d_val_,
+        indices_t->dense_.d_val_, nindices, desc);
+  } else if (u_vec_type == GrB_SPARSE && indices_vec_type == GrB_SPARSE &&
+      w_vec_type == GrB_DENSE) {
+    gatherIndexed(&w->dense_, mask, accum, u->sparse_.d_val_,
+        indices_t->sparse_.d_val_, nindices, desc);
+  } else {
+    std::cout << "w: " << w_vec_type << " u: " << u_vec_type <<
+        " indices: " << indices_vec_type << std::endl;
+    std::cout << "Error: extract gather not implemented for this config!\n";
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End extractGather===\n";
     CHECK(w->print());
   }
   return GrB_SUCCESS;

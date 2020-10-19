@@ -439,36 +439,6 @@ Info assignIndexed(Vector<W>*       w,
 }
 
 /*!
- * Extension method
- * Assign vector to vector subset when indices are already a GraphBLAS vector
- *   w[indices] = w[indices] + mask .* u   +: accum
- *                                        .*: Boolean and
- */
-template <typename W, typename M, typename U, typename I,
-          typename BinaryOpT>
-Info assignScatter(Vector<W>*       w,
-                   const Vector<M>* mask,
-                   BinaryOpT        accum,
-                   const Vector<U>* u,
-                   const Vector<I>* indices,
-                   Index            nindices,
-                   Descriptor*      desc) {
-  // Null pointer check
-  if (w == NULL || u == NULL || indices == NULL || desc == NULL)
-    return GrB_UNINITIALIZED_OBJECT;
-
-  // Dimension check
-  // -only have one case (no transpose option)
-  CHECK(checkDimSizeSize(w, mask, "w.size  != mask.size"));
-
-  auto                 mask_t = (mask == NULL) ? NULL : &mask->vector_;
-  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
-
-  return backend::assignScatter(&w->vector_, mask_t, accum, &u->vector_,
-      &indices->vector_, nindices, desc_t);
-}
-
-/*!
  * Assign matrix to matrix subset
  *   C[row_indices, col_indices] = 
  *       C[row_indices, col_indices] + mask .* A   +: accum
@@ -792,25 +762,56 @@ Info scatter(Vector<W>*       w,
 
 /*!
  * Extension method
+ * Assign vector to vector subset when indices are already a GraphBLAS vector
+ *   w[indices] = w[indices] + mask .* u   +: accum
+ *                                        .*: Boolean and
+ */
+template <typename W, typename M, typename U, typename I,
+          typename BinaryOpT>
+Info assignScatter(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Descriptor*      desc) {
+  // Null pointer check
+  if (w == NULL || u == NULL || indices == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  // -only have one case (no transpose option)
+  CHECK(checkDimSizeSize(w, mask, "w.size  != mask.size"));
+
+  auto                 mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::assignScatter(&w->vector_, mask_t, accum, &u->vector_,
+      &indices->vector_, desc_t);
+}
+
+/*!
+ * Extension method
  * Gather values in vector u from indices (vector index) and store in another
  * vector w.
  *   w[i] = u[index[i]]
  */
-/*template <typename W, typename M, typename U, typename I>
-Info gather(Vector<W>*       w,
-            const Vector<M>* mask,
-            const Vector<U>* u,
-            const Vector<I>* indices,
-            Descriptor*      desc) {
-  if (u == NULL || w == NULL || indices == NULL)
+template <typename W, typename M, typename U, typename I,
+          typename BinaryOpT>
+Info extractGather(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Descriptor*      desc) {
+  if (u == NULL || w == NULL || indices == NULL || desc == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
   const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
   backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
-  return backend::gather(&w->vector_, mask_t, &u->vector_, &indices->vector_,
-      desc_t);
-}*/
+  return backend::extractGather(&w->vector_, mask_t, accum, &u->vector_,
+      &indices->vector_, desc_t);
+}
 
 template <typename W, typename a>
 Info graphColor(Vector<W>*       w,

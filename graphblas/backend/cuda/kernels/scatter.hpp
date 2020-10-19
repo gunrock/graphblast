@@ -36,7 +36,7 @@ __global__ void scatterIndexedKernel(W*       w_val,
   }
 }
 
-// no mask vector indexed variant for both sparse and dense
+// no mask vector not indexed variant for both sparse and dense
 template <typename W, typename U>
 __global__ void scatterIndexedKernel(W*       w_val,
                                      Index    w_nvals,

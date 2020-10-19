@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <stack>
+#include <unordered_set>
 
 namespace graphblas {
 namespace algorithm {
@@ -60,12 +61,12 @@ int SimpleVerifyCc(Index                   nrows,
                    const std::vector<int>& h_cc_cpu,
                    bool                    suppress_zero) {
   int num_error = 0;
-  int max_label = 0;
+  std::unordered_set<int> dict;
 
   for (Index row = 0; row < nrows; ++row) {
     int row_label = h_cc_cpu[row];
-    if (row_label > max_label)
-      max_label = row_label;
+    if (dict.find(row_label) == dict.end())
+      dict.insert(row_label);
 
     if (row_label == 0 && num_error == 0 && !suppress_zero)
       std::cout << "\nINCORRECT: [" << row << "]: has no component.\n";
@@ -89,7 +90,7 @@ int SimpleVerifyCc(Index                   nrows,
     std::cout << "\nCORRECT\n";
   else
     std::cout << num_error << " errors occurred.\n";
-  std::cout << "Connected components found with " << max_label;
+  std::cout << "Connected components found with " << dict.size();
   std::cout << " components.\n";
 }
 }  // namespace algorithm
