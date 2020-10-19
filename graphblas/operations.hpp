@@ -439,6 +439,36 @@ Info assignIndexed(Vector<W>*       w,
 }
 
 /*!
+ * Extension method
+ * Assign vector to vector subset when indices are already a GraphBLAS vector
+ *   w[indices] = w[indices] + mask .* u   +: accum
+ *                                        .*: Boolean and
+ */
+template <typename W, typename M, typename U, typename I,
+          typename BinaryOpT>
+Info assignScatter(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Index            nindices,
+                   Descriptor*      desc) {
+  // Null pointer check
+  if (w == NULL || u == NULL || indices == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  // -only have one case (no transpose option)
+  CHECK(checkDimSizeSize(w, mask, "w.size  != mask.size"));
+
+  auto                 mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::assignScatter(&w->vector_, mask_t, accum, &u->vector_,
+      &indices->vector_, nindices, desc_t);
+}
+
+/*!
  * Assign matrix to matrix subset
  *   C[row_indices, col_indices] = 
  *       C[row_indices, col_indices] + mask .* A   +: accum

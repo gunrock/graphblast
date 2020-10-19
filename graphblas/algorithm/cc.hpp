@@ -141,20 +141,41 @@ float cc(Vector<int>*       v,
     CHECK(mask.clear());
     eWiseMult<bool, bool, int, int>(&mask, &star, GrB_NULL,
         CustomLessLessSemiring<int>(), &min_neighbor_parent, &parent, desc);
+    //assign<int, bool, int, Index>(&hook_min_neighbor_parent, &mask, GrB_NULL,
+    //    static_cast<int>(-1), GrB_ALL, A_nrows, desc);
+    eWiseMult<int, bool, bool, int>(&hook_parent, GrB_NULL, GrB_NULL,
+        PlusMultipliesSemiring<bool, int, int>(), &mask, &parent, desc);
+    CHECK(desc->toggle(GrB_MASK));
+    assign<int, bool, int, Index>(&hook_parent, &mask, GrB_NULL,
+        static_cast<int>(-1), GrB_ALL, A_nrows, desc);
+    CHECK(desc->toggle(GrB_MASK));
+    CHECK(hook_parent.sparse2dense(-1));
+    CHECK(hook_parent.dense2sparse(-1, desc));
+
+    eWiseMult<int, bool, bool, int>(&hook_min_neighbor_parent, GrB_NULL,
+        GrB_NULL, PlusMultipliesSemiring<bool, int, int>(), &mask,
+        &min_neighbor_parent, desc);
+    CHECK(desc->toggle(GrB_MASK));
     assign<int, bool, int, Index>(&hook_min_neighbor_parent, &mask, GrB_NULL,
-        static_cast<int>(0), GrB_ALL, A_nrows, desc);
-    eWiseMult<bool,>(&hook_parent, GrB_NULL, GrB_NULL,
-        MinimumSelectSecondSemiring<int>(), &hook_min_neighbor_parent, &parent,
-        desc);
+        static_cast<int>(-1), GrB_ALL, A_nrows, desc);
+    CHECK(desc->toggle(GrB_MASK));
+    CHECK(hook_min_neighbor_parent.sparse2dense(-1));
+    CHECK(hook_min_neighbor_parent.dense2sparse(-1, desc));
+
     CHECK(min_neighbor_parent.clear());
     CHECK(hook_parent.nvals(&num_hooks));
-    CHECK(hook_parent.extractTuples(&index, &value, &num_hooks));
+    assignScatter<int, bool, int, int>(&parent, GrB_NULL, GrB_NULL,
+        &hook_min_neighbor_parent, &hook_parent, num_hooks, desc);
+    /*CHECK(hook_parent.extractTuples(&index, &value, &num_hooks));
     CHECK(temp.nnew(num_hooks));
     // TODO(ctcyang): Need to implement extract variant.
+    std::cout << "num_hooks: " << num_hooks << std::endl;
+    printArray("index", index, num_hooks);
+    printArray("value", value, num_hooks);
     extract<int, int, int>(&temp, GrB_NULL, GrB_NULL, &hook_min_neighbor_parent,
         &index, num_hooks, desc);
     reduce_assign(&parent, &temp, &value, num_hooks);
-    CHECK(temp.clear());
+    CHECK(temp.clear());*/
 
     // Modify the star vector.
     // TODO(ctcyang): Need to implement constant assign variant.

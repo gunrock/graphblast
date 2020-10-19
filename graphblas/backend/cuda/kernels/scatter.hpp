@@ -20,30 +20,30 @@ __global__ void scatterKernel(W*       w_val,
 }
 
 // no mask vector indexed variant for both sparse and dense
-template <typename W, typename V>
+template <typename W, typename U, typename V>
 __global__ void scatterIndexedKernel(W*       w_val,
                                      Index    w_nvals,
-                                     Index*   u_val,
+                                     U*       u_val,
                                      Index    u_nvals,
                                      V*       v_val) {
   Index row = blockIdx.x * blockDim.x + threadIdx.x;
   for (; row < u_nvals; row += blockDim.x * gridDim.x) {
-    Index ind = u_val[row];
+    Index ind = static_cast<Index>(u_val[row]);
     V val = v_val[row];
-    if (ind > 0 && ind < w_nvals)
+    if (ind >= 0 && ind < w_nvals)
       w_val[ind] = val;
     __syncwarp();
   }
 }
 
 // no mask vector indexed variant for both sparse and dense
-template <typename W, typename V>
+template <typename W, typename U>
 __global__ void scatterIndexedKernel(W*       w_val,
                                      Index    w_nvals,
-                                     V*       v_val) {
+                                     U*       u_val) {
   Index row = blockIdx.x * blockDim.x + threadIdx.x;
   for (; row < w_nvals; row += blockDim.x * gridDim.x) {
-    V val = v_val[row];
+    U val = u_val[row];
     w_val[row] = val;
     __syncwarp();
   }

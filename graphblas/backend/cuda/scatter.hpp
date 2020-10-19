@@ -80,15 +80,15 @@ Info scatterSparse(DenseVector<W>*        w,
 }
 
 // Dense vector indexed variant
-template <typename W, typename M, typename U,
+template <typename W, typename M, typename U, typename I,
           typename BinaryOpT>
-Info scatterIndexed(DenseVector<W>*       w,
-                    const Vector<M>*      mask,
-                    BinaryOpT             accum,
-                    const DenseVector<U>* u,
-                    int*                  indices,
-                    Index                 nindices,
-                    Descriptor*           desc) {
+Info scatterIndexed(DenseVector<W>*  w,
+                    const Vector<M>* mask,
+                    BinaryOpT        accum,
+                    U*               d_u_val,
+                    I*               d_indices,
+                    Index            nindices,
+                    Descriptor*      desc) {
   bool use_mask = (mask != NULL);
 
   // Get descriptor parameters for nthreads
@@ -97,7 +97,7 @@ Info scatterIndexed(DenseVector<W>*       w,
   const int nt = static_cast<int>(nt_mode);
 
   // Get number of elements
-  int w_nvals = 0;
+  Index w_nvals = 0;
   CHECK(w->nvals(&w_nvals));
 
   if (use_mask) {
@@ -110,13 +110,11 @@ Info scatterIndexed(DenseVector<W>*       w,
     NB.x = (nindices + nt - 1)/nt;
     NB.y = 1;
     NB.z = 1;
-    if (indices == NULL) {
-      scatterIndexedKernel<<<NB, NT>>>(w->d_val_, w_nvals, u->d_val_);
+    if (d_indices == NULL) {
+      scatterIndexedKernel<<<NB, NT>>>(w->d_val_, w_nvals, d_u_val);
     } else {
-      // TODO(ctcyang): implement non-GrB_ALL variant of this kernel.
-      //scatterIndexedKernel<<<NB, NT>>>(w->d_val_, w_nvals,
-      //    (indices->dense_).d_val_, nindices, u->d_val_);
-      return GrB_NOT_IMPLEMENTED;
+      scatterIndexedKernel<<<NB, NT>>>(w->d_val_, w_nvals, d_indices, nindices,
+          d_u_val);
     }
   }
   w->need_update_ = true;

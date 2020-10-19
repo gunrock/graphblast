@@ -57,6 +57,8 @@ class Vector {
   Info countUnique(Index* count);
   Info setStorage(Storage vec_type);
   Info getStorage(Storage* vec_type) const;
+  Info sparse2dense(T identity, Descriptor* desc = NULL);
+  Info dense2sparse(T identity, Descriptor* desc);
   Info swap(Vector* rhs);
 
  private:
@@ -200,6 +202,16 @@ template <typename T>
 Info Vector<T>::getStorage(Storage* vec_type) const {
   if (vec_type == NULL) return GrB_NULL_POINTER;
   return vector_.getStorage(vec_type);
+}
+
+template <typename T>
+Info Vector<T>::sparse2dense(T identity, Descriptor* desc) {
+  return vector_.sparse2dense(identity, &desc->descriptor_);
+}
+
+template <typename T>
+Info Vector<T>::dense2sparse(T identity, Descriptor* desc) {
+  return vector_.dense2sparse(identity, &desc->descriptor_);
 }
 
 template <typename T>

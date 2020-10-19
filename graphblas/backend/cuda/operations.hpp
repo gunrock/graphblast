@@ -764,7 +764,51 @@ Info assignIndexed(Vector<W>*       w,
   }
   CHECK(u_t->setStorage(GrB_DENSE));
   CHECK(w->setStorage(GrB_DENSE));
-  scatterIndexed(&w->dense_, mask, accum, &u->dense_, indices, nindices, desc);
+  scatterIndexed(&w->dense_, mask, accum, u->dense_.d_val_, indices, nindices,
+      desc);
+
+  if (desc->debug()) {
+    std::cout << "===End assign===\n";
+    CHECK(w->print());
+  }
+  return GrB_SUCCESS;
+}
+
+template <typename W, typename U, typename M, typename I,
+          typename BinaryOpT>
+Info assignScatter(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Index            nindices,
+                   Descriptor*      desc) {
+  Vector<U>* u_t = const_cast<Vector<U>*>(u);
+  Vector<I>* indices_t = const_cast<Vector<I>*>(indices);
+
+  if (desc->debug()) {
+    std::cout << "===Begin assign===\n";
+    CHECK(u_t->print());
+    CHECK(indices_t->print());
+  }
+
+  Storage u_vec_type;
+  Storage indices_vec_type;
+  Storage w_vec_type;
+  CHECK(u_t->getStorage(&u_vec_type));
+  CHECK(indices_t->getStorage(&indices_vec_type));
+  CHECK(w->getStorage(&w_vec_type));
+  if (u_vec_type == GrB_DENSE && indices_vec_type != GrB_DENSE &&
+      w_vec_type == GrB_DENSE) {
+    scatterIndexed(&w->dense_, mask, accum, u->dense_.d_val_,
+        indices->dense_.d_val_, nindices, desc);
+  } else if (u_vec_type == GrB_SPARSE && indices_vec_type == GrB_SPARSE &&
+      w_vec_type == GrB_DENSE) {
+    scatterIndexed(&w->dense_, mask, accum, u->sparse_.d_val_,
+        indices->sparse_.d_val_, nindices, desc);
+  } else {
+    std::cout << "Error: assign scatter not implemented for this config!\n";
+  }
 
   if (desc->debug()) {
     std::cout << "===End assign===\n";
@@ -834,9 +878,10 @@ Info assign(Vector<W>*           w,
   Storage vec_type;
   CHECK(w->getStorage(&vec_type));
 
-  // 2 cases:
+  // 3 cases:
   // 1) SpVec
   // 2) DeVec
+  // 3) uninitialized vector
   if (vec_type == GrB_SPARSE) {
     CHECK(w->setStorage(GrB_SPARSE));
     CHECK(assignSparse(&w->sparse_, mask, accum, val, indices, nindices,
@@ -845,6 +890,9 @@ Info assign(Vector<W>*           w,
     CHECK(w->setStorage(GrB_DENSE));
     CHECK(assignDense(&w->dense_, mask, accum, val, indices, nindices,
         desc));
+  } else {
+    // TODO(ctcyang): implement more efficient version of unassigned vector by
+    // arbitrarily setting storage to either sparse or dense.
   }
 
   if (desc->debug()) {
