@@ -177,7 +177,7 @@ float cc(Vector<int>*       v,
     reduce_assign(&parent, &temp, &value, num_hooks);
     CHECK(temp.clear());*/
 
-    // Modify the star vector.
+    // StarCheck: Modify the star vector.
     // TODO(ctcyang): Need to implement constant assign variant.
     CHECK(value_vec.build(&value, num_hooks));
     assign<bool, bool, bool>(&star, GrB_NULL, GrB_NULL, false, &value_vec,
