@@ -96,13 +96,9 @@ float cc(Vector<int>*       v,
 
   if (desc->descriptor_.timing_ > 0)
     gpu_tight.Start();
-  do {
+  for (iter = 1; iter <= desc->descriptor_.max_niter_; ++iter) {
     if (desc->descriptor_.debug()) {
       std::cout << "=====CC Iteration " << iter - 1 << "=====\n";
-      /*CHECK(v->print());
-      CHECK(w.print());
-      CHECK(f.print());
-      CHECK(m.print());*/
     }
     if (desc->descriptor_.timing_ == 2) {
       gpu_tight.Stop();
@@ -119,36 +115,6 @@ float cc(Vector<int>*       v,
     }
     // Duplicate parent.
     CHECK(parent_temp.dup(&parent));
-
-    // Hooking and shortcutting.
-    // mngf[u] = A x gf
-    //mxv<int, int, int, int>(&min_neighbor_parent, GrB_NULL, GrB_NULL,
-    //    MinimumSelectSecondSemiring<int>(), A, &grandparent, desc);
-    //CHECK(mask.clear());
-    //eWiseMult<bool, bool, int, int>(&mask, GrB_NULL, GrB_NULL,
-    //    CustomLessLessSemiring<int>(), &min_neighbor_parent, &parent, desc);
-    //assign<int, bool, int, Index>(&hook_min_neighbor_parent, &mask, GrB_NULL,
-    //    static_cast<int>(-1), GrB_ALL, A_nrows, desc);
-    /*eWiseMult<int, bool, bool, int>(&parent_temp, GrB_NULL, GrB_NULL,
-        PlusMultipliesSemiring<bool, int, int>(), &mask, &parent, desc);
-    CHECK(desc->toggle(GrB_MASK));
-    assign<int, bool, int, Index>(&parent_temp, &mask, GrB_NULL,
-        static_cast<int>(-1), GrB_ALL, A_nrows, desc);
-    CHECK(desc->toggle(GrB_MASK));
-    CHECK(parent_temp.sparse2dense(-1));
-    CHECK(parent_temp.dense2sparse(-1, desc));*/
-
-    /*eWiseMult<int, bool, bool, int>(&hook_min_neighbor_parent, GrB_NULL,
-        GrB_NULL, PlusMultipliesSemiring<bool, int, int>(), &mask,
-        &min_neighbor_parent, desc);
-    CHECK(desc->toggle(GrB_MASK));
-    assign<int, bool, int, Index>(&hook_min_neighbor_parent, &mask, GrB_NULL,
-        static_cast<int>(-1), GrB_ALL, A_nrows, desc);
-    CHECK(desc->toggle(GrB_MASK));
-    CHECK(hook_min_neighbor_parent.sparse2dense(-1));
-    CHECK(hook_min_neighbor_parent.dense2sparse(-1, desc));
-    CHECK(min_neighbor_parent.clear());
-    CHECK(parent_temp.nvals(&num_hooks));*/
 
     // 1) Stochastic hooking.
     // mngf[u] = A x gf
@@ -190,16 +156,13 @@ float cc(Vector<int>*       v,
         std::numeric_limits<int>::max(), GrB_ALL, A_nrows, desc);
     CHECK(desc->toggle(GrB_MASK));
 
-    if (succ == 0) {
-      break;
-    }
-    iter++;
     if (desc->descriptor_.debug())
       std::cout << "succ: " << succ << " " << static_cast<int>(succ) <<
           std::endl;
-    if (iter > desc->descriptor_.max_niter_)
+    if (succ == 0) {
       break;
-  } while (succ > 0);
+    }
+  }
 
   // Copy result to output.
   CHECK(v->dup(&parent));
