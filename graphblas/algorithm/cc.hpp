@@ -118,9 +118,6 @@ float cc(Vector<int>*       v,
     if (desc->descriptor_.debug())
       std::cout << "succ: " << succ << " " << static_cast<int>(succ) <<
           std::endl;
-    if (succ == 0) {
-      break;
-    }
   }
 
   // Copy result to output.
