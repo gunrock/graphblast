@@ -183,6 +183,13 @@ float cc(Vector<int>*       v,
     reduce<int, bool>(&succ, GrB_NULL, PlusMonoid<int>(), &diff, desc);
     CHECK(grandparent_temp.dup(&grandparent));
 
+    // 6) Similar to BFS and SSSP, we should filter out the unproductive
+    // vertices from the next iteration.
+    CHECK(desc->toggle(GrB_MASK));
+    assign<int, bool, int, int>(&grandparent, &diff, GrB_NULL,
+        std::numeric_limits<int>::max(), GrB_ALL, A_nrows, desc);
+    CHECK(desc->toggle(GrB_MASK));
+
     if (succ == 0) {
       break;
     }
