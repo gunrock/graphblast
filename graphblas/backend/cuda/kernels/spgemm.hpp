@@ -41,7 +41,7 @@ __global__ void spgemmMaskedKernel(c*           C_csrVal,
       c accumulator = identity;
       if (mask_val) {
         // Load B bounds on which we must do binary search
-        Index B_ind       = A_csrColInd[edge];
+        Index B_ind       = mask_csrColInd[edge];
         Index B_col_start = B_cscColPtr[B_ind];
         Index B_col_end   = B_cscColPtr[B_ind+1];
         
