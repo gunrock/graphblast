@@ -128,15 +128,6 @@ Info cusparse_spgemm(SparseMatrix<c>*       C,
   C_nrows = C->nrows_;
   C_ncols = C->ncols_;
 
-  // Dimension compatibility check
-  if ((A_ncols != B_nrows) || (C_ncols != B_ncols) || (C_nrows != A_nrows)) {
-    std::cout << "Dim mismatch mxm" << std::endl;
-    std::cout << A_ncols << " " << B_nrows << std::endl;
-    std::cout << C_ncols << " " << B_ncols << std::endl;
-    std::cout << C_nrows << " " << A_nrows << std::endl;
-    return GrB_DIMENSION_MISMATCH;
-  }
-
   // SpGEMM Computation
   cusparseHandle_t handle;
   cusparseCreate(&handle);
@@ -154,20 +145,10 @@ Info cusparse_spgemm(SparseMatrix<c>*       C,
   if (C->d_csrRowPtr_ == NULL) {
     CUDA_CALL( cudaMalloc( &C->d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
   }
-  /*else
-  {
-    CUDA_CALL( cudaFree(&C->d_csrRowPtr_) );
-    CUDA_CALL( cudaMalloc( &C->d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
-  }*/
 
   if (C->h_csrRowPtr_ == NULL)
     C->h_csrRowPtr_ = reinterpret_cast<Index*>(malloc((A_nrows+1)*
         sizeof(Index)));
-  /*else
-  {
-    free( C->h_csrRowPtr_ );
-    C->h_csrRowPtr_ = (Index*)malloc((A_nrows+1)*sizeof(Index));
-  }*/
 
   // Analyze
   status = cusparseXcsrgemmNnz(handle,
@@ -274,14 +255,49 @@ Info cusparse_spgemm(SparseMatrix<c>*       C,
 
 template <typename c, typename a, typename b, typename m,
           typename BinaryOpT,     typename SemiringT>
-Info cusparse_spgemm2(SparseMatrix<c>*       C,
-                      const Matrix<m>*       mask,
-                      BinaryOpT              accum,
-                      SemiringT              op,
-                      const SparseMatrix<a>* A,
-                      const SparseMatrix<b>* B,
-                      Descriptor*            desc) {
-  return GrB_NOT_IMPLEMENTED;
+Info spgemm(SparseMatrix<c>*       C,
+            const Matrix<m>*       mask,
+            BinaryOpT              accum,
+            SemiringT              op,
+            const SparseMatrix<a>* A,
+            const SparseMatrix<b>* B,
+            Descriptor*            desc) {
+  Index A_nrows, A_ncols, A_nvals;
+  Index B_nrows, B_ncols, B_nvals;
+  Index C_nrows, C_ncols, C_nvals;
+
+  A_nrows = A->nrows_;
+  A_ncols = A->ncols_;
+  A_nvals = A->nvals_;
+  B_nrows = B->nrows_;
+  B_ncols = B->ncols_;
+  B_nvals = B->nvals_;
+  C_nrows = C->nrows_;
+  C_ncols = C->ncols_;
+
+  // TODO(ctcyang): Support transpose options for A and B.
+
+  // Compute how much buffer is required for ComputeOutputStructure and
+  // ComputeOutputValues.
+
+  // Compute C structure: C->csrRowPtr_.
+  ComputeOutputStructure(A_nrows, B_ncols, A_ncols,
+      A_nvals, A->d_csrRowPtr_, A->d_csrColInd_,
+      B_nvals, B->d_csrRowPtr_, B->d_csrColInd_,
+               C->d_csrRowPtr_, &C_nvals, desc);
+
+  // Allocate memory for C col_ind and csr_val using C_nvals.
+
+  // Compute C indices and values: C->csrColInd_ and C->csrVal_.
+  ComputeOutputValues(A_nrows, B_ncols, A_ncols,
+      A_nvals, A->d_csrVal_, A->d_csrRowPtr_, A->d_csrColInd_,
+      B_nvals, B->d_csrVal_, B->d_csrRowPtr_, B->d_csrColInd_,
+               C->d_csrVal_, C->d_csrRowPtr_, C->d_csrColInd_, desc);
+
+  // Set flag that we need to copy data from GPU.
+  C->need_update_ = true;
+  C->nvals_ = C_nvals;
+  return GrB_SUCCESS;
 }
 
 template <typename m, typename BinaryOpT, typename SemiringT>
@@ -304,15 +320,6 @@ Info cusparse_spgemm2(SparseMatrix<float>*       C,
   B_nvals = B->nvals_;
   C_nrows = C->nrows_;
   C_ncols = C->ncols_;
-
-  // Dimension compatibility check
-  if ((A_ncols != B_nrows) || (C_ncols != B_ncols) || (C_nrows != A_nrows)) {
-    std::cout << "Dim mismatch mxm2" << std::endl;
-    std::cout << A_ncols << " " << B_nrows << std::endl;
-    std::cout << C_ncols << " " << B_ncols << std::endl;
-    std::cout << C_nrows << " " << A_nrows << std::endl;
-    return GrB_DIMENSION_MISMATCH;
-  }
 
   // SpGEMM Computation
   cusparseHandle_t handle;
@@ -338,20 +345,10 @@ Info cusparse_spgemm2(SparseMatrix<float>*       C,
   if (C->d_csrRowPtr_ == NULL) {
     CUDA_CALL(cudaMalloc(&C->d_csrRowPtr_, (A_nrows+1)*sizeof(Index)));
   }
-  /*else
-  {
-    CUDA_CALL( cudaFree(&C.d_csrRowPtr_) );
-    CUDA_CALL( cudaMalloc( &C.d_csrRowPtr_, (A_nrows+1)*sizeof(Index) ));
-  }*/
 
   if (C->h_csrRowPtr_ == NULL)
     C->h_csrRowPtr_ = reinterpret_cast<Index*>(malloc((A_nrows+1)*sizeof(
         Index)));
-  /*else
-  {
-    free( C.h_csrRowPtr_ );
-    C.h_csrRowPtr_ = (Index*)malloc((A_nrows+1)*sizeof(Index));
-  }*/
 
   // Step 1: create an opaque structure
   cusparseCreateCsrgemm2Info(&info);
