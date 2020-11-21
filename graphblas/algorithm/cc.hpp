@@ -12,8 +12,8 @@ namespace graphblas {
 namespace algorithm {
 
 // Code is based on the algorithm described in the following paper.
-// Zhang, Azad, Hu. FastSV: FastSV: A Distributed-Memory Connected Component
-// Algorithm with Fast Convergence (SIAM PP20).
+// Zhang, Azad, Hu. FastSV: A Distributed-Memory Connected Component Algorithm
+// with Fast Convergence (SIAM PP20).
 float cc(Vector<int>*       v,
          const Matrix<int>* A,
          int                seed,
