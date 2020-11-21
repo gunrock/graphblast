@@ -71,12 +71,12 @@ float misInner(Vector<int>*       v,
         GreaterPlusSemiring<int>(), w, m, desc);
 
     // assign new members (frontier) to independent set v
-    assign<int, int>(v, f, GrB_NULL, static_cast<int>(1), GrB_ALL, A_nrows,
-        desc);
+    assign<int, int, int, Index>(v, f, GrB_NULL, static_cast<int>(1), GrB_ALL,
+        A_nrows, desc);
 
     // get rid of new members in candidate list
-    assign<int, int>(w, f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
-        desc);
+    assign<int, int, int, Index>(w, f, GrB_NULL, static_cast<int>(0), GrB_ALL,
+        A_nrows, desc);
 
     // check for stopping condition
     reduce<int, int>(&succ, GrB_NULL, PlusMonoid<int>(), f, desc);
@@ -86,8 +86,8 @@ float misInner(Vector<int>*       v,
     // remove neighbors of new members from candidates
     vxm<int, int, int, int>(m, w, GrB_NULL,
         LogicalOrAndSemiring<int>(), f, A,  desc);
-    assign<int, int>(w, m, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
-        desc);
+    assign<int, int, int, Index>(w, m, GrB_NULL, static_cast<int>(0), GrB_ALL,
+        A_nrows, desc);
   } while (succ > 0);
   if (desc->descriptor_.timing_ > 0) {
     gpu_tight.Stop();

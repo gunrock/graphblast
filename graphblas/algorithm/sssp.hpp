@@ -78,8 +78,8 @@ float sssp(Vector<float>*       v,
     // Similar to BFS, except we need to filter out the unproductive vertices
     // here rather than as part of masked vxm
     CHECK(desc->toggle(GrB_MASK));
-    assign<float, float>(&f2, &m, GrB_NULL, std::numeric_limits<float>::max(),
-        GrB_ALL, A_nrows, desc);
+    assign<float, float, float, Index>(&f2, &m, GrB_NULL,
+        std::numeric_limits<float>::max(), GrB_ALL, A_nrows, desc);
     CHECK(desc->toggle(GrB_MASK));
 
     CHECK(f2.swap(&f1));
