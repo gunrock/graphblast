@@ -62,7 +62,8 @@ float bfs(Vector<float>*       v,
     unvisited -= static_cast<int>(succ);
     gpu_tight.Start();
 
-    assign<float, float>(v, &f1, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
+    assign<float, float, float, Index>(v, &f1, GrB_NULL, iter, GrB_ALL, A_nrows,
+        desc);
     CHECK(desc->toggle(GrB_MASK));
     vxm<float, float, float, float>(&f2, v, GrB_NULL,
         LogicalOrAndSemiring<float>(), &f1, A, desc);

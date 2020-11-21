@@ -13,11 +13,11 @@ namespace graphblas {
 namespace algorithm {
 
 // cuSPARSE implementation
-float gcCusparse(Vector<int>*       v,
+float gcCusparse(Vector<int>*         v,
                  const Matrix<float>* A,
-                 int                seed,
-                 int                max_colors,
-                 Descriptor*        desc) {
+                 int                  seed,
+                 int                  max_colors,
+                 Descriptor*          desc) {
   Index A_nrows;
   CHECK(A->nrows(&A_nrows));
 
@@ -120,11 +120,11 @@ float gcIS(Vector<int>*       v,
     }
 
     // assign new color
-    assign<int, int>(v, &f, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
+    assign<int, int, int, Index>(v, &f, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
 
     // get rid of colored nodes in candidate list
-    assign<int, int>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
-        desc);
+    assign<int, int, int, Index>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL,
+        A_nrows, desc);
 
     iter++;
     if (desc->descriptor_.debug())
@@ -226,11 +226,11 @@ float gcMIS(Vector<int>*       v,
     }
 
     // assign new color
-    assign<int, int>(v, &f, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
+    assign<int, int, int, Index>(v, &f, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
 
     // get rid of colored nodes in candidate list
-    assign<int, int>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
-        desc);
+    assign<int, int, int, Index>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL,
+        A_nrows, desc);
 
     iter++;
     if (desc->descriptor_.debug())
@@ -377,11 +377,12 @@ float gcJP(Vector<int>*       v,
         &min_array, desc);
 
     // assign new color
-    assign<int, int>(v, &f, GrB_NULL, min_color, GrB_ALL, A_nrows, desc);
+    assign<int, int, int, Index>(v, &f, GrB_NULL, min_color, GrB_ALL, A_nrows,
+        desc);
 
     // get rid of colored nodes in candidate list
-    assign<int, int>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL, A_nrows,
-        desc);
+    assign<int, int, int, Index>(&w, &f, GrB_NULL, static_cast<int>(0), GrB_ALL,
+        A_nrows, desc);
 
     iter++;
     if (desc->descriptor_.debug())

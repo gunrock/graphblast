@@ -416,15 +416,26 @@ Info extract(Vector<W>*                w,
  */
 template <typename W, typename M, typename U,
           typename BinaryOpT>
-Info assign(Vector<W>*                w,
-            const Vector<U>*          mask,
-            BinaryOpT                 accum,
-            const Vector<U>*          u,
-            const std::vector<Index>* indices,
-            Index                     nindices,
-            Descriptor*               desc) {
-  std::cout << "Error: assign vector variant not implemented yet!\n";
-  return GrB_NOT_IMPLEMENTED;
+Info assignIndexed(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   int*             indices,
+                   Index            nindices,
+                   Descriptor*      desc) {
+  // Null pointer check
+  if (w == NULL || u == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  // -only have one case (no transpose option)
+  CHECK(checkDimSizeSize(w, mask, "w.size  != mask.size"));
+
+  auto                 mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::assignIndexed(&w->vector_, mask_t, accum, &u->vector_,
+      indices, nindices, desc_t);
 }
 
 /*!
@@ -493,15 +504,15 @@ Info assign(Matrix<c>*                C,
  *   w[indices] = w[indices] + val   +: accum
  *                                  .*: Boolean and
  */
-template <typename W, typename M, typename T,
+template <typename W, typename M, typename T, typename I,
           typename BinaryOpT>
-Info assign(Vector<W>*                w,
-            Vector<M>*                mask,
-            BinaryOpT                 accum,
-            T                         val,
-            const std::vector<Index>* indices,
-            Index                     nindices,
-            Descriptor*               desc) {
+Info assign(Vector<W>*       w,
+            Vector<M>*       mask,
+            BinaryOpT        accum,
+            T                val,
+            const Vector<I>* indices,
+            Index            nindices,
+            Descriptor*      desc) {
   // Null pointer check
   if (w == NULL || desc == NULL)
     return GrB_UNINITIALIZED_OBJECT;
@@ -512,8 +523,9 @@ Info assign(Vector<W>*                w,
 
   auto                 mask_t = (mask == NULL) ? NULL : &mask->vector_;
   backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+  auto              indices_t = (indices == NULL) ? NULL : &indices->vector_;
 
-  return backend::assign(&w->vector_, mask_t, accum, val, indices, nindices,
+  return backend::assign(&w->vector_, mask_t, accum, val, indices_t, nindices,
       desc_t);
 }
 
@@ -730,22 +742,75 @@ Info scale(Vector<W>*       w,
 
 /*!
  * Extension method
- * Scatter constant to indices (vector u) to another vector w
- *   w[u] = val
+ * Scatter constant to indices of another vector w
+ *   w[indices[i]] = mask .* val
  */
-template <typename W, typename M, typename U, typename T>
+template <typename W, typename M, typename I, typename T>
 Info scatter(Vector<W>*       w,
              const Vector<M>* mask,
-             const Vector<U>* u,
+             const Vector<I>* indices,
              T                val,
              Descriptor*      desc) {
-  if (u == NULL || w == NULL)
+  if (indices == NULL || w == NULL)
     return GrB_UNINITIALIZED_OBJECT;
 
   const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
   backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
 
-  return backend::scatter(&w->vector_, mask_t, &u->vector_, val, desc_t);
+  return backend::scatter(&w->vector_, mask_t, &indices->vector_, val, desc_t);
+}
+
+/*!
+ * Extension method
+ * Assign vector to vector subset when indices are already a GraphBLAS vector
+ *   w[indices] = w[indices] + mask .* u   +: accum
+ *                                        .*: Boolean and
+ */
+template <typename W, typename M, typename U, typename I,
+          typename BinaryOpT>
+Info assignScatter(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Descriptor*      desc) {
+  // Null pointer check
+  if (w == NULL || u == NULL || indices == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  // Dimension check
+  // -only have one case (no transpose option)
+  CHECK(checkDimSizeSize(w, mask, "w.size  != mask.size"));
+
+  auto                 mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor* desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::assignScatter(&w->vector_, mask_t, accum, &u->vector_,
+      &indices->vector_, desc_t);
+}
+
+/*!
+ * Extension method
+ * Gather values in vector u from indices (vector index) and store in another
+ * vector w.
+ *   w[i] = u[index[i]]
+ */
+template <typename W, typename M, typename U, typename I,
+          typename BinaryOpT>
+Info extractGather(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Descriptor*      desc) {
+  if (u == NULL || w == NULL || indices == NULL || desc == NULL)
+    return GrB_UNINITIALIZED_OBJECT;
+
+  const backend::Vector<M>* mask_t = (mask == NULL) ? NULL : &mask->vector_;
+  backend::Descriptor*      desc_t = (desc == NULL) ? NULL : &desc->descriptor_;
+
+  return backend::extractGather(&w->vector_, mask_t, accum, &u->vector_,
+      &indices->vector_, desc_t);
 }
 
 template <typename W, typename a>

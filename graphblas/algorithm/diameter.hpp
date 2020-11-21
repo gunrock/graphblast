@@ -12,10 +12,10 @@ namespace algorithm {
 
 // Use float for now for both v and A
 std::pair<int, int> diameter(Vector<float>*       v,
-             const Matrix<float>* A,
-             Index                s_start,
-             Index                s_end,
-             Descriptor*          desc) {
+                             const Matrix<float>* A,
+                             Index                s_start,
+                             Index                s_end,
+                             Descriptor*          desc) {
   Index A_nrows;
   A->nrows(&A_nrows);
 
@@ -36,7 +36,8 @@ std::pair<int, int> diameter(Vector<float>*       v,
     int iter = 1;
     float succ = 0.f;
     do {
-      assign<float, float>(v, &q1, GrB_NULL, iter, GrB_ALL, A_nrows, desc);
+      assign<float, float, float, Index>(v, &q1, GrB_NULL,
+          static_cast<float>(iter), GrB_ALL, A_nrows, desc);
       desc->toggle(GrB_MASK);
       vxm<float, float, float, float>(&q2, v, GrB_NULL,
           LogicalOrAndSemiring<float>(), &q1, A, desc);

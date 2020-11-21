@@ -357,10 +357,17 @@ Info eWiseMult(Vector<W>*       w,
    * 4) dense  x sparse
    */
   if (u_vec_type == GrB_SPARSE && v_vec_type == GrB_SPARSE) {
-    CHECK(w->setStorage(GrB_SPARSE));
+    CHECK(v_t->setStorage(GrB_DENSE));
+    
+    // TODO(ctcyang): Add true sparse-sparse eWiseMult.
+    // For now, use dense-sparse.
+    /*CHECK(w->setStorage(GrB_SPARSE));
     CHECK(eWiseMultInner(&w->sparse_, mask, accum, op, &u->sparse_,
-        &v->sparse_, desc));
-  } else if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE) {
+        &v->sparse_, desc));*/
+  }
+  CHECK(u->getStorage(&u_vec_type));
+  CHECK(v->getStorage(&v_vec_type));
+  if (u_vec_type == GrB_DENSE && v_vec_type == GrB_DENSE) {
     // depending on whether sparse mask is present or not
     if (mask != NULL) {
       Storage mask_type;
@@ -735,15 +742,36 @@ Info extract(Vector<W>*                w,
 
 template <typename W, typename U, typename M,
           typename BinaryOpT>
-Info assign(Vector<W>*                w,
-            const Vector<M>*          mask,
-            BinaryOpT                 accum,
-            const Vector<U>*          u,
-            const std::vector<Index>* indices,
-            Index                     nindices,
-            Descriptor*               desc) {
-  std::cout << "Error: assign vector variant not implemented yet!\n";
-  return GrB_NOT_IMPLEMENTED;
+Info assignIndexed(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   int*             indices,
+                   Index            nindices,
+                   Descriptor*      desc) {
+  Vector<U>* u_t = const_cast<Vector<U>*>(u);
+
+  if (desc->debug()) {
+    std::cout << "===Begin assign===\n";
+    CHECK(u_t->print());
+  }
+
+  Storage u_vec_type;
+  Storage indices_vec_type;
+  CHECK(u_t->getStorage(&u_vec_type));
+  if (u_vec_type != GrB_DENSE && u_vec_type != GrB_SPARSE) {
+    return GrB_UNINITIALIZED_OBJECT;
+  }
+  CHECK(u_t->setStorage(GrB_DENSE));
+  CHECK(w->setStorage(GrB_DENSE));
+  scatterIndexed(&w->dense_, mask, accum, u->dense_.d_val_, indices, nindices,
+      desc);
+
+  if (desc->debug()) {
+    std::cout << "===End assign===\n";
+    CHECK(w->print());
+  }
+  return GrB_SUCCESS;
 }
 
 template <typename c, typename a, typename m,
@@ -791,13 +819,13 @@ Info assign(Matrix<c>*                C,
 
 template <typename W, typename T, typename M,
           typename BinaryOpT>
-Info assign(Vector<W>*                w,
-            Vector<M>*                mask,
-            BinaryOpT                 accum,
-            T                         val,
-            const std::vector<Index>* indices,
-            Index                     nindices,
-            Descriptor*               desc) {
+Info assign(Vector<W>*           w,
+            Vector<M>*           mask,
+            BinaryOpT            accum,
+            T                    val,
+            const Vector<Index>* indices,
+            Index                nindices,
+            Descriptor*          desc) {
   if (desc->debug()) {
     std::cout << "===Begin assign===\n";
     std::cout << "Input: " << val << std::endl;
@@ -807,9 +835,10 @@ Info assign(Vector<W>*                w,
   Storage vec_type;
   CHECK(w->getStorage(&vec_type));
 
-  // 2 cases:
+  // 3 cases:
   // 1) SpVec
   // 2) DeVec
+  // 3) uninitialized vector
   if (vec_type == GrB_SPARSE) {
     CHECK(w->setStorage(GrB_SPARSE));
     CHECK(assignSparse(&w->sparse_, mask, accum, val, indices, nindices,
@@ -818,6 +847,9 @@ Info assign(Vector<W>*                w,
     CHECK(w->setStorage(GrB_DENSE));
     CHECK(assignDense(&w->dense_, mask, accum, val, indices, nindices,
         desc));
+  } else {
+    // TODO(ctcyang): implement more efficient version of unassigned vector by
+    // arbitrarily setting storage to either sparse or dense.
   }
 
   if (desc->debug()) {
@@ -1105,6 +1137,116 @@ Info scatter(Vector<W>*       w,
 
   if (desc->debug()) {
     std::cout << "===End scatter===\n";
+    CHECK(w->print());
+  }
+  return GrB_SUCCESS;
+}
+
+template <typename W, typename U, typename M, typename I,
+          typename BinaryOpT>
+Info assignScatter(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Descriptor*      desc) {
+  Vector<U>* u_t = const_cast<Vector<U>*>(u);
+  Vector<I>* indices_t = const_cast<Vector<I>*>(indices);
+
+  if (desc->debug()) {
+    std::cout << "===Begin assignScatter===\n";
+    CHECK(u_t->print());
+    CHECK(indices_t->print());
+  }
+  Index nindices;
+  CHECK(indices_t->nvals(&nindices));
+
+  Storage u_vec_type;
+  Storage indices_vec_type;
+  Storage w_vec_type;
+  CHECK(u_t->getStorage(&u_vec_type));
+  CHECK(indices_t->getStorage(&indices_vec_type));
+  CHECK(w->getStorage(&w_vec_type));
+
+  if (indices_vec_type != u_vec_type) {
+    CHECK(indices_t->setStorage(u_vec_type));
+    CHECK(indices_t->getStorage(&indices_vec_type));
+  }
+  if (w_vec_type != u_vec_type) {
+    CHECK(w->setStorage(u_vec_type));
+    CHECK(w->getStorage(&w_vec_type));
+  }
+  if (u_vec_type == GrB_DENSE && indices_vec_type == GrB_DENSE &&
+      w_vec_type == GrB_DENSE) {
+    scatterIndexed(&w->dense_, mask, accum, u->dense_.d_val_,
+        indices_t->dense_.d_val_, nindices, desc);
+  } else if (u_vec_type == GrB_SPARSE && indices_vec_type == GrB_SPARSE &&
+      w_vec_type == GrB_DENSE) {
+    scatterIndexed(&w->dense_, mask, accum, u->sparse_.d_val_,
+        indices_t->sparse_.d_val_, nindices, desc);
+  } else {
+    std::cout << "w: " << w_vec_type << " u: " << u_vec_type <<
+        " indices: " << indices_vec_type << std::endl;
+    std::cout << "Error: assign scatter not implemented for this config!\n";
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End assignScatter===\n";
+    CHECK(w->print());
+  }
+  return GrB_SUCCESS;
+}
+
+template <typename W, typename U, typename M, typename I,
+          typename BinaryOpT>
+Info extractGather(Vector<W>*       w,
+                   const Vector<M>* mask,
+                   BinaryOpT        accum,
+                   const Vector<U>* u,
+                   const Vector<I>* indices,
+                   Descriptor*      desc) {
+  Vector<U>* u_t = const_cast<Vector<U>*>(u);
+  Vector<I>* indices_t = const_cast<Vector<I>*>(indices);
+
+  if (desc->debug()) {
+    std::cout << "===Begin extractGather===\n";
+    CHECK(u_t->print());
+    CHECK(indices_t->print());
+  }
+  Index nindices;
+  CHECK(indices_t->nvals(&nindices));
+
+  Storage u_vec_type;
+  Storage indices_vec_type;
+  Storage w_vec_type;
+  CHECK(u_t->getStorage(&u_vec_type));
+  CHECK(indices_t->getStorage(&indices_vec_type));
+  CHECK(w->getStorage(&w_vec_type));
+
+  if (u_vec_type != indices_vec_type) {
+    CHECK(indices_t->setStorage(u_vec_type));
+    CHECK(indices_t->getStorage(&indices_vec_type));
+  }
+  if (w_vec_type != u_vec_type) {
+    CHECK(w->setStorage(u_vec_type));
+    CHECK(w->getStorage(&w_vec_type));
+  }
+  if (u_vec_type == GrB_DENSE && indices_vec_type == GrB_DENSE &&
+      w_vec_type == GrB_DENSE) {
+    gatherIndexed(&w->dense_, mask, accum, u->dense_.d_val_,
+        indices_t->dense_.d_val_, nindices, desc);
+  } else if (u_vec_type == GrB_SPARSE && indices_vec_type == GrB_SPARSE &&
+      w_vec_type == GrB_DENSE) {
+    gatherIndexed(&w->dense_, mask, accum, u->sparse_.d_val_,
+        indices_t->sparse_.d_val_, nindices, desc);
+  } else {
+    std::cout << "w: " << w_vec_type << " u: " << u_vec_type <<
+        " indices: " << indices_vec_type << std::endl;
+    std::cout << "Error: extract gather not implemented for this config!\n";
+  }
+
+  if (desc->debug()) {
+    std::cout << "===End extractGather===\n";
     CHECK(w->print());
   }
   return GrB_SUCCESS;

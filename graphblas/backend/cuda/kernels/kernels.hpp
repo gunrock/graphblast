@@ -11,5 +11,6 @@
 #include "graphblas/backend/cuda/kernels/ewiseadd.hpp"
 #include "graphblas/backend/cuda/kernels/trace.hpp"
 #include "graphblas/backend/cuda/kernels/scatter.hpp"
+#include "graphblas/backend/cuda/kernels/gather.hpp"
 
 #endif  // GRAPHBLAS_BACKEND_CUDA_KERNELS_KERNELS_HPP_

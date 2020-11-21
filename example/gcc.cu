@@ -13,7 +13,7 @@
 #include <boost/program_options.hpp>
 
 #include "graphblas/graphblas.hpp"
-#include "graphblas/algorithm/gc.hpp"
+#include "graphblas/algorithm/cc.hpp"
 #include "test/test.hpp"
 
 bool debug_;
@@ -32,8 +32,7 @@ int main(int argc, char** argv) {
   int  directed;
   int  niter;
   int  seed;
-  int  max_colors;
-  int  gc_algo;
+  int  cc_algo;
   char* dat_name;
   po::variables_map vm;
 
@@ -49,8 +48,7 @@ int main(int argc, char** argv) {
     directed   = vm["directed" ].as<int>();
     niter      = vm["niter"    ].as<int>();
     seed       = vm["seed"     ].as<int>();
-    max_colors = vm["maxcolors"].as<int>();
-    gc_algo    = vm["gcalgo"   ].as<int>();
+    cc_algo    = vm["ccalgo"   ].as<int>();
 
     // This is an imperfect solution, because this should happen in
     // desc.loadArgs(vm) instead of application code!
@@ -66,44 +64,47 @@ int main(int argc, char** argv) {
     CHECK(desc.toggle(graphblas::GrB_INP1));
 
   // Matrix A
-  graphblas::Matrix<int> a(nrows, ncols);
+  graphblas::Matrix<int> A(nrows, ncols);
   values.clear();
   values.resize(nvals, 1.f);
-  CHECK(a.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
+  CHECK(A.build(&row_indices, &col_indices, &values, nvals, GrB_NULL,
       dat_name));
-  CHECK(a.nrows(&nrows));
-  CHECK(a.ncols(&ncols));
-  CHECK(a.nvals(&nvals));
-  if (debug) CHECK(a.print());
+  CHECK(A.nrows(&nrows));
+  CHECK(A.ncols(&ncols));
+  CHECK(A.nvals(&nvals));
+  if (debug) CHECK(A.print());
 
   // Vector v
   graphblas::Vector<int> v(nrows);
 
-  // Cpu graph coloring
-  CpuTimer gc_cpu;
-  std::vector<int> h_gc_cpu(nrows, 0);
+  // Cpu connected components.
+  CpuTimer cc_cpu;
+  std::vector<int> h_cc_cpu(nrows, 0);
   int depth = 10000;
-  gc_cpu.Start();
-  int d = graphblas::algorithm::gcCpu(seed, &a, &h_gc_cpu, max_colors);
-  gc_cpu.Stop();
-  graphblas::algorithm::verifyGc(&a, h_gc_cpu);
+  cc_cpu.Start();
+  int d = graphblas::algorithm::ccCpu(seed, &A, &h_cc_cpu);
+  cc_cpu.Stop();
+  graphblas::algorithm::verifyCc(&A, h_cc_cpu, /*suppress_zero=*/true);
 
   // Warmup
   CpuTimer warmup;
   warmup.Start();
-  if (gc_algo == 0)
-    graphblas::algorithm::gcJP(&v, &a, seed, max_colors, &desc);
-  else if (gc_algo == 1)
-    graphblas::algorithm::gcMIS(&v, &a, seed, max_colors, &desc);
-  else if (gc_algo == 2)
-    graphblas::algorithm::gcIS(&v, &a, seed, max_colors, &desc);
-  else
-    std::cout << "Error: Invalid graph coloring algorithm selected!\n";
+  if (cc_algo == 0) {
+    graphblas::algorithm::cc(&v, &A, seed, &desc);
+  } else if (cc_algo == 1) {
+    std::cout << "Error: CC algorithm 1 not implemented!\n";
+    //graphblas::algorithm::ccMIS(&v, &A, seed, &desc);
+  } else if (cc_algo == 2) {
+    std::cout << "Error: CC algorithm 2 not implemented!\n";
+    //graphblas::algorithm::ccIS(&v, &A, seed, &desc);
+  } else {
+    std::cout << "Error: Invalid connected components algorithm selected!\n";
+  }
   warmup.Stop();
 
-  std::vector<int> h_gc_gpu;
-  CHECK(v.extractTuples(&h_gc_gpu, &nrows));
-  graphblas::algorithm::verifyGc(&a, h_gc_gpu);
+  std::vector<int> h_cc_gpu;
+  CHECK(v.extractTuples(&h_cc_gpu, &nrows));
+  graphblas::algorithm::verifyCc(&A, h_cc_gpu, /*suppress_zero=*/true);
 
   // Benchmark
   graphblas::Vector<int> y(nrows);
@@ -113,14 +114,16 @@ int main(int argc, char** argv) {
   float tight = 0.f;
   float val;
   for (int i = 0; i < niter; i++) {
-    if (gc_algo == 0) {
-      val = graphblas::algorithm::gcJP(&v, &a, seed, max_colors, &desc);
-    } else if (gc_algo == 1) {
-      val = graphblas::algorithm::gcMIS(&v, &a, seed, max_colors, &desc);
-    } else if (gc_algo == 2) {
-      val = graphblas::algorithm::gcIS(&v, &a, seed, max_colors, &desc);
+    if (cc_algo == 0) {
+      val = graphblas::algorithm::cc(&v, &A, seed, &desc);
+    } else if (cc_algo == 1) {
+      std::cout << "Error: CC algorithm 1 not implemented!\n";
+      //val = graphblas::algorithm::ccMIS(&v, &A, seed, &desc);
+    } else if (cc_algo == 2) {
+      std::cout << "Error: CC algorithm 2 not implemented!\n";
+      //val = graphblas::algorithm::ccIS(&v, &A, seed, &desc);
     } else {
-      std::cout << "Error: Invalid graph coloring algorithm selected!\n";
+      std::cout << "Error: Invalid connected components algorithm selected!\n";
       break;
     }
     tight += val;
@@ -129,7 +132,7 @@ int main(int argc, char** argv) {
   vxm_gpu.Stop();
 
   float flop = 0;
-  std::cout << "cpu, " << gc_cpu.ElapsedMillis() << ", \n";
+  std::cout << "cpu, " << cc_cpu.ElapsedMillis() << ", \n";
   std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
   float elapsed_vxm = vxm_gpu.ElapsedMillis();
@@ -137,8 +140,8 @@ int main(int argc, char** argv) {
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
   if (niter) {
-    std::vector<int> h_gc_gpu2;
-    graphblas::algorithm::verifyGc(&a, h_gc_gpu);
+    std::vector<int> h_cc_gpu2;
+    graphblas::algorithm::verifyCc(&A, h_cc_gpu, /*suppress_zero=*/true);
   }
 
   return 0;

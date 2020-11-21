@@ -16,6 +16,7 @@
 #include "graphblas/backend/cuda/gemv.hpp"
 #include "graphblas/backend/cuda/reduce.hpp"
 #include "graphblas/backend/cuda/scatter.hpp"
+#include "graphblas/backend/cuda/gather.hpp"
 #include "graphblas/backend/cuda/ewisemult.hpp"
 #include "graphblas/backend/cuda/ewiseadd.hpp"
 #include "graphblas/backend/cuda/trace.hpp"
