@@ -77,6 +77,63 @@ __global__ void spgemmMaskedKernel(c*           C_csrVal,
     }
   }
 }
+
+// This kernel and the following kernels are from the CUDA-based pseudocode from
+// Naumov et al. AmgX: A library for GPU accelerated algebraic multigrid and
+// preconditioned iterative methods (SIAM J. Sci. Comp., 2015).
+__global__ csrgemm_count_kernel(int n, int *Ap, int *Ai, double *Av,
+                                int *Pp, int *Pi, double *Pv,
+                                int *Zp, int *Zi, double *Zv) {
+  int row, col, j, k;
+  // For each row of A in parallel.
+  for (row = threadIdx.z + blockIdx.z * blockDim.z; row < n;
+       row += blockDim.z * gridDim.z) {
+    // For each column of A in parallel.
+    for (j = Ap[row] + threadIdx.y + blockIdx.y * blockDim.y; j < Ap[row + 1];
+         j += blockDim.y * gridDim.y) {
+      // This represents the row of P.
+      col = Ai[j];
+      // For each column of P in parallel.
+      for (k = Pp[col] + threadIdx.x + blockIdx.x * blockDim.x; k < Pp[col + 1];
+           k += blockDim.x * gridDim.x) {
+        // This represents the key.
+        col_P = Pi[k];
+        // Perform union to eliminate duplicate keys.
+        hashTable[row].insert(col_P);
+      }
+    }
+    Zp[row] = hashTable[row].size();
+  }
+}
+
+__global__ csrgemm_compute_kernel(int n, int *Ap, int *Ai, double *Av,
+                                  int *Pp, int *Pi, double *Pv,
+                                  int *Zp, int *Zi, double *Zv) {
+  int row, col, j, k;
+  double val, val_P;
+  // For each row of A in parallel.
+  for (row = threadIdx.z + blockIdx.z*blockDim.z; row < n;
+       row += blockDim.z * gridDim.z) {
+    // For each col of A in parallel.
+    for (j = Ap[row] + threadIdx.y + blockIdx.y * blockDim.y; j < Ap[row + 1];
+         j+= blockDim.y * gridDim.y) {
+      // This represents the row of P.
+      col = Ai[j];
+      val = Av[j];
+      // For each col of P in parallel.
+      for (k = Pp[col] + threadIdx.x + blockIdx.x * blockDim.x; k < Pp[col + 1];
+           k += blockDim.x * gridDim.x) {
+        // The next two variables represent the key and value respectively.
+        col_P = Pi[k];
+        val_P = Pv[k];
+        // Perform union to reduce values on key conflict.
+        hashTable[row].insert_by_key(col_P, val * val_P);
+      }
+    }
+    Zi[row] = hashTable[row].export_keys()
+    Zv[row] = hashTable[row].export_values();
+  }
+}
 }  // namespace backend
 }  // namespace graphblas
 
