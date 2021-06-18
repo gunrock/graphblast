@@ -29,7 +29,8 @@ class SparseMatrix {
         h_cscColPtr_(NULL), h_cscRowInd_(NULL), h_cscVal_(NULL),
         d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
         d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
-        need_update_(0), symmetric_(0) {
+        need_update_(0), csr_initialized_(false), csc_initialized_(false),
+        csr_ownership_(false), csc_ownership_(false), symmetric_(0) {
     format_ = getEnv("GRB_SPARSE_MATRIX_FORMAT", GrB_SPARSE_MATRIX_CSRCSC);
   }
 
@@ -39,7 +40,8 @@ class SparseMatrix {
         h_cscColPtr_(NULL), h_cscRowInd_(NULL), h_cscVal_(NULL),
         d_csrRowPtr_(NULL), d_csrColInd_(NULL), d_csrVal_(NULL),
         d_cscColPtr_(NULL), d_cscRowInd_(NULL), d_cscVal_(NULL),
-        need_update_(0), symmetric_(0) {
+        need_update_(0), csr_initialized_(false), csc_initialized_(false),
+        csr_ownership_(false), csc_ownership_(false), symmetric_(0) {
     format_ = getEnv("GRB_SPARSE_MATRIX_FORMAT", GrB_SPARSE_MATRIX_CSRCSC);
   }
 
@@ -131,6 +133,10 @@ class SparseMatrix {
 
   // GPU variables
   bool need_update_;
+  bool csr_initialized_;
+  bool csc_initialized_;
+  bool csr_ownership_;
+  bool csc_ownership_;
   // Symmetric can mean 2 things:
   // 1) structure is symmetric i.e. d_cscColPtr_/d_cscRowInd_ are same as 
   //    d_csrRowPtr_/d_csrColInd_, so d_cscColPtr_ and d_cscRowInd_ can be freed
@@ -161,14 +167,16 @@ class SparseMatrix {
 
 template <typename T>
 SparseMatrix<T>::~SparseMatrix() {
-  if (h_csrRowPtr_) free(h_csrRowPtr_);
-  if (h_csrColInd_) free(h_csrColInd_);
-  if (h_csrVal_   ) free(h_csrVal_);
-  if (d_csrRowPtr_) CUDA_CALL(cudaFree(d_csrRowPtr_));
-  if (d_csrColInd_) CUDA_CALL(cudaFree(d_csrColInd_));
-  if (d_csrVal_   ) CUDA_CALL(cudaFree(d_csrVal_   ));
+  if (csr_ownership_) {
+    if (h_csrRowPtr_) free(h_csrRowPtr_);
+    if (h_csrColInd_) free(h_csrColInd_);
+    if (h_csrVal_   ) free(h_csrVal_);
+    if (d_csrRowPtr_) CUDA_CALL(cudaFree(d_csrRowPtr_));
+    if (d_csrColInd_) CUDA_CALL(cudaFree(d_csrColInd_));
+    if (d_csrVal_   ) CUDA_CALL(cudaFree(d_csrVal_   ));
+  }
 
-  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  if (csc_ownership_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
     if (h_cscColPtr_) free(h_cscColPtr_);
     if (h_cscRowInd_) free(h_cscRowInd_);
     if (h_cscVal_   ) free(h_cscVal_);
@@ -217,9 +225,13 @@ Info SparseMatrix<T>::dup(const SparseMatrix* rhs) {
       CUDA_CALL(cudaMemcpy(d_cscRowInd_, rhs->d_cscRowInd_,
           nvals_*sizeof(Index), cudaMemcpyDeviceToDevice));
     }
+    csc_initialized_ = true;
+    csc_ownership_ = true;
   }
 
   need_update_ = true;
+  csr_initialized_ = true;
+  csr_ownership_ = true;
   return GrB_SUCCESS;
 }
 
@@ -307,7 +319,11 @@ Info SparseMatrix<T>::build(const std::vector<Index>* row_indices,
   } else {
     coo2csc(h_cscColPtr_, h_cscRowInd_, h_cscVal_,
             *row_indices, *col_indices, *values, nrows_, ncols_);
+    csc_initialized_ = true;
+    csc_ownership_ = true;
   }
+  csr_initialized_ = true;
+  csr_ownership_ = true;
 
   if (dat_name != NULL) {
     if (!exists(dat_name)) {
@@ -366,7 +382,6 @@ Info SparseMatrix<T>::build(char* dat_name) {
         h_csrVal_[i] = static_cast<T>(1);
 
       if (format_ == GrB_SPARSE_MATRIX_CSRONLY) {
-      //if (symmetric_ || format_ == GrB_SPARSE_MATRIX_CSRONLY) {
         if (h_cscColPtr_ != NULL) free(h_cscColPtr_);
         if (h_cscRowInd_ != NULL) free(h_cscRowInd_);
         if (h_cscVal_    != NULL) free(h_cscVal_);
@@ -376,7 +391,11 @@ Info SparseMatrix<T>::build(char* dat_name) {
       } else {
         csr2csc(h_cscColPtr_, h_cscRowInd_, h_cscVal_,
                 h_csrRowPtr_, h_csrColInd_, h_csrVal_, nrows_, ncols_);
+        csc_initialized_ = true;
+        csc_ownership_ = true;
       }
+      csr_initialized_ = true;
+      csr_ownership_ = true;
 
       CHECK(cpuToGpu());
     }
@@ -402,10 +421,12 @@ Info SparseMatrix<T>::build(Index* row_ptr,
                             Index  nvals) {
   d_csrRowPtr_ = row_ptr;
   d_csrColInd_ = col_ind;
-  d_csrVal_    = values;
+  d_csrVal_ = values;
 
-  nvals_       = nvals;
+  nvals_ = nvals;
   need_update_ = true;
+  csr_initialized_ = true;
+  csr_ownership_ = false;
 
   // Don't forget CPU must still be allocated
   CHECK(allocateCpu());
@@ -478,12 +499,14 @@ const T SparseMatrix<T>::operator[](Index ind) {
 
 template <typename T>
 Info SparseMatrix<T>::print(bool force_update) {
-  CHECK(gpuToCpu(force_update));
-  printArray("csrColInd", h_csrColInd_, std::min(nvals_, 40));
-  printArray("csrRowPtr", h_csrRowPtr_, std::min(nrows_+1, 40));
-  printArray("csrVal",    h_csrVal_,    std::min(nvals_, 40));
-  CHECK(printCSR("pretty print"));
-  if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
+  if (csr_initialized_) {
+    CHECK(gpuToCpu(force_update));
+    printArray("csrColInd", h_csrColInd_, std::min(nvals_, 40));
+    printArray("csrRowPtr", h_csrRowPtr_, std::min(nrows_+1, 40));
+    printArray("csrVal",    h_csrVal_,    std::min(nvals_, 40));
+    CHECK(printCSR("pretty print"));
+  }
+  if (csc_initialized_ && format_ == GrB_SPARSE_MATRIX_CSRCSC) {
     if (!h_cscRowInd_ || !h_cscColPtr_ || !h_cscVal_)
       syncCpu();
     printArray("cscRowInd", h_cscRowInd_, std::min(nvals_, 40));
@@ -671,6 +694,7 @@ Info SparseMatrix<T>::allocateGpu() {
     CUDA_CALL(cudaMalloc(&d_csrVal_, ncapacity_*sizeof(T)));
     printMemory("csrVal");
   }
+  csr_ownership_ =  true;
   if (format_ == GrB_SPARSE_MATRIX_CSRCSC) {
     if (nvals_ > 0 && d_cscVal_ == NULL) {
       CUDA_CALL(cudaMalloc(&d_cscVal_, ncapacity_*sizeof(T)));
@@ -683,6 +707,7 @@ Info SparseMatrix<T>::allocateGpu() {
         CUDA_CALL(cudaMalloc(&d_cscRowInd_, ncapacity_*sizeof(Index)));
       }
     }
+    csc_ownership_ = true;
   }
 
   // TODO(@ctcyang): same reason as above for allocateCpu()

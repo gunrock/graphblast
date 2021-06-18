@@ -103,6 +103,9 @@ Info spgemmMasked(SparseMatrix<c>*       C,
           A_nrows);
     }
   }
+  C->need_update_ = true;
+  C->csr_initialized_ = true;
+  C->csc_initialized_ = false;
   return GrB_SUCCESS;
 }
 
@@ -268,6 +271,8 @@ Info cusparse_spgemm(SparseMatrix<c>*       C,
   }
 
   C->need_update_ = true;  // Set flag that we need to copy data from GPU
+  C->csr_initialized_ = true;
+  C->csc_initialized_ = false;
   C->nvals_ = C_nvals;     // Update nnz count for C
   return GrB_SUCCESS;
 }
@@ -494,6 +499,8 @@ Info cusparse_spgemm2(SparseMatrix<float>*       C,
   }
 
   C->need_update_ = true;  // Set flag that we need to copy data from GPU
+  C->csr_initialized_ = true;
+  C->csc_initialized_ = false;
   C->nvals_ = C_nvals;     // Update nnz count for C
   if (desc->debug())
     std::cout << C_nvals << " nonzeroes!\n";
