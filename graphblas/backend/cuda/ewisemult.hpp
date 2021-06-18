@@ -325,10 +325,13 @@ Info eWiseMultInner(SparseMatrix<c>*       C,
 
     eWiseMultKernel<<<NB, NT>>>(C->d_csrVal_, NULL, extractMul(op),
         A->d_csrVal_, A_nvals, val);
+    C->csr_initialized_ = true;
 
-    if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC)
+    if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC) {
       eWiseMultKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
           A->d_cscVal_, A_nvals, val);
+      C->csc_initialized_ = true;
+    }
   }
   C->need_update_ = true;
 
@@ -518,13 +521,16 @@ Info eWiseMultColInner(SparseMatrix<c>*       C,
     // Assign values for CSR value array
     eWiseMultCSRKernel<<<NB, NT>>>(C->d_csrVal_, NULL, extractMul(op),
         A->d_csrRowPtr_, A->d_csrVal_, A_nrows, B->d_val_);
+    C->csr_initialized_ = true;
 
     NB.x = (A_ncols + nt - 1) / nt * 32;
 
     // Assign values for CSC value array
-    if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC)
+    if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC) {
       eWiseMultCSCKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
           A->d_cscColPtr_, A->d_cscRowInd_, A->d_cscVal_, A_ncols, B->d_val_);
+      C->csc_initialized_ = true;
+    }
   }
   C->need_update_ = true;
 
@@ -589,13 +595,16 @@ Info eWiseMultRowInner(SparseMatrix<c>*       C,
     // Assign values for CSR value array
     eWiseMultCSCKernel<<<NB, NT>>>(C->d_csrVal_, NULL, extractMul(op),
         A->d_csrRowPtr_, A->d_csrColInd_, A->d_csrVal_, A_ncols, B->d_val_);
+    C->csr_initialized_ = true;
 
     NB.x = (A_ncols + nt - 1) / nt * 32;
 
     // Assign values for CSC value array
-    if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC)
+    if (A->format_ == GrB_SPARSE_MATRIX_CSRCSC) {
       eWiseMultCSRKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
           A->d_cscColPtr_, A->d_cscVal_, A_nrows, B->d_val_);
+      C->csc_initialized_ = true;
+    }
   }
   C->need_update_ = true;
 
