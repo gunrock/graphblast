@@ -331,6 +331,8 @@ Info eWiseMultInner(SparseMatrix<c>*       C,
       eWiseMultKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
           A->d_cscVal_, A_nvals, val);
       C->csc_initialized_ = true;
+    } else {
+      C->csc_initialized_ = false;
     }
   }
   C->need_update_ = true;
@@ -530,6 +532,8 @@ Info eWiseMultColInner(SparseMatrix<c>*       C,
       eWiseMultCSCKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
           A->d_cscColPtr_, A->d_cscRowInd_, A->d_cscVal_, A_ncols, B->d_val_);
       C->csc_initialized_ = true;
+    } else {
+      C->csc_initialized_ = false;
     }
   }
   C->need_update_ = true;
@@ -604,6 +608,8 @@ Info eWiseMultRowInner(SparseMatrix<c>*       C,
       eWiseMultCSRKernel<<<NB, NT>>>(C->d_cscVal_, NULL, extractMul(op),
           A->d_cscColPtr_, A->d_cscVal_, A_nrows, B->d_val_);
       C->csc_initialized_ = true;
+    } else {
+      C->csc_initialized_ = false;
     }
   }
   C->need_update_ = true;
