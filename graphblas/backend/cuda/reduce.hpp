@@ -22,8 +22,10 @@ Info reduceCommon(T*          val,
   T* d_temp_val = reinterpret_cast<T*>(desc->d_buffer_);
   size_t temp_storage_bytes = 0;
 
-  if (nvals == 0)
-    return GrB_INVALID_OBJECT;
+  if (nvals == 0) {
+    *val = op.identity();
+    return GrB_SUCCESS;
+  }
 
   CUDA_CALL(cub::DeviceReduce::Reduce(NULL, temp_storage_bytes, d_val,
       d_temp_val, nvals, op, op.identity()));
