@@ -5,7 +5,7 @@ include common.mk
 #-------------------------------------------------------------------------------
 
 # Includes
-INC += -I$(MGPU_DIR) -I$(CUB_DIR) -I$(BOOST_DIR) -I$(GRB_DIR)
+INC += -I$(MGPU_DIR)  -I$(BOOST_DIR) -I$(GRB_DIR)
 
 #-------------------------------------------------------------------------------
 # Dependency Lists

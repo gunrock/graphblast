@@ -4,3 +4,6 @@
 [submodule "ext/cub"]
 	path = ext/cub
 	url = https://ctcyang@github.com/NVlabs/cub.git
+[submodule "ext/GALATIC"]
+	path = ext/GALATIC
+	url = git@github.com:richardlett/GALATIC.git

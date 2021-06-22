@@ -43,8 +43,13 @@ Info mxm(Matrix<c>*       C,
           desc));
     } else if (typeid(c) == typeid(float) && typeid(a) == typeid(float) &&
                typeid(b) == typeid(float)) {
+        // GALATIC_spgemm(&C->sparse_,
+        //               op,
+        //              &A->sparse_,
+        //               &B->sparse_,
+        //                         desc);
       CHECK(cusparse_spgemm2(&C->sparse_, mask, accum, op, &A->sparse_,
-            &B->sparse_, desc));
+           &B->sparse_, desc));
     } else {
       std::cout << "Error: Unmasked SpGEMM not implemented yet!\n";
       return GrB_NOT_IMPLEMENTED;

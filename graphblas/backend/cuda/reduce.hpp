@@ -1,7 +1,7 @@
 #ifndef GRAPHBLAS_BACKEND_CUDA_REDUCE_HPP_
 #define GRAPHBLAS_BACKEND_CUDA_REDUCE_HPP_
 
-#include <cub.cuh>
+#include <cub/cub.cuh>
 
 #include <iostream>
 

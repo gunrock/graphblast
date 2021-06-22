@@ -5,7 +5,7 @@
 #include <cusparse.h>
 
 #include <moderngpu.cuh>
-#include <cub.cuh>
+#include <cub/cub.cuh>
 
 #include <iostream>
 #include <algorithm>

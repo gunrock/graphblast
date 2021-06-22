@@ -1,7 +1,7 @@
 # CMakeLists.txt for unittest
  
 # required cmakeversion                                                                                                                                                                                   
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.20)
 # packages                                                                                                                                                                                                 
 find_package(CUDA)
 find_package(Boost COMPONENTS program_options REQUIRED)
@@ -13,7 +13,7 @@ set( PROJ_PATH      ${CMAKE_SOURCE_DIR})
 set( PROJ_OUT_PATH  ${CMAKE_BINARY_DIR})
 set( PROJ_HEADERS   "" )
 set( PROJ_LIBRARIES "" )
-set( PROJ_INCLUDES  "./" "ext/moderngpu/include" "ext/cub/cub")
+set( PROJ_INCLUDES  "./" "ext/moderngpu/include")
 set( mgpu_SRC_FILES "ext/moderngpu/src/mgpucontext.cu" "ext/moderngpu/src/mgpuutil.cpp")
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin )
 #set( CUDA_CURAND_LIBRARY "$ENV{CUDA_HOME}/lib64/libcurand.so" )
@@ -23,12 +23,12 @@ set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
 #FILE( GLOB_RECURSE PROJ_LIBRARIES ext/cublas1.1/*.cu )
 FILE( GLOB_RECURSE PROJ_HEADERS graphblas/*.hpp)
 # nvcc flags
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_35 -lineinfo -O3 -use_fast_math -Xptxas=-v")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}  -arch=sm_50 -lineinfo -O3 -use_fast_math -Xptxas=-v --expt-relaxed-constexpr ")
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-Xptxas=-v;-dlcm=ca;-maxrregcount=64)
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_21)
 # needed for cudamalloc
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++11" )
+set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++14" )
 #set(CMAKE_CXX_FLAGS "-fpermissive -pg -m64 -std=c++11" )
 #set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++11 -H" )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")

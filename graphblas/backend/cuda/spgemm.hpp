@@ -1,13 +1,23 @@
 #ifndef GRAPHBLAS_BACKEND_CUDA_SPGEMM_HPP_
 #define GRAPHBLAS_BACKEND_CUDA_SPGEMM_HPP_
 
+
+#include "../../../ext/GALATIC/include/dCSR.cuh"
+#include "../../../ext/GALATIC/include/SemiRingInterface.h"
+#include "../../../ext/GALATIC/source/device/Multiply.cuh"
+
 #include "graphblas/backend/cuda/sparse_matrix.hpp"
+
 
 #include <cuda.h>
 #include <cusparse.h>
 
 #include <iostream>
 #include <vector>
+
+
+
+
 
 namespace graphblas {
 namespace backend {
@@ -16,6 +26,37 @@ class SparseMatrix;
 
 template <typename T>
 class DenseMatrix;
+
+namespace {
+template<typename T>
+void matrixToGalatic(const SparseMatrix<T> *input , dCSR<T>& output) {
+  output.col_ids     = reinterpret_cast<unsigned int*>(input->d_csrColInd_);
+  output.data        = input->d_csrVal_;
+  output.row_offsets = reinterpret_cast<unsigned int*>(input->d_csrRowPtr_);
+  output.rows = input->nrows_;
+  output.cols = input->ncols_;
+  output.nnz = input->nvals_;
+}
+// for copying results back after matrix multiplicaiton
+template<typename T>
+void galaticToSparse(SparseMatrix<T> *output , const dCSR<T>& input) {
+  output->d_csrColInd_ = reinterpret_cast<Index*>(input.col_ids);
+  output->d_csrVal_    = input.data;
+  output->d_csrRowPtr_ = reinterpret_cast<Index*>(input.row_offsets);
+  output->nvals_       = input.nnz;
+  output->ncapacity_ = input.nnz;
+}
+// to prevent double freeing of resources when destructor runs
+// as we do a shallow copy in matrixToGalatic and galaticToSparse.
+template<typename T>
+void nullizeGalaticMatrix(dCSR<T>& m) {
+  m.data        = nullptr;
+  m.col_ids     = nullptr;
+  m.row_offsets = nullptr;
+}
+} // End anonymous Namespace
+
+
 
 template <typename c, typename a, typename b, typename m,
           typename BinaryOpT,     typename SemiringT>
@@ -108,6 +149,139 @@ Info spgemmMasked(SparseMatrix<c>*       C,
   C->csc_initialized_ = false;
   return GrB_SUCCESS;
 }
+
+// A shim between graphblast's and GALATIC's semiring interfaces
+template<typename NativeSR, typename a, typename b, typename c>
+  struct GalaticSemiring : SemiRing<a, b, c>  {
+    NativeSR nativeSemiring;
+
+    __device__ c multiply(const a& left, const b& right) const
+      { return nativeSemiring.mul_op(left, right); }
+    __device__ c add(const c& left,const  c& right) const
+      { return nativeSemiring.add_op(left, right);  }
+    __device__ static c  AdditiveIdentity()
+      { return NativeSR::identity();           }
+};
+template <typename c, typename a, typename b,   typename SemiringT>
+Info GALATIC_spgemm(SparseMatrix<c>*       C,
+                     SemiringT              op,
+                     const SparseMatrix<a>* A,
+                     const SparseMatrix<b>* B,
+                     Descriptor*            desc) {
+
+  Index A_nrows, A_ncols, A_nvals;
+  Index B_nrows, B_ncols, B_nvals;
+  Index C_nrows, C_ncols, C_nvals;
+
+  A_nrows = A->nrows_;
+  A_ncols = A->ncols_;
+  A_nvals = A->nvals_;
+  B_nrows = B->nrows_;
+  B_ncols = B->ncols_;
+  B_nvals = B->nvals_;
+  C_nrows = C->nrows_;
+  C_ncols = C->ncols_;
+
+  // Dimension compatibility check
+  if ((A_ncols != B_nrows) || (C_ncols != B_ncols) || (C_nrows != A_nrows)) {
+    std::cout << "Dim mismatch mxm" << std::endl;
+    std::cout << A_ncols << " " << B_nrows << std::endl;
+    std::cout << C_ncols << " " << B_ncols << std::endl;
+    std::cout << C_nrows << " " << A_nrows << std::endl;
+    return GrB_DIMENSION_MISMATCH;
+  }
+ 
+
+  // cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
+  // cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
+  // cusparseStatus_t status;
+
+
+  if (C->d_csrColInd_ != NULL) {
+    CUDA_CALL(cudaFree(C->d_csrColInd_));
+    CUDA_CALL(cudaFree(C->d_csrVal_));
+    C->d_csrColInd_ = NULL;
+    C->d_csrVal_ = NULL;
+  }
+
+  if (C->d_csrRowPtr_ != NULL) {
+    CUDA_CALL(cudaFree( C->d_csrRowPtr_));
+    C->d_csrRowPtr_ = NULL;
+  }
+
+  if (C->h_csrColInd_ != NULL) {
+    free(C->h_csrColInd_);
+    free(C->h_csrVal_);
+    C->h_csrColInd_ = NULL;
+    C->h_csrVal_ = NULL;
+  }
+
+
+  if (C->h_csrRowPtr_ == NULL)
+    C->h_csrRowPtr_ = reinterpret_cast<Index*>(malloc((A_nrows+1)*
+        sizeof(Index)));
+
+
+
+  dCSR<c> outMatrixGPU;
+  dCSR<a> leftInputMatrixGPU;
+  dCSR<b> rightInputMatrixGPU;
+
+  matrixToGalatic(A, leftInputMatrixGPU);
+  matrixToGalatic(B, rightInputMatrixGPU);
+  
+
+  const int Threads = 128;
+  const int BlocksPerMP = 1;
+  const int NNZPerThread = 2;
+  const int InputElementsPerThreads = 2;
+  const int RetainElementsPerThreads = 1;
+  const int MaxChunksToMerge = 16;
+  const int MaxChunksGeneralizedMerge = 256; // MAX: 865
+  const int MergePathOptions = 8;
+    
+  
+  GPUMatrixMatrixMultiplyTraits DefaultTraits(Threads, BlocksPerMP, NNZPerThread,
+                                                InputElementsPerThreads, RetainElementsPerThreads,
+                                                MaxChunksToMerge, MaxChunksGeneralizedMerge, MergePathOptions );
+
+  const bool Debug_Mode = false;
+
+
+  // GALATIC has its own semiring interface; 
+  // GalaticSemiring is a shim here for conversion of SemiringT, see above
+ 
+  GalaticSemiring<SemiringT, a, b, c> sr;
+  ExecutionStats stats;
+
+  sr.nativeSemiring = op;
+
+  ACSpGEMM::Multiply<GalaticSemiring<SemiringT, a, b, c>>(leftInputMatrixGPU, rightInputMatrixGPU, 
+                                      outMatrixGPU, DefaultTraits, stats,
+                                      Debug_Mode, sr);
+
+  galaticToSparse(C , outMatrixGPU);
+
+  // prevent allocations being freed twice when destructors are ran, 
+  // as we are doing shallow copies:
+  //
+  // A, B -> leftInputMatrixGPU, rightInputMatrixGPU
+  // outMatrixGPU -> C.
+  nullizeGalaticMatrix(outMatrixGPU);
+  nullizeGalaticMatrix(leftInputMatrixGPU);
+  nullizeGalaticMatrix(rightInputMatrixGPU);
+
+  C->h_csrColInd_ = reinterpret_cast<Index*>(malloc(C->ncapacity_*sizeof(Index)));
+  C->h_csrVal_    = reinterpret_cast<c*>(malloc(C->ncapacity_*sizeof(c)));
+
+
+  C->need_update_ = true;  // Set flag that we need to copy data from GPU
+  C->csr_initialized_ = true;
+  C->csc_initialized_ = false;
+  return GrB_SUCCESS;
+}
+
+
 
 template <typename c, typename a, typename b, typename m,
           typename BinaryOpT,     typename SemiringT>
