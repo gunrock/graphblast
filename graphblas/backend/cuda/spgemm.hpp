@@ -190,11 +190,6 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
     std::cout << C_nrows << " " << A_nrows << std::endl;
     return GrB_DIMENSION_MISMATCH;
   }
- 
-  //fixme, not sure if this is nessecary or sufficent
-//  cusparseSetMatType(desc, CUSPARSE_MATRIX_TYPE_GENERAL);
-//  cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
-
 
   if (C->d_csrColInd_ != NULL) {
     CUDA_CALL(cudaFree(C->d_csrColInd_));
@@ -223,26 +218,6 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
   matrixToGalatic(A, leftInputMatrixGPU);
   matrixToGalatic(B, rightInputMatrixGPU);
 
-  
-
-  const int Threads = 128;
-  const int BlocksPerMP = 1;
-  const int NNZPerThread = 2;
-  const int InputElementsPerThreads = 2;
-  const int RetainElementsPerThreads = 1;
-  const int MaxChunksToMerge = 16;
-  const int MaxChunksGeneralizedMerge = 256; // MAX: 865
-  const int MergePathOptions = 8;
-    
-  
-  GPUMatrixMatrixMultiplyTraits DefaultTraits(
-    Threads, BlocksPerMP, NNZPerThread, InputElementsPerThreads,
-    RetainElementsPerThreads, MaxChunksToMerge,MaxChunksGeneralizedMerge,
-    MergePathOptions
-  );
-
-  const bool Debug_Mode = false;
-
 
   // GALATIC has its own semiring interface; 
   // GalaticSemiring is a shim here for conversion of graphblast-style
@@ -252,8 +227,6 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
 
   ExecutionStats stats;
   try {
-
-
       Desc_value nt_mode;
       CHECK(desc->get(GrB_NT, &nt_mode));
       const int num_threads  = static_cast<int>(nt_mode);
@@ -273,7 +246,7 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
                       ( leftInputMatrixGPU, rightInputMatrixGPU,
                       outMatrixGPU, DefaultTraits, stats, semiring_shim);
               break;
-          case 512:
+          case 512: // experimental
               ACSpGEMM::MultiplyImplementation<GalaticSemiring<SemiringT, a, b, c>,
                       512, 1, 1, 1, 2, 16, 512, 8, 0, a, b, c,
                       GalaticSemiring<SemiringT, a, b, c>>
