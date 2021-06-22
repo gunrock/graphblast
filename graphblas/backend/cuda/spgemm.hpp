@@ -27,37 +27,6 @@ class SparseMatrix;
 template <typename T>
 class DenseMatrix;
 
-namespace {
-template<typename T>
-void matrixToGalatic(const SparseMatrix<T> *input , dCSR<T>& output) {
-  output.col_ids     = reinterpret_cast<unsigned int*>(input->d_csrColInd_);
-  output.data        = input->d_csrVal_;
-  output.row_offsets = reinterpret_cast<unsigned int*>(input->d_csrRowPtr_);
-  output.rows = input->nrows_;
-  output.cols = input->ncols_;
-  output.nnz = input->nvals_;
-}
-// for copying results back after matrix multiplicaiton
-template<typename T>
-void galaticToSparse(SparseMatrix<T> *output , const dCSR<T>& input) {
-  output->d_csrColInd_ = reinterpret_cast<Index*>(input.col_ids);
-  output->d_csrVal_    = input.data;
-  output->d_csrRowPtr_ = reinterpret_cast<Index*>(input.row_offsets);
-  output->nvals_       = input.nnz;
-  output->ncapacity_ = input.nnz;
-}
-// to prevent double freeing of resources when destructor runs
-// as we do a shallow copy in matrixToGalatic and galaticToSparse.
-template<typename T>
-void nullizeGalaticMatrix(dCSR<T>& m) {
-  m.data        = nullptr;
-  m.col_ids     = nullptr;
-  m.row_offsets = nullptr;
-}
-} // End anonymous Namespace
-
-
-
 template <typename c, typename a, typename b, typename m,
           typename BinaryOpT,     typename SemiringT>
 Info spgemmMasked(SparseMatrix<c>*       C,
@@ -149,21 +118,52 @@ Info spgemmMasked(SparseMatrix<c>*       C,
   C->csc_initialized_ = false;
   return GrB_SUCCESS;
 }
+// Shallow copy graphblast sparsematrix -> Galatic dCSR format
+template<typename T>
+static void matrixToGalatic(const SparseMatrix<T> *input , dCSR<T>& output) {
+  output.col_ids     = reinterpret_cast<unsigned int*>(input->d_csrColInd_);
+  output.data        = input->d_csrVal_;
+  output.row_offsets = reinterpret_cast<unsigned int*>(input->d_csrRowPtr_);
+  output.rows        = input->nrows_;
+  output.cols        = input->ncols_;
+  output.nnz         = input->nvals_;
+}
 
-// A shim between graphblast's and GALATIC's semiring interfaces
+// Shallow copy Galatic dCSR format -> graphblast sparsematrix 
+template<typename T>
+static void galaticToSparse(SparseMatrix<T> *output , const dCSR<T>& input) {
+  output->d_csrColInd_ = reinterpret_cast<Index*>(input.col_ids);
+  output->d_csrVal_    = input.data;
+  output->d_csrRowPtr_ = reinterpret_cast<Index*>(input.row_offsets);
+  output->nvals_       = input.nnz;
+  output->ncapacity_   = input.nnz;
+}
+
+// Nullize pointers in Galatic's sparse matrices;
+// Galatic's destructors check for null. Doing this will prevent double
+// freeing when shallowcopying with  matrixToGalatic & galaticToSparse
+template<typename T>
+static void nullizeGalaticMatrix(dCSR<T>& m) {
+  m.data        = nullptr;
+  m.col_ids     = nullptr;
+  m.row_offsets = nullptr;
+}
+
+// A generic shim between graphblast's and GALATIC's semiring interfaces
 template<typename NativeSR, typename a, typename b, typename c>
-  struct GalaticSemiring : SemiRing<a, b, c>  {
-    NativeSR nativeSemiring;
+static struct GalaticSemiring : SemiRing<a, b, c>  {
+  NativeSR nativeSemiring;
 
-    __device__ c multiply(const a& left, const b& right) const
-      { return nativeSemiring.mul_op(left, right); }
-    __device__ c add(const c& left,const  c& right) const
-      { return nativeSemiring.add_op(left, right);  }
-    __device__ static c  AdditiveIdentity()
-      { return NativeSR::identity();           }
+  __device__ c multiply(const a& left, const b& right) const
+    { return nativeSemiring.mul_op(left, right);  }
+  __device__ c add(const c& left,const  c& right)      const
+    { return nativeSemiring.add_op(left, right);  }
+  __device__ static c AdditiveIdentity()
+    { return NativeSR::identity();                }
 };
+
 template <typename c, typename a, typename b,   typename SemiringT>
-Info GALATIC_spgemm(SparseMatrix<c>*       C,
+Info GALATIC_spgemm(SparseMatrix<c>*        C,
                      SemiringT              op,
                      const SparseMatrix<a>* A,
                      const SparseMatrix<b>* B,
@@ -191,10 +191,9 @@ Info GALATIC_spgemm(SparseMatrix<c>*       C,
     return GrB_DIMENSION_MISMATCH;
   }
  
-
-  // cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-  // cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
-  // cusparseStatus_t status;
+  //fixme, not sure if this is nessecary or sufficent
+  cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
+  cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
 
 
   if (C->d_csrColInd_ != NULL) {
@@ -205,7 +204,7 @@ Info GALATIC_spgemm(SparseMatrix<c>*       C,
   }
 
   if (C->d_csrRowPtr_ != NULL) {
-    CUDA_CALL(cudaFree( C->d_csrRowPtr_));
+    CUDA_CALL(cudaFree(C->d_csrRowPtr_));
     C->d_csrRowPtr_ = NULL;
   }
 
@@ -216,17 +215,11 @@ Info GALATIC_spgemm(SparseMatrix<c>*       C,
     C->h_csrVal_ = NULL;
   }
 
-
-  if (C->h_csrRowPtr_ == NULL)
-    C->h_csrRowPtr_ = reinterpret_cast<Index*>(malloc((A_nrows+1)*
-        sizeof(Index)));
-
-
-
   dCSR<c> outMatrixGPU;
   dCSR<a> leftInputMatrixGPU;
   dCSR<b> rightInputMatrixGPU;
 
+  //shallow copy input matrices to galatic format
   matrixToGalatic(A, leftInputMatrixGPU);
   matrixToGalatic(B, rightInputMatrixGPU);
   
@@ -241,25 +234,37 @@ Info GALATIC_spgemm(SparseMatrix<c>*       C,
   const int MergePathOptions = 8;
     
   
-  GPUMatrixMatrixMultiplyTraits DefaultTraits(Threads, BlocksPerMP, NNZPerThread,
-                                                InputElementsPerThreads, RetainElementsPerThreads,
-                                                MaxChunksToMerge, MaxChunksGeneralizedMerge, MergePathOptions );
+  GPUMatrixMatrixMultiplyTraits DefaultTraits(
+    Threads, BlocksPerMP, NNZPerThread, InputElementsPerThreads,
+    RetainElementsPerThreads, MaxChunksToMerge,MaxChunksGeneralizedMerge,
+    MergePathOptions
+  );
 
   const bool Debug_Mode = false;
 
 
   // GALATIC has its own semiring interface; 
-  // GalaticSemiring is a shim here for conversion of SemiringT, see above
- 
-  GalaticSemiring<SemiringT, a, b, c> sr;
-  ExecutionStats stats;
-
+  // GalaticSemiring is a shim here for conversion of graphblast-style
+  // SemiringT type. GalaticSemiring definition is above this function
+  GalaticSemiring<SemiringT, a, b, c> semiring_shim;
   sr.nativeSemiring = op;
 
-  ACSpGEMM::Multiply<GalaticSemiring<SemiringT, a, b, c>>(leftInputMatrixGPU, rightInputMatrixGPU, 
-                                      outMatrixGPU, DefaultTraits, stats,
-                                      Debug_Mode, sr);
+  ExecutionStats stats;
+  try {
+    ACSpGEMM::Multiply<GalaticSemiring<SemiringT, a, b, c>>(
+      leftInputMatrixGPU, rightInputMatrixGPU, outMatrixGPU, 
+      DefaultTraits, stats, Debug_Mode, semiring_shim
+    );
+  } catch(std::exception& e) {
+    std::cout
+      << "Exception occured in GALATIC SpGEMM, called from GALATIC_spgemm\n"
+      << "Exception:\n" 
+      << e 
+      << std::endl;
+    return GrB_OUT_OF_MEMORY; //most likely issue, fixme
+  }
 
+  // shallow copy to native format.
   galaticToSparse(C , outMatrixGPU);
 
   // prevent allocations being freed twice when destructors are ran, 
@@ -271,6 +276,10 @@ Info GALATIC_spgemm(SparseMatrix<c>*       C,
   nullizeGalaticMatrix(leftInputMatrixGPU);
   nullizeGalaticMatrix(rightInputMatrixGPU);
 
+
+  if (C->h_csrRowPtr_ == NULL)
+    C->h_csrRowPtr_ = reinterpret_cast<Index*>(malloc((A_nrows+1)*
+        sizeof(Index)));
   C->h_csrColInd_ = reinterpret_cast<Index*>(malloc(C->ncapacity_*sizeof(Index)));
   C->h_csrVal_    = reinterpret_cast<c*>(malloc(C->ncapacity_*sizeof(c)));
 
