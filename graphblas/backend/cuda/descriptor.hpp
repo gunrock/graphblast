@@ -280,6 +280,14 @@ Info Descriptor::loadArgs(const po::variables_map& vm) {
       std::cout << "Error: incorrect nthread selection!\n";
   }
 
+  if(mode_ == "galatic") {
+      CHECK(set(GrB_MODE, GrB_GALATIC));
+  } else if (mode_ == "cusparse2") {
+      CHECK(set(GrB_MODE, GrB_CUSPARSE2));
+  } else {
+      std::cout << R"(Invalid mode: Options are "galatic" and "cusparse2")" << std::endl;
+  }
+
   // TODO(@ctcyang): Enable device selection using ndevice_
   // if( ndevice_!=0 )
 

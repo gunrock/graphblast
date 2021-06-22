@@ -60,6 +60,7 @@ enum Desc_value {GrB_SCMP,               // for GrB_MASK
                  GrB_DEFAULT,
                  GrB_CUSPARSE,           // for SpMV, SpMM
                  GrB_CUSPARSE2,
+                 GrB_GALATIC,
                  GrB_FIXEDROW,
                  GrB_FIXEDCOL,
                  GrB_MERGEPATH  =    9,

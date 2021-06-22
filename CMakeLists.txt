@@ -1,7 +1,7 @@
 # CMakeLists.txt for unittest
  
 # required cmakeversion                                                                                                                                                                                   
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 2.8)
 # packages                                                                                                                                                                                                 
 find_package(CUDA)
 find_package(Boost COMPONENTS program_options REQUIRED)
@@ -23,12 +23,12 @@ set( CUDA_CUSPARSE_LIBRARY "$ENV{CUDA_HOME}/lib64/libcusparse.so" )
 #FILE( GLOB_RECURSE PROJ_LIBRARIES ext/cublas1.1/*.cu )
 FILE( GLOB_RECURSE PROJ_HEADERS graphblas/*.hpp)
 # nvcc flags
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}  -arch=sm_50 -lineinfo -O3 -use_fast_math -Xptxas=-v --expt-relaxed-constexpr ")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}  -arch=sm_35 -lineinfo -O3 -use_fast_math -Xptxas=-v --expt-relaxed-constexpr ")
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-fpermissive;-arch=sm_35;-lineinfo;-Xptxas=-v;-dlcm=ca;-maxrregcount=64)
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_21)
 # needed for cudamalloc
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++14" )
+set(CMAKE_CXX_FLAGS "-fpermissive -g  -std=c++14" )
 #set(CMAKE_CXX_FLAGS "-fpermissive -pg -m64 -std=c++11" )
 #set(CMAKE_CXX_FLAGS "-fpermissive -g -m64 -std=c++11 -H" )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")

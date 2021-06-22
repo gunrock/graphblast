@@ -23,7 +23,9 @@ int main( int argc, char** argv )
   graphblas::Index b_num_rows, b_num_cols, b_num_edges;
   char* dat_name;
 
-  // Load A
+
+
+    // Load A
   std::cout << "loading A" << std::endl;
   readMtx("../data/small/chesapeake.mtx", &a_row_indices, &a_col_indices,
       &a_values, &a_num_rows, &a_num_cols, &a_num_edges, 0, false, &dat_name);
@@ -44,7 +46,13 @@ int main( int argc, char** argv )
   //
   graphblas::Matrix<float> c(a_num_rows, b_num_cols);
   graphblas::Descriptor desc;
-  desc.descriptor_.debug_ = true;
+
+  po::variables_map vm;
+  parseArgs(argc, argv, &vm);
+  CHECK(desc.loadArgs(vm));
+
+
+    desc.descriptor_.debug_ = true;
   graphblas::mxm<float,float,float,float>(
       &c,
       GrB_NULL,
@@ -64,9 +72,10 @@ int main( int argc, char** argv )
   A.build(a.matrix_.sparse_.d_csrRowPtr_, a.matrix_.sparse_.d_csrColInd_, a.matrix_.sparse_.d_csrVal_, a.matrix_.sparse_.nvals_);
   B.build(b.matrix_.sparse_.d_csrRowPtr_, b.matrix_.sparse_.d_csrColInd_, b.matrix_.sparse_.d_csrVal_, b.matrix_.sparse_.nvals_);
 
+
   desc.descriptor_.debug_ = true;
 
-  graphblas::mxm<T, T, T, T>(&C, GrB_NULL, GrB_NULL, graphblas::PlusMultipliesSemiring<float>(),
+  graphblas::mxm<T, T, T, T>(&C, GrB_NULL, GrB_NULL, graphblas::PlusDividesSemiring<float>(),
                              &A, &B, &desc);
 
   // Multiply using CPU array initialization.

@@ -151,7 +151,7 @@ static void nullizeGalaticMatrix(dCSR<T>& m) {
 
 // A generic shim between graphblast's and GALATIC's semiring interfaces
 template<typename NativeSR, typename a, typename b, typename c>
-static struct GalaticSemiring : SemiRing<a, b, c>  {
+struct GalaticSemiring : SemiRing<a, b, c>  {
   NativeSR nativeSemiring;
 
   __device__ c multiply(const a& left, const b& right) const
@@ -192,8 +192,8 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
   }
  
   //fixme, not sure if this is nessecary or sufficent
-  cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-  cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
+//  cusparseSetMatType(desc, CUSPARSE_MATRIX_TYPE_GENERAL);
+//  cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
 
 
   if (C->d_csrColInd_ != NULL) {
@@ -222,6 +222,7 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
   //shallow copy input matrices to galatic format
   matrixToGalatic(A, leftInputMatrixGPU);
   matrixToGalatic(B, rightInputMatrixGPU);
+
   
 
   const int Threads = 128;
@@ -247,21 +248,53 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
   // GalaticSemiring is a shim here for conversion of graphblast-style
   // SemiringT type. GalaticSemiring definition is above this function
   GalaticSemiring<SemiringT, a, b, c> semiring_shim;
-  sr.nativeSemiring = op;
+  semiring_shim.nativeSemiring = op;
 
   ExecutionStats stats;
   try {
-    ACSpGEMM::Multiply<GalaticSemiring<SemiringT, a, b, c>>(
-      leftInputMatrixGPU, rightInputMatrixGPU, outMatrixGPU, 
-      DefaultTraits, stats, Debug_Mode, semiring_shim
-    );
+
+
+      Desc_value nt_mode;
+      CHECK(desc->get(GrB_NT, &nt_mode));
+      const int num_threads  = static_cast<int>(nt_mode);
+
+      switch (num_threads) {
+          case 64:
+          ACSpGEMM::MultiplyImplementation<GalaticSemiring<SemiringT, a, b, c>,
+                      64, 4, 2, 8, 4, 16, 512, 8, 0, a, b, c,
+                      GalaticSemiring<SemiringT, a, b, c>>
+                      (leftInputMatrixGPU, rightInputMatrixGPU,
+                       outMatrixGPU, DefaultTraits, stats, semiring_shim);
+              break;
+          case 128:
+              ACSpGEMM::MultiplyImplementation<GalaticSemiring<SemiringT, a, b, c>,
+                      128, 4, 2, 4, 4, 16, 512, 8, 0, a, b, c,
+                      GalaticSemiring<SemiringT, a, b, c>>
+                      ( leftInputMatrixGPU, rightInputMatrixGPU,
+                      outMatrixGPU, DefaultTraits, stats, semiring_shim);
+              break;
+          case 512:
+              ACSpGEMM::MultiplyImplementation<GalaticSemiring<SemiringT, a, b, c>,
+                      512, 1, 1, 1, 2, 16, 512, 8, 0, a, b, c,
+                      GalaticSemiring<SemiringT, a, b, c>>
+                      (leftInputMatrixGPU, rightInputMatrixGPU,
+                              outMatrixGPU, DefaultTraits, stats, semiring_shim);
+              break;
+          default: // 256
+              ACSpGEMM::MultiplyImplementation<GalaticSemiring<SemiringT, a, b, c>,
+                      256, 4, 2, 4, 4, 16, 512, 8, 0, a, b, c,
+                      GalaticSemiring<SemiringT, a, b, c>>
+                      (leftInputMatrixGPU, rightInputMatrixGPU,
+                              outMatrixGPU, DefaultTraits, stats, semiring_shim);
+              break;
+      }
   } catch(std::exception& e) {
-    std::cout
+    std::cerr
       << "Exception occured in GALATIC SpGEMM, called from GALATIC_spgemm\n"
       << "Exception:\n" 
-      << e 
+      << e.what()
       << std::endl;
-    return GrB_OUT_OF_MEMORY; //most likely issue, fixme
+    return GrB_OUT_OF_MEMORY; //the most likely issue, fixme
   }
 
   // shallow copy to native format.
