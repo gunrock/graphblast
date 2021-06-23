@@ -18,7 +18,7 @@ int main( int argc, char** argv )
 
   std::vector<graphblas::Index> a_row_indices, b_row_indices;
   std::vector<graphblas::Index> a_col_indices, b_col_indices;
-  std::vector<float> a_values, b_values;
+  std::vector<double> a_values, b_values;
   graphblas::Index a_num_rows, a_num_cols, a_num_edges;
   graphblas::Index b_num_rows, b_num_cols, b_num_edges;
   char* dat_name;
@@ -29,7 +29,7 @@ int main( int argc, char** argv )
   std::cout << "loading A" << std::endl;
   readMtx("../data/small/chesapeake.mtx", &a_row_indices, &a_col_indices,
       &a_values, &a_num_rows, &a_num_cols, &a_num_edges, 0, false, &dat_name);
-  graphblas::Matrix<float> a(a_num_rows, a_num_cols);
+  graphblas::Matrix<double> a(a_num_rows, a_num_cols);
   a.build(&a_row_indices, &a_col_indices, &a_values, a_num_edges, GrB_NULL,
      dat_name);
   if(DEBUG) a.print();
@@ -38,13 +38,13 @@ int main( int argc, char** argv )
   std::cout << "loading B" << std::endl;
   readMtx("../data/small/chesapeake.mtx", &b_row_indices, &b_col_indices,
       &b_values, &b_num_rows, &b_num_cols, &b_num_edges, 0, false, &dat_name);
-  graphblas::Matrix<float> b(b_num_rows, b_num_cols);
+  graphblas::Matrix<double> b(b_num_rows, b_num_cols);
   b.build(&b_row_indices, &b_col_indices, &b_values, b_num_edges, GrB_NULL,
       dat_name);
   if(DEBUG) b.print();
 
   //
-  graphblas::Matrix<float> c(a_num_rows, b_num_cols);
+  graphblas::Matrix<double> c(a_num_rows, b_num_cols);
   graphblas::Descriptor desc;
 
   po::variables_map vm;
@@ -53,11 +53,11 @@ int main( int argc, char** argv )
 
 
     desc.descriptor_.debug_ = true;
-  graphblas::mxm<float,float,float,float>(
+  graphblas::mxm<double, double, double, double>(
       &c,
       GrB_NULL,
       GrB_NULL,
-      graphblas::PlusMultipliesSemiring<float>(),
+      graphblas::PlusMultipliesSemiring<double>(),
       &a,
       &b,
       &desc
@@ -65,9 +65,9 @@ int main( int argc, char** argv )
   if(DEBUG) c.print();
 
   // Multiply using GPU array initialization.
-  graphblas::Matrix<float> A(a_num_rows, a_num_cols);
-  graphblas::Matrix<float> B(b_num_rows, b_num_cols);
-  graphblas::Matrix<float> C(a_num_rows, b_num_cols);
+  graphblas::Matrix<double> A(a_num_rows, a_num_cols);
+  graphblas::Matrix<double> B(b_num_rows, b_num_cols);
+  graphblas::Matrix<double> C(a_num_rows, b_num_cols);
 
   A.build(a.matrix_.sparse_.d_csrRowPtr_, a.matrix_.sparse_.d_csrColInd_, a.matrix_.sparse_.d_csrVal_, a.matrix_.sparse_.nvals_);
   B.build(b.matrix_.sparse_.d_csrRowPtr_, b.matrix_.sparse_.d_csrColInd_, b.matrix_.sparse_.d_csrVal_, b.matrix_.sparse_.nvals_);
@@ -75,7 +75,7 @@ int main( int argc, char** argv )
 
   desc.descriptor_.debug_ = true;
 
-  graphblas::mxm<T, T, T, T>(&C, GrB_NULL, GrB_NULL, graphblas::PlusDividesSemiring<float>(),
+  graphblas::mxm<double, double, double, double>(&C, GrB_NULL, GrB_NULL, graphblas::CustomLessPlusSemiring<double>(),
                              &A, &B, &desc);
 
   // Multiply using CPU array initialization.
