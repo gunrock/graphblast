@@ -73,22 +73,19 @@ struct less_equal {
     return lhs <= rhs;
   }
 };
-namespace fixme {
 template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>
-struct first {
+struct left_arg {
   inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) {
     return lhs;
   }
 };
-}
-namespace fixme {
 template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>
-struct second {
+struct right_arg {
   inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) {
     return rhs;
   }
 };
-}
+
 
 template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>
 struct minimum {
