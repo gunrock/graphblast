@@ -1,23 +1,15 @@
 #ifndef GRAPHBLAS_BACKEND_CUDA_SPGEMM_HPP_
 #define GRAPHBLAS_BACKEND_CUDA_SPGEMM_HPP_
 
-
-#include "../../../ext/GALATIC/include/dCSR.cuh"
-#include "../../../ext/GALATIC/include/SemiRingInterface.h"
-#include "../../../ext/GALATIC/source/device/Multiply.cuh"
+#include <GALATIC/GALATICMinimumIncludes.cuh>
 
 #include "graphblas/backend/cuda/sparse_matrix.hpp"
-
 
 #include <cuda.h>
 #include <cusparse.h>
 
 #include <iostream>
 #include <vector>
-
-
-
-
 
 namespace graphblas {
 namespace backend {
@@ -218,10 +210,7 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
   matrixToGalatic(A, leftInputMatrixGPU);
   matrixToGalatic(B, rightInputMatrixGPU);
 
-
-
   GPUMatrixMatrixMultiplyTraits DefaultTraits;
-
 
   // GALATIC has its own semiring interface; 
   // GalaticSemiring is a shim here for conversion of graphblast-style
@@ -231,8 +220,6 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
 
   ExecutionStats stats;
   try {
-
-
       Desc_value nt_mode;
       CHECK(desc->get(GrB_NT, &nt_mode));
       const int num_threads  = static_cast<int>(nt_mode);
@@ -288,21 +275,17 @@ Info GALATIC_spgemm(SparseMatrix<c>*        C,
   nullizeGalaticMatrix(leftInputMatrixGPU);
   nullizeGalaticMatrix(rightInputMatrixGPU);
 
-
   if (C->h_csrRowPtr_ == NULL)
     C->h_csrRowPtr_ = reinterpret_cast<Index*>(malloc((A_nrows+1)*
         sizeof(Index)));
   C->h_csrColInd_ = reinterpret_cast<Index*>(malloc(C->ncapacity_*sizeof(Index)));
   C->h_csrVal_    = reinterpret_cast<c*>(malloc(C->ncapacity_*sizeof(c)));
 
-
   C->need_update_ = true;  // Set flag that we need to copy data from GPU
   C->csr_initialized_ = true;
   C->csc_initialized_ = false;
   return GrB_SUCCESS;
 }
-
-
 
 template <typename c, typename a, typename b, typename m,
           typename BinaryOpT,     typename SemiringT>
