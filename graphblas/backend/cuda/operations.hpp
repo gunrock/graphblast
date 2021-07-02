@@ -52,7 +52,7 @@ Info mxm(Matrix<c>*       C,
              &B->sparse_, desc));
         else {
             if (s_mode != GrB_GALATIC) {
-                std::cout << R"(Unknown mode (Options are: "cuspare2" and "galatic"; defaulting to galatic)" << std::endl;
+                std::cout << R"(Unknown mode (Options are: "cusparse2" and "galatic"; defaulting to galatic)" << std::endl;
             }
             CHECK(GALATIC_spgemm(&C->sparse_,
                                  op,

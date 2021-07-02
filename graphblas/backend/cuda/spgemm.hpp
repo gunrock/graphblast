@@ -1,7 +1,7 @@
 #ifndef GRAPHBLAS_BACKEND_CUDA_SPGEMM_HPP_
 #define GRAPHBLAS_BACKEND_CUDA_SPGEMM_HPP_
 
-#include <GALATIC/GALATICMinimumIncludes.cuh>
+#include "GALATICMinimumIncludes.cuh"
 
 #include "graphblas/backend/cuda/sparse_matrix.hpp"
 

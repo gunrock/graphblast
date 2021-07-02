@@ -1,6 +1,6 @@
 [submodule "ext/moderngpu"]
 	path = ext/moderngpu
-	url = git@github.com:ctcyang/moderngpu.git
+	url = https://ctcyang@github.com/ctcyang/moderngpu.git
 [submodule "ext/GALATIC"]
 	path = ext/GALATIC
-	url = git@github.com:richardlett/GALATIC.git
+	url = https://ctcyang@github.com/richardlett/GALATIC.git
