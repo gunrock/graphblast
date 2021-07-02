@@ -43,11 +43,30 @@ Info mxm(Matrix<c>*       C,
           desc));
     } else if (typeid(c) == typeid(float) && typeid(a) == typeid(float) &&
                typeid(b) == typeid(float)) {
-      CHECK(cusparse_spgemm2(&C->sparse_, mask, accum, op, &A->sparse_,
-            &B->sparse_, desc));
+
+        Desc_value s_mode;
+        CHECK(desc->get(GrB_MODE, &s_mode));
+
+        if (s_mode == GrB_CUSPARSE2)
+            CHECK(cusparse_spgemm2(&C->sparse_, mask, accum, op, &A->sparse_,
+             &B->sparse_, desc));
+        else {
+            if (s_mode != GrB_GALATIC) {
+                std::cout << R"(Unknown mode (Options are: "cusparse2" and "galatic"; defaulting to galatic)" << std::endl;
+            }
+            CHECK(GALATIC_spgemm(&C->sparse_,
+                                 op,
+                                 &A->sparse_,
+                                 &B->sparse_,
+                                 desc));
+
+        }
     } else {
-      std::cout << "Error: Unmasked SpGEMM not implemented yet!\n";
-      return GrB_NOT_IMPLEMENTED;
+        CHECK(GALATIC_spgemm(&C->sparse_,
+                             op,
+                             &A->sparse_,
+                             &B->sparse_,
+                             desc));
     }
   } else {
     std::cout << "Error: SpMM and GEMM not implemented yet!\n";

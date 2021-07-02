@@ -9,11 +9,13 @@ GraphBLAST is a GPU implementation of [GraphBLAS](http://www.graphblas.org), an 
 
 ## Prerequisites
 
-This software has been tested on the following dependencies:
+This software has been tested to build with the following dependencies:
 
-* CUDA 9.1, 9.2
-* Boost 1.58
-* g++ 4.9.3, 5.4.0
+* CUDA 11.3
+  * (Change: CUDA > 11 is now required)
+* Boost 1.74
+* g++ 8.3.0
+  * (Change: C++14 is required)
 
 Optional:
 

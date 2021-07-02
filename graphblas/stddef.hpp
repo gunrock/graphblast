@@ -73,20 +73,19 @@ struct less_equal {
     return lhs <= rhs;
   }
 };
-
 template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>
-struct first {
+struct left_arg {
   inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) {
     return lhs;
   }
 };
-
 template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>
-struct second {
+struct right_arg {
   inline GRB_HOST_DEVICE T_out operator()(T_in1 lhs, T_in2 rhs) {
     return rhs;
   }
 };
+
 
 template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>
 struct minimum {
@@ -173,21 +172,19 @@ REGISTER_MONOID(NotEqualToMonoid, not_equal_to, std::numeric_limits<T_out>::max(
 }  // namespace graphblas
 
 // Semiring generator macro provided by Scott McMillan
-#define REGISTER_SEMIRING(SR_NAME, ADD_MONOID, MULT_BINARYOP)             \
-template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1> \
-struct SR_NAME                                                            \
-{                                                                         \
-  typedef T_out result_type;                                              \
-  typedef T_out T_out_type;                                               \
-                                                                          \
-  inline T_out identity() const                                           \
-  { return ADD_MONOID<T_out>().identity(); }                              \
-                                                                          \
-  inline __host__ __device__ T_out add_op(T_out lhs, T_out rhs)           \
-  { return ADD_MONOID<T_out>()(lhs, rhs); }                               \
-                                                                          \
-  inline __host__ __device__ T_out mul_op(T_in1 lhs, T_in2 rhs)           \
-  { return MULT_BINARYOP<T_in1, T_in2, T_out>()(lhs, rhs); }              \
+#define REGISTER_SEMIRING(SR_NAME, ADD_MONOID, MULT_BINARYOP)                   \
+template <typename T_in1, typename T_in2 = T_in1, typename T_out = T_in1>       \
+struct SR_NAME                                                                  \
+{                                                                               \
+  typedef T_out result_type;                                                    \
+  typedef T_out T_out_type;                                                     \
+                                                                                \
+  static inline GRB_HOST_DEVICE T_out identity()                                \
+  { return ADD_MONOID<T_out>().identity(); }                                    \
+  inline GRB_HOST_DEVICE T_out add_op(const T_out& lhs, const T_out& rhs) const \
+  { return ADD_MONOID<T_out>()(lhs, rhs); }                                     \
+  inline GRB_HOST_DEVICE T_out mul_op(const T_in1& lhs, const T_in2& rhs) const \
+  { return MULT_BINARYOP<T_in1, T_in2, T_out>()(lhs, rhs); }                    \
 };
 
 namespace graphblas {
